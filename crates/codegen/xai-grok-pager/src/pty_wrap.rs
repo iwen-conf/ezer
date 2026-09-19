@@ -23,11 +23,11 @@ fn apply_wrap_child_env(
     appearance: Option<SystemAppearance>,
 ) {
     cmd.env("EZER_OSC52_SINK", "1");
-    cmd.env("LC_GROK_OSC52_SINK", "1");
+    cmd.env("LC_EZER_OSC52_SINK", "1");
     if let Some(appearance) = appearance {
         let value = appearance.as_env_value();
         cmd.env("EZER_APPEARANCE", value);
-        cmd.env("LC_GROK_APPEARANCE", value);
+        cmd.env("LC_EZER_APPEARANCE", value);
     }
 }
 
@@ -366,23 +366,23 @@ mod tests {
     fn apply_wrap_child_env_dark_overrides_parent_light_on_both_names() {
         let mut cmd = portable_pty::CommandBuilder::new("true");
         cmd.env("EZER_APPEARANCE", "light");
-        cmd.env("LC_GROK_APPEARANCE", "light");
+        cmd.env("LC_EZER_APPEARANCE", "light");
         apply_wrap_child_env(&mut cmd, Some(SystemAppearance::Dark));
         assert_eq!(env_str(&cmd, "EZER_APPEARANCE").as_deref(), Some("dark"));
-        assert_eq!(env_str(&cmd, "LC_GROK_APPEARANCE").as_deref(), Some("dark"));
+        assert_eq!(env_str(&cmd, "LC_EZER_APPEARANCE").as_deref(), Some("dark"));
         assert_eq!(env_str(&cmd, "EZER_OSC52_SINK").as_deref(), Some("1"));
-        assert_eq!(env_str(&cmd, "LC_GROK_OSC52_SINK").as_deref(), Some("1"));
+        assert_eq!(env_str(&cmd, "LC_EZER_OSC52_SINK").as_deref(), Some("1"));
     }
 
     #[test]
     fn apply_wrap_child_env_light_overrides_parent_dark_on_both_names() {
         let mut cmd = portable_pty::CommandBuilder::new("true");
         cmd.env("EZER_APPEARANCE", "dark");
-        cmd.env("LC_GROK_APPEARANCE", "dark");
+        cmd.env("LC_EZER_APPEARANCE", "dark");
         apply_wrap_child_env(&mut cmd, Some(SystemAppearance::Light));
         assert_eq!(env_str(&cmd, "EZER_APPEARANCE").as_deref(), Some("light"));
         assert_eq!(
-            env_str(&cmd, "LC_GROK_APPEARANCE").as_deref(),
+            env_str(&cmd, "LC_EZER_APPEARANCE").as_deref(),
             Some("light")
         );
     }
@@ -391,10 +391,10 @@ mod tests {
     fn apply_wrap_child_env_none_does_not_stamp_from_parent_snapshot() {
         let mut cmd = portable_pty::CommandBuilder::new("true");
         cmd.env("EZER_APPEARANCE", "dark");
-        cmd.env_remove("LC_GROK_APPEARANCE");
+        cmd.env_remove("LC_EZER_APPEARANCE");
         apply_wrap_child_env(&mut cmd, None);
         assert_eq!(env_str(&cmd, "EZER_APPEARANCE").as_deref(), Some("dark"));
-        assert_eq!(env_str(&cmd, "LC_GROK_APPEARANCE"), None);
+        assert_eq!(env_str(&cmd, "LC_EZER_APPEARANCE"), None);
         assert_eq!(env_str(&cmd, "EZER_OSC52_SINK").as_deref(), Some("1"));
     }
 }

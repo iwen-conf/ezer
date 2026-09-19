@@ -173,7 +173,7 @@ pub fn invalidate_auto_theme_config() {
 
 // -- Theme resolution --------------------------------------------------------
 
-/// Concrete kind, never `Auto`. Env (`EZER_THEME` / `LC_GROK_THEME`), then `[ui].theme`, then `GrokNight`.
+/// Concrete kind, never `Auto`. Env (`EZER_THEME` / `LC_EZER_THEME`), then `[ui].theme`, then `GrokNight`.
 #[must_use]
 pub fn resolve_initial_theme() -> ThemeKind {
     resolve_initial_theme_from(env_theme_name().as_deref(), load_from_disk(), true)
@@ -190,7 +190,7 @@ fn env_theme_name() -> Option<String> {
 }
 
 fn env_theme_name_from(env: &HashMap<String, String>) -> Option<&str> {
-    for key in ["EZER_THEME", "LC_GROK_THEME"] {
+    for key in ["EZER_THEME", "LC_EZER_THEME"] {
         let Some(raw) = env
             .get(key)
             .map(String::as_str)
@@ -750,7 +750,7 @@ mod tests {
     #[test]
     fn grok_theme_wins_over_lc_and_config() {
         with_test_env(|| {
-            let env = theme_env(&[("EZER_THEME", "ezerday"), ("LC_GROK_THEME", "tokyonight")]);
+            let env = theme_env(&[("EZER_THEME", "ezerday"), ("LC_EZER_THEME", "tokyonight")]);
             assert_eq!(
                 resolve_initial_theme_from(
                     env_theme_name_from(&env),
@@ -778,7 +778,7 @@ mod tests {
                 resolve_initial_theme_from(
                     env_theme_name_from(&theme_env(&[
                         ("EZER_THEME", ""),
-                        ("LC_GROK_THEME", "ezerday")
+                        ("LC_EZER_THEME", "ezerday")
                     ])),
                     Some(ThemeKind::TokyoNight),
                     false,
@@ -787,7 +787,7 @@ mod tests {
             );
             assert_eq!(
                 resolve_initial_theme_from(
-                    env_theme_name_from(&theme_env(&[("LC_GROK_THEME", "ezerday")])),
+                    env_theme_name_from(&theme_env(&[("LC_EZER_THEME", "ezerday")])),
                     Some(ThemeKind::TokyoNight),
                     true,
                 ),
@@ -803,7 +803,7 @@ mod tests {
                 resolve_initial_theme_from(
                     env_theme_name_from(&theme_env(&[
                         ("EZER_THEME", "not-a-theme"),
-                        ("LC_GROK_THEME", "ezerday"),
+                        ("LC_EZER_THEME", "ezerday"),
                     ])),
                     Some(ThemeKind::TokyoNight),
                     false,
@@ -821,7 +821,7 @@ mod tests {
                 resolve_initial_theme_from(
                     env_theme_name_from(&theme_env(&[
                         ("EZER_THEME", "not-a-theme"),
-                        ("LC_GROK_THEME", "")
+                        ("LC_EZER_THEME", "")
                     ])),
                     Some(ThemeKind::GrokDay),
                     false,
@@ -830,7 +830,7 @@ mod tests {
             );
             assert_eq!(
                 resolve_initial_theme_from(
-                    env_theme_name_from(&theme_env(&[("EZER_THEME", ""), ("LC_GROK_THEME", "")])),
+                    env_theme_name_from(&theme_env(&[("EZER_THEME", ""), ("LC_EZER_THEME", "")])),
                     Some(ThemeKind::GrokDay),
                     true,
                 ),
@@ -865,7 +865,7 @@ mod tests {
             system_appearance::set_mock(Some(system_appearance::SystemAppearance::Dark));
             assert_eq!(
                 resolve_initial_theme_from(
-                    env_theme_name_from(&theme_env(&[("LC_GROK_THEME", "auto")])),
+                    env_theme_name_from(&theme_env(&[("LC_EZER_THEME", "auto")])),
                     Some(ThemeKind::TokyoNight),
                     true,
                 ),

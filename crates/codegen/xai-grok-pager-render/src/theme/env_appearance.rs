@@ -1,6 +1,6 @@
 //! Process-environment appearance hints when desktop APIs are unavailable.
 //!
-//! `LC_GROK_APPEARANCE` is the SSH-surviving alias (`AcceptEnv LC_*`).
+//! `LC_EZER_APPEARANCE` is the SSH-surviving alias (`AcceptEnv LC_*`).
 //! `COLORFGBG` is a terminal polarity hint stamped once at shell start and then inherited unchanged: a guess, not a live reading.
 //!
 //! Startup (`detect_with_osc11_fallback`) checks desktop, then explicit wrap/SSH stamps, then OSC 11, then `COLORFGBG`.
@@ -17,7 +17,7 @@ pub fn detect() -> Option<SystemAppearance> {
     detect_from_env_map(&crate::host::collect_unicode_env())
 }
 
-/// Ordered lookup: `EZER_APPEARANCE`, then `LC_GROK_APPEARANCE`, then `COLORFGBG`.
+/// Ordered lookup: `EZER_APPEARANCE`, then `LC_EZER_APPEARANCE`, then `COLORFGBG`.
 #[must_use]
 pub fn detect_from_env_map(env: &HashMap<String, String>) -> Option<SystemAppearance> {
     detect_explicit_from_env_map(env).or_else(|| detect_colorfgbg_from_env_map(env))
@@ -27,7 +27,7 @@ pub fn detect_from_env_map(env: &HashMap<String, String>) -> Option<SystemAppear
 #[must_use]
 pub fn detect_explicit_from_env_map(env: &HashMap<String, String>) -> Option<SystemAppearance> {
     parse_appearance_var(env_nonempty(env, "EZER_APPEARANCE"))
-        .or_else(|| parse_appearance_var(env_nonempty(env, "LC_GROK_APPEARANCE")))
+        .or_else(|| parse_appearance_var(env_nonempty(env, "LC_EZER_APPEARANCE")))
 }
 
 /// Inherited `COLORFGBG` polarity guess.
@@ -100,7 +100,7 @@ mod tests {
     #[test]
     fn lc_alias_used_when_canonical_absent() {
         assert_eq!(
-            detect_from_env_map(&env(&[("LC_GROK_APPEARANCE", "light")])),
+            detect_from_env_map(&env(&[("LC_EZER_APPEARANCE", "light")])),
             Some(SystemAppearance::Light)
         );
     }
@@ -110,7 +110,7 @@ mod tests {
         assert_eq!(
             detect_from_env_map(&env(&[
                 ("EZER_APPEARANCE", "dark"),
-                ("LC_GROK_APPEARANCE", "light"),
+                ("LC_EZER_APPEARANCE", "light"),
                 ("COLORFGBG", "0;15"),
             ])),
             Some(SystemAppearance::Dark)
@@ -136,14 +136,14 @@ mod tests {
     fn lc_wins_over_conflicting_colorfgbg() {
         assert_eq!(
             detect_from_env_map(&env(&[
-                ("LC_GROK_APPEARANCE", "light"),
+                ("LC_EZER_APPEARANCE", "light"),
                 ("COLORFGBG", "15;0"),
             ])),
             Some(SystemAppearance::Light)
         );
         assert_eq!(
             detect_from_env_map(&env(&[
-                ("LC_GROK_APPEARANCE", "dark"),
+                ("LC_EZER_APPEARANCE", "dark"),
                 ("COLORFGBG", "0;15"),
             ])),
             Some(SystemAppearance::Dark)
@@ -154,13 +154,13 @@ mod tests {
     fn unknown_or_empty_lc_falls_through_to_colorfgbg_when_grok_absent() {
         assert_eq!(
             detect_from_env_map(&env(&[
-                ("LC_GROK_APPEARANCE", "solarized"),
+                ("LC_EZER_APPEARANCE", "solarized"),
                 ("COLORFGBG", "15;0"),
             ])),
             Some(SystemAppearance::Dark)
         );
         assert_eq!(
-            detect_from_env_map(&env(&[("LC_GROK_APPEARANCE", ""), ("COLORFGBG", "0;15"),])),
+            detect_from_env_map(&env(&[("LC_EZER_APPEARANCE", ""), ("COLORFGBG", "0;15"),])),
             Some(SystemAppearance::Light)
         );
     }
@@ -216,7 +216,7 @@ mod tests {
         assert_eq!(
             detect_colorfgbg_from_env_map(&env(&[
                 ("EZER_APPEARANCE", "light"),
-                ("LC_GROK_APPEARANCE", "light"),
+                ("LC_EZER_APPEARANCE", "light"),
                 ("COLORFGBG", "15;0"),
             ])),
             Some(SystemAppearance::Dark)

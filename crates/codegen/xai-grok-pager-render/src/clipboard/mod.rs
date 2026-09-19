@@ -33,12 +33,12 @@ fn is_container_no_display() -> bool {
 }
 
 /// `ezer wrap` intercepts OSC 52 onto the local clipboard and advertises it. Over SSH only `TERM` propagates, so brands look incapable.
-/// `LC_GROK_OSC52_SINK` survives default OpenSSH `SendEnv`/`AcceptEnv` of `LC_*`.
+/// `LC_EZER_OSC52_SINK` survives default OpenSSH `SendEnv`/`AcceptEnv` of `LC_*`.
 pub fn osc52_sink_active() -> bool {
     static SINK: OnceLock<bool> = OnceLock::new();
     *SINK.get_or_init(|| {
         std::env::var_os("EZER_OSC52_SINK").is_some()
-            || std::env::var_os("LC_GROK_OSC52_SINK").is_some()
+            || std::env::var_os("LC_EZER_OSC52_SINK").is_some()
     })
 }
 

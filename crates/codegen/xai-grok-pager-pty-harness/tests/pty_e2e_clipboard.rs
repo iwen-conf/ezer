@@ -50,7 +50,7 @@ async fn unknown_ssh_clipboard_delivery_is_unverified() {
             EnvOp::set("SSH_CONNECTION", "scripted-test 1 127.0.0.1 2"),
             // Drop the sink vars a parent `grok wrap` would have set, so the test takes the path with no OSC 52 sink
             EnvOp::remove("EZER_OSC52_SINK"),
-            EnvOp::remove("LC_GROK_OSC52_SINK"),
+            EnvOp::remove("LC_EZER_OSC52_SINK"),
         ],
         Some(content.home()),
     )

@@ -4,7 +4,7 @@ use super::common::*;
 
 /// A single argv containing whitespace routes through `$SHELL -i -c`, the same hop OSC 52 takes.
 const PRINT_APPEARANCE: &str =
-    "printf 'ezer=%s lc=%s\\n' \"$EZER_APPEARANCE\" \"$LC_GROK_APPEARANCE\"";
+    "printf 'ezer=%s lc=%s\\n' \"$EZER_APPEARANCE\" \"$LC_EZER_APPEARANCE\"";
 
 fn parse_printed_appearance(raw: &str) -> Option<(String, String)> {
     let line = raw.lines().find(|l| l.starts_with("ezer="))?;
@@ -25,7 +25,7 @@ fn wrap_appearance_env_advertised_through_shell() {
             ("SHELL", "/bin/sh"),
             ("COLORFGBG", "15;0"),
             ("EZER_APPEARANCE", ""),
-            ("LC_GROK_APPEARANCE", ""),
+            ("LC_EZER_APPEARANCE", ""),
         ],
     );
     let (grok, lc) = parse_printed_appearance(&raw)
@@ -56,7 +56,7 @@ fn wrap_appearance_env_desktop_none_does_not_restamp_parent_grok() {
         &[
             ("SHELL", "/bin/sh"),
             ("EZER_APPEARANCE", "light"),
-            ("LC_GROK_APPEARANCE", ""),
+            ("LC_EZER_APPEARANCE", ""),
         ],
     );
     let (grok, lc) = parse_printed_appearance(&raw)

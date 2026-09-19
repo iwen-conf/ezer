@@ -4,7 +4,7 @@
 //! It intercepts OSC 52 clipboard escape sequences from the command's output and writes their payload to the local system clipboard.
 //! It is useful for containerized or remote shells (`docker exec`, `kubectl exec`, ...) whose clipboard cannot otherwise reach the user.
 //! That matters most in terminals that do not handle OSC 52 themselves (for example Apple Terminal).
-//! It also stamps `LC_GROK_APPEARANCE` from the local OS theme so a remote `theme = "auto"` can resolve over SSH and tmux.
+//! It also stamps `LC_EZER_APPEARANCE` from the local OS theme so a remote `theme = "auto"` can resolve over SSH and tmux.
 //!
 //! Resolvable programs spawn directly.
 //! On Unix, a command a direct spawn cannot run (a single shell-quoted string `ezer wrap "mycli ssh host"` or a shell alias) goes to `$SHELL -i -c`.

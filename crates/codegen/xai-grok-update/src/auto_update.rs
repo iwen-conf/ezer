@@ -1639,7 +1639,7 @@ async fn regenerate_completions(binary: &std::path::Path, grok_home: &std::path:
 
     let completions: &[(&str, std::path::PathBuf)] = &[
         ("bash", grok_home.join("completions/bash/ezer.bash")),
-        ("zsh", grok_home.join("completions/zsh/_grok")),
+        ("zsh", grok_home.join("completions/zsh/_ezer")),
         ("fish", user_home.join(".config/fish/completions/ezer.fish")),
     ];
 

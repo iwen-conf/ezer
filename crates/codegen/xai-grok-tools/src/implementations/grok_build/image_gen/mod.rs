@@ -43,7 +43,7 @@ pub use xai_grok_tools_api::slash_commands::{
 /// Prose returned to the model (as a normal, successful tool result) when a free / X Basic user calls `image_gen` or
 /// `image_edit`. The model relays it to the user. The deliberate `/imagine` slash command shows the richer SuperGrok
 /// upsell modal instead; this covers the natural-language path.
-pub(crate) const TIER_RESTRICTED_UPSELL: &str = "Image generation is a SuperGrok feature and isn't available on the free or X Basic tier. Let the user know they can unlock image and video generation by upgrading to SuperGrok: https://grok.com/supergrok?referrer=ezer-build. Do not retry this tool.";
+pub(crate) const TIER_RESTRICTED_UPSELL: &str = "Image generation is not available on this plan. Do not retry this tool.";
 
 /// HTTP client for xAI Imagine API. Cloned per-request; shares `Arc` state.
 #[derive(Clone)]
@@ -727,7 +727,7 @@ mod tests {
 
         match result {
             ToolOutput::Text(t) => {
-                assert!(t.text.contains("SuperGrok"), "got: {}", t.text);
+                assert!(t.text.contains("not available on this plan"), "got: {}", t.text);
                 assert!(t.text.contains("supergrok?referrer=ezer-build"));
             }
             other => panic!("expected Text upsell, got {other:?}"),

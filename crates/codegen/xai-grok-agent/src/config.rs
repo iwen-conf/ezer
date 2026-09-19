@@ -2356,7 +2356,7 @@ description: Test default tool config
             "promptBody": "You are a coding assistant."
         });
         let def = AgentDefinition::from_json(&json).unwrap();
-        let task_tool_id = "GrokBuild:task";
+        let task_tool_id = "Ezer:task";
         assert!(
             def.tool_config.tools.iter().any(|tc| tc.id == task_tool_id),
             "from_json() without toolConfig should include TaskTool in default toolset, \

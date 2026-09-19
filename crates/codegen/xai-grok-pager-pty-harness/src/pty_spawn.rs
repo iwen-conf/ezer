@@ -16,15 +16,15 @@ use xai_grok_test_support::TestSandbox;
 
 use crate::pty::EnvOp;
 
-const CLIPBOARD_SINK_ENV_VARS: &[&str] = &["EZER_OSC52_SINK", "LC_GROK_OSC52_SINK"];
+const CLIPBOARD_SINK_ENV_VARS: &[&str] = &["EZER_OSC52_SINK", "LC_EZER_OSC52_SINK"];
 
 /// Host / wrap appearance hints that would make `theme=auto` non-deterministic
 /// in PTY tests (layout depends on the resolved palette).
 const APPEARANCE_ENV_VARS: &[&str] = &[
     "EZER_APPEARANCE",
-    "LC_GROK_APPEARANCE",
+    "LC_EZER_APPEARANCE",
     "EZER_THEME",
-    "LC_GROK_THEME",
+    "LC_EZER_THEME",
     "COLORFGBG",
 ];
 

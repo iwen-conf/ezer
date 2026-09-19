@@ -2,7 +2,7 @@
 //!
 //! Detection chain (each step only runs when the previous returns nothing):
 //! 1. `dark-light` desktop APIs: macOS `AppleInterfaceStyle`, Linux XDG portal `org.freedesktop.appearance.color-scheme`, Windows registry
-//! 2. Explicit env stamps, `EZER_APPEARANCE` / `LC_GROK_APPEARANCE` (SSH with tmux, wrap, headless).
+//! 2. Explicit env stamps, `EZER_APPEARANCE` / `LC_EZER_APPEARANCE` (SSH with tmux, wrap, headless).
 //!    See [`super::env_appearance`].
 //! 3. OSC 11 terminal background query, **startup-only**; see [`detect_with_osc11_fallback`].
 //!    The result is cached so runtime `detect()` / `resolve_auto` cannot be overwritten by stale `COLORFGBG`.

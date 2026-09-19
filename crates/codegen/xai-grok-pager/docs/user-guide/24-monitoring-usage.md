@@ -1,6 +1,6 @@
 # Monitoring Usage (External OpenTelemetry)
 
-> **Status: alpha.** The schema below is versioned (`grok_code.schema.version = v1`);
+> **Status: alpha.** The schema below is versioned (`ezer.schema.version = v1`);
 > additive changes may occur without notice, renames/removals will bump the
 > version and be called out in the changelog.
 
@@ -94,8 +94,8 @@ without the master switch.
 | `OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE` | `delta` | `delta` \| `cumulative`. |
 | `OTEL_METRICS_INCLUDE_SESSION_ID` | `1` | Attach `session.id` to metrics (cardinality opt-out). |
 | `OTEL_METRICS_INCLUDE_VERSION` | `0` | Attach `app.version` to metrics. |
-| `OTEL_LOG_USER_PROMPTS` | `0` | Content gate: prompt text on `grok_code.user_prompt` (60 KB cap, secret-scrubbed). |
-| `OTEL_LOG_ASSISTANT_RESPONSES` | follows prompts if unset | Content gate: `response` on `grok_code.assistant_response` (60 KB cap, secret-scrubbed). Unset follows `OTEL_LOG_USER_PROMPTS`; explicit `0` keeps responses off while prompts stay on. `response_length` always exports. Env-only fleets with `OTEL_LOG_USER_PROMPTS=1` must set `OTEL_LOG_ASSISTANT_RESPONSES=0` (or pin it off in requirements) to keep a prompts-only stream. |
+| `OTEL_LOG_USER_PROMPTS` | `0` | Content gate: prompt text on `ezer.user_prompt` (60 KB cap, secret-scrubbed). |
+| `OTEL_LOG_ASSISTANT_RESPONSES` | follows prompts if unset | Content gate: `response` on `ezer.assistant_response` (60 KB cap, secret-scrubbed). Unset follows `OTEL_LOG_USER_PROMPTS`; explicit `0` keeps responses off while prompts stay on. `response_length` always exports. Env-only fleets with `OTEL_LOG_USER_PROMPTS=1` must set `OTEL_LOG_ASSISTANT_RESPONSES=0` (or pin it off in requirements) to keep a prompts-only stream. |
 | `OTEL_LOG_TOOL_DETAILS` | `0` | Metadata gate: 4 KB `tool_parameters` preview, full file paths, verbatim MCP/skill/plugin names. Does **not** include full bodies. Details without CONTENT is the enterprise default. |
 | `OTEL_LOG_TOOL_CONTENT` | `0` | Body gate: `tool_input`, `tool_output`, `full_command`, and failure `error_message` (secret-scrubbed; 60 KB for input/output/command, 4 KB for error_message). Independent of DETAILS — CONTENT does **not** imply DETAILS. Default off. |
 
@@ -212,7 +212,7 @@ resolved its configuration, and whether it is exporting or suppressed.
 | `service.version`, `client.version` | build/client versions |
 | `app.entrypoint` | `cli` \| `headless` \| `agent` |
 | `terminal.type` | terminal emulator brand |
-| `grok_code.schema.version` | `v1` |
+| `ezer.schema.version` | `v1` |
 
 Identity attributes (`user.id`, and `organization.id` / `team.id` /
 `deployment.id` when known) are attached per metric data point and per event
@@ -222,22 +222,22 @@ non-empty address — it is identity, not a content gate, and is never taken fro
 git, an API key, or a deployment key. `prompt.id` (per-prompt UUID) appears on
 events only, never metrics.
 
-## Metrics (meter scope `ai.xai.grok_code`)
+## Metrics (meter scope `ai.xai.ezer`)
 
 | Metric | Unit | Attributes |
 |---|---|---|
-| `grok_code.session.count` | `{session}` | base attrs only |
-| `grok_code.token.usage` | `{token}` | `type` = `input` \| `output` \| `reasoning` \| `cache_read`; `model` |
-| `grok_code.turn.count` | `{turn}` | `outcome` = `completed` \| `cancelled` \| `error`; `model` |
-| `grok_code.turn.ttft` | `ms` | `model` |
-| `grok_code.turn.ttfm` | `ms` | `model` |
-| `grok_code.tool.decision` | `{decision}` | `tool_name`, `decision` = `allow` \| `deny` \| `cancelled` \| `followup`, `access_kind`, `permission_mode` |
-| `grok_code.tool.usage` | `{call}` | `tool_name`, `outcome` |
-| `grok_code.error.count` | `{error}` | `error_category`, `model` |
-| `grok_code.startup.total` | `ms` | `outcome` = `ok` \| `timeout` \| `error`; `auth_mode` |
-| `grok_code.startup.interactive` | `ms` | `auth_mode` |
-| `grok_code.startup.phase_duration` | `ms` | `phase`, `outcome`, `auth_mode` |
-| `grok_code.startup.timeout` | `{timeout}` | `stuck_in`, `auth_mode` |
+| `ezer.session.count` | `{session}` | base attrs only |
+| `ezer.token.usage` | `{token}` | `type` = `input` \| `output` \| `reasoning` \| `cache_read`; `model` |
+| `ezer.turn.count` | `{turn}` | `outcome` = `completed` \| `cancelled` \| `error`; `model` |
+| `ezer.turn.ttft` | `ms` | `model` |
+| `ezer.turn.ttfm` | `ms` | `model` |
+| `ezer.tool.decision` | `{decision}` | `tool_name`, `decision` = `allow` \| `deny` \| `cancelled` \| `followup`, `access_kind`, `permission_mode` |
+| `ezer.tool.usage` | `{call}` | `tool_name`, `outcome` |
+| `ezer.error.count` | `{error}` | `error_category`, `model` |
+| `ezer.startup.total` | `ms` | `outcome` = `ok` \| `timeout` \| `error`; `auth_mode` |
+| `ezer.startup.interactive` | `ms` | `auth_mode` |
+| `ezer.startup.phase_duration` | `ms` | `phase`, `outcome`, `auth_mode` |
+| `ezer.startup.timeout` | `{timeout}` | `stuck_in`, `auth_mode` |
 
 `startup.total` measures process start to a usable session, recorded once per
 process; `outcome` = `timeout` or `error` means startup ended without one.
@@ -264,7 +264,7 @@ turn on the same clock, so `ttft` never exceeds `ttfm`. A turn that produced no
 model output records no `ttft`; a reasoning-only or tool-only turn records `ttft`
 but no `ttfm`.
 
-There is no `cost.usage` metric: join `grok_code.token.usage` with your own
+There is no `cost.usage` metric: join `ezer.token.usage` with your own
 price sheet. `lines_of_code.count` and `active_time.total` are planned for a
 later phase.
 
@@ -284,24 +284,24 @@ stream is active.
 
 | `event.name` | Attributes |
 |---|---|
-| `grok_code.session_start` | `model`, `permission_mode`, `mcp_server_count`, `plugin_count`, `skill_count`, `hook_count`, `memory_enabled`, `is_git_repo`, `client_identifier` |
-| `grok_code.session_end` | `duration_secs`, `turn_count`, `tool_call_count`, `compaction_count`, `model` |
-| `grok_code.user_prompt` | `prompt_length`, `model`, `screen_mode?` (`fullscreen` \| `inline` \| `minimal` \| `headless` \| `other`), `command_name?` (slash/skill name, always-on metadata); `prompt` (**prompts**) |
-| `grok_code.assistant_response` | `response_length`; `response` (**responses**; omitted on tool-only turns) |
-| `grok_code.turn_completed` | `outcome`, `duration_ms`, `tool_call_count`, `model`, `error_category?`, `cancellation_category?` |
-| `grok_code.api_request` | `model`, `duration_ms`, `stop_reason?`, `input_tokens`, `output_tokens`, `reasoning_tokens`, `cache_read_tokens` |
-| `grok_code.api_error` | `error_category`, `model`, `status_code?`, `duration_ms?` |
-| `grok_code.tool_result` | `tool_name`, `outcome`, `success`, `duration_ms`, `file_extension`, `tool_use_id`; reduced `mcp_tool.name` / `mcp_server.name` always (verbatim under **details**); `tool_parameters` preview + `file_path` (**details**); `tool_input`, `tool_output`, `full_command`, `error_message` (**content**) |
-| `grok_code.tool_decision` | `tool_name`, `decision`, `access_kind`, `permission_mode`, `source`, `tool_use_id`; reduced MCP names always (verbatim under **details**); `tool_parameters` preview (**details**); `tool_input`, `full_command` (**content**) |
-| `grok_code.mcp_server_connection` | `status`, `transport_type`, `duration_ms`, `tool_count?`, `error_type?`; reduced `mcp_server.name` always (verbatim under **details**); `error_message` (**content**) |
-| `grok_code.permission_mode_changed` | `from_mode`, `to_mode`, `trigger` |
-| `grok_code.skill_activated` | `skill_source`, `trigger` = `slash_command` \| `skill_md_read` \| `skill_tool`; `skill.name` (**details**) |
-| `grok_code.plugin_loaded` | `install_kind?`, `success`, `error_category?`; `plugin_name` (**details**) |
-| `grok_code.compaction` | `duration_ms`, `tokens_before`, `tokens_after`, `model?` |
-| `grok_code.subagent` | `phase` = `launched` \| `completed`, `subagent_type?`, `outcome?`, `duration_ms?` |
-| `grok_code.auth` | `auth_method` |
-| `grok_code.internal_error` | `error_type` (class only — no message, no location) |
-| `grok_code.model_switched` | `from_model`, `to_model`, `success`, `error_code?` |
+| `ezer.session_start` | `model`, `permission_mode`, `mcp_server_count`, `plugin_count`, `skill_count`, `hook_count`, `memory_enabled`, `is_git_repo`, `client_identifier` |
+| `ezer.session_end` | `duration_secs`, `turn_count`, `tool_call_count`, `compaction_count`, `model` |
+| `ezer.user_prompt` | `prompt_length`, `model`, `screen_mode?` (`fullscreen` \| `inline` \| `minimal` \| `headless` \| `other`), `command_name?` (slash/skill name, always-on metadata); `prompt` (**prompts**) |
+| `ezer.assistant_response` | `response_length`; `response` (**responses**; omitted on tool-only turns) |
+| `ezer.turn_completed` | `outcome`, `duration_ms`, `tool_call_count`, `model`, `error_category?`, `cancellation_category?` |
+| `ezer.api_request` | `model`, `duration_ms`, `stop_reason?`, `input_tokens`, `output_tokens`, `reasoning_tokens`, `cache_read_tokens` |
+| `ezer.api_error` | `error_category`, `model`, `status_code?`, `duration_ms?` |
+| `ezer.tool_result` | `tool_name`, `outcome`, `success`, `duration_ms`, `file_extension`, `tool_use_id`; reduced `mcp_tool.name` / `mcp_server.name` always (verbatim under **details**); `tool_parameters` preview + `file_path` (**details**); `tool_input`, `tool_output`, `full_command`, `error_message` (**content**) |
+| `ezer.tool_decision` | `tool_name`, `decision`, `access_kind`, `permission_mode`, `source`, `tool_use_id`; reduced MCP names always (verbatim under **details**); `tool_parameters` preview (**details**); `tool_input`, `full_command` (**content**) |
+| `ezer.mcp_server_connection` | `status`, `transport_type`, `duration_ms`, `tool_count?`, `error_type?`; reduced `mcp_server.name` always (verbatim under **details**); `error_message` (**content**) |
+| `ezer.permission_mode_changed` | `from_mode`, `to_mode`, `trigger` |
+| `ezer.skill_activated` | `skill_source`, `trigger` = `slash_command` \| `skill_md_read` \| `skill_tool`; `skill.name` (**details**) |
+| `ezer.plugin_loaded` | `install_kind?`, `success`, `error_category?`; `plugin_name` (**details**) |
+| `ezer.compaction` | `duration_ms`, `tokens_before`, `tokens_after`, `model?` |
+| `ezer.subagent` | `phase` = `launched` \| `completed`, `subagent_type?`, `outcome?`, `duration_ms?` |
+| `ezer.auth` | `auth_method` |
+| `ezer.internal_error` | `error_type` (class only — no message, no location) |
+| `ezer.model_switched` | `from_model`, `to_model`, `success`, `error_code?` |
 
 ## Privacy model
 
@@ -361,14 +361,14 @@ Example queries (PromQL, with the Prometheus exporter above):
 
 ```promql
 # Tokens by model and type across the org, 1h rate
-sum by (model, type) (rate(grok_code_token_usage_total[1h]))
+sum by (model, type) (rate(ezer_token_usage_total[1h]))
 
 # Sessions per team per day
-sum by (team_id) (increase(grok_code_session_count_total[1d]))
+sum by (team_id) (increase(ezer_session_count_total[1d]))
 
 # Tool-permission denial ratio
-sum(rate(grok_code_tool_decision_total{decision="deny"}[1h]))
-  / sum(rate(grok_code_tool_decision_total[1h]))
+sum(rate(ezer_tool_decision_total{decision="deny"}[1h]))
+  / sum(rate(ezer_tool_decision_total[1h]))
 ```
 
 ## Debugging

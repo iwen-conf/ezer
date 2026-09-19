@@ -8,7 +8,7 @@
 //! Answering the private request OSC is effectively an image clipboard *read* for the wrapped session.
 //! Any process that can write to the PTY (not only the inner `ezer`) can solicit the host pasteboard.
 //! That is intentional and acceptable for `ezer wrap`: the user opted into wrap on their own host, and the answer stays inside their session.
-//! The remote also only requests when `osc52_sink_active()` (wrap already set `EZER_OSC52_SINK` / `LC_GROK_OSC52_SINK`).
+//! The remote also only requests when `osc52_sink_active()` (wrap already set `EZER_OSC52_SINK` / `LC_EZER_OSC52_SINK`).
 //! Do not generalize this pattern to untrusted multiplexers without an explicit allowlist.
 
 use base64::Engine as _;
