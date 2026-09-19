@@ -1,17 +1,13 @@
 # Custom Models
 
-Grok connects to custom model endpoints for alternative providers, self-hosted models, and overriding built-in settings. This guide explains how to select models, configure endpoints, and integrate third-party providers.
+ezer is a custom-provider / BYOK client. There is no bundled Grok/xAI model
+catalog. Configure at least one `[model.<name>]` (and usually `[models].default`)
+in `~/.ezer/config.toml`.
 
----
-
-## Default Models
-
-By default, Grok uses models hosted by SpaceXAI, and new sessions start with `grok-4.5`. Default models require no configuration. Authenticate with `grok login` or an API key, then start a session.
-
-List all available models:
+List configured / discovered models:
 
 ```bash
-grok models
+ezer models
 ```
 
 ---
@@ -67,15 +63,17 @@ default = "grok-4.5"
 
 ## Supported API Backends
 
-Grok supports three API backends. Set `api_backend` in your `[model.*]` config to choose which protocol the model uses:
+ezer supports three API backends. Set `api_backend` in your `[model.*]` config to choose which protocol the model uses:
 
 | Value | API | Default |
 |-------|-----|---------|
-| `"chat_completions"` | OpenAI Chat Completions (`/v1/chat/completions`) | Yes |
-| `"responses"` | OpenAI Responses (`/v1/responses`) | |
+| `"responses"` | OpenAI Responses (`POST /v1/responses`, streaming SSE) | Yes |
+| `"chat_completions"` | OpenAI Chat Completions (`/v1/chat/completions`) | compatibility only |
 | `"messages"` | Anthropic Messages (`/v1/messages`) | |
 
-When you omit `api_backend`, Grok uses `chat_completions`.
+When you omit `api_backend`, ezer uses **`responses`**. Full Responses support
+is first-class: input items, tool/function calls, reasoning items when present,
+streaming events, and non-stream completions.
 
 To send provider-specific authentication or version headers -- for example, Anthropic's `x-api-key` -- use the `extra_headers` field described below. Grok sends those headers verbatim with every request to the endpoint.
 
@@ -83,7 +81,7 @@ To send provider-specific authentication or version headers -- for example, Anth
 
 ## Configuring Custom Models
 
-Add custom model endpoints in `~/.grok/config.toml` under `[model.<name>]` sections:
+Add custom model endpoints in `~/.ezer/config.toml` under `[model.<name>]` sections:
 
 ```toml
 [model.my-model]
@@ -93,7 +91,7 @@ name = "Display Name"                     # Shown in the model picker
 description = "Model description"          # Optional description
 api_key = "sk-..."                        # API key for this provider (optional)
 env_key = "XAI_API_KEY"                   # Env var holding the API key (optional; string or array)
-api_backend = "chat_completions"          # "chat_completions", "responses", or "messages"
+api_backend = "responses"                 # default; "chat_completions" or "messages" if needed
 reasoning_summary = "concise"             # Responses API only: "none", "auto", "concise", or "detailed"
 temperature = 0.7                         # Sampling temperature
 top_p = 0.95                              # Nucleus sampling parameter
@@ -235,7 +233,7 @@ name = "GPT-4o"
 env_key = "OPENAI_API_KEY"
 ```
 
-`api_backend` defaults to `"chat_completions"`, so you don't need to set it explicitly for OpenAI.
+`api_backend` defaults to `"responses"`. Set `api_backend = "chat_completions"` only for gateways that do not implement Responses.
 
 ### OpenAI (Responses API)
 

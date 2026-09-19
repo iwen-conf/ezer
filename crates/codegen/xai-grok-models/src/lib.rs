@@ -1,5 +1,8 @@
-//! Default model IDs loaded from `default_models.json` at runtime.
-//! Edit that JSON file to change them.
+//! Bundled model IDs loaded from `default_models.json`.
+//!
+//! ezer does not inject this catalog into the live picker. User `[model.*]`
+//! entries and `/v1/models` prefetch populate the catalog. These defaults
+//! remain as a fallback string for tests and pre-catalog paths.
 //!
 //! At runtime each model is resolved from the first of these that is set: CLI flag, ENV var, config.toml, remote settings, these defaults.
 

@@ -22,7 +22,7 @@ use xai_grok_pager::scrollback::blocks::mermaid_content::MermaidRenderQuality;
 
 /// `PAGER_BINARY` (absolutized: Bazel sets a runfiles-relative path) or `CARGO_BIN_EXE_xai-grok-pager`.
 fn pager_binary() -> Result<PathBuf, String> {
-    for key in ["PAGER_BINARY", "CARGO_BIN_EXE_xai-grok-pager"] {
+    for key in ["PAGER_BINARY", "CARGO_BIN_EXE_ezer"] {
         if let Some(value) = std::env::var_os(key) {
             let path = PathBuf::from(value);
             if path.exists() {

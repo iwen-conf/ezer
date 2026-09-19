@@ -1,97 +1,61 @@
 # Getting Started
 
-Grok Build is a terminal-based AI coding assistant from SpaceXAI. It runs as a TUI (Terminal User Interface) that understands your codebase, executes shell commands, edits files, searches the web, and manages tasks.
+ezer is a terminal-based AI coding assistant. It runs as a TUI (Terminal User Interface) that understands your codebase, executes shell commands, edits files, searches the web, and manages tasks.
 
 You can use it interactively as a full-screen TUI, run it headlessly for scripting and CI/CD, or integrate it into editors via the Agent Client Protocol (ACP).
+
+ezer does **not** require an xAI / grok.com login. Configure a local API key and an OpenAI Responses-compatible `base_url`, then launch.
 
 ---
 
 ## Installation
 
-Install the latest stable release (macOS, Linux, or Windows via Git Bash):
+Build from this repository (no grok.com installer):
 
 ```bash
-curl -fsSL https://x.ai/cli/install.sh | bash
+cargo build -p xai-grok-pager-bin --release --bin ezer
+./crates/codegen/xai-grok-pager/scripts/install.sh   # copies into ~/.ezer/bin
+ezer --version
 ```
 
-Install a specific version:
-
-```bash
-curl -fsSL https://x.ai/cli/install.sh | bash -s 0.1.42
-```
-
-On **Windows (PowerShell)**, use the native PowerShell installer:
-
-```powershell
-irm https://x.ai/cli/install.ps1 | iex
-```
-
-Install a specific version:
-
-```powershell
-$env:GROK_VERSION="0.1.42"; irm https://x.ai/cli/install.ps1 | iex
-```
-
-The PowerShell installer automatically adds `%USERPROFILE%\.grok\bin` to your User PATH. Alternatively, install via [Git for Windows](https://gitforwindows.org/) (Git Bash) or MSYS2 using the bash script above. WSL users get the Linux binary automatically.
-
-Verify the installation:
-
-```bash
-grok --version
-```
-
-Update to the latest version at any time:
-
-```bash
-grok update
-```
-
-To fetch a repository through Grove (NFS on macOS, FUSE on Linux), enable
-`grok clone` with `[clone] enabled = true` in Grove config, `GROK_CLONE=1`,
-or the enable-both convenience `GROK_GROVE=1` / `[cli] grove = true` in
-`~/.grok/config.toml`:
-
-```bash
-grok clone <url> [dir]
-```
-
-The default is a depth-1 checkout of the selected branch. Pass `--full-history`
-for a complete clone. Clone enablement is independent of session / `-w` Grove
-worktrees (the convenience above turns both on; the specific knobs still win).
-the grok.com sign-in below — see [grok clone](27-grok-clone.md#authentication)
-and [Configuration reference](26-config-reference.md).
+State lives under `~/.ezer/` (`$EZER_HOME` overrides). See [Migrating from grok](../../../../docs/MIGRATION.md) if you previously used `~/.grok`.
 
 ---
 
 ## First Launch
 
-Start Grok by running:
+Write `~/.ezer/config.toml` before the first launch:
 
-```bash
-grok
+```toml
+[models]
+default = "my-model"
+
+[model.my-model]
+model = "my-model"
+base_url = "http://192.168.0.63:8788/v1"
+api_backend = "responses"
+api_key = "sk-..."
 ```
 
-On first launch, Grok opens your browser to authenticate with grok.com. After you sign in, Grok stores your credentials in `~/.grok/auth.json`, where they persist across sessions. Grok refreshes your credentials automatically and prompts you to sign in again when they can no longer be renewed.
-
-If you prefer API key authentication (e.g., for CI/CD or environments without a browser), set the `XAI_API_KEY` environment variable instead:
-
 ```bash
-export XAI_API_KEY="xai-..."
-grok
+export EZER_API_KEY="sk-..."   # optional if api_key is in config.toml
+ezer
 ```
 
-See [Authentication](02-authentication.md) for the full set of auth options including OIDC, external auth providers, and device code flow.
+The TUI starts without a grok.com browser prompt and talks Responses
+(`POST /v1/responses`) to your gateway. See [Authentication](02-authentication.md)
+and [Custom Models](11-custom-models.md).
 
 ---
 
 ## Basic Interaction
 
-Once authenticated, Grok presents a full-screen TUI with two main areas:
+Once configured, ezer presents a full-screen TUI with two main areas:
 
-- **Scrollback** -- the conversation history showing your prompts, Grok's responses, tool calls, file edits, and more.
+- **Scrollback** -- the conversation history showing your prompts, the assistant's responses, tool calls, file edits, and more.
 - **Prompt** -- the input area at the bottom where you type messages.
 
-Type a message and press `Enter` to send it. Grok reads files, runs commands, and edits code as needed. Each tool run streams into the scrollback in real time.
+Type a message and press `Enter` to send it. ezer reads files, runs commands, and edits code as needed. Each tool run streams into the scrollback in real time.
 
 Press `Tab` to move focus between the prompt and the scrollback. While a turn is running, `Ctrl+C` cancels it once the composer is empty — with a draft, the first press only clears it. `Esc` never cancels a turn; mid-turn it shows a reminder to use `Ctrl+C`. Idle, press `Esc` twice within 800ms to clear a non-empty prompt, or (with an empty prompt and conversation messages) to open rewind — see [Keyboard Shortcuts](03-keyboard-shortcuts.md#escape). With the scrollback focused, use the arrow keys to select entries and to collapse or expand them. To navigate with `j`/`k` and fold with `h`/`l` instead, enable Vim mode.
 

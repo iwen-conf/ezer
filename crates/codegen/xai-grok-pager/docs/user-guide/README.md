@@ -1,6 +1,6 @@
-# Grok Build User Guide
+# ezer User Guide
 
-Learn how to install, configure, and extend Grok Build, the terminal-based AI coding assistant from SpaceXAI.
+Learn how to install, configure, and extend ezer, a Responses-first terminal coding agent. No grok.com login is required.
 
 ---
 

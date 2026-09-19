@@ -6,26 +6,26 @@ use std::path::PathBuf;
 /// Top-level commands for the pager binary.
 #[derive(Debug, Clone, Subcommand)]
 pub enum Command {
-    /// Run Grok without the interactive UI
+    /// Run ezer without the interactive UI
     Agent(Box<AgentArgs>),
-    /// Show the configuration Grok discovers for this directory
+    /// Show the configuration ezer discovers for this directory
     Inspect {
         /// Emit machine-readable JSON output.
         #[arg(long)]
         json: bool,
     },
-    /// Check terminal, clipboard, color, and input support without starting Grok
+    /// Check terminal, clipboard, color, and input support without starting ezer
     Doctor(crate::doctor_cmd::DoctorArgs),
     /// Manage running leader processes
     Leader(LeaderMgmtArgs),
     /// Sign out and clear cached credentials
     Logout,
-    /// Sign in to Grok
+    /// Optional OIDC / device-code sign-in (not required for BYOK)
     Login {
         /// Ignored (kept for backwards compatibility). OAuth2 is now the only auth method.
         #[arg(long, hide = true)]
         legacy: bool,
-        /// Use Grok OAuth via auth.x.ai.
+        /// Use OIDC / OAuth via a configured issuer (not required for local API keys).
         #[arg(long = "oauth", alias = "oidc", conflicts_with_all = ["device_auth"])]
         oauth: bool,
         /// Use device-code authentication for headless/remote environments.
@@ -54,7 +54,7 @@ pub enum Command {
     Usage(crate::usage_cmd::UsageArgs),
     /// Fetch and install managed configuration
     Setup {
-        /// Print the fetched configuration as JSON instead of installing it; writes nothing to ~/.grok.
+        /// Print the fetched configuration as JSON instead of installing it; writes nothing to ~/.ezer.
         #[arg(long)]
         json: bool,
     },
@@ -394,9 +394,9 @@ pub struct LeaderArgs {
 }
 #[derive(Debug, Clone, Parser)]
 #[command(
-    name = "grok",
+    name = "ezer",
     version = xai_grok_version::full_version(),
-    about = "Grok Build TUI",
+    about = "ezer — Responses-first coding agent TUI (BYOK / custom providers)",
     disable_version_flag = true,
     next_display_order = None,
     help_template = "\
@@ -420,9 +420,9 @@ pub struct PagerArgs {
     /// Working directory.
     #[arg(long)]
     pub cwd: Option<PathBuf>,
-    /// Use a custom leader socket path instead of the default `~/.grok/leader.sock`.
+    /// Use a custom leader socket path instead of the default `~/.ezer/leader.sock`.
     /// A local/branch build can thus run an isolated leader without colliding with the default one already running on the machine
-    /// Name it `~/.grok/leader-*.sock` to keep `grok leader list/kill` able to find it; any other location works but won't be auto-discovered
+    /// Name it `~/.ezer/leader-*.sock` to keep `ezer leader list/kill` able to find it; any other location works but won't be auto-discovered
     #[arg(
         long = "leader-socket",
         value_name = "PATH",

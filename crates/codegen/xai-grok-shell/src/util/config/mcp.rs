@@ -1763,14 +1763,14 @@ fn config_path() -> PathBuf {
         .join("config.toml")
 }
 
-/// Path to the user-level config file (`~/.grok/config.toml`).
+/// Path to the user-level config file (`~/.ezer/config.toml`).
 pub fn user_config_path() -> PathBuf {
     config_path()
 }
 
-/// Path to a project-level config file (`<dir>/.grok/config.toml`).
+/// Path to a project-level config file (`<dir>/.ezer/config.toml`).
 pub fn project_config_path(dir: &std::path::Path) -> PathBuf {
-    dir.join(".grok").join("config.toml")
+    dir.join(xai_dirs::PROJECT_DIR_NAME).join("config.toml")
 }
 
 /// True when the config file at `path` defines `[mcp_servers.<name>]`.

@@ -1,6 +1,6 @@
 # Configuration
 
-Grok reads settings from config files, environment variables, and CLI flags. This page covers the common options. The field list for `config.toml`, `managed_config.toml`, and `requirements.toml` is [26-config-reference.md](26-config-reference.md) (extracted to `~/.grok/docs/user-guide/` on launch).
+ezer reads settings from config files, environment variables, and CLI flags. This page covers the common options. The field list for `config.toml`, `managed_config.toml`, and `requirements.toml` is [26-config-reference.md](26-config-reference.md) (extracted to `~/.ezer/docs/user-guide/` on launch). User state lives in `~/.ezer` (`$EZER_HOME`). There is no default fallback to `~/.grok`.
 
 ---
 
@@ -12,7 +12,7 @@ Settings resolve highest-priority first:
 2. **Environment variables** (e.g. `XAI_API_KEY`, `GROK_MEMORY`)
 3. **`requirements.toml` / MDM** (org-enforced; clamps every config layer below, including the overlay)
 4. **`GROK_CONFIG` / `GROK_CONFIG_PATH` overlay** (above `config.toml` and managed, below `requirements.toml` / MDM)
-5. **config.toml** (`~/.grok/config.toml`)
+5. **config.toml** (`~/.ezer/config.toml`)
 6. **`managed_config.toml`** (org-deployed defaults; below `config.toml`)
 7. **Built-in defaults**
 
@@ -37,7 +37,7 @@ GROK_CONFIG='{"models": {"default_reasoning_effort": "high"}}' grok agent stdio
 
 ## config.toml (main configuration)
 
-Location: `~/.grok/config.toml`. If the file is missing, Grok uses its built-in defaults, so you only need to set the values you want to override.
+Location: `~/.ezer/config.toml`. If the file is missing, ezer uses built-in defaults (no Grok/xAI model catalog). Set `[model.*]` and `[models].default` for BYOK.
 
 ### General settings
 
@@ -46,8 +46,8 @@ Location: `~/.grok/config.toml`. If the file is missing, Grok uses its built-in 
 auto_update = true                     # check for updates on launch
 
 [models]
-default = "grok-4.5"                   # model used for new sessions
-web_search = "grok-4.5"                # model used by the web_search tool
+default = "my-model"                   # model used for new sessions (must exist in [model.*] or /v1/models)
+# web_search = "my-model"              # model used by the web_search tool
 # Optional picker allowlist (globs on catalog key or model id). Empty = unrestricted.
 # A signed policy pin replaces this list (model id only) and cannot be widened from here.
 # allowed_models = ["grok-4.5", "grok-4*"]

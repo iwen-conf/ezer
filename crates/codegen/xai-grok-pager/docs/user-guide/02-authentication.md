@@ -1,18 +1,41 @@
 # Authentication
 
-Grok supports several authentication methods, including interactive browser login, enterprise single sign-on (SSO), and headless CI/CD runners.
+ezer is **BYOK-first**. The supported default is a local API key plus a
+Responses-compatible base URL. SpaceXAI / grok.com browser login is **not**
+required and is not started on first launch.
 
 ---
 
-## Browser Login (Default)
+## API key (default)
 
-On first launch, Grok opens your browser to authenticate with grok.com:
-
-```bash
-grok
+```toml
+# ~/.ezer/config.toml
+[model.my-model]
+model = "my-model"
+base_url = "http://192.168.0.63:8788/v1"
+api_backend = "responses"
+api_key = "sk-..."
 ```
 
-Grok stores credentials in `~/.grok/auth.json` and reuses them across sessions. Grok refreshes access tokens automatically in the background. When a token can't be refreshed, Grok prompts you to sign in again. Credentials without a server-provided expiry fall back to a 30-day lifetime.
+Or set an environment variable (first match wins):
+
+```bash
+export EZER_API_KEY="sk-..."
+# or: export OPENAI_API_KEY="sk-..."
+# or: export XAI_API_KEY="..."   # legacy alias
+ezer
+```
+
+Credentials in `~/.ezer/config.toml` and `~/.ezer/auth.json` (if you still use
+optional OIDC) are written owner-only (`0600` on Unix).
+
+---
+
+## Browser / OIDC login (optional)
+
+`ezer login` remains available for enterprise OIDC or an external auth
+provider. It is not the first-run path. Do not expect a grok.com OAuth window
+when only an API key is configured.
 
 ### Credential storage
 

@@ -1026,10 +1026,12 @@ pub fn reasoning_efforts_meta_value(opts: &[ReasoningEffortOption]) -> serde_jso
 #[derive(Clone, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum ApiBackend {
-    /// Use the Chat Completions API (/v1/chat/completions)
-    #[default]
+    /// Use the Chat Completions API (/v1/chat/completions).
+    /// Compatibility path only; ezer defaults to [`Self::Responses`].
     ChatCompletions,
-    /// Use the Responses API (/v1/responses)
+    /// Use the Responses API (`POST /v1/responses`, streaming SSE).
+    /// Default wire protocol for custom / BYOK providers.
+    #[default]
     Responses,
     /// Use the Anthropic Messages API (/v1/messages)
     Messages,
