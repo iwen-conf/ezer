@@ -2298,7 +2298,7 @@ pub(crate) async fn run(
                 if let Some(update) = result {
                     tracing::info!(
                         latest_version = %update.latest_version,
-                        "Background update check: newer version available"
+                        "Background update check: newer version available (notice only)"
                     );
                     let latest = update.latest_version;
                     app.pending_update_version = Some(latest.clone());

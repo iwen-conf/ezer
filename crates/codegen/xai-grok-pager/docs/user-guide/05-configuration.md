@@ -43,7 +43,7 @@ Location: `~/.ezer/config.toml` (`EZER_HOME` override). If the file is missing o
 
 ```toml
 [cli]
-auto_update = true                     # check for updates on launch
+auto_update = true                     # one-time notice on launch; never auto-install
 
 [models]
 default = "workbuddy"                   # model used for new sessions
