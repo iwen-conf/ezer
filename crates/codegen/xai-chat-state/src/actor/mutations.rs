@@ -1,6 +1,6 @@
 //! Mutation handlers for the ChatStateActor.
 
-use xai_grok_sampling_types::{
+use ezer_sampling_types::{
     ContentPart, ConversationItem, DanglingToolCallReason, dedup_duplicate_tool_results,
     repair_dangling_tool_calls,
 };
@@ -124,9 +124,9 @@ impl ChatStateActor {
     pub(super) fn pop_stranded_continue_reminder(&mut self) {
         if !matches!(
             self.state.conversation.last(),
-            Some(xai_grok_sampling_types::ConversationItem::User(u))
+            Some(ezer_sampling_types::ConversationItem::User(u))
                 if u.synthetic_reason
-                    == xai_grok_sampling_types::SyntheticReason::LengthContinue
+                    == ezer_sampling_types::SyntheticReason::LengthContinue
         ) {
             return;
         }
@@ -134,9 +134,9 @@ impl ChatStateActor {
             let mut stranded = 0;
             while matches!(
                 conversation.last(),
-                Some(xai_grok_sampling_types::ConversationItem::User(u))
+                Some(ezer_sampling_types::ConversationItem::User(u))
                     if u.synthetic_reason
-                        == xai_grok_sampling_types::SyntheticReason::LengthContinue
+                        == ezer_sampling_types::SyntheticReason::LengthContinue
             ) {
                 conversation.pop();
                 stranded += 1;
@@ -183,7 +183,7 @@ impl ChatStateActor {
     ) -> Option<(usize, tokio::sync::oneshot::Receiver<std::io::Result<()>>)> {
         let (stripped, disk_ack) =
             self.rewrite_history(HistoryRewrite::ImageStrip, |conversation| {
-                let stripped = xai_grok_sampling_types::strip_images_by_url(conversation, urls);
+                let stripped = ezer_sampling_types::strip_images_by_url(conversation, urls);
                 if stripped > 0 {
                     tracing::warn!(
                         stripped,
@@ -275,7 +275,7 @@ impl ChatStateActor {
         // means the continuation is dead — the stranded reminder must not sit before the new instruction.
         // A live reminder is never trailing here: its continuation is still in flight.
         {
-            use xai_grok_sampling_types::SyntheticReason as R;
+            use ezer_sampling_types::SyntheticReason as R;
             if matches!(
                 &item,
                 ConversationItem::User(u)
@@ -398,7 +398,7 @@ impl ChatStateActor {
                 ConversationItem::ToolResult(tr) => tr.content.len(),
                 ConversationItem::BackendToolCall(b) => b.text_summary().len(),
                 ConversationItem::Reasoning(r) => {
-                    xai_grok_sampling_types::reasoning_item_text(r).len()
+                    ezer_sampling_types::reasoning_item_text(r).len()
                         + r.encrypted_content.as_deref().map(str::len).unwrap_or(0)
                 }
             })
@@ -417,14 +417,14 @@ impl ChatStateActor {
     /// Stash the per-turn `TokenUsage` from the most recent model response.
     /// No event is emitted — this slot is read on demand at `PromptResponse`
     /// construction time, not pushed to subscribers.
-    pub(super) fn record_last_turn_usage(&mut self, usage: xai_grok_sampling_types::TokenUsage) {
+    pub(super) fn record_last_turn_usage(&mut self, usage: ezer_sampling_types::TokenUsage) {
         self.state.last_turn_usage = Some(usage);
     }
 
     pub(super) fn record_model_call_usage(
         &mut self,
         model_id: Option<String>,
-        usage: &xai_grok_sampling_types::TokenUsage,
+        usage: &ezer_sampling_types::TokenUsage,
         api_duration_ms: Option<u64>,
         cost_usd_ticks: Option<i64>,
     ) {

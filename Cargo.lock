@@ -13285,8 +13285,8 @@ dependencies = [
  "tokio-util",
  "tracing",
  "xai-compaction-transcript",
- "xai-grok-compaction",
- "xai-grok-sampling-types",
+ "ezer-compaction",
+ "ezer-sampling-types",
  "xai-token-estimation",
 ]
 
@@ -13331,7 +13331,7 @@ dependencies = [
  "tree-sitter-python",
  "tree-sitter-rust",
  "tree-sitter-typescript",
- "xai-grok-paths",
+ "ezer-paths",
 ]
 
 [[package]]
@@ -13341,7 +13341,7 @@ dependencies = [
  "regex",
  "serde_json",
  "strum 0.27.2",
- "xai-grok-sampling-types",
+ "ezer-sampling-types",
 ]
 
 [[package]]
@@ -13515,10 +13515,10 @@ dependencies = [
  "url",
  "xai-circuit-breaker",
  "xai-dirs",
- "xai-grok-auth",
- "xai-grok-extra-ca",
- "xai-grok-otel",
- "xai-grok-version",
+ "ezer-auth",
+ "ezer-extra-ca",
+ "ezer-otel",
+ "ezer-version",
  "xai-test-utils",
  "zstd",
 ]
@@ -13568,7 +13568,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "xai-grok-active-sessions"
+name = "ezer-active-sessions"
 version = "0.1.0"
 dependencies = [
  "agent-client-protocol",
@@ -13580,11 +13580,11 @@ dependencies = [
  "tempfile",
  "tracing",
  "windows 0.61.3",
- "xai-grok-config",
+ "ezer-config",
 ]
 
 [[package]]
-name = "xai-grok-agent"
+name = "ezer-agent"
 version = "0.1.0"
 dependencies = [
  "chrono",
@@ -13605,10 +13605,10 @@ dependencies = [
  "tokio",
  "tracing",
  "xai-dirs",
- "xai-grok-config",
- "xai-grok-hooks",
- "xai-grok-sampling-types",
- "xai-grok-tools",
+ "ezer-config",
+ "ezer-hooks",
+ "ezer-sampling-types",
+ "ezer-tools",
  "xai-token-estimation",
  "xai-tool-types",
  "xai-tty-utils",
@@ -13616,7 +13616,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "xai-grok-announcements"
+name = "ezer-announcements"
 version = "0.1.0"
 dependencies = [
  "chrono",
@@ -13625,11 +13625,11 @@ dependencies = [
  "tokio",
  "tracing",
  "ts-rs",
- "xai-grok-tools",
+ "ezer-tools",
 ]
 
 [[package]]
-name = "xai-grok-auth"
+name = "ezer-auth"
 version = "0.1.0"
 dependencies = [
  "async-trait",
@@ -13642,7 +13642,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "xai-grok-bundle"
+name = "ezer-bundle"
 version = "0.1.0"
 dependencies = [
  "anyhow",
@@ -13653,11 +13653,11 @@ dependencies = [
  "sha2 0.10.9",
  "tar",
  "tempfile",
- "xai-grok-config",
+ "ezer-config",
 ]
 
 [[package]]
-name = "xai-grok-compaction"
+name = "ezer-compaction"
 version = "0.1.0"
 dependencies = [
  "anyhow",
@@ -13670,7 +13670,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "xai-grok-config"
+name = "ezer-config"
 version = "0.1.0"
 dependencies = [
  "base64 0.22.1",
@@ -13691,13 +13691,13 @@ dependencies = [
  "urlencoding",
  "which",
  "xai-dirs",
- "xai-grok-env",
- "xai-grok-version",
+ "ezer-env",
+ "ezer-version",
  "xai-tty-utils",
 ]
 
 [[package]]
-name = "xai-grok-config-types"
+name = "ezer-config-types"
 version = "0.1.0"
 dependencies = [
  "agent-client-protocol",
@@ -13707,13 +13707,13 @@ dependencies = [
  "strum 0.27.2",
  "toml",
  "tracing",
- "xai-grok-announcements",
- "xai-grok-config",
- "xai-grok-mcp",
+ "ezer-announcements",
+ "ezer-config",
+ "ezer-mcp",
 ]
 
 [[package]]
-name = "xai-grok-dashboard-store"
+name = "ezer-dashboard-store"
 version = "0.1.0"
 dependencies = [
  "pretty_assertions",
@@ -13722,12 +13722,12 @@ dependencies = [
  "tempfile",
  "thiserror 2.0.18",
  "tracing",
- "xai-grok-config",
+ "ezer-config",
  "xai-sqlite-journal",
 ]
 
 [[package]]
-name = "xai-grok-diag-server"
+name = "ezer-diag-server"
 version = "0.1.0"
 dependencies = [
  "anyhow",
@@ -13738,11 +13738,11 @@ dependencies = [
  "tempfile",
  "tokio",
  "tracing",
- "xai-grok-version",
+ "ezer-version",
 ]
 
 [[package]]
-name = "xai-grok-env"
+name = "ezer-env"
 version = "0.1.0"
 dependencies = [
  "tracing",
@@ -13750,7 +13750,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "xai-grok-extra-ca"
+name = "ezer-extra-ca"
 version = "0.1.0"
 dependencies = [
  "base64 0.22.1",
@@ -13764,7 +13764,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "xai-grok-feedback"
+name = "ezer-feedback"
 version = "0.1.0"
 dependencies = [
  "flate2",
@@ -13783,7 +13783,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "xai-grok-foreign-sessions"
+name = "ezer-foreign-sessions"
 version = "0.1.0"
 dependencies = [
  "chrono",
@@ -13803,7 +13803,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "xai-grok-gboom"
+name = "ezer-gboom"
 version = "0.1.0"
 dependencies = [
  "crossterm",
@@ -13811,7 +13811,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "xai-grok-hooks"
+name = "ezer-hooks"
 version = "0.1.0"
 dependencies = [
  "fastrand",
@@ -13827,14 +13827,14 @@ dependencies = [
  "toml",
  "tracing",
  "url",
- "xai-grok-config",
- "xai-grok-extra-ca",
- "xai-grok-sandbox",
- "xai-grok-tools",
+ "ezer-config",
+ "ezer-extra-ca",
+ "ezer-sandbox",
+ "ezer-tools",
 ]
 
 [[package]]
-name = "xai-grok-http"
+name = "ezer-http"
 version = "0.1.0"
 dependencies = [
  "rcgen",
@@ -13844,16 +13844,16 @@ dependencies = [
  "serde_json",
  "tokio",
  "tracing",
- "xai-grok-auth",
- "xai-grok-extra-ca",
- "xai-grok-sampler",
- "xai-grok-telemetry",
- "xai-grok-version",
- "xai-grok-workspace",
+ "ezer-auth",
+ "ezer-extra-ca",
+ "ezer-sampler",
+ "ezer-telemetry",
+ "ezer-version",
+ "ezer-workspace",
 ]
 
 [[package]]
-name = "xai-grok-image"
+name = "ezer-image"
 version = "0.1.0"
 dependencies = [
  "crc32fast",
@@ -13863,7 +13863,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "xai-grok-login"
+name = "ezer-login"
 version = "0.1.0"
 dependencies = [
  "anyhow",
@@ -13904,24 +13904,24 @@ dependencies = [
  "uuid",
  "webbrowser",
  "xai-file-utils",
- "xai-grok-auth",
- "xai-grok-config",
- "xai-grok-config-types",
- "xai-grok-env",
- "xai-grok-extra-ca",
- "xai-grok-http",
- "xai-grok-memory",
- "xai-grok-sampler",
- "xai-grok-shell-base",
- "xai-grok-telemetry",
- "xai-grok-test-support",
- "xai-grok-tools",
- "xai-grok-version",
+ "ezer-auth",
+ "ezer-config",
+ "ezer-config-types",
+ "ezer-env",
+ "ezer-extra-ca",
+ "ezer-http",
+ "ezer-memory",
+ "ezer-sampler",
+ "ezer-shell-base",
+ "ezer-telemetry",
+ "ezer-test-support",
+ "ezer-tools",
+ "ezer-version",
  "xai-system-power",
 ]
 
 [[package]]
-name = "xai-grok-markdown"
+name = "ezer-markdown"
 version = "0.1.0"
 dependencies = [
  "anstyle",
@@ -13941,12 +13941,12 @@ dependencies = [
  "unicode-segmentation",
  "unicode-width 0.2.0",
  "url",
- "xai-grok-markdown-core",
+ "ezer-markdown-core",
  "xai-ratatui-textarea",
 ]
 
 [[package]]
-name = "xai-grok-markdown-core"
+name = "ezer-markdown-core"
 version = "0.1.0"
 dependencies = [
  "pulldown-cmark",
@@ -13954,7 +13954,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "xai-grok-mcp"
+name = "ezer-mcp"
 version = "0.1.0"
 dependencies = [
  "agent-client-protocol",
@@ -13980,21 +13980,21 @@ dependencies = [
  "webbrowser",
  "which",
  "xai-computer-hub-sdk",
- "xai-grok-config",
- "xai-grok-extra-ca",
- "xai-grok-sandbox",
- "xai-grok-session-events",
- "xai-grok-telemetry",
- "xai-grok-tools",
- "xai-grok-version",
- "xai-grok-workspace-types",
+ "ezer-config",
+ "ezer-extra-ca",
+ "ezer-sandbox",
+ "ezer-session-events",
+ "ezer-telemetry",
+ "ezer-tools",
+ "ezer-version",
+ "ezer-workspace-types",
  "xai-tool-protocol",
  "xai-tool-runtime",
  "xai-tool-types",
 ]
 
 [[package]]
-name = "xai-grok-memory"
+name = "ezer-memory"
 version = "0.1.0"
 dependencies = [
  "anyhow",
@@ -14021,17 +14021,17 @@ dependencies = [
  "tokio",
  "tracing",
  "windows 0.61.3",
- "xai-grok-auth",
- "xai-grok-config-types",
- "xai-grok-http",
- "xai-grok-tools",
- "xai-grok-version",
+ "ezer-auth",
+ "ezer-config-types",
+ "ezer-http",
+ "ezer-tools",
+ "ezer-version",
  "xai-sqlite-journal",
  "xai-token-estimation",
 ]
 
 [[package]]
-name = "xai-grok-mermaid"
+name = "ezer-mermaid"
 version = "0.1.0"
 dependencies = [
  "fontdb",
@@ -14049,7 +14049,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "xai-grok-models"
+name = "ezer-models"
 version = "0.1.0"
 dependencies = [
  "serde",
@@ -14057,7 +14057,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "xai-grok-otel"
+name = "ezer-otel"
 version = "0.1.0"
 dependencies = [
  "async-trait",
@@ -14078,14 +14078,14 @@ dependencies = [
  "tracing-opentelemetry",
  "tracing-subscriber",
  "url",
- "xai-grok-auth",
- "xai-grok-env",
- "xai-grok-extra-ca",
- "xai-grok-secrets",
+ "ezer-auth",
+ "ezer-env",
+ "ezer-extra-ca",
+ "ezer-secrets",
 ]
 
 [[package]]
-name = "xai-grok-pager"
+name = "ezer-pager"
 version = "1.0.35"
 dependencies = [
  "agent-client-protocol",
@@ -14152,34 +14152,34 @@ dependencies = [
  "xai-dirs",
  "xai-fast-worktree",
  "xai-file-utils",
- "xai-grok-active-sessions",
- "xai-grok-agent",
- "xai-grok-announcements",
- "xai-grok-config",
- "xai-grok-dashboard-store",
- "xai-grok-extra-ca",
- "xai-grok-feedback",
- "xai-grok-foreign-sessions",
- "xai-grok-gboom",
- "xai-grok-hooks",
- "xai-grok-login",
- "xai-grok-markdown",
- "xai-grok-mermaid",
- "xai-grok-otel",
- "xai-grok-pager-diff",
- "xai-grok-pager-render",
- "xai-grok-plugin-marketplace",
- "xai-grok-sampling-types",
- "xai-grok-sandbox",
- "xai-grok-shell",
- "xai-grok-status-line",
- "xai-grok-telemetry",
- "xai-grok-test-support",
- "xai-grok-tools",
- "xai-grok-update",
- "xai-grok-version",
- "xai-grok-voice",
- "xai-grok-workspace",
+ "ezer-active-sessions",
+ "ezer-agent",
+ "ezer-announcements",
+ "ezer-config",
+ "ezer-dashboard-store",
+ "ezer-extra-ca",
+ "ezer-feedback",
+ "ezer-foreign-sessions",
+ "ezer-gboom",
+ "ezer-hooks",
+ "ezer-login",
+ "ezer-markdown",
+ "ezer-mermaid",
+ "ezer-otel",
+ "ezer-pager-diff",
+ "ezer-pager-render",
+ "ezer-plugin-marketplace",
+ "ezer-sampling-types",
+ "ezer-sandbox",
+ "ezer-shell",
+ "ezer-status-line",
+ "ezer-telemetry",
+ "ezer-test-support",
+ "ezer-tools",
+ "ezer-update",
+ "ezer-version",
+ "ezer-voice",
+ "ezer-workspace",
  "xai-hooks-plugins-types",
  "xai-prompt-queue",
  "xai-ratatui-inline",
@@ -14190,7 +14190,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "xai-grok-pager-bin"
+name = "ezer-pager-bin"
 version = "1.0.35"
 dependencies = [
  "anyhow",
@@ -14211,34 +14211,34 @@ dependencies = [
  "tracing-subscriber",
  "xai-acp-lib",
  "xai-crash-handler",
- "xai-grok-active-sessions",
- "xai-grok-config",
- "xai-grok-extra-ca",
- "xai-grok-login",
- "xai-grok-pager",
- "xai-grok-pager-minimal",
- "xai-grok-sandbox",
- "xai-grok-shell",
- "xai-grok-telemetry",
- "xai-grok-update",
- "xai-grok-version",
- "xai-grok-workspace",
+ "ezer-active-sessions",
+ "ezer-config",
+ "ezer-extra-ca",
+ "ezer-login",
+ "ezer-pager",
+ "ezer-pager-minimal",
+ "ezer-sandbox",
+ "ezer-shell",
+ "ezer-telemetry",
+ "ezer-update",
+ "ezer-version",
+ "ezer-workspace",
  "xai-tty-utils",
 ]
 
 [[package]]
-name = "xai-grok-pager-diff"
+name = "ezer-pager-diff"
 version = "0.1.0"
 dependencies = [
  "agent-client-protocol",
  "serde_json",
  "similar",
  "tracing",
- "xai-grok-tools",
+ "ezer-tools",
 ]
 
 [[package]]
-name = "xai-grok-pager-minimal"
+name = "ezer-pager-minimal"
 version = "0.1.0"
 dependencies = [
  "chrono",
@@ -14249,16 +14249,16 @@ dependencies = [
  "tracing",
  "unicode-width 0.2.0",
  "uuid",
- "xai-grok-pager",
- "xai-grok-pager-diff",
- "xai-grok-shell",
- "xai-grok-version",
+ "ezer-pager",
+ "ezer-pager-diff",
+ "ezer-shell",
+ "ezer-version",
  "xai-ratatui-inline",
  "xai-token-estimation",
 ]
 
 [[package]]
-name = "xai-grok-pager-pty-harness"
+name = "ezer-pager-pty-harness"
 version = "0.1.0"
 dependencies = [
  "alacritty_terminal",
@@ -14283,12 +14283,12 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "unicode-width 0.2.0",
- "xai-grok-test-support",
+ "ezer-test-support",
  "xai-tty-utils",
 ]
 
 [[package]]
-name = "xai-grok-pager-render"
+name = "ezer-pager-render"
 version = "0.1.0"
 dependencies = [
  "agent-client-protocol",
@@ -14332,21 +14332,21 @@ dependencies = [
  "vte 0.15.0",
  "windows-sys 0.59.0",
  "xai-dirs",
- "xai-grok-config",
- "xai-grok-gboom",
- "xai-grok-markdown",
- "xai-grok-paths",
- "xai-grok-shared",
- "xai-grok-telemetry",
- "xai-grok-tools",
- "xai-grok-workspace",
+ "ezer-config",
+ "ezer-gboom",
+ "ezer-markdown",
+ "ezer-paths",
+ "ezer-shared",
+ "ezer-telemetry",
+ "ezer-tools",
+ "ezer-workspace",
  "xai-ratatui-inline",
  "xai-ratatui-textarea",
  "xai-tty-utils",
 ]
 
 [[package]]
-name = "xai-grok-paths"
+name = "ezer-paths"
 version = "0.1.0"
 dependencies = [
  "camino",
@@ -14356,7 +14356,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "xai-grok-plugin-marketplace"
+name = "ezer-plugin-marketplace"
 version = "0.1.0"
 dependencies = [
  "chrono",
@@ -14368,14 +14368,14 @@ dependencies = [
  "toml",
  "tracing",
  "xai-dirs",
- "xai-grok-agent",
- "xai-grok-config",
+ "ezer-agent",
+ "ezer-config",
  "xai-hooks-plugins-types",
  "xai-tty-utils",
 ]
 
 [[package]]
-name = "xai-grok-sampler"
+name = "ezer-sampler"
 version = "0.1.0"
 dependencies = [
  "async-openai",
@@ -14398,16 +14398,16 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "uuid",
- "xai-grok-auth",
- "xai-grok-extra-ca",
- "xai-grok-sampling-types",
- "xai-grok-test-support",
- "xai-grok-version",
+ "ezer-auth",
+ "ezer-extra-ca",
+ "ezer-sampling-types",
+ "ezer-test-support",
+ "ezer-version",
  "zstd",
 ]
 
 [[package]]
-name = "xai-grok-sampling-types"
+name = "ezer-sampling-types"
 version = "0.1.0"
 dependencies = [
  "assert_matches",
@@ -14422,12 +14422,12 @@ dependencies = [
  "thiserror 2.0.18",
  "tracing",
  "xai-circuit-breaker",
- "xai-grok-compaction",
+ "ezer-compaction",
  "xai-tool-types",
 ]
 
 [[package]]
-name = "xai-grok-sandbox"
+name = "ezer-sandbox"
 version = "0.1.0"
 dependencies = [
  "anyhow",
@@ -14448,11 +14448,11 @@ dependencies = [
  "tracing",
  "url",
  "xai-dirs",
- "xai-grok-config",
+ "ezer-config",
 ]
 
 [[package]]
-name = "xai-grok-secrets"
+name = "ezer-secrets"
 version = "0.1.0"
 dependencies = [
  "regex",
@@ -14461,7 +14461,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "xai-grok-session-events"
+name = "ezer-session-events"
 version = "0.1.0"
 dependencies = [
  "chrono",
@@ -14473,7 +14473,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "xai-grok-session-search"
+name = "ezer-session-search"
 version = "0.1.0"
 dependencies = [
  "async-trait",
@@ -14488,13 +14488,13 @@ dependencies = [
  "tokio",
  "tracing",
  "uuid",
- "xai-grok-config",
- "xai-grok-telemetry",
+ "ezer-config",
+ "ezer-telemetry",
  "xai-sqlite-journal",
 ]
 
 [[package]]
-name = "xai-grok-shared"
+name = "ezer-shared"
 version = "0.0.0"
 dependencies = [
  "agent-client-protocol",
@@ -14517,15 +14517,15 @@ dependencies = [
  "uuid",
  "wl-clipboard-rs",
  "xai-dirs",
- "xai-grok-config",
- "xai-grok-image",
- "xai-grok-models",
- "xai-grok-status-line",
+ "ezer-config",
+ "ezer-image",
+ "ezer-models",
+ "ezer-status-line",
  "xai-tty-utils",
 ]
 
 [[package]]
-name = "xai-grok-shell"
+name = "ezer-shell"
 version = "1.0.35"
 dependencies = [
  "agent-client-protocol",
@@ -14614,42 +14614,42 @@ dependencies = [
  "xai-fast-worktree",
  "xai-file-utils",
  "xai-fsnotify",
- "xai-grok-agent",
- "xai-grok-announcements",
- "xai-grok-auth",
- "xai-grok-bundle",
- "xai-grok-compaction",
- "xai-grok-config",
- "xai-grok-config-types",
- "xai-grok-env",
- "xai-grok-extra-ca",
- "xai-grok-feedback",
- "xai-grok-foreign-sessions",
- "xai-grok-hooks",
- "xai-grok-http",
- "xai-grok-login",
- "xai-grok-mcp",
- "xai-grok-memory",
- "xai-grok-models",
- "xai-grok-otel",
- "xai-grok-paths",
- "xai-grok-plugin-marketplace",
- "xai-grok-sampler",
- "xai-grok-sampling-types",
- "xai-grok-sandbox",
- "xai-grok-session-events",
- "xai-grok-session-search",
- "xai-grok-shared",
- "xai-grok-shell-base",
- "xai-grok-shell-session-support",
- "xai-grok-shell-terminal",
- "xai-grok-status-line",
- "xai-grok-subagent-resolution",
- "xai-grok-telemetry",
- "xai-grok-test-support",
- "xai-grok-tools",
- "xai-grok-version",
- "xai-grok-workspace",
+ "ezer-agent",
+ "ezer-announcements",
+ "ezer-auth",
+ "ezer-bundle",
+ "ezer-compaction",
+ "ezer-config",
+ "ezer-config-types",
+ "ezer-env",
+ "ezer-extra-ca",
+ "ezer-feedback",
+ "ezer-foreign-sessions",
+ "ezer-hooks",
+ "ezer-http",
+ "ezer-login",
+ "ezer-mcp",
+ "ezer-memory",
+ "ezer-models",
+ "ezer-otel",
+ "ezer-paths",
+ "ezer-plugin-marketplace",
+ "ezer-sampler",
+ "ezer-sampling-types",
+ "ezer-sandbox",
+ "ezer-session-events",
+ "ezer-session-search",
+ "ezer-shared",
+ "ezer-shell-base",
+ "ezer-shell-session-support",
+ "ezer-shell-terminal",
+ "ezer-status-line",
+ "ezer-subagent-resolution",
+ "ezer-telemetry",
+ "ezer-test-support",
+ "ezer-tools",
+ "ezer-version",
+ "ezer-workspace",
  "xai-hooks-plugins-types",
  "xai-hunk-tracker",
  "xai-interjection-core",
@@ -14667,7 +14667,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "xai-grok-shell-base"
+name = "ezer-shell-base"
 version = "0.1.0"
 dependencies = [
  "anyhow",
@@ -14685,16 +14685,16 @@ dependencies = [
  "url",
  "windows 0.61.3",
  "xai-dirs",
- "xai-grok-config",
- "xai-grok-env",
- "xai-grok-extra-ca",
- "xai-grok-shared",
- "xai-grok-version",
+ "ezer-config",
+ "ezer-env",
+ "ezer-extra-ca",
+ "ezer-shared",
+ "ezer-version",
  "xai-tty-utils",
 ]
 
 [[package]]
-name = "xai-grok-shell-session-support"
+name = "ezer-shell-session-support"
 version = "0.1.0"
 dependencies = [
  "axum",
@@ -14705,12 +14705,12 @@ dependencies = [
  "tokio",
  "tracing",
  "xai-file-utils",
- "xai-grok-http",
- "xai-grok-version",
+ "ezer-http",
+ "ezer-version",
 ]
 
 [[package]]
-name = "xai-grok-shell-terminal"
+name = "ezer-shell-terminal"
 version = "0.1.0"
 dependencies = [
  "agent-client-protocol",
@@ -14731,16 +14731,16 @@ dependencies = [
  "uuid",
  "windows 0.61.3",
  "xai-acp-lib",
- "xai-grok-config",
- "xai-grok-paths",
- "xai-grok-sandbox",
- "xai-grok-tools",
- "xai-grok-workspace",
+ "ezer-config",
+ "ezer-paths",
+ "ezer-sandbox",
+ "ezer-tools",
+ "ezer-workspace",
  "xai-tty-utils",
 ]
 
 [[package]]
-name = "xai-grok-status-line"
+name = "ezer-status-line"
 version = "0.1.0"
 dependencies = [
  "serde",
@@ -14750,7 +14750,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "xai-grok-subagent-resolution"
+name = "ezer-subagent-resolution"
 version = "0.1.0"
 dependencies = [
  "chrono",
@@ -14761,14 +14761,14 @@ dependencies = [
  "tokio",
  "toml",
  "tracing",
- "xai-grok-agent",
- "xai-grok-sampling-types",
- "xai-grok-tools",
+ "ezer-agent",
+ "ezer-sampling-types",
+ "ezer-tools",
  "xai-tool-types",
 ]
 
 [[package]]
-name = "xai-grok-telemetry"
+name = "ezer-telemetry"
 version = "0.1.0"
 dependencies = [
  "anyhow",
@@ -14809,23 +14809,23 @@ dependencies = [
  "whoami",
  "xai-dirs",
  "xai-file-utils",
- "xai-grok-auth",
- "xai-grok-config",
- "xai-grok-env",
- "xai-grok-extra-ca",
- "xai-grok-otel",
- "xai-grok-sampler",
- "xai-grok-secrets",
- "xai-grok-session-events",
- "xai-grok-test-support",
- "xai-grok-version",
+ "ezer-auth",
+ "ezer-config",
+ "ezer-env",
+ "ezer-extra-ca",
+ "ezer-otel",
+ "ezer-sampler",
+ "ezer-secrets",
+ "ezer-session-events",
+ "ezer-test-support",
+ "ezer-version",
  "xai-mixpanel",
  "xai-token-estimation",
  "xai-tty-utils",
 ]
 
 [[package]]
-name = "xai-grok-test-support"
+name = "ezer-test-support"
 version = "0.1.0"
 dependencies = [
  "agent-client-protocol",
@@ -14860,7 +14860,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "xai-grok-tools"
+name = "ezer-tools"
 version = "0.1.220-alpha.4"
 dependencies = [
  "anyhow",
@@ -14928,18 +14928,18 @@ dependencies = [
  "xai-computer-hub-sdk",
  "xai-dirs",
  "xai-file-utils",
- "xai-grok-auth",
- "xai-grok-config",
- "xai-grok-env",
- "xai-grok-extra-ca",
- "xai-grok-feedback",
- "xai-grok-image",
- "xai-grok-otel",
- "xai-grok-sandbox",
- "xai-grok-test-support",
- "xai-grok-tools-api",
- "xai-grok-version",
- "xai-grok-workspace-types",
+ "ezer-auth",
+ "ezer-config",
+ "ezer-env",
+ "ezer-extra-ca",
+ "ezer-feedback",
+ "ezer-image",
+ "ezer-otel",
+ "ezer-sandbox",
+ "ezer-test-support",
+ "ezer-tools-api",
+ "ezer-version",
+ "ezer-workspace-types",
  "xai-interjection-core",
  "xai-message-delivery-core",
  "xai-test-utils",
@@ -14953,7 +14953,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "xai-grok-tools-api"
+name = "ezer-tools-api"
 version = "0.1.220-alpha.4"
 dependencies = [
  "prost",
@@ -14966,7 +14966,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "xai-grok-update"
+name = "ezer-update"
 version = "0.1.220-alpha.4"
 dependencies = [
  "anyhow",
@@ -14989,26 +14989,26 @@ dependencies = [
  "url",
  "wiremock",
  "xai-dirs",
- "xai-grok-extra-ca",
- "xai-grok-login",
- "xai-grok-shell",
- "xai-grok-telemetry",
- "xai-grok-tools",
- "xai-grok-version",
+ "ezer-extra-ca",
+ "ezer-login",
+ "ezer-shell",
+ "ezer-telemetry",
+ "ezer-tools",
+ "ezer-version",
  "xai-tty-utils",
  "zip 3.0.0",
  "zstd",
 ]
 
 [[package]]
-name = "xai-grok-version"
+name = "ezer-version"
 version = "1.0.35"
 dependencies = [
  "semver",
 ]
 
 [[package]]
-name = "xai-grok-voice"
+name = "ezer-voice"
 version = "0.1.0"
 dependencies = [
  "anyhow",
@@ -15024,12 +15024,12 @@ dependencies = [
  "tracing-subscriber",
  "url",
  "xai-dirs",
- "xai-grok-extra-ca",
+ "ezer-extra-ca",
  "xai-tty-utils",
 ]
 
 [[package]]
-name = "xai-grok-workspace"
+name = "ezer-workspace"
 version = "0.1.220-alpha.4"
 dependencies = [
  "agent-client-protocol",
@@ -15095,25 +15095,25 @@ dependencies = [
  "xai-file-utils",
  "xai-fsnotify",
  "xai-fuzzy-file-search",
- "xai-grok-agent",
- "xai-grok-auth",
- "xai-grok-config",
- "xai-grok-config-types",
- "xai-grok-diag-server",
- "xai-grok-env",
- "xai-grok-extra-ca",
- "xai-grok-hooks",
- "xai-grok-mcp",
- "xai-grok-paths",
- "xai-grok-sandbox",
- "xai-grok-session-events",
- "xai-grok-telemetry",
- "xai-grok-tools",
- "xai-grok-tools-api",
- "xai-grok-version",
- "xai-grok-workspace-client",
- "xai-grok-workspace-daemon",
- "xai-grok-workspace-types",
+ "ezer-agent",
+ "ezer-auth",
+ "ezer-config",
+ "ezer-config-types",
+ "ezer-diag-server",
+ "ezer-env",
+ "ezer-extra-ca",
+ "ezer-hooks",
+ "ezer-mcp",
+ "ezer-paths",
+ "ezer-sandbox",
+ "ezer-session-events",
+ "ezer-telemetry",
+ "ezer-tools",
+ "ezer-tools-api",
+ "ezer-version",
+ "ezer-workspace-client",
+ "ezer-workspace-daemon",
+ "ezer-workspace-types",
  "xai-hunk-tracker",
  "xai-test-utils",
  "xai-tool-protocol",
@@ -15126,7 +15126,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "xai-grok-workspace-client"
+name = "ezer-workspace-client"
 version = "0.1.0"
 dependencies = [
  "schemars 1.0.4",
@@ -15137,14 +15137,14 @@ dependencies = [
  "tokio",
  "tracing",
  "xai-computer-hub-sdk",
- "xai-grok-workspace-types",
+ "ezer-workspace-types",
  "xai-tool-protocol",
  "xai-tool-runtime",
  "xai-tool-types",
 ]
 
 [[package]]
-name = "xai-grok-workspace-daemon"
+name = "ezer-workspace-daemon"
 version = "0.1.0"
 dependencies = [
  "clap",
@@ -15164,7 +15164,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "xai-grok-workspace-types"
+name = "ezer-workspace-types"
 version = "0.1.0"
 dependencies = [
  "base64 0.22.1",
@@ -15223,7 +15223,7 @@ dependencies = [
  "reqwest 0.12.24",
  "serde_json",
  "thiserror 2.0.18",
- "xai-grok-secrets",
+ "ezer-secrets",
 ]
 
 [[package]]
@@ -15340,7 +15340,7 @@ dependencies = [
  "serde_json",
  "tokio",
  "tokio-util",
- "xai-grok-tools-api",
+ "ezer-tools-api",
  "xai-tool-protocol",
  "xai-tool-types",
 ]

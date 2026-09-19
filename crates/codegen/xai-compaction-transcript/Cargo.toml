@@ -13,7 +13,7 @@ serde_json = { workspace = true }
 # `Display` for the detail level and the segment-read artifact kind.
 strum = { workspace = true }
 # `ConversationItem`, the segment view that gets rendered.
-xai-grok-sampling-types = { path = "../xai-grok-sampling-types" }
+ezer-sampling-types = { path = "../ezer-sampling-types" }
 
 [lints]
 workspace = true

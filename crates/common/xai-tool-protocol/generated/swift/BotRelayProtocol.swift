@@ -696,7 +696,7 @@ public func isGatewayMethodUnsupported(_ error: BotRelayError) -> Bool {
 }
 
 // Allowlisted bot-relay command schema (Args+Reply transitive closure).
-// Source: crates/common/xai-grok-bot-upstream/src/generated/{defs,methods}.rs
+// Source: crates/common/ezer-bot-upstream/src/generated/{defs,methods}.rs
 // Schema closure: 484 types.
 
 public struct ArgsClearTrays: Codable, Sendable, Equatable {

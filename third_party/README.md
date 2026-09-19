@@ -27,7 +27,7 @@ when re-vendoring.
 Mermaid layout stack:
 
 ```text
-xai-grok-mermaid
+ezer-mermaid
   └── mermaid-to-svg          (MIT)
         ├── dagre_rust        (Apache-2.0)
         │     ├── graphlib_rust

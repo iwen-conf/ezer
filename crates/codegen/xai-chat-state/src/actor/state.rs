@@ -2,7 +2,7 @@
 
 use std::collections::BTreeSet;
 
-use xai_grok_sampling_types::{
+use ezer_sampling_types::{
     ConversationItem, DanglingToolCallReason, SamplingConfig, TokenUsage, ToolSpec,
     dedup_duplicate_tool_results, repair_dangling_tool_calls,
 };
@@ -32,7 +32,7 @@ fn estimate_tool_tokens(
 
 /// Bytes/4 estimate of one tool definition (name + description + the
 /// JSON-serialized parameters).
-pub fn estimate_tool_definition_tokens(td: &xai_grok_sampling_types::ToolDefinition) -> u64 {
+pub fn estimate_tool_definition_tokens(td: &ezer_sampling_types::ToolDefinition) -> u64 {
     estimate_tool_tokens(
         &td.function.name,
         td.function.description.as_deref(),
@@ -41,7 +41,7 @@ pub fn estimate_tool_definition_tokens(td: &xai_grok_sampling_types::ToolDefinit
 }
 
 /// Sum [`estimate_tool_definition_tokens`] across a slice.
-pub fn estimate_tool_definitions_tokens(tds: &[xai_grok_sampling_types::ToolDefinition]) -> u64 {
+pub fn estimate_tool_definitions_tokens(tds: &[ezer_sampling_types::ToolDefinition]) -> u64 {
     tds.iter().map(estimate_tool_definition_tokens).sum()
 }
 
@@ -57,7 +57,7 @@ pub fn estimate_tool_specs_tokens(tools: &[ToolSpec]) -> u64 {
 /// Images count at [`xai_token_estimation::IMAGE_TOKEN_ESTIMATE`] each.
 /// Shared so the per-variant arithmetic stays in one place.
 pub fn estimate_item_tokens(item: &ConversationItem) -> u64 {
-    use xai_grok_sampling_types::ContentPart;
+    use ezer_sampling_types::ContentPart;
     match item {
         ConversationItem::System(s) => xai_token_estimation::estimate_tokens(&s.content),
         ConversationItem::User(u) => {
@@ -87,7 +87,7 @@ pub fn estimate_item_tokens(item: &ConversationItem) -> u64 {
         ConversationItem::Reasoning(r) => {
             // Text and encrypted blob are the same reasoning twice: take the
             // larger, not the sum. The ciphertext is base64, ~4/3 over raw bytes.
-            let text_bytes = xai_grok_sampling_types::reasoning_item_text(r).len();
+            let text_bytes = ezer_sampling_types::reasoning_item_text(r).len();
             let enc_bytes = r.encrypted_content.as_deref().map(str::len).unwrap_or(0);
             (text_bytes.max(enc_bytes * 3 / 4) as u64) / xai_token_estimation::BYTES_PER_TOKEN
         }
@@ -105,7 +105,7 @@ pub fn estimate_conversation_tokens(items: &[ConversationItem]) -> u64 {
 /// Other hosts may plug a real BPE tokenizer into the same seam.
 pub struct EstimatedItemTokenCounter;
 
-impl xai_grok_compaction::ItemTokenCounter<ConversationItem> for EstimatedItemTokenCounter {
+impl ezer_compaction::ItemTokenCounter<ConversationItem> for EstimatedItemTokenCounter {
     fn count_item_tokens(&self, item: &ConversationItem) -> u32 {
         // The estimate is a `u64`; a single item never approaches `u32::MAX`
         // tokens, but saturate rather than wrap if one somehow does.
@@ -261,7 +261,7 @@ mod tests {
 
     #[test]
     fn estimated_item_token_counter_matches_estimate_item_tokens() {
-        use xai_grok_compaction::ItemTokenCounter;
+        use ezer_compaction::ItemTokenCounter;
 
         let counter = EstimatedItemTokenCounter;
         let items = vec![
@@ -282,7 +282,7 @@ mod tests {
     #[test]
     fn reasoning_estimate_takes_max_of_text_and_encrypted_not_sum() {
         // max(4000, 4000*3/4)/4 = 1000, not the (4000+4000)/4 = 2000 double-count.
-        let mut r = xai_grok_sampling_types::synthesized_reasoning_item("x".repeat(4000));
+        let mut r = ezer_sampling_types::synthesized_reasoning_item("x".repeat(4000));
         r.encrypted_content = Some("e".repeat(4000));
         assert_eq!(estimate_item_tokens(&ConversationItem::Reasoning(r)), 1000);
     }
@@ -290,7 +290,7 @@ mod tests {
     #[test]
     fn reasoning_estimate_encrypted_only_scales_base64_down() {
         // No visible text: base64-corrected size, 4000*3/4/4 = 750.
-        let mut r = xai_grok_sampling_types::synthesized_reasoning_item("");
+        let mut r = ezer_sampling_types::synthesized_reasoning_item("");
         r.summary.clear();
         r.encrypted_content = Some("e".repeat(4000));
         assert_eq!(estimate_item_tokens(&ConversationItem::Reasoning(r)), 750);
@@ -298,7 +298,7 @@ mod tests {
 
     #[test]
     fn reasoning_estimate_text_only_is_plain_bytes_per_token() {
-        let r = xai_grok_sampling_types::synthesized_reasoning_item("x".repeat(4000));
+        let r = ezer_sampling_types::synthesized_reasoning_item("x".repeat(4000));
         assert_eq!(estimate_item_tokens(&ConversationItem::Reasoning(r)), 1000);
     }
 
@@ -353,7 +353,7 @@ mod tests {
     #[test]
     fn estimate_tool_definition_tokens_counts_name_desc_params() {
         // Empty parameters serialize to "null" (4 bytes) in the JSON-string len
-        let td = xai_grok_sampling_types::ToolDefinition::function(
+        let td = ezer_sampling_types::ToolDefinition::function(
             "search",
             Some("find a file"),
             serde_json::json!({}),
@@ -364,12 +364,12 @@ mod tests {
 
     #[test]
     fn estimate_tool_specs_tokens_counts_only_provided_specs() {
-        let kept = xai_grok_sampling_types::ToolDefinition::function(
+        let kept = ezer_sampling_types::ToolDefinition::function(
             "search",
             Some("find a file"),
             serde_json::json!({"type": "object"}),
         );
-        let dropped = xai_grok_sampling_types::ToolDefinition::function(
+        let dropped = ezer_sampling_types::ToolDefinition::function(
             "web_search",
             Some("search the web"),
             serde_json::json!({"type": "object"}),
@@ -405,12 +405,12 @@ mod tests {
 
     #[test]
     fn estimate_tool_definitions_tokens_sums_across_slice() {
-        let a = xai_grok_sampling_types::ToolDefinition::function(
+        let a = ezer_sampling_types::ToolDefinition::function(
             "a",
             None::<&str>,
             serde_json::json!({}),
         );
-        let b = xai_grok_sampling_types::ToolDefinition::function(
+        let b = ezer_sampling_types::ToolDefinition::function(
             "b",
             None::<&str>,
             serde_json::json!({}),

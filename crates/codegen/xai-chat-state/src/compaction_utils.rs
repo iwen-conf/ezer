@@ -2,9 +2,9 @@
 //!
 //! These are stateless functions that operate on conversation data only —
 //! no I/O, no actor state. They live in `xai-chat-state` so that both
-//! this crate and `xai-grok-shell` can share them without duplication.
+//! this crate and `ezer-shell` can share them without duplication.
 use std::collections::BTreeSet;
-use xai_grok_sampling_types::{ContentPart, ConversationItem, SyntheticReason, ToolResultItem};
+use ezer_sampling_types::{ContentPart, ConversationItem, SyntheticReason, ToolResultItem};
 pub const AGENT_MESSAGE_MODEL_LABEL: &str =
     "[Message authored by another agent; not a human request or approval.]";
 /// Canonical history prepared exactly once for a model-facing request.
@@ -551,7 +551,7 @@ pub struct CompactionServerSummary {
     pub tool_count: usize,
     pub description: Option<String>,
 }
-/// A dependency-free mirror of `TodoStatus` (xai-grok-tools), kept here so
+/// A dependency-free mirror of `TodoStatus` (ezer-tools), kept here so
 /// this crate avoids that heavy dependency.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TodoSummaryStatus {
@@ -564,7 +564,7 @@ impl TodoSummaryStatus {
     pub fn is_actionable(self) -> bool {
         matches!(self, Self::Pending | Self::InProgress)
     }
-    /// Mirrors `TodoStatus::tag()` in xai-grok-tools.
+    /// Mirrors `TodoStatus::tag()` in ezer-tools.
     pub fn tag(self) -> &'static str {
         match self {
             Self::Pending => "[pending]",
@@ -575,7 +575,7 @@ impl TodoSummaryStatus {
     }
 }
 /// Compaction-layer summary of a todo item. Protocol-layer equivalent is
-/// `TodoItem` in xai-grok-tools.
+/// `TodoItem` in ezer-tools.
 #[derive(Clone)]
 pub struct TodoSummary {
     pub id: String,
@@ -858,7 +858,7 @@ pub fn format_transcript_location(path: &str) -> String {
     )
 }
 /// Wrap text in `<user_query>...</user_query>` tags.
-/// Canonical wrapping shared by `xai-chat-state` and `xai-grok-shell`.
+/// Canonical wrapping shared by `xai-chat-state` and `ezer-shell`.
 pub fn wrap_user_query(text: impl Into<String>) -> String {
     let text = text.into();
     format!("<user_query>\n{text}\n</user_query>")
@@ -898,7 +898,7 @@ fn summary_before_recent_carrier(_input: &CompactedHistoryInput<'_>) -> Option<S
     None
 }
 /// This is a pure function with no I/O. It mirrors exactly what
-/// `run_compact_inner` in `xai-grok-shell` assembles inline, but is
+/// `run_compact_inner` in `ezer-shell` assembles inline, but is
 /// independently testable.
 pub fn build_compacted_history(input: CompactedHistoryInput<'_>) -> Vec<ConversationItem> {
     let carrier = summary_before_recent_carrier(&input);
@@ -1050,11 +1050,11 @@ impl HistoryRepairReport {
 /// Dedup, strip displaced results, then backfill synthetic results for calls left unanswered.
 /// Pure and idempotent.
 pub fn repair_history(items: &mut Vec<ConversationItem>) -> HistoryRepairReport {
-    let duplicates_removed = xai_grok_sampling_types::dedup_duplicate_tool_results(items);
+    let duplicates_removed = ezer_sampling_types::dedup_duplicate_tool_results(items);
     let stripped_tool_result_ids = strip_displaced_tool_results(items);
-    let synthetic_results_inserted = xai_grok_sampling_types::repair_dangling_tool_calls(
+    let synthetic_results_inserted = ezer_sampling_types::repair_dangling_tool_calls(
         items,
-        xai_grok_sampling_types::DanglingToolCallReason::HarnessHalted {
+        ezer_sampling_types::DanglingToolCallReason::HarnessHalted {
             class: "history_repair",
         },
     );

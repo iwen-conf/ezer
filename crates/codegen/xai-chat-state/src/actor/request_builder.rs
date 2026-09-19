@@ -1,6 +1,6 @@
 //! ConversationRequest assembly — image compaction, pruning, repair, memory injection.
 
-use xai_grok_sampling_types::{ConversationItem, ConversationRequest, ToolSpec, TraceContext};
+use ezer_sampling_types::{ConversationItem, ConversationRequest, ToolSpec, TraceContext};
 
 use super::ChatStateActor;
 use crate::events::ChatStateEvent;
@@ -92,7 +92,7 @@ impl ChatStateActor {
             json_schema: None,
             // Execute completed tool calls on a Length-truncated turn instead
             // of failing it; text-only salvage stays behind `CompletePartial`.
-            length_policy: xai_grok_sampling_types::LengthPolicy::CompleteToolCalls,
+            length_policy: ezer_sampling_types::LengthPolicy::CompleteToolCalls,
         }
     }
 

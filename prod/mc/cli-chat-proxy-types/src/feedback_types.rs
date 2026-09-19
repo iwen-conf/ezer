@@ -1,7 +1,7 @@
 //! Feedback API request and response types.
 //!
 //! These types support the feedback collection system for ezer sessions.
-//! The agent (xai-grok-shell) uses heuristics to determine when to request feedback,
+//! The agent (ezer-shell) uses heuristics to determine when to request feedback,
 //! and clients submit feedback through these types to the feedback backend.
 
 use chrono::{DateTime, Utc};
@@ -489,7 +489,7 @@ pub struct FeedbackSubmission {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub client_version: Option<String>,
 
-    /// Shell (xai-grok-shell) version
+    /// Shell (ezer-shell) version
     #[serde(skip_serializing_if = "Option::is_none")]
     pub shell_version: Option<String>,
 

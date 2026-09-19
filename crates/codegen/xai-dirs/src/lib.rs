@@ -1,6 +1,6 @@
 //! Home-directory resolution generally: USERPROFILE-first `home_dir`, plus
 //! ezer-home (`$EZER_HOME`, deprecated `$GROK_HOME`, or `<home>/.ezer`).
-//! Shared by `xai-grok-config` and `xai-fast-worktree`.
+//! Shared by `ezer-config` and `xai-fast-worktree`.
 //!
 //! Which function to call:
 //! - [`grok_home`]: the usual choice, a cached, created path to build on.

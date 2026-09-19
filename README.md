@@ -35,14 +35,19 @@ Requirements:
 - **protoc** — via DotSlash, `$PATH`, or `$PROTOC`.
 
 ```sh
-cargo run -p xai-grok-pager-bin              # build + launch the TUI (`ezer`)
-cargo build -p xai-grok-pager-bin --release  # release binary: target/release/ezer
-cargo check -p xai-grok-pager-bin            # fast validation
+cargo run -p ezer-pager-bin              # build + launch the TUI (`ezer`)
+cargo build -p ezer-pager-bin --release  # release binary: target/release/ezer
+cargo check -p ezer-pager-bin            # fast validation
 ```
 
-The package is still `xai-grok-pager-bin`; the default binary name is `ezer`.
+The shipping package is `ezer-pager-bin`; the default binary name is `ezer`.
 
-Internal crate paths (`xai-grok-*`, functions like `grok_home()`) were left in place so TUI, tools, sessions, skills, headless, and ACP keep working. User-facing CLI, `~/.ezer`, and help/version say **ezer**.
+Crates that previously used the `xai-grok-*` package/directory names are now
+`ezer-*` (workspace members, path deps, and Rust `use` paths). Historical
+`xai-*` leaf crates that never had `grok` in the name were left as-is.
+Internal function names such as `grok_home()` still exist so TUI, tools,
+sessions, skills, headless, and ACP keep the same behavior. User-facing CLI,
+`~/.ezer`, and help/version say **ezer**.
 
 ## Configuration
 
@@ -167,7 +172,7 @@ if payload.get("type") in FC_ARG_TYPES and not payload.get("item_id"):
 
 Also keep `item.id` and `item.call_id` on `response.output_item.added` / `.done` function_call items (those already look fine in the fixture).
 
-ezer client inject (do not remove): `xai_grok_sampler::client::inject_item_id_from_call_id` copies `call_id` → `item_id` when `item_id` is missing, null, or `""`. Tests: `deserialize_function_call_arguments_*` and `tests/workbuddy_responses.rs`.
+ezer client inject (do not remove): `ezer_sampler::client::inject_item_id_from_call_id` copies `call_id` → `item_id` when `item_id` is missing, null, or `""`. Tests: `deserialize_function_call_arguments_*` and `tests/workbuddy_responses.rs`.
 
 #### Other observed quirks
 
@@ -189,21 +194,21 @@ Project-local config is read from `.ezer/config.toml` in the workspace, then `~/
 ## Documentation
 
 The user guide ships with the pager crate:
-[`crates/codegen/xai-grok-pager/docs/user-guide/`](crates/codegen/xai-grok-pager/docs/user-guide/)
+[`crates/codegen/ezer-pager/docs/user-guide/`](crates/codegen/ezer-pager/docs/user-guide/)
 — getting started, keyboard shortcuts, slash commands, configuration, theming,
 MCP servers, skills, plugins, hooks, headless mode, sandboxing, and more.
 
-Start with [custom models](crates/codegen/xai-grok-pager/docs/user-guide/11-custom-models.md) and [authentication](crates/codegen/xai-grok-pager/docs/user-guide/02-authentication.md).
+Start with [custom models](crates/codegen/ezer-pager/docs/user-guide/11-custom-models.md) and [authentication](crates/codegen/ezer-pager/docs/user-guide/02-authentication.md).
 
 ## Repository layout
 
 | Path | Contents |
 |------|----------|
-| `crates/codegen/xai-grok-pager-bin` | Composition-root package; builds the `ezer` binary |
-| `crates/codegen/xai-grok-pager` | The TUI: scrollback, prompt, modals, rendering |
-| `crates/codegen/xai-grok-shell` | Agent runtime + leader/stdio/headless entry points |
-| `crates/codegen/xai-grok-tools` | Tool implementations (terminal, file edit, search, ...) |
-| `crates/codegen/xai-grok-workspace` | Host filesystem, VCS, execution, checkpoints |
+| `crates/codegen/ezer-pager-bin` | Composition-root package; builds the `ezer` binary |
+| `crates/codegen/ezer-pager` | The TUI: scrollback, prompt, modals, rendering |
+| `crates/codegen/ezer-shell` | Agent runtime + leader/stdio/headless entry points |
+| `crates/codegen/ezer-tools` | Tool implementations (terminal, file edit, search, ...) |
+| `crates/codegen/ezer-workspace` | Host filesystem, VCS, execution, checkpoints |
 | `crates/codegen/...` | The rest of the CLI crate closure (config, MCP, markdown, sandbox, ...) |
 | `crates/common/`, `crates/build/`, `prod/mc/` | Small shared leaf crates pulled in by the closure |
 | `third_party/` | Vendored upstream source (Mermaid diagram stack) |
@@ -213,11 +218,24 @@ Start with [custom models](crates/codegen/xai-grok-pager/docs/user-guide/11-cust
 > profiles) is **generated** — treat it as read-only. Prefer editing per-crate
 > `Cargo.toml` files.
 
+## De-branding leftovers
+
+Shipping crate folders and package names are `ezer-*`. These `rg -i grok` hits remain on purpose and are **not** crate paths:
+
+| Kind | Examples | In `ezer` binary? |
+|------|----------|-------------------|
+| Internal APIs | `grok_home()`, `GrokComConfig`, `GrokBuildEnvironment`, `ClientType::GrokPager` | Symbol / type names if the binary is unstripped |
+| Theme ids | `groknight`, `grokday` | Yes — first-party theme names |
+| Optional OAuth | `grok.com` copy behind `EZER_ENABLE_XAI_LOGIN=1` | Only if that login path is linked |
+| Historical `xai-*` crates | `xai-dirs`, `xai-crash-handler`, … | Panic `file!()` paths (`crates/codegen/xai-…`) — no `grok` |
+| npm platform packages | `crates/codegen/ezer-pager/npm/grok-*` | No — not linked into the Rust CLI |
+| Docs | this README's fork/history notes | No |
+
 ## Development
 
 ```sh
 cargo check -p <crate>        # always target specific crates; full-workspace builds are slow
-cargo test -p xai-grok-config # per-crate tests
+cargo test -p ezer-config # per-crate tests
 cargo clippy -p <crate>       # lint config: clippy.toml at the repo root
 cargo fmt --all               # rustfmt.toml at the repo root
 ```
@@ -230,5 +248,5 @@ Version 2.0** — see [`LICENSE`](LICENSE).
 Third-party and vendored code remains under its original licenses. See:
 
 - [`THIRD-PARTY-NOTICES`](THIRD-PARTY-NOTICES)
-- [`crates/codegen/xai-grok-tools/THIRD_PARTY_NOTICES.md`](crates/codegen/xai-grok-tools/THIRD_PARTY_NOTICES.md)
+- [`crates/codegen/ezer-tools/THIRD_PARTY_NOTICES.md`](crates/codegen/ezer-tools/THIRD_PARTY_NOTICES.md)
 - [`third_party/NOTICE`](third_party/NOTICE)
