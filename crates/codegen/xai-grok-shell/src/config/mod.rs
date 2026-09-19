@@ -44,13 +44,21 @@ fn resolve_standalone_memory_mode(
 ) -> MemoryMode {
     MemoryConfig::resolve(false, false, config, remote).mode
 }
+fn default_subagents_enabled() -> bool {
+    true
+}
 /// Configuration for subagent (task tool) support.
 /// Parsed from the `[subagents]` section of `~/.ezer/config.toml` or `.ezer/config.toml`.
-/// Enabled by default; can be disabled via the `EZER_SUBAGENTS=0` env var or `[subagents] enabled = false` in config.toml.
-#[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize)]
+/// Enabled by default (including BYOK / custom Responses). Disable with `EZER_SUBAGENTS=0`,
+/// `[subagents] enabled = false`, or `--no-subagents`.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 #[serde(default)]
 pub struct SubagentsConfig {
     /// Whether subagent support is enabled.
+    ///
+    /// Defaults to `true` even when a `[subagents]` table exists only to set
+    /// concurrency / models. An explicit `enabled = false` still disables.
+    #[serde(default = "default_subagents_enabled")]
     pub enabled: bool,
     /// Raw `[subagents] max_depth` (i64 so out-of-range parses; clamped to at least 1 at resolve).
     #[serde(default)]
@@ -83,6 +91,22 @@ pub struct SubagentsConfig {
     pub personas: std::collections::HashMap<String, SubagentPersona>,
 }
 use xai_grok_subagent_resolution::config::{SubagentPersona, SubagentRole};
+impl Default for SubagentsConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            max_depth: None,
+            max_concurrent: None,
+            sampling_limit: None,
+            limit_behavior: None,
+            workflow_max_concurrent: None,
+            models: std::collections::HashMap::new(),
+            toggle: std::collections::HashMap::new(),
+            roles: std::collections::HashMap::new(),
+            personas: std::collections::HashMap::new(),
+        }
+    }
+}
 impl SubagentsConfig {
     fn discover_personas_in_dir(&mut self, dir: &std::path::Path) {
         if !dir.is_dir() {
@@ -352,10 +376,16 @@ impl SubagentsConfig {
         }
         LimitBehavior::Queue
     }
-    /// Resolve the final subagents config from all sources (in priority order): CLI flag `--subagents` (absolute highest, always enables) `EZER_SUBAGENTS` env var: `1`/`true` enables, `0`/`false` force-disables
-    /// Config file `[subagents]` section Default (enabled) `enabled` is deliberately not remotely gated. Only explicit local intent (CLI flag, `EZER_SUBAGENTS`, `[subagents] enabled`) changes the default.
+    /// Resolve the final subagents config from all sources (in priority order):
+    /// CLI `--no-subagents` (`Some(false)`) force-disables; a legacy `--subagents`
+    /// / TUI default of `Some(true)` force-enables. `EZER_SUBAGENTS` env var:
+    /// `1`/`true` enables, `0`/`false` force-disables. Config file `[subagents]`
+    /// section. Default (enabled). `enabled` is deliberately not remotely gated.
+    /// Only explicit local intent (CLI flag, `EZER_SUBAGENTS`, `[subagents] enabled`)
+    /// changes the default. A `[subagents]` table used only for limits or model
+    /// pins does not disable the feature.
     /// Project files are excluded from this trust-independent base; Task boundaries overlay them using the parent cwd's authoritative trust verdict.
-    pub fn resolve(cli_flag: bool, config: &toml::Value) -> Self {
+    pub fn resolve(cli_flag: Option<bool>, config: &toml::Value) -> Self {
         let user_grok_root = xai_grok_config::user_grok_home();
         Self::resolve_base_with_sources(
             cli_flag,
@@ -365,7 +395,7 @@ impl SubagentsConfig {
         )
     }
     pub(crate) fn resolve_base_with_sources(
-        cli_flag: bool,
+        cli_flag: Option<bool>,
         config: &toml::Value,
         user_grok_root: Option<&std::path::Path>,
         bundled_root: &std::path::Path,
@@ -375,7 +405,7 @@ impl SubagentsConfig {
             .and_then(|v| v.clone().try_into().ok())
             .unwrap_or_default();
         let resolved = crate::agent::config::resolve_enabled(
-            if cli_flag { Some(true) } else { None },
+            cli_flag,
             "EZER_SUBAGENTS",
             result.enabled,
             config.get("subagents").is_some(),

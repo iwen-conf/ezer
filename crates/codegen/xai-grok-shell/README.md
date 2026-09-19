@@ -447,7 +447,7 @@ ezer [OPTIONS]
 | `--sandbox <PROFILE>`      | OS-level filesystem/network guardrails (see [Sandbox](#sandbox))       |
 | `--light`                  | Use light theme (macOS Basic) instead of dark                          |
 | `--single-turn`            | Exit after first response (requires `--prompt`)                        |
-| `--subagents`              | Enable subagent/task tool support (see [Subagents](#subagents))        |
+| `--no-subagents`           | Disable subagent/task tool support (on by default; see [Subagents](#subagents)) |
 | `--disable-web-search`     | Remove web search tool from the agent toolset                          |
 | `--agent-profile <PATH>`   | Load a custom agent definition file (see [Agent Profiles](#agent-profiles)) |
 | `--allow <RULE>`           | Permission allow rule with glob patterns (repeatable). See [Permission Rules](#permission-rules-allow--deny). |
@@ -2356,7 +2356,7 @@ ezer includes these tools by default:
 | `web_search`     | Search the web for up-to-date information                      |
 | `web_fetch`      | Fetch a specific URL and return its content as markdown        |
 | `todo_write`     | Create and manage task lists                                   |
-| `task`           | Launch subagent sessions (requires `--subagents`)              |
+| `task` / `spawn_subagent` | Launch parallel subagent sessions (on by default; `--no-subagents` disables) |
 | `kill_task`      | Terminate a running background task or subagent                |
 | `get_task_output` | Get output and status from a background task or subagent      |
 | `memory_search`  | Search cross-session memory (requires memory enabled) |
@@ -2510,7 +2510,11 @@ The agent persists all session updates automatically. Clients can reconnect and 
 | `EZER_OIDC_ISSUER`              | OIDC issuer URL (alternative to config file). See [OIDC](#oidc-customer-sso)                             |
 | `EZER_OIDC_CLIENT_ID`           | OIDC client ID (alternative to config file). See [OIDC](#oidc-customer-sso)                              |
 | `EZER_HOME`                     | Override config directory (default: `~/.ezer`)                                                           |
-| `EZER_SUBAGENTS`                | Enable (`1`) or disable (`0`) subagent/task tool support                                                 |
+| `EZER_SUBAGENTS`                | Enable (`1`) or disable (`0`) subagent/task tool support (default on)                                    |
+| `EZER_MAX_CONCURRENT_SUBAGENTS` | Cap on live child sessions (default 32)                                                                  |
+| `EZER_SUBAGENT_LIMIT_BEHAVIOR`  | `queue` (default) or `fail` when the live-child cap is hit                                               |
+| `EZER_SUBAGENT_SAMPLING_LIMIT`  | Cap on in-flight child sampling calls                                                                    |
+| `EZER_SUBAGENT_WORKER_THREADS`  | Threads in the subagent worker pool                                                                      |
 | `EZER_MEMORY`                   | Enable (`1`) or disable (`0`) cross-session memory                                                       |
 | `EZER_AGENT`                    | Custom agent definition path or name (see [Agent Profiles](#agent-profiles))                             |
 | `EZER_WEB_FETCH`                | Enable (`1`) or disable (`0`) the `web_fetch` tool                                                       |

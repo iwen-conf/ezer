@@ -69,6 +69,10 @@ pub struct ChatCompletionRequest {
     pub tools: Option<Vec<ToolDefinition>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tool_choice: Option<ToolChoice>,
+    /// When tools are present, request parallel function calls so a BYOK model
+    /// can spawn several subagents in one turn. Omitted when there are no tools.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub parallel_tool_calls: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub search_parameters: Option<SearchParameters>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -116,6 +120,7 @@ impl ChatCompletionRequest {
             user: None,
             tools: None,
             tool_choice: None,
+            parallel_tool_calls: None,
             search_parameters: None,
             response_format: None,
             reasoning_effort: None,
@@ -144,6 +149,7 @@ impl ChatCompletionRequest {
             user: None,
             tools: None,
             tool_choice: None,
+            parallel_tool_calls: None,
             search_parameters: None,
             response_format: None,
             reasoning_effort: None,

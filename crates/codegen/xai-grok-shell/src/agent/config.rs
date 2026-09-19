@@ -1373,7 +1373,8 @@ pub struct Config {
     #[serde(skip)]
     pub cli_agent_overrides: CliAgentOverrides,
     /// Whether subagent (task tool) support is enabled.
-    /// Enabled by default; disabled only via `EZER_SUBAGENTS=0` or `[subagents] enabled = false`.
+    /// Enabled by default (BYOK included); disabled via `EZER_SUBAGENTS=0`,
+    /// `[subagents] enabled = false`, or `--no-subagents`.
     /// Not remotely gated.
     #[serde(skip)]
     pub subagents_enabled: bool,
@@ -2097,7 +2098,7 @@ impl Config {
     /// Populate trust-independent `#[serde(skip)]` subagent base fields.
     /// Must be called after `new_from_toml_cfg` on the **primary startup path** before the config is handed to `MvpAgent`.
     /// Project definitions are overlaid per cwd after that cwd's authoritative folder-trust resolve.
-    pub(crate) fn resolve_subagents(&mut self, cli_flag: bool, raw_config: &toml::Value) {
+    pub(crate) fn resolve_subagents(&mut self, cli_flag: Option<bool>, raw_config: &toml::Value) {
         let sa = crate::config::SubagentsConfig::resolve(cli_flag, raw_config);
         let remote_settings = self.remote_settings.clone();
         self.resolve_subagent_limits(&sa, remote_settings.as_ref());
@@ -2150,8 +2151,7 @@ impl Config {
         self.cli_subagents = ctx.cli_subagents;
         self.web_search_model_override = ctx.cli_web_search_model.map(|s| s.to_owned());
         self.session_summary_model_override = ctx.cli_session_summary_model.map(|s| s.to_owned());
-        let cli_flag = ctx.cli_subagents.unwrap_or(false);
-        self.resolve_subagents(cli_flag, ctx.raw_config);
+        self.resolve_subagents(ctx.cli_subagents, ctx.raw_config);
         let env = std::env::var(crate::config::SubagentsConfig::ENV_MAX_DEPTH).ok();
         let toml_max = ctx
             .raw_config
