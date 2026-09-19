@@ -22,8 +22,9 @@ and ACP — without requiring an xAI account.
 - First launch is **BYOK-first**: OpenAI-compatible Responses API, no browser login wall.
 - Default wire protocol for custom models is **`POST /v1/responses`** (Chat Completions remains available).
 - The CLI binary is **`ezer`**.
+- Compiled catalog default is **`workbuddy`** (wire id `deepseek-v4.1-flash`). Startup validates catalog **`id`** (not only the wire `model` slug), so an alias default no longer panics.
 
-Optional xAI OAuth still exists behind `EZER_ENABLE_XAI_LOGIN=1` (or `ezer login --force-login`) and never blocks startup.
+Optional browser OAuth still exists behind `EZER_ENABLE_XAI_LOGIN=1` (or `ezer login --force-login`) and never blocks startup. BYOK does not require grok.com.
 
 ## Building from source
 

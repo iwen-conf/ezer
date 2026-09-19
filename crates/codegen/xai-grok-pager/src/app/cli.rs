@@ -20,12 +20,12 @@ pub enum Command {
     Leader(LeaderMgmtArgs),
     /// Sign out and clear cached credentials
     Logout,
-    /// Sign in (optional xAI; not required for BYOK)
+    /// Sign in (optional; not required for BYOK)
     Login {
         /// Ignored (kept for backwards compatibility). OAuth2 is now the only auth method.
         #[arg(long, hide = true)]
         legacy: bool,
-        /// Use optional xAI OAuth via auth.x.ai.
+        /// Use optional browser OAuth (off unless EZER_ENABLE_XAI_LOGIN=1).
         #[arg(long = "oauth", alias = "oidc", conflicts_with_all = ["device_auth"])]
         oauth: bool,
         /// Use device-code authentication for headless/remote environments.
@@ -296,7 +296,7 @@ pub struct AgentArgs {
     /// Override the CLI chat proxy base URL.
     #[arg(long = "cli-chat-proxy-base-url")]
     pub cli_chat_proxy_base_url: Option<String>,
-    /// Override the public xAI API base URL.
+    /// Override the public API base URL.
     #[arg(long = "xai-api-base-url")]
     pub xai_api_base_url: Option<String>,
     /// Agent runtime mode
@@ -381,7 +381,7 @@ pub struct LeaderArgs {
     /// Keep the leader running after the last client disconnects.
     #[arg(long)]
     pub no_exit_on_disconnect: bool,
-    /// Defer the optional xAI relay WebSocket until the first headless IPC client registers.
+    /// Defer the optional relay WebSocket until the first headless IPC client registers.
     /// Without this flag the leader connects the relay eagerly at startup.
     /// Passed by leaders auto-spawned from interactive clients (TUI/IDE), which only need the relay if a headless client appears.
     #[arg(long)]
@@ -950,7 +950,7 @@ impl PagerArgs {
         let Some(target) = self.session_to_resume().map(str::to_owned) else {
             return Ok(());
         };
-        use crate::app::session_title_resolve::{PinnedResumeTarget, presandbox_resume_target};
+        use crate::app::session_title_resolve::{presandbox_resume_target, PinnedResumeTarget};
         let pinned = presandbox_resume_target(&target, cwd, self.local_resume_selection())?;
         self.resume_target_pinned = true;
         if let PinnedResumeTarget::Title {

@@ -5469,7 +5469,7 @@ fn format_auth_lines(is_api_key_auth: bool, api_key_env_set: bool) -> String {
             "  Auth method: API key\n"
         };
         return format!(
-            "{method}  Run `ezer login` if you use optional xAI auth, or set EZER_API_KEY for BYOK.\n"
+            "{method}  Set EZER_API_KEY or api_key in ~/.ezer/config.toml for BYOK. Optional: `ezer login`.\n"
         );
     }
     String::from("  Auth method: OAuth\n")

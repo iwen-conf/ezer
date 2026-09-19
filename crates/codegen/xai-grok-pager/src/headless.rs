@@ -447,11 +447,11 @@ fn auto_respond_to_permissions(
 fn auth_required_message(interactive: bool) -> String {
     if interactive {
         "Not signed in. Set EZER_API_KEY or add api_key in ~/.ezer/config.toml \
-         (optional: `ezer login` / `ezer login --device-code` if xAI login is enabled)."
+         (optional: `ezer login` / `ezer login --device-code` if browser login is enabled)."
             .to_string()
     } else {
         "Not signed in. Set EZER_API_KEY or add api_key in ~/.ezer/config.toml.\n  \
-         Optional (xAI login enabled): ezer login --device-code\n\n\
+         Optional (browser login enabled): ezer login --device-code\n\n\
          Alternatively, run `ezer login` on a machine with a browser."
             .to_string()
     }

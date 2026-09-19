@@ -7,20 +7,20 @@ use std::io::IsTerminal;
 use std::sync::Arc;
 
 use axum::{
-    Router,
     extract::{Query, State},
     http::{Method, StatusCode},
     response::Html,
     routing::get,
+    Router,
 };
 use tokio::net::TcpListener;
 
 use super::super::config::{GrokComConfig, OidcAuthConfig};
 use super::super::{AuthManager, GrokAuth};
 use super::protocol::{
-    OidcError, build_authorize_url, build_grok_auth, discover, enforce_login_principal,
-    exchange_code, extract_user_info, generate_pkce, login_principal_policy,
-    peek_access_token_principal, peek_access_token_principal_id, validate_state,
+    build_authorize_url, build_grok_auth, discover, enforce_login_principal, exchange_code,
+    extract_user_info, generate_pkce, login_principal_policy, peek_access_token_principal,
+    peek_access_token_principal_id, validate_state, OidcError,
 };
 
 /// Maximum time to wait for the browser OAuth callback (or manual paste of the code).
@@ -152,10 +152,7 @@ fn parse_callback_params(params: &HashMap<String, String>) -> CallbackResult {
 
 fn callback_response(result: &CallbackResult) -> (StatusCode, Html<String>) {
     let (title, message) = match result {
-        Ok(_) => (
-            "Signed in",
-            "You can close this window and return to ezer.",
-        ),
+        Ok(_) => ("Signed in", "You can close this window and return to ezer."),
         Err(_) => ("Access denied", "Close this window and try again."),
     };
     (
@@ -411,12 +408,7 @@ pub async fn run_login_flow_with_config(
     } else {
         // No client UI: print to stderr
         eprintln!();
-        let provider_label = if oidc.issuer == super::super::config::XAI_OAUTH2_ISSUER {
-            "xAI".to_owned()
-        } else {
-            oidc.issuer.clone()
-        };
-        eprintln!("Signing in with {}...", provider_label);
+        eprintln!("Signing in...");
         eprintln!();
         if let Err(e) = webbrowser::open(&auth_url) {
             tracing::debug!(error = %e, "OIDC: failed to open browser");

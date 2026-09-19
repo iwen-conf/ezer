@@ -2,6 +2,12 @@
 //! Edit that JSON file to change them.
 //!
 //! At runtime each model is resolved from the first of these that is set: CLI flag, ENV var, config.toml, remote settings, these defaults.
+//!
+//! Catalog keys vs wire slugs: `default` / `web_search` / `image_description` /
+//! `session_summary` name **catalog entries** (`id`, falling back to `model`).
+//! `model` is the API slug (e.g. `id = "workbuddy"`, `model = "deepseek-v4.1-flash"`).
+//! Startup used to validate only `model` and panic after the strip-grok merge
+//! when `default` was `workbuddy`.
 
 #![deny(clippy::indexing_slicing)]
 
@@ -25,20 +31,53 @@ struct DefaultModels {
 
 #[derive(serde::Deserialize)]
 struct DefaultModelEntry {
+    /// Catalog key used by `default` / config `[models]` / `--model`.
+    /// Matches `agent::config::default_models`, which keys the map on `id`.
+    #[serde(default)]
+    id: Option<String>,
+    /// Wire slug sent in API requests (may differ from `id`).
     model: String,
+}
+
+impl DefaultModelEntry {
+    /// Same key `agent::config::default_models` uses for the catalog map.
+    fn catalog_key(&self) -> &str {
+        self.id
+            .as_deref()
+            .filter(|id| !id.is_empty())
+            .unwrap_or(self.model.as_str())
+    }
+}
+
+fn assert_catalog_contains(catalog: &[&str], field: &str, value: &str) {
+    assert!(
+        catalog.contains(&value),
+        "default_models.json: '{field}' is '{value}' but catalog keys are {catalog:?}"
+    );
 }
 
 static DEFAULTS: LazyLock<DefaultModels> = LazyLock::new(|| {
     let defaults: DefaultModels = serde_json::from_str(DEFAULT_MODELS_JSON)
         .expect("default_models.json: invalid JSON or missing 'default' field");
 
-    // Baked-in JSON: a mismatch here is a developer error
-    let model_ids: Vec<&str> = defaults.models.iter().map(|m| m.model.as_str()).collect();
-    assert!(
-        model_ids.contains(&defaults.default.as_str()),
-        "default_models.json: 'default' is '{}' but 'models' array only has {model_ids:?}",
-        defaults.default,
-    );
+    // Baked-in JSON: a mismatch here is a developer error. Compare against
+    // catalog keys (`id` else `model`), not wire slugs alone — otherwise an
+    // alias like workbuddy → deepseek-v4.1-flash panics at process start.
+    let catalog: Vec<&str> = defaults
+        .models
+        .iter()
+        .map(DefaultModelEntry::catalog_key)
+        .collect();
+    assert_catalog_contains(&catalog, "default", &defaults.default);
+    if let Some(ref value) = defaults.web_search {
+        assert_catalog_contains(&catalog, "web_search", value);
+    }
+    if let Some(ref value) = defaults.image_description {
+        assert_catalog_contains(&catalog, "image_description", value);
+    }
+    if let Some(ref value) = defaults.session_summary {
+        assert_catalog_contains(&catalog, "session_summary", value);
+    }
 
     defaults
 });
@@ -67,4 +106,55 @@ pub fn default_session_summary_model() -> &'static str {
         .session_summary
         .as_deref()
         .unwrap_or(&DEFAULTS.default)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn baked_defaults_resolve_without_panic() {
+        assert_eq!(default_model(), "workbuddy");
+        assert_eq!(default_web_search_model(), "workbuddy");
+        assert_eq!(default_image_description_model(), "workbuddy");
+        assert_eq!(default_session_summary_model(), "workbuddy");
+    }
+
+    #[test]
+    fn catalog_key_uses_id_when_wire_slug_differs() {
+        let entry: DefaultModelEntry =
+            serde_json::from_str(r#"{"id":"workbuddy","model":"deepseek-v4.1-flash"}"#)
+                .expect("entry");
+        assert_eq!(entry.catalog_key(), "workbuddy");
+        assert_eq!(entry.model, "deepseek-v4.1-flash");
+    }
+
+    #[test]
+    fn catalog_key_falls_back_to_model() {
+        let entry: DefaultModelEntry = serde_json::from_str(r#"{"model":"hy3"}"#).expect("entry");
+        assert_eq!(entry.catalog_key(), "hy3");
+    }
+
+    #[test]
+    fn baked_json_default_is_a_catalog_key() {
+        let root: serde_json::Value = serde_json::from_str(DEFAULT_MODELS_JSON).expect("json");
+        let default = root["default"].as_str().expect("default");
+        let keys: Vec<String> = root["models"]
+            .as_array()
+            .expect("models")
+            .iter()
+            .map(|m| {
+                m.get("id")
+                    .and_then(|v| v.as_str())
+                    .filter(|id| !id.is_empty())
+                    .or_else(|| m.get("model").and_then(|v| v.as_str()))
+                    .unwrap_or("")
+                    .to_owned()
+            })
+            .collect();
+        assert!(
+            keys.iter().any(|k| k == default),
+            "default {default:?} missing from catalog keys {keys:?}"
+        );
+    }
 }

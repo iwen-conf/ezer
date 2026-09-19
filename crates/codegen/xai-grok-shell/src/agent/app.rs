@@ -312,8 +312,9 @@ pub async fn run_headless(
     crate::http::set_process_client_mode_headless();
     use crate::agent::relay::spawn_relay_connection_with_callback;
     use tokio_util::sync::CancellationToken;
-    const HEADLESS_NO_SESSION: &str = "Headless mode requires a grok.com session. \
-        Run `ezer login` to sign in, or use `ezer agent stdio` for API-key access.";
+    const HEADLESS_NO_SESSION: &str = "This relay headless mode needs a signed-in session. \
+        BYOK users should use `ezer -p` or `ezer agent stdio` with ~/.ezer/config.toml. \
+        Optional browser login: `ezer login` (EZER_ENABLE_XAI_LOGIN=1).";
     xai_file_utils::queue::cleanup_orphaned_uploads(
         &grok_home::grok_home(),
         xai_file_utils::queue::DEFAULT_MAX_AGE,
@@ -395,16 +396,18 @@ pub async fn run_headless(
     else {
         anyhow::bail!("{HEADLESS_NO_SESSION}");
     };
-    let grok_code_url = format!("{}/build", ctx.grok_ws_origin);
+    let relay_console_url = format!("{}/build", ctx.grok_ws_origin);
+    // Do not send BYOK users to grok.com/build. Only advertise a custom relay origin.
+    let advertise_console = !ctx.grok_ws_origin.contains("grok.com");
     let on_first_connect: Box<dyn FnOnce() + Send + 'static> = Box::new(move || {
-        if !did_browser_flow {
+        if !did_browser_flow && advertise_console {
             eprintln!();
             eprintln!(
                 "Open ezer: {} (press Enter to open in browser)",
-                grok_code_url
+                relay_console_url
             );
             eprintln!();
-            let url_for_open = grok_code_url.clone();
+            let url_for_open = relay_console_url.clone();
             std::thread::spawn(move || {
                 let mut input = String::new();
                 let _ = std::io::stdin().read_line(&mut input);
