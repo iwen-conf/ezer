@@ -83,7 +83,7 @@ ezer update
 
 ### Browser Login (Default)
 
-On first launch, ezer opens your browser to authenticate with grok.com:
+On first launch, ezer uses your BYOK API key. Optional xAI browser login is never required:
 
 ```bash
 ezer
@@ -123,7 +123,7 @@ Authenticate developers via your own Identity Provider (Okta, Azure AD, Auth0) i
 
 ```toml
 # ~/.ezer/config.toml
-[grok_com_config.oidc]
+[auth.oidc]
 issuer = "https://acme.okta.com"
 client_id = "0oa1b2c3d4e5f6g7h8i9"
 ```
@@ -394,10 +394,10 @@ auth_provider = "litellm"
 If you've authenticated with `ezer login`, you can use the stored credentials to call the CLI chat proxy directly via curl. The proxy requires specific headers that mirror what the ezer CLI sends internally:
 
 ```bash
-curl -s -N -X POST "https://cli-chat-proxy.grok.com/v1/chat/completions" \
+curl -s -N -X POST "https://api.example.com/v1/chat/completions" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $(jq -r '."https://accounts.x.ai/sign-in".key' ~/.ezer/auth.json)" \
-  -H "X-XAI-Token-Auth: xai-grok-cli" \
+  -H "Authorization: Bearer <api-key>" \
   -H "x-ezer-model-override: ezer-build" \
   -d '{
     "model": "ezer-build",
@@ -411,7 +411,7 @@ curl -s -N -X POST "https://cli-chat-proxy.grok.com/v1/chat/completions" \
 | Header                           | Required | Purpose                                                                                                                                                                                   |
 | -------------------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `Authorization: Bearer <token>`  | Yes      | Session token from `~/.ezer/auth.json` (set by `ezer login`)                                                                                                                              |
-| `X-XAI-Token-Auth: xai-grok-cli` | Yes      | Tells the auth middleware to validate as a CLI session token                                                                                                                              |
+| `Authorization: Bearer <api-key>` | Yes      | Tells the auth middleware to validate as a CLI session token                                                                                                                              |
 | `x-ezer-model-override: <model>` | Yes\*    | The proxy uses this header (not the JSON body) to route to the correct backend. \*Can be omitted for `ezer-build` which is on the default route, but always safe to include. |
 
 **Streaming vs non-streaming:**
@@ -861,7 +861,7 @@ import asyncio
 import json
 import os
 
-class GrokChat:
+class EzerChat:
     """Simple OpenAI-compatible wrapper using headless mode."""
 
     def __init__(self, cwd="."):
@@ -909,7 +909,7 @@ class GrokChat:
 
 # Usage
 async def main():
-    client = GrokChat(cwd=".")
+    client = EzerChat(cwd=".")
 
     # Non-streaming
     response = await client.create([{"role": "user", "content": "What files are here?"}])
@@ -929,7 +929,7 @@ asyncio.run(main())
 ```typescript
 import { execa } from "execa";
 
-class GrokChat {
+class EzerChat {
   constructor(private cwd = ".") {}
 
   private buildArgs(prompt: string, model: string, stream: boolean) {
@@ -988,7 +988,7 @@ class GrokChat {
 }
 
 // Usage
-const client = new GrokChat(".");
+const client = new EzerChat(".");
 
 // Non-streaming
 const response = await client.create([
@@ -1017,7 +1017,7 @@ Use the Agent Client Protocol for full access to tool calls, thoughts, plans, an
 import asyncio
 import json
 
-class GrokACPChat:
+class EzerACPChat:
     """Rich OpenAI-compatible wrapper using ACP protocol."""
 
     def __init__(self, cwd="."):
@@ -1118,7 +1118,7 @@ class GrokACPChat:
 
 # Usage
 async def main():
-    client = await GrokACPChat(cwd=".").init()
+    client = await EzerACPChat(cwd=".").init()
 
     # Streaming with rich updates
     async for chunk in await client.create(
@@ -1144,7 +1144,7 @@ asyncio.run(main())
 import { spawn, ChildProcess } from "child_process";
 import * as readline from "readline";
 
-class GrokACPChat {
+class EzerACPChat {
   private proc!: ChildProcess;
   private sessionId!: string;
   private rl!: readline.Interface;
@@ -1256,7 +1256,7 @@ class GrokACPChat {
 }
 
 // Usage
-const client = await new GrokACPChat(".").init();
+const client = await new EzerACPChat(".").init();
 
 // Streaming with rich updates
 for await (const chunk of await client.create(
@@ -1336,8 +1336,8 @@ Each feature section below documents its own config. This section covers the gen
 auto_update = true                     # check for updates on launch
 
 [models]
-default = "grok-4.6"                   # model used for new sessions
-web_search = "grok-4.6"                # model used by the web_search tool
+default = "workbuddy"                   # model used for new sessions
+web_search = "workbuddy"                # model used by the web_search tool
 
 [ui]
 max_thoughts_width = 120               # max column width for reasoning display
@@ -1799,7 +1799,7 @@ they cannot be disabled from the hooks modal, the enable/disable APIs, or the
 `disabled-hooks` file, and a byte-identical copy in a lower layer cannot take
 over their provenance. Enforcement relies on OS file ownership — deploy these
 files root-owned (or via MDM); there is no signature verification. Hooks in
-`$GROK_HOME` layers (`requirements.toml`, `managed_config.toml`, `config.toml`)
+`$EZER_HOME` layers (`requirements.toml`, `managed_config.toml`, `config.toml`)
 remain convenience distribution, not an enforcement boundary: the user owns
 that directory and can edit or repoint it.
 
@@ -1842,7 +1842,7 @@ You can override specific fields of built-in models without redefining everythin
 api_key = "my-api-key"
 
 # Override temperature and add a custom API key
-[model.grok-4.20-0309-reasoning]
+[model.workbuddy]
 temperature = 0.5
 api_key = "sk-custom"
 ```
@@ -2501,7 +2501,7 @@ The agent persists all session updates automatically. Clients can reconnect and 
 | Variable                         | Description                                                                                              |
 | -------------------------------- | -------------------------------------------------------------------------------------------------------- |
 | `XAI_API_KEY`         | API key from [console.x.ai](https://console.x.ai). Used for custom endpoint auth and API key login      |
-| `EZER_CLI_CHAT_PROXY_BASE_URL`  | Override the cli-chat-proxy URL (default: `https://cli-chat-proxy.grok.com/v1`)                          |
+| `EZER_CLI_CHAT_PROXY_BASE_URL`  | Override the cli-chat-proxy URL (default: `https://api.example.com/v1`)                          |
 | `EZER_MODELS_BASE_URL`          | Custom base URL for inference. Model list auto-fetched from `{base_url}/models` (see [Custom Models Endpoint](#custom-models-endpoint)) |
 | `EZER_MODELS_LIST_URL`          | Override the model list URL if it differs from `{EZER_MODELS_BASE_URL}/models`                                              |
 | `EZER_AUTH_PROVIDER_COMMAND`     | External auth binary (alternative to config file). See [External Auth Provider](#external-auth-provider) |
@@ -2509,7 +2509,7 @@ The agent persists all session updates automatically. Clients can reconnect and 
 | `EZER_AUTH_EARLY_INVALIDATION_SECS` | Seconds before `expires_at` to consider a token expired (default: `300`). See [Automatic Credential Refresh](#automatic-credential-refresh) |
 | `EZER_OIDC_ISSUER`              | OIDC issuer URL (alternative to config file). See [OIDC](#oidc-customer-sso)                             |
 | `EZER_OIDC_CLIENT_ID`           | OIDC client ID (alternative to config file). See [OIDC](#oidc-customer-sso)                              |
-| `GROK_HOME`                     | Override config directory (default: `~/.ezer`)                                                           |
+| `EZER_HOME`                     | Override config directory (default: `~/.ezer`)                                                           |
 | `EZER_SUBAGENTS`                | Enable (`1`) or disable (`0`) subagent/task tool support                                                 |
 | `EZER_MEMORY`                   | Enable (`1`) or disable (`0`) cross-session memory                                                       |
 | `EZER_AGENT`                    | Custom agent definition path or name (see [Agent Profiles](#agent-profiles))                             |
@@ -2560,7 +2560,7 @@ Generate and install:
 
 ```bash
 mkdir -p ~/.zsh/completions
-ezer completions zsh > ~/.zsh/completions/_grok
+ezer completions zsh > ~/.zsh/completions/_ezer
 ```
 
 Add to `~/.zshrc`:
@@ -2575,7 +2575,7 @@ Alternative (ezer-managed location):
 
 ```bash
 mkdir -p ~/.ezer/completions/zsh
-ezer completions zsh > ~/.ezer/completions/zsh/_grok
+ezer completions zsh > ~/.ezer/completions/zsh/_ezer
 ```
 
 Add to `~/.zshrc`:
@@ -2613,7 +2613,7 @@ The `--debug` firehose uses a fixed filter (first-party crates at `debug`) and i
 
 ```bash
 # Debug auth, info for everything else
-EZER_LOG_FILE=/tmp/ezer-debug.log RUST_LOG="info,xai_grok_login=debug" ezer
+EZER_LOG_FILE=/tmp/ezer-debug.log RUST_LOG="info" ezer
 ```
 
 ### Authentication fails
