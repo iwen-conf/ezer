@@ -1,5 +1,5 @@
 use super::*;
-use ezer_tools::implementations::grok_build::SEND_SUBAGENT_MESSAGE_TOOL_NAME;
+use ezer_tools::implementations::ezer_build::SEND_SUBAGENT_MESSAGE_TOOL_NAME;
 
 fn tool(name: &str, description: Option<&str>, parameters: serde_json::Value) -> ToolSpec {
     ToolSpec {

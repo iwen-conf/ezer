@@ -43,6 +43,6 @@ fn main() {
             ".xai.ezer.tools.v1.FinalizeToolServerConfigResponse.callback_status",
             "#[serde(default)]",
         )
-        .compile_protos(&["proto/grok-tools.proto"], &["proto/"])
+        .compile_protos(&["proto/ezer-tools.proto"], &["proto/"])
         .unwrap();
 }

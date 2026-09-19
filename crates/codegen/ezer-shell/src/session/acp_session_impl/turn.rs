@@ -3,7 +3,7 @@ use super::*;
 use crate::session::{InputAuthority, SlashAuthority};
 use crate::util::dual_clock::DualClock;
 use tracing::Instrument;
-use ezer_tools::implementations::grok_build::task::types::{
+use ezer_tools::implementations::ezer_build::task::types::{
     SubagentEvent, SubagentMarkUsageNotAppliedRequest, SubagentWaitPromptDrainedRequest,
 };
 use ezer_tools::types::tool::ToolKind;
@@ -217,7 +217,7 @@ impl UsageDrainOutcome {
     /// Same policy as freeze's terminal outcome: a live foreground child is fail-closed; sticky and background are report-only.
     pub(super) fn from_outstanding_reply(
         reply: Option<
-            &ezer_tools::implementations::grok_build::task::types::SubagentOutstandingReply,
+            &ezer_tools::implementations::ezer_build::task::types::SubagentOutstandingReply,
         >,
     ) -> Self {
         match reply {
@@ -1890,7 +1890,7 @@ impl SessionActor {
         let Some(buffer) = &self.tool_context.monitor_event_buffer else {
             return;
         };
-        let mine = ezer_tools::implementations::grok_build::monitor::types::drain_owned(
+        let mine = ezer_tools::implementations::ezer_build::monitor::types::drain_owned(
             buffer,
             Some(self.session_info.id.0.as_ref()),
         );
@@ -2837,7 +2837,7 @@ impl SessionActor {
             let bridge = self.agent.borrow().tool_bridge().clone();
             let messaging_grant = if bridge
                 .read_resource::<
-                    ezer_tools::implementations::grok_build::task::types::AgentMessageSenderResource,
+                    ezer_tools::implementations::ezer_build::task::types::AgentMessageSenderResource,
                 >()
                 .await
                 .is_some()

@@ -11,7 +11,7 @@ use agent_client_protocol::{self as acp, Client as _};
 use xai_acp_lib::AcpAgentGatewaySender as GatewaySender;
 use ezer_mcp::servers::parse_mcp_qualified_name;
 use ezer_session_events::{Event, EventWriter, PermissionDecision};
-use ezer_tools::implementations::grok_build::web_fetch::domain_from_url;
+use ezer_tools::implementations::ezer_build::web_fetch::domain_from_url;
 
 const REJECT_ONCE_LABEL: &str = "No, and tell ezer what to do differently";
 
@@ -872,7 +872,7 @@ pub fn tool_name_for_access(access: &AccessKind) -> String {
         AccessKind::WebFetch(_) => "web_fetch".to_owned(),
         AccessKind::WebSearch(_) => "web_search".to_owned(),
         AccessKind::AgentMessage { .. } => {
-            ezer_tools::implementations::grok_build::SEND_SUBAGENT_MESSAGE_TOOL_NAME.to_owned()
+            ezer_tools::implementations::ezer_build::SEND_SUBAGENT_MESSAGE_TOOL_NAME.to_owned()
         }
         AccessKind::Tool(name) => name.clone(),
     }

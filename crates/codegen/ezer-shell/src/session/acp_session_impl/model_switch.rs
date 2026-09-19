@@ -329,7 +329,7 @@ impl SessionActor {
             }
             bridge
                 .update_resource(
-                    ezer_tools::implementations::grok_build::workflow::WorkflowLaunchHandle(
+                    ezer_tools::implementations::ezer_build::workflow::WorkflowLaunchHandle(
                         self.workflow_launch_tx.clone(),
                     ),
                 )
@@ -337,7 +337,7 @@ impl SessionActor {
             if !self.goal_runs_on_workflow_engine() {
                 bridge
                     .update_resource(
-                        ezer_tools::implementations::grok_build::update_goal::GoalUpdateHandle(
+                        ezer_tools::implementations::ezer_build::update_goal::GoalUpdateHandle(
                             self.goal_update_tx.clone(),
                         ),
                     )

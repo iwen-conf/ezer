@@ -785,7 +785,7 @@ fn loop_instruction_derives_interval_without_default_or_inline_execute() {
 #[test]
 fn loop_prompt_matches_pager_wording() {
     // The shell and pager must stay textually identical so they don't drift.
-    use ezer_tools::implementations::grok_build::{
+    use ezer_tools::implementations::ezer_build::{
         loop_schedule_instruction, loop_usage_message,
     };
     assert_eq!(loop_text(""), loop_usage_message());

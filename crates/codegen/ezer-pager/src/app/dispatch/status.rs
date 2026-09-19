@@ -411,7 +411,7 @@ pub(super) fn append_consumer_billing_surface(app: &mut AppView, agent_id: Agent
     if !app.usage_visible {
         return vec![];
     }
-    // Remote-settings kill switch (`grok_build_usage_redirect_url`): link out instead of fetching billing from the backend
+    // Remote-settings kill switch (`ezer_build_usage_redirect_url`): link out instead of fetching billing from the backend
     if let Some(url) = app.usage_billing_redirect_url.clone() {
         if let Some(agent) = app.agents.get_mut(&agent_id) {
             agent.scrollback.push_block(RenderBlock::System(

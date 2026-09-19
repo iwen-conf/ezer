@@ -4,7 +4,7 @@ use crate::handle::tests::{
     background_capable_cfg, make_confining_handle, make_handle, start_background_sleep,
 };
 use std::sync::Arc;
-use ezer_tools::implementations::grok_build::scheduler::types::{
+use ezer_tools::implementations::ezer_build::scheduler::types::{
     ScheduledTask, SchedulerState,
 };
 use ezer_tools::types::resources::State;

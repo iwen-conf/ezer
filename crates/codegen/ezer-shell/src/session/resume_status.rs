@@ -633,7 +633,7 @@ mod tests {
             dir.path().join("resources_state.json"),
             r#"{
               "state": {
-                "grok_build.Scheduler": {
+                "ezer_build.Scheduler": {
                   "tasks": [
                     {"id":"live","intervalSecs":30,"prompt":"ping"},
                     {"id":"expired","intervalSecs":30,"prompt":"old","expiresAt":"2000-01-01T00:00:00Z"},

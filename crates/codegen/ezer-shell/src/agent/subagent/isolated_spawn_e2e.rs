@@ -11,11 +11,11 @@ use std::time::Duration;
 use tokio::sync::mpsc;
 use tokio_util::sync::CancellationToken;
 use xai_acp_lib::AcpAgentGatewaySender as GatewaySender;
-use ezer_tools::implementations::grok_build::task::coordinator::{
+use ezer_tools::implementations::ezer_build::task::coordinator::{
     ChildCompletion, ChildRunOutput, ChildRunner, LocalBoxFuture, SubagentCoordinator,
 };
-use ezer_tools::implementations::grok_build::task::root_control::NoRootControl;
-use ezer_tools::implementations::grok_build::task::types::{
+use ezer_tools::implementations::ezer_build::task::root_control::NoRootControl;
+use ezer_tools::implementations::ezer_build::task::types::{
     SubagentDescribeOutcome, SubagentOwner, SubagentRequest, SubagentValidateTypeOutcome,
 };
 use xai_tool_types::SubagentIsolationMode;
@@ -99,7 +99,7 @@ fn spawn_ctx(parent_cwd: PathBuf) -> SubagentSpawnContext {
         gcs_upload_method: None,
         hook_registry: None,
         parent_depth: 0,
-        subagents_max_depth: ezer_tools::implementations::grok_build::task::MAX_SUBAGENT_DEPTH,
+        subagents_max_depth: ezer_tools::implementations::ezer_build::task::MAX_SUBAGENT_DEPTH,
         workflow_max_concurrent_agents:
             crate::session::workflow::host_service::DEFAULT_WORKFLOW_MAX_CONCURRENT_AGENTS,
         media_gen_batch_limits: ezer_tools::media_gen_limits::MediaGenBatchLimits::default(),
@@ -139,7 +139,7 @@ fn spawn_ctx(parent_cwd: PathBuf) -> SubagentSpawnContext {
         parent_notification_handle: None,
         parent_scheduler_handle: None,
         subagent_sampling_semaphore: Arc::new(tokio::sync::Semaphore::new(
-            ezer_tools::implementations::grok_build::task::admission::DEFAULT_MAX_CONCURRENT,
+            ezer_tools::implementations::ezer_build::task::admission::DEFAULT_MAX_CONCURRENT,
         )),
     }
 }
@@ -164,7 +164,7 @@ impl ChildRunner for Runner {
     type DescribeFuture = LocalBoxFuture<SubagentDescribeOutcome>;
     fn run(
         &self,
-        run: ezer_tools::implementations::grok_build::task::coordinator::ChildRunRequest<
+        run: ezer_tools::implementations::ezer_build::task::coordinator::ChildRunRequest<
             Self::Control,
         >,
     ) -> Self::RunFuture {
@@ -206,10 +206,10 @@ pub async fn spawn_isolated_subagent_for_e2e(
     remote: RemoteSettings,
     mock_base_url: &str,
 ) -> IsolatedSubagentSpawn {
-    use ezer_tools::implementations::grok_build::task::backend::{
+    use ezer_tools::implementations::ezer_build::task::backend::{
         ChannelBackend, SubagentBackend,
     };
-    use ezer_tools::implementations::grok_build::task::coordinator::CoordinatorConfig;
+    use ezer_tools::implementations::ezer_build::task::coordinator::CoordinatorConfig;
     let mut ctx = spawn_ctx(parent_cwd.to_path_buf());
     ctx.remote_settings = Some(remote);
     ctx.sampling_config.base_url = mock_base_url.to_owned();

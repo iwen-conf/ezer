@@ -118,7 +118,7 @@ impl GrokBuildRow {
             shape: None,
         }
     }
-    const fn without_grok_build_name() -> Self {
+    const fn without_ezer_build_name() -> Self {
         GrokBuildRow {
             name: None,
             fills: &[],
@@ -182,12 +182,12 @@ impl Tool {
                 GrokBuildRow::new("scheduler_create").with_shape(fill_cron_interval)
             }
             Tool::McpListResources | Tool::McpReadResource | Tool::Mcp { .. } => {
-                GrokBuildRow::without_grok_build_name()
+                GrokBuildRow::without_ezer_build_name()
             }
         }
     }
     /// An MCP tool is `server__tool`; the MCP resource kinds have no Ezer name.
-    fn grok_build_name(&self) -> Option<String> {
+    fn ezer_build_name(&self) -> Option<String> {
         if let Tool::Mcp { server, tool } = self {
             return Some(format!("{server}{MCP_NAME_SEPARATOR}{tool}"));
         }
@@ -195,7 +195,7 @@ impl Tool {
     }
     /// The case's arguments in Ezer's shape: the fields a case may leave out are filled, and
     /// the row's shape applies. Arguments that are not a table pass through unchanged.
-    fn grok_build_arguments(&self, arguments: &Value) -> Value {
+    fn ezer_build_arguments(&self, arguments: &Value) -> Value {
         let Some(fields) = arguments.as_object() else {
             return arguments.clone();
         };
@@ -213,13 +213,13 @@ impl Tool {
     }
     /// The call for Ezer's name when the request offers it.
     pub(crate) fn pick(&self, offered: &OfferedTools, arguments: &Value) -> Option<PickedToolCall> {
-        let arguments = self.grok_build_arguments(arguments);
-        if let Some(name) = self.grok_build_name().filter(|name| offered.has_tool(name)) {
+        let arguments = self.ezer_build_arguments(arguments);
+        if let Some(name) = self.ezer_build_name().filter(|name| offered.has_tool(name)) {
             return Some(PickedToolCall { name, arguments });
         }
         if let Tool::Mcp { .. } = self
             && offered.has_tool(USE_TOOL_NAME)
-            && let Some(name) = self.grok_build_name()
+            && let Some(name) = self.ezer_build_name()
         {
             return Some(PickedToolCall {
                 name: USE_TOOL_NAME.to_owned(),
@@ -233,13 +233,13 @@ impl Tool {
     }
     /// Whether a call the agent carried back in its history is this tool's under Ezer's name.
     pub(crate) fn is_called_by(&self, call: &HistoryToolCall) -> bool {
-        if self.grok_build_name().is_some_and(|name| call.name == name) {
+        if self.ezer_build_name().is_some_and(|name| call.name == name) {
             return true;
         }
         if let Tool::Mcp { .. } = self
             && call.name == USE_TOOL_NAME
             && call.arguments.get("tool_name").and_then(Value::as_str)
-                == self.grok_build_name().as_deref()
+                == self.ezer_build_name().as_deref()
         {
             return true;
         }

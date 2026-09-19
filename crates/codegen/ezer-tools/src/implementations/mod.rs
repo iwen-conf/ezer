@@ -1,9 +1,9 @@
 pub mod codex;
 pub mod cursor_rules_on_read;
 pub mod editor_infra;
-pub mod grok_build;
-pub mod grok_build_concise;
-pub mod grok_build_hashline;
+pub mod ezer_build;
+pub mod ezer_build_concise;
+pub mod ezer_build_hashline;
 pub mod lsp;
 pub mod memory;
 pub mod opencode;
@@ -13,8 +13,8 @@ pub mod skills;
 pub mod task_output;
 pub mod use_tool;
 pub mod web_search;
-pub use grok_build::bash::{BashError, BashToolInput};
-pub use grok_build::{
+pub use ezer_build::bash::{BashError, BashToolInput};
+pub use ezer_build::{
     AskUserQuestionTool, BashTool, EnterPlanModeTool, ExitPlanModeTool, GrepTool, KillTaskTool,
     ListDirTool, ReadFileTool, SearchReplaceTool, SendSubagentMessageDisposition,
     SendSubagentMessageTool, TaskOutputTool, TaskTool, TodoWriteTool, WaitTasksTool, WebFetchTool,

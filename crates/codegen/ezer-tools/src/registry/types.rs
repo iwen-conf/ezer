@@ -1,7 +1,7 @@
 use crate::{
     computer::types::{AsyncFileSystem, TerminalBackend},
     implementations::{
-        codex, grok_build, grok_build_concise, grok_build_hashline, opencode,
+        codex, ezer_build, ezer_build_concise, ezer_build_hashline, opencode,
         skills::types::SkillInfo,
     },
     notification::ToolNotificationHandle,
@@ -176,12 +176,12 @@ pub struct ToolServerConfig {
 }
 #[derive(Clone)]
 pub struct SubagentSessionResources {
-    pub backend: crate::implementations::grok_build::task::backend::SubagentBackendResource,
+    pub backend: crate::implementations::ezer_build::task::backend::SubagentBackendResource,
     /// Same channel as [`Self::backend`]; required so `TaskCompletionReminder`
     /// can drain completions onto the next tool result (shell parity).
-    pub event_sender: crate::implementations::grok_build::task::types::SubagentEventSender,
-    pub depth: crate::implementations::grok_build::task::types::SubagentDepthCounter,
-    pub session_id: crate::implementations::grok_build::task::types::SessionIdResource,
+    pub event_sender: crate::implementations::ezer_build::task::types::SubagentEventSender,
+    pub depth: crate::implementations::ezer_build::task::types::SubagentDepthCounter,
+    pub session_id: crate::implementations::ezer_build::task::types::SessionIdResource,
 }
 /// Everything a session provides at finalization time. This is the **public API boundary** —
 /// callers pass concrete, strongly-typed values. The builder converts these into type-erased
@@ -208,7 +208,7 @@ pub struct SessionContext {
     /// scheduler actor instead of spawning its own, so scheduled tasks survive
     /// subagent exit.
     pub parent_scheduler_handle:
-        Option<crate::implementations::grok_build::scheduler::types::SchedulerHandle>,
+        Option<crate::implementations::ezer_build::scheduler::types::SchedulerHandle>,
     /// Available skills for the Skill tool and description templates.
     pub skills: Vec<SkillInfo>,
     /// File path for persisting Resources state across restarts. The toolset loads existing state on construction and
@@ -226,7 +226,7 @@ pub struct SessionContext {
     /// Optional web fetch configuration. When `Enabled`, a `WebFetchClient`
     /// is created and injected into `Resources` so the `web_fetch` tool can
     /// fetch URLs. When `Disabled` (default), the tool is not registered.
-    pub web_fetch_config: crate::implementations::grok_build::web_fetch::WebFetchConfig,
+    pub web_fetch_config: crate::implementations::ezer_build::web_fetch::WebFetchConfig,
     /// Optional shared LSP handle — created once by the caller (shell),
     /// passed to every session. Same pattern as `fs` and `backend`.
     /// When `Some`, inserted into `Resources` so `LspTool` can use it.
@@ -234,16 +234,16 @@ pub struct SessionContext {
     /// Optional image generation configuration. When `Enabled`, an `ImageGenClient` is created and
     /// injected into `Resources` so the `image_gen` tool can call the xAI Imagine API. When
     /// `Disabled` (default), the tool is not registered and image generation is unavailable.
-    pub image_gen_config: crate::implementations::grok_build::image_gen::ImageGenConfig,
+    pub image_gen_config: crate::implementations::ezer_build::image_gen::ImageGenConfig,
     /// Optional video generation configuration. When `Enabled`, a `VideoGenClient` is created and
     /// injected into `Resources` so the `video_gen` tool can call the xAI Video Generation API.
     /// When `Disabled` (default), the tool is not registered and video generation is unavailable.
-    pub video_gen_config: crate::implementations::grok_build::video_gen::VideoGenConfig,
+    pub video_gen_config: crate::implementations::ezer_build::video_gen::VideoGenConfig,
     /// Optional deploy service configuration. When enabled, the
     /// `deploy_app` tool connects to the service at call time using the shared
     /// API key provider.
     pub app_builder_deployer_config:
-        crate::implementations::grok_build::app_builder::AppBuilderDeployerConfig,
+        crate::implementations::ezer_build::app_builder::AppBuilderDeployerConfig,
     /// Dynamic API key provider for tool HTTP clients. When set, clients resolve the API key
     /// per-request from this provider instead of using the key baked into their config at
     /// construction time. Prevents 401 failures when a session outlives the initial token lifetime.
@@ -606,42 +606,42 @@ impl ToolRegistryBuilder {
             shared_local_registry: None,
             system_reminders_enabled: true,
         };
-        b.register_with_params::<grok_build::BashTool, grok_build::bash::BashParams>();
-        b.register_with_params::<grok_build::ReadFileTool, grok_build::read_file::ReadFileParams>();
+        b.register_with_params::<ezer_build::BashTool, ezer_build::bash::BashParams>();
+        b.register_with_params::<ezer_build::ReadFileTool, ezer_build::read_file::ReadFileParams>();
         b.register_with_params::<
-                grok_build::SearchReplaceTool,
-                grok_build::search_replace::SearchReplaceParams,
+                ezer_build::SearchReplaceTool,
+                ezer_build::search_replace::SearchReplaceParams,
             >();
-        b.register_with_params::<grok_build::ListDirTool, grok_build::list_dir::ListDirParams>();
-        b.register_with_params::<grok_build::GrepTool, grok_build::grep::GrepParams>();
-        b.register::<grok_build::KillTaskTool>();
-        b.register::<grok_build::KillTerminalCommandTool>();
-        b.register::<grok_build::TodoWriteTool>();
-        b.register::<grok_build::UpdateGoalTool>();
-        b.register::<grok_build::WorkflowTool>();
-        b.register::<grok_build::TaskOutputTool>();
-        b.register::<grok_build::GetTerminalCommandOutputTool>();
-        b.register::<grok_build::WaitTasksTool>();
-        b.register::<grok_build::TaskTool>();
-        b.register::<grok_build::SendSubagentMessageTool>();
-        b.register::<grok_build::SendFeedbackTool>();
-        b.register::<grok_build::WebSearchTool>();
-        b.register_with_params::<grok_build::WebFetchTool, grok_build::web_fetch::WebFetchParams>();
-        b.register::<grok_build::LspTool>();
-        b.register::<grok_build::ImageGenTool>();
-        b.register::<grok_build::ImageEditTool>();
-        b.register::<grok_build::ImageToVideoTool>();
-        b.register::<grok_build::ReferenceToVideoTool>();
-        b.register::<grok_build::EnterPlanModeTool>();
-        b.register::<grok_build::ExitPlanModeTool>();
+        b.register_with_params::<ezer_build::ListDirTool, ezer_build::list_dir::ListDirParams>();
+        b.register_with_params::<ezer_build::GrepTool, ezer_build::grep::GrepParams>();
+        b.register::<ezer_build::KillTaskTool>();
+        b.register::<ezer_build::KillTerminalCommandTool>();
+        b.register::<ezer_build::TodoWriteTool>();
+        b.register::<ezer_build::UpdateGoalTool>();
+        b.register::<ezer_build::WorkflowTool>();
+        b.register::<ezer_build::TaskOutputTool>();
+        b.register::<ezer_build::GetTerminalCommandOutputTool>();
+        b.register::<ezer_build::WaitTasksTool>();
+        b.register::<ezer_build::TaskTool>();
+        b.register::<ezer_build::SendSubagentMessageTool>();
+        b.register::<ezer_build::SendFeedbackTool>();
+        b.register::<ezer_build::WebSearchTool>();
+        b.register_with_params::<ezer_build::WebFetchTool, ezer_build::web_fetch::WebFetchParams>();
+        b.register::<ezer_build::LspTool>();
+        b.register::<ezer_build::ImageGenTool>();
+        b.register::<ezer_build::ImageEditTool>();
+        b.register::<ezer_build::ImageToVideoTool>();
+        b.register::<ezer_build::ReferenceToVideoTool>();
+        b.register::<ezer_build::EnterPlanModeTool>();
+        b.register::<ezer_build::ExitPlanModeTool>();
         b.register_with_params::<
-                grok_build::AskUserQuestionTool,
-                grok_build::ask_user_question::AskUserQuestionParams,
+                ezer_build::AskUserQuestionTool,
+                ezer_build::ask_user_question::AskUserQuestionParams,
             >();
-        b.register::<grok_build::MonitorTool>();
-        b.register::<grok_build::SchedulerCreateTool>();
-        b.register::<grok_build::SchedulerDeleteTool>();
-        b.register::<grok_build::SchedulerListTool>();
+        b.register::<ezer_build::MonitorTool>();
+        b.register::<ezer_build::SchedulerCreateTool>();
+        b.register::<ezer_build::SchedulerDeleteTool>();
+        b.register::<ezer_build::SchedulerListTool>();
         b.register::<codex::apply_patch::ApplyPatchTool>();
         b.register::<codex::list_dir::CodexListDirTool>();
         b.register::<codex::grep_files::CodexGrepFilesTool>();
@@ -662,28 +662,28 @@ impl ToolRegistryBuilder {
                 crate::implementations::use_tool::UseToolParams,
             >();
         b.register_with_params::<
-                grok_build_concise::ReadFileConciseTool,
-                grok_build::read_file::ReadFileParams,
+                ezer_build_concise::ReadFileConciseTool,
+                ezer_build::read_file::ReadFileParams,
             >();
         b.register_with_params::<
-                grok_build_concise::SearchReplaceConciseTool,
-                grok_build::search_replace::SearchReplaceParams,
+                ezer_build_concise::SearchReplaceConciseTool,
+                ezer_build::search_replace::SearchReplaceParams,
             >();
         b.register_with_params::<
-                grok_build_concise::BashConciseTool,
-                grok_build::bash::BashParams,
+                ezer_build_concise::BashConciseTool,
+                ezer_build::bash::BashParams,
             >();
         b.register_with_params::<
-                grok_build_hashline::HashlineReadTool,
-                grok_build_hashline::config::HashlineSchemeParams,
+                ezer_build_hashline::HashlineReadTool,
+                ezer_build_hashline::config::HashlineSchemeParams,
             >();
         b.register_with_params::<
-                grok_build_hashline::HashlineEditTool,
-                grok_build_hashline::config::HashlineSchemeParams,
+                ezer_build_hashline::HashlineEditTool,
+                ezer_build_hashline::config::HashlineSchemeParams,
             >();
         b.register_with_params::<
-                grok_build_hashline::HashlineGrepTool,
-                grok_build_hashline::config::HashlineSchemeParams,
+                ezer_build_hashline::HashlineGrepTool,
+                ezer_build_hashline::config::HashlineSchemeParams,
             >();
         b.register_reminder(crate::reminders::LspDiagnosticsReminder);
         b.register_reminder(crate::reminders::TaskCompletionReminder);
@@ -923,7 +923,7 @@ impl ToolRegistryBuilder {
         }
         let session_folder = crate::types::resources::SessionFolder(ctx.session_folder.clone());
         let feedback_drafts_path =
-            crate::implementations::grok_build::send_feedback::drafts_file_path(&session_folder.0);
+            crate::implementations::ezer_build::send_feedback::drafts_file_path(&session_folder.0);
         let renderer = TemplateRenderer::new(kind_to_name.clone(), kind_params.clone())
             .with_system_reminders_enabled(self.system_reminders_enabled)
             .with_feedback_drafts_path(feedback_drafts_path);
@@ -980,7 +980,7 @@ impl ToolRegistryBuilder {
         let image_gen_config = ctx.image_gen_config;
         let video_gen_config = ctx.video_gen_config;
         if image_gen_config.has_credentials() {
-            match crate::implementations::grok_build::image_gen::ImageGenClient::new(
+            match crate::implementations::ezer_build::image_gen::ImageGenClient::new(
                 &image_gen_config,
                 ctx.api_key_provider.clone(),
             ) {
@@ -998,7 +998,7 @@ impl ToolRegistryBuilder {
             }
         }
         if video_gen_config.is_enabled() {
-            match crate::implementations::grok_build::video_gen::VideoGenClient::new(
+            match crate::implementations::ezer_build::video_gen::VideoGenClient::new(
                 &video_gen_config,
                 ctx.api_key_provider.clone(),
             ) {
@@ -1015,10 +1015,10 @@ impl ToolRegistryBuilder {
                 }
             }
         }
-        if let crate::implementations::grok_build::web_fetch::WebFetchConfig::Enabled { params } =
+        if let crate::implementations::ezer_build::web_fetch::WebFetchConfig::Enabled { params } =
             &ctx.web_fetch_config
         {
-            match crate::implementations::grok_build::web_fetch::WebFetchClient::new(params) {
+            match crate::implementations::ezer_build::web_fetch::WebFetchClient::new(params) {
                 Ok(client) => {
                     resources.insert(client);
                 }
@@ -1037,14 +1037,14 @@ impl ToolRegistryBuilder {
             resources.insert(crate::types::resources::SystemRemindersEnabled(false));
         }
         resources.register_state::<crate::reminders::task_completion::ReportedTaskCompletions>();
-        resources.register_state::<crate::implementations::grok_build::todo::TodoState>();
+        resources.register_state::<crate::implementations::ezer_build::todo::TodoState>();
         resources.register_state::<crate::types::resources::WebCitationCounter>();
         resources
             .register_state::<
                 crate::implementations::cursor_rules_on_read::CursorRulesOnReadTracker,
             >();
         resources
-            .register_state::<crate::implementations::grok_build::scheduler::types::SchedulerState>(
+            .register_state::<crate::implementations::ezer_build::scheduler::types::SchedulerState>(
             );
         for entry in self.tools.values() {
             (entry.register_params)(&mut resources);
@@ -1173,7 +1173,7 @@ impl ToolRegistryBuilder {
                 let (scheduler_cmd_tx, scheduler_cmd_rx) = tokio::sync::mpsc::unbounded_channel();
                 let cancel_token = tokio_util::sync::CancellationToken::new();
                 resources.insert(
-                    crate::implementations::grok_build::scheduler::types::SchedulerHandle(
+                    crate::implementations::ezer_build::scheduler::types::SchedulerHandle(
                         scheduler_cmd_tx,
                     ),
                 );
@@ -1181,7 +1181,7 @@ impl ToolRegistryBuilder {
             };
         let shared_resources = resources.into_shared();
         if let (Some(cmd_rx), Some(cancel_token)) = (scheduler_cmd_rx, &scheduler_cancel_token) {
-            let actor = crate::implementations::grok_build::scheduler::actor::SchedulerActor {
+            let actor = crate::implementations::ezer_build::scheduler::actor::SchedulerActor {
                 resources: shared_resources.clone(),
                 resources_persistence: persistence.clone(),
                 notification_handle: scheduler_notification_handle,
@@ -1935,14 +1935,14 @@ fn explain_requirement_failure(
                 .with_category("requirements")
         }
         "Ezer:get_task_output" => {
-            let has_grok_build_bash = has_tool_with_bool_param(
+            let has_ezer_build_bash = has_tool_with_bool_param(
                 proposed,
                 "Ezer",
                 "run_terminal_cmd",
                 "enabled_background",
                 true,
             );
-            let has_grok_build_concise_bash = has_tool_with_bool_param(
+            let has_ezer_build_concise_bash = has_tool_with_bool_param(
                 proposed,
                 "EzerConcise",
                 "run_terminal_cmd",
@@ -1953,7 +1953,7 @@ fn explain_requirement_failure(
             let has_task = has_tool(proposed, "Ezer", "task");
             let mut notes = vec![];
             if has_tool(proposed, "Ezer", "run_terminal_cmd")
-                && !has_grok_build_bash
+                && !has_ezer_build_bash
             {
                 notes
                     .push(
@@ -1961,7 +1961,7 @@ fn explain_requirement_failure(
                     );
             }
             if has_tool(proposed, "EzerConcise", "run_terminal_cmd")
-                && !has_grok_build_concise_bash
+                && !has_ezer_build_concise_bash
             {
                 notes
                     .push(
@@ -1970,7 +1970,7 @@ fn explain_requirement_failure(
             }
             let mut message = "get_task_output requires a background-capable bash tool (Ezer:run_terminal_cmd or EzerConcise:run_terminal_cmd with enabled_background=true), OpenCode:bash, or Ezer:task"
                 .to_string();
-            let has_provider = has_grok_build_bash || has_grok_build_concise_bash
+            let has_provider = has_ezer_build_bash || has_ezer_build_concise_bash
                 || has_opencode_bash || has_task;
             if !has_provider && !notes.is_empty() {
                 message.push_str(&format!("; {}", notes.join("; ")));
@@ -2095,14 +2095,14 @@ mod tests {
             memory_backend: None,
             web_search_config: crate::implementations::web_search::WebSearchConfig::default(),
             web_fetch_config:
-                crate::implementations::grok_build::web_fetch::WebFetchConfig::default(),
+                crate::implementations::ezer_build::web_fetch::WebFetchConfig::default(),
             lsp: None,
             image_gen_config:
-                crate::implementations::grok_build::image_gen::ImageGenConfig::default(),
+                crate::implementations::ezer_build::image_gen::ImageGenConfig::default(),
             video_gen_config:
-                crate::implementations::grok_build::video_gen::VideoGenConfig::default(),
+                crate::implementations::ezer_build::video_gen::VideoGenConfig::default(),
             app_builder_deployer_config:
-                crate::implementations::grok_build::app_builder::AppBuilderDeployerConfig::default(),
+                crate::implementations::ezer_build::app_builder::AppBuilderDeployerConfig::default(),
             api_key_provider: None,
             auth_provider: None,
             attribution_callback: None,
@@ -2230,7 +2230,7 @@ mod tests {
     /// tool-name references from missing conditional guards.
     #[tokio::test]
     async fn full_toolset_descriptions_render_cleanly() {
-        use crate::implementations::grok_build::{
+        use crate::implementations::ezer_build::{
             IMAGE_GEN_TOOL_NAME, IMAGE_TO_VIDEO_TOOL_NAME, REFERENCE_TO_VIDEO_TOOL_NAME,
             SCHEDULER_CREATE_TOOL_NAME, SCHEDULER_DELETE_TOOL_NAME,
             SEND_SUBAGENT_MESSAGE_TOOL_NAME,
@@ -2784,9 +2784,9 @@ mod tests {
                     behavior_version: None,
                     kind: None,
                 },
-                ToolConfig::for_tool::<grok_build::GrepTool>(),
-                ToolConfig::for_tool::<grok_build::KillTaskTool>(),
-                ToolConfig::for_tool::<grok_build::TaskOutputTool>(),
+                ToolConfig::for_tool::<ezer_build::GrepTool>(),
+                ToolConfig::for_tool::<ezer_build::KillTaskTool>(),
+                ToolConfig::for_tool::<ezer_build::TaskOutputTool>(),
                 ToolConfig {
                     id: "Ezer:list_dir".to_string(),
                     params: None,
@@ -3227,7 +3227,7 @@ mod tests {
         let tmp = TempDir::new().unwrap();
         let builder = ToolRegistryBuilder::new();
         let config = ToolServerConfig {
-            tools: vec![ToolConfig::for_tool::<grok_build::ReadFileTool>()],
+            tools: vec![ToolConfig::for_tool::<ezer_build::ReadFileTool>()],
             behavior_preset: None,
         };
         let ctx = test_session_context(&tmp);
@@ -3259,7 +3259,7 @@ mod tests {
         let tmp = TempDir::new().unwrap();
         let builder = ToolRegistryBuilder::new();
         let config = ToolServerConfig {
-            tools: vec![ToolConfig::for_tool::<grok_build::ReadFileTool>()],
+            tools: vec![ToolConfig::for_tool::<ezer_build::ReadFileTool>()],
             behavior_preset: None,
         };
         let ctx = test_session_context(&tmp);
@@ -3355,7 +3355,7 @@ mod tests {
         let tmp = TempDir::new().unwrap();
         let builder = ToolRegistryBuilder::new();
         let config = ToolServerConfig {
-            tools: vec![ToolConfig::for_tool::<grok_build::ReadFileTool>()],
+            tools: vec![ToolConfig::for_tool::<ezer_build::ReadFileTool>()],
             behavior_preset: None,
         };
         let ctx = test_session_context(&tmp);
@@ -3384,7 +3384,7 @@ mod tests {
             .finalize(
                 ToolServerConfig {
                     tools: vec![
-                        ToolConfig::for_tool::<grok_build::TodoWriteTool>(),
+                        ToolConfig::for_tool::<ezer_build::TodoWriteTool>(),
                         ToolConfig::for_tool::<opencode::OpenCodeWriteTool>(),
                     ],
                     behavior_preset: None,
@@ -3500,8 +3500,8 @@ mod tests {
         let builder = ToolRegistryBuilder::new();
         let config = ToolServerConfig {
             tools: vec![
-                ToolConfig::for_tool::<grok_build::ReadFileTool>(),
-                ToolConfig::for_tool::<grok_build::GrepTool>(),
+                ToolConfig::for_tool::<ezer_build::ReadFileTool>(),
+                ToolConfig::for_tool::<ezer_build::GrepTool>(),
             ],
             behavior_preset: None,
         };
@@ -4444,8 +4444,8 @@ mod tests {
         let builder = ToolRegistryBuilder::new();
         let config = ToolServerConfig {
             tools: vec![
-                ToolConfig::for_tool::<grok_build::EnterPlanModeTool>(),
-                ToolConfig::for_tool::<grok_build::ExitPlanModeTool>(),
+                ToolConfig::for_tool::<ezer_build::EnterPlanModeTool>(),
+                ToolConfig::for_tool::<ezer_build::ExitPlanModeTool>(),
             ],
             behavior_preset: None,
         };
@@ -4495,9 +4495,9 @@ mod tests {
                     behavior_version: None,
                     kind: None,
                 },
-                ToolConfig::for_tool::<grok_build_hashline::HashlineEditTool>(),
-                ToolConfig::for_tool::<grok_build_hashline::HashlineGrepTool>(),
-                ToolConfig::for_tool::<grok_build::ListDirTool>(),
+                ToolConfig::for_tool::<ezer_build_hashline::HashlineEditTool>(),
+                ToolConfig::for_tool::<ezer_build_hashline::HashlineGrepTool>(),
+                ToolConfig::for_tool::<ezer_build::ListDirTool>(),
             ],
             behavior_preset: None,
         };
@@ -4535,18 +4535,18 @@ mod tests {
             kind: None,
         }
     }
-    async fn grok_build_bridge(tmp: &TempDir) -> crate::bridge::ToolBridge {
+    async fn ezer_build_bridge(tmp: &TempDir) -> crate::bridge::ToolBridge {
         let builder = ToolRegistryBuilder::new();
         let config = ToolServerConfig {
             tools: vec![
-                ToolConfig::for_tool::<grok_build::ListDirTool>(),
-                ToolConfig::for_tool::<grok_build::ReadFileTool>(),
-                ToolConfig::for_tool::<grok_build::SearchReplaceTool>(),
+                ToolConfig::for_tool::<ezer_build::ListDirTool>(),
+                ToolConfig::for_tool::<ezer_build::ReadFileTool>(),
+                ToolConfig::for_tool::<ezer_build::SearchReplaceTool>(),
                 bash_config_with_background(),
-                ToolConfig::for_tool::<grok_build::TaskOutputTool>(),
-                ToolConfig::for_tool::<grok_build::KillTaskTool>(),
-                ToolConfig::for_tool::<grok_build::GrepTool>(),
-                ToolConfig::for_tool::<grok_build::TodoWriteTool>(),
+                ToolConfig::for_tool::<ezer_build::TaskOutputTool>(),
+                ToolConfig::for_tool::<ezer_build::KillTaskTool>(),
+                ToolConfig::for_tool::<ezer_build::GrepTool>(),
+                ToolConfig::for_tool::<ezer_build::TodoWriteTool>(),
             ],
             behavior_preset: None,
         };
@@ -4559,7 +4559,7 @@ mod tests {
     async fn hub_dispatch_list_dir() {
         let tmp = TempDir::new().unwrap();
         std::fs::write(tmp.path().join("hello.txt"), "world").unwrap();
-        let bridge = grok_build_bridge(&tmp).await;
+        let bridge = ezer_build_bridge(&tmp).await;
         let result = bridge
             .call(
                 "list_dir",
@@ -4583,7 +4583,7 @@ mod tests {
         std::fs::create_dir_all(&test_dir).unwrap();
         std::fs::write(test_dir.join("parity.txt"), "test").unwrap();
         let args = serde_json::json!({ "target_directory": test_dir.to_str().unwrap() });
-        let hub_bridge = grok_build_bridge(&tmp).await;
+        let hub_bridge = ezer_build_bridge(&tmp).await;
         let hub_result = hub_bridge
             .call("list_dir", args.clone(), "hub-call")
             .await
@@ -4596,7 +4596,7 @@ mod tests {
             serde_json::json!({ "target_directory": legacy_test_dir.to_str().unwrap() });
         let builder = ToolRegistryBuilder::new();
         let config = ToolServerConfig {
-            tools: vec![ToolConfig::for_tool::<grok_build::ListDirTool>()],
+            tools: vec![ToolConfig::for_tool::<ezer_build::ListDirTool>()],
             behavior_preset: None,
         };
         let legacy_toolset = Arc::new(
@@ -4623,7 +4623,7 @@ mod tests {
         let tmp = TempDir::new().unwrap();
         let file = tmp.path().join("editable.txt");
         std::fs::write(&file, "hello world").unwrap();
-        let bridge = grok_build_bridge(&tmp).await;
+        let bridge = ezer_build_bridge(&tmp).await;
         bridge
             .call(
                 "read_file",
@@ -4656,7 +4656,7 @@ mod tests {
     #[tokio::test]
     async fn hub_dispatch_bash() {
         let tmp = TempDir::new().unwrap();
-        let bridge = grok_build_bridge(&tmp).await;
+        let bridge = ezer_build_bridge(&tmp).await;
         let result = bridge
             .call(
                 "run_terminal_cmd",
@@ -4678,7 +4678,7 @@ mod tests {
     #[tokio::test]
     async fn hub_dispatch_invalid_args() {
         let tmp = TempDir::new().unwrap();
-        let bridge = grok_build_bridge(&tmp).await;
+        let bridge = ezer_build_bridge(&tmp).await;
         let result = bridge.call("grep", serde_json::json!({}), "bad-call").await;
         assert!(
             result.is_err(),
@@ -4693,7 +4693,7 @@ mod tests {
         let tmp = TempDir::new().unwrap();
         let builder = ToolRegistryBuilder::new();
         let config = ToolServerConfig {
-            tools: vec![ToolConfig::for_tool::<grok_build::ListDirTool>()],
+            tools: vec![ToolConfig::for_tool::<ezer_build::ListDirTool>()],
             behavior_preset: None,
         };
         let toolset = builder
@@ -4724,8 +4724,8 @@ mod tests {
         let builder = ToolRegistryBuilder::new();
         let config = ToolServerConfig {
             tools: vec![
-                ToolConfig::for_tool::<grok_build::ListDirTool>(),
-                ToolConfig::for_tool::<grok_build::ReadFileTool>(),
+                ToolConfig::for_tool::<ezer_build::ListDirTool>(),
+                ToolConfig::for_tool::<ezer_build::ReadFileTool>(),
             ],
             behavior_preset: None,
         };
@@ -4788,7 +4788,7 @@ mod tests {
     /// $schema and per-property descriptions are retained.
     #[test]
     fn generate_schema_strips_root_title_and_description() {
-        let schema = generate_schema::<crate::implementations::grok_build::bash::BashToolInput>();
+        let schema = generate_schema::<crate::implementations::ezer_build::bash::BashToolInput>();
         assert!(
             schema.get("title").is_none(),
             "root title (struct name) must be stripped: {schema}"

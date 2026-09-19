@@ -8,7 +8,7 @@
 use super::support::*;
 use super::*;
 use agent_client_protocol as acp;
-use ezer_tools::implementations::grok_build::image_gen::ImageGenTool;
+use ezer_tools::implementations::ezer_build::image_gen::ImageGenTool;
 use ezer_tools::media_gen_limits::DEFAULT_MAX_PARALLEL_IMAGE_GEN;
 use ezer_tools::registry::types::ToolConfig;
 

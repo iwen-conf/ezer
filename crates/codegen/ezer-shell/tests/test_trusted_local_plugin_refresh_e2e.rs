@@ -2,7 +2,7 @@
 //! 1. Install a local plugin (full copy into `installed-plugins/`).
 //! 2. Add a new agent only on the **live** source tree.
 //! 3. Start a headless session: startup must re-copy trusted and user-home local installs.
-//! 4. After exit, check the session JSON under `$GROK_HOME/sessions/` parses.
+//! 4. After exit, check the session JSON under `$EZER_HOME/sessions/` parses.
 //!
 //! Requires a built `ezer` binary (`EZER_BINARY` or cargo-built pager) for the ignored headless test.
 //!

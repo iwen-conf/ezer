@@ -342,7 +342,7 @@ async fn compact_reseed_skips_turn_end_drain_and_round_count() {
                 tracker.snapshot_mut().expect("goal").rounds_since_verify = 4;
             }
             actor.pending_classifier_completions.lock().push_back(
-                ezer_tools::implementations::grok_build::update_goal::UpdateGoalInput {
+                ezer_tools::implementations::ezer_build::update_goal::UpdateGoalInput {
                     completed: None,
                     message: Some("progress".into()),
                     blocked_reason: None,

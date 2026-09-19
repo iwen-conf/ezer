@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use ezer_tools::implementations::grok_build::send_subagent_message::SendSubagentMessageOutput;
+use ezer_tools::implementations::ezer_build::send_subagent_message::SendSubagentMessageOutput;
 use ezer_tools::tool_taxonomy::{CanonicalToolMeta, TOOL_META_KEY, ToolIdentity};
 use ezer_tools::types::output::ToolOutput;
 use ezer_tools::types::tool::{ToolKind, ToolNamespace};
@@ -306,7 +306,7 @@ fn wire_id_is_trimmed_and_a_blank_or_missing_id_still_renders() {
 #[test]
 fn wire_input_is_preserved_without_admission_revalidation() {
     let oversize = "x".repeat(
-        ezer_tools::implementations::grok_build::task::types::MAX_ACTIVE_AGENT_MESSAGE_BYTES
+        ezer_tools::implementations::ezer_build::task::types::MAX_ACTIVE_AGENT_MESSAGE_BYTES
             + 1,
     );
     for (subagent_id, text) in [("null", "hello"), ("sub-123", ""), ("sub-123", &oversize)] {
@@ -351,7 +351,7 @@ fn typed_outcomes_map_exhaustively_to_delivery_presentations() {
         ),
         (
             Output::QuotaExceeded {
-                kind: ezer_tools::implementations::grok_build::task::types::ActiveAgentMessageQuotaKind::SenderTargetInFlight,
+                kind: ezer_tools::implementations::ezer_build::task::types::ActiveAgentMessageQuotaKind::SenderTargetInFlight,
                 limit: 4,
             },
             "Message rejected \u{b7} subagent sub-123",
@@ -619,7 +619,7 @@ fn pager_routes_every_terminal_category_to_the_dedicated_block() {
         Output::NotActiveOrFinalizing,
         Output::Saturated { max_in_flight: 8 },
         Output::QuotaExceeded {
-            kind: ezer_tools::implementations::grok_build::task::types::ActiveAgentMessageQuotaKind::AttemptOutbound,
+            kind: ezer_tools::implementations::ezer_build::task::types::ActiveAgentMessageQuotaKind::AttemptOutbound,
             limit: 32,
         },
         Output::Unsupported,

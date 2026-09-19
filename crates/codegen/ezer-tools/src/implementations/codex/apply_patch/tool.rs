@@ -779,10 +779,10 @@ mod tests {
     ) -> (
         Resources,
         Arc<
-            crate::implementations::grok_build_hashline::memory_v2_test_support::FakeMemoryV2Access,
+            crate::implementations::ezer_build_hashline::memory_v2_test_support::FakeMemoryV2Access,
         >,
     ) {
-        use crate::implementations::grok_build_hashline::memory_v2_test_support::FakeMemoryV2Access;
+        use crate::implementations::ezer_build_hashline::memory_v2_test_support::FakeMemoryV2Access;
         let access = Arc::new(FakeMemoryV2Access::new(&cwd.join("memory")));
         let mut resources = test_resources(cwd);
         resources.insert(crate::types::memory_v2::MemoryV2AccessResource(

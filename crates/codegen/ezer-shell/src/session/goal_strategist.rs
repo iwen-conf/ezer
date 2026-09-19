@@ -18,8 +18,8 @@ use crate::session::goal_role_tools::RoleToolNames;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use ezer_session_events::EventWriter;
-use ezer_tools::implementations::grok_build::task::backend::ChannelBackend;
-use ezer_tools::implementations::grok_build::task::types::{
+use ezer_tools::implementations::ezer_build::task::backend::ChannelBackend;
+use ezer_tools::implementations::ezer_build::task::types::{
     SubagentOwner, SubagentRequest, SubagentRuntimeOverrides,
 };
 
@@ -87,10 +87,10 @@ pub(crate) fn strategist_should_fire(consecutive: u32, last_fired: u32, every: u
 
 pub(crate) struct ChannelSpawner {
     pub(crate) event_tx: tokio::sync::mpsc::UnboundedSender<
-        ezer_tools::implementations::grok_build::task::types::SubagentEvent,
+        ezer_tools::implementations::ezer_build::task::types::SubagentEvent,
     >,
     pub(crate) foreground_wait:
-        Option<ezer_tools::implementations::grok_build::task::types::SubagentForegroundWait>,
+        Option<ezer_tools::implementations::ezer_build::task::types::SubagentForegroundWait>,
     pub(crate) parent_session_id: String,
     pub(crate) parent_prompt_id: Option<String>,
     pub(crate) cwd: Option<String>,
@@ -536,7 +536,7 @@ mod tests {
 
     #[tokio::test]
     async fn channel_spawner_request_is_harness_internal() {
-        use ezer_tools::implementations::grok_build::task::types::{
+        use ezer_tools::implementations::ezer_build::task::types::{
             SubagentEvent, SubagentResult,
         };
 
@@ -582,7 +582,7 @@ mod tests {
     /// 3-role parity: an explicit strategist pair threads `agent_type` as the request's `harness_agent_type`, not the subagent_type.
     #[tokio::test]
     async fn channel_spawner_threads_harness_override_to_request() {
-        use ezer_tools::implementations::grok_build::task::types::{
+        use ezer_tools::implementations::ezer_build::task::types::{
             SubagentEvent, SubagentResult,
         };
         let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
@@ -1178,7 +1178,7 @@ mod tests {
     /// An explicit named toolset renders the tool names, and the explicit `from_summary` path leaves no tool placeholder unresolved.
     #[test]
     fn strategist_template_renders_per_agent_type_names() {
-        use ezer_tools::implementations::grok_build::task::types::SubagentTypeSummary;
+        use ezer_tools::implementations::ezer_build::task::types::SubagentTypeSummary;
         let mut tool_names = std::collections::HashMap::new();
         tool_names.insert(
             ezer_tools::types::tool::ToolKind::Read,

@@ -15,8 +15,8 @@ use crate::session::goal_role_tools::RoleToolNames;
 use std::path::Path;
 use std::sync::Arc;
 use ezer_session_events::EventWriter;
-use ezer_tools::implementations::grok_build::task::backend::ChannelBackend;
-use ezer_tools::implementations::grok_build::task::types::{
+use ezer_tools::implementations::ezer_build::task::backend::ChannelBackend;
+use ezer_tools::implementations::ezer_build::task::types::{
     SubagentOwner, SubagentRequest, SubagentRuntimeOverrides,
 };
 use xai_tool_types::SubagentCapabilityMode;
@@ -74,10 +74,10 @@ pub(crate) trait GoalSummarizerSpawner: Send + Sync {
 
 pub(crate) struct ChannelSpawner {
     pub(crate) event_tx: tokio::sync::mpsc::UnboundedSender<
-        ezer_tools::implementations::grok_build::task::types::SubagentEvent,
+        ezer_tools::implementations::ezer_build::task::types::SubagentEvent,
     >,
     pub(crate) foreground_wait:
-        Option<ezer_tools::implementations::grok_build::task::types::SubagentForegroundWait>,
+        Option<ezer_tools::implementations::ezer_build::task::types::SubagentForegroundWait>,
     pub(crate) parent_session_id: String,
     pub(crate) parent_prompt_id: Option<String>,
     pub(crate) cwd: Option<String>,
@@ -604,7 +604,7 @@ mod tests {
 
     #[tokio::test]
     async fn channel_spawner_request_is_harness_internal_and_read_only() {
-        use ezer_tools::implementations::grok_build::task::types::{
+        use ezer_tools::implementations::ezer_build::task::types::{
             SubagentEvent, SubagentResult,
         };
         use xai_tool_types::SubagentCapabilityMode;

@@ -8,7 +8,7 @@ use crate::permission::types::{
     AccessKind, Decision, PatternMode, PermissionConfig, PermissionRule, RuleAction, ToolFilter,
 };
 use ezer_paths::normalize_lexically;
-use ezer_tools::implementations::grok_build::web_fetch::domain::normalize_domain;
+use ezer_tools::implementations::ezer_build::web_fetch::domain::normalize_domain;
 
 /// A security-gate escalation with `Ask` provenance.
 /// The bash-command and shell-file gates only escalate (rule `Allow` is dropped), so these three arms cover every gate outcome.

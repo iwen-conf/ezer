@@ -3660,7 +3660,7 @@ fn submit_question_answers_cancel_clears_local_modal_and_restores_prompt() {
     // (b) restore the stashed prompt text and cursor
     // (c) return InputOutcome::Changed (no Action) and silently drop the directive carried by LocalQuestionKind::Fork.
     use crate::views::question_view::{LocalQuestionKind, QuestionViewState};
-    use ezer_tools::implementations::grok_build::ask_user_question::{
+    use ezer_tools::implementations::ezer_build::ask_user_question::{
         Question, QuestionOption,
     };
 
@@ -5522,7 +5522,7 @@ fn suggestion_debounce_routes_by_agent_id_not_active_view() {
 fn casual_commenting_keeps_its_parked_draft_when_a_card_closes() {
     use crate::views::question_view::QuestionViewState;
     use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
-    use ezer_tools::implementations::grok_build::ask_user_question::Question;
+    use ezer_tools::implementations::ezer_build::ask_user_question::Question;
 
     let id = AgentId(0);
     let mut app = test_app_with_agent();

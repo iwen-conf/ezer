@@ -5,8 +5,8 @@ use std::time::Duration;
 
 use tokio::sync::{mpsc, oneshot};
 use tokio_util::sync::CancellationToken;
-use ezer_tools::implementations::grok_build::task::backend::{ChannelBackend, SubagentBackend};
-use ezer_tools::implementations::grok_build::task::types::{
+use ezer_tools::implementations::ezer_build::task::backend::{ChannelBackend, SubagentBackend};
+use ezer_tools::implementations::ezer_build::task::types::{
     ModelOverrideProvenance, SubagentCancelRequest, SubagentCancelTarget, SubagentEvent,
     SubagentOwner, SubagentRequest, SubagentRuntimeOverrides,
 };
@@ -79,7 +79,7 @@ pub(crate) struct WorkflowHostParams {
     pub store: super::store::WorkflowRunStore,
     pub notify: WorkflowNotifySender,
     pub subagent_event_tx: mpsc::UnboundedSender<
-        ezer_tools::implementations::grok_build::task::types::SubagentEvent,
+        ezer_tools::implementations::ezer_build::task::types::SubagentEvent,
     >,
     pub parent_session_id: String,
     pub allow_fork_context: bool,
@@ -983,7 +983,7 @@ mod tests {
         scratch_suffix: &str,
         tracker: Arc<parking_lot::Mutex<WorkflowTracker>>,
         subagent_event_tx: mpsc::UnboundedSender<
-            ezer_tools::implementations::grok_build::task::types::SubagentEvent,
+            ezer_tools::implementations::ezer_build::task::types::SubagentEvent,
         >,
     ) -> (WorkflowHostParams, mpsc::UnboundedReceiver<PersistenceMsg>) {
         let (persist_tx, persist_rx) = mpsc::unbounded_channel::<PersistenceMsg>();
@@ -1173,10 +1173,10 @@ mod tests {
                 .unwrap();
             reply_rx
         };
-        let succeed = |spawn: ezer_tools::implementations::grok_build::task::types::SubagentSpawnRequest| {
+        let succeed = |spawn: ezer_tools::implementations::ezer_build::task::types::SubagentSpawnRequest| {
             spawn
                 .respond_with(|request| {
-                    ezer_tools::implementations::grok_build::task::types::SubagentResult {
+                    ezer_tools::implementations::ezer_build::task::types::SubagentResult {
                         success: true,
                         output: Arc::from("done"),
                         subagent_id: request.id.clone(),

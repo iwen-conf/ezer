@@ -225,7 +225,7 @@ impl WorktreeDb {
             .with_context(|| format!("failed to set journal mode {}", mode.as_ref()))
     }
 
-    /// Open `~/.ezer/worktrees.db` via `resolve_grok_home` (`$GROK_HOME`, else
+    /// Open `~/.ezer/worktrees.db` via `resolve_grok_home` (`$EZER_HOME`, else
     /// `<home>/.ezer`). Resolved fresh each call for test overrides. Each call
     /// opens its own connection — hot paths should cache the instance.
     pub fn open_default() -> Result<Self> {
@@ -445,10 +445,10 @@ pub fn now_epoch_secs() -> i64 {
     crate::time::epoch_secs()
 }
 
-/// Resolve the ezer home: `$GROK_HOME`, else `<home>/.ezer`.
+/// Resolve the ezer home: `$EZER_HOME`, else `<home>/.ezer`.
 pub fn resolve_grok_home() -> Result<PathBuf> {
     xai_dirs::resolve_grok_home()
-        .context("neither $GROK_HOME nor a home directory could be resolved")
+        .context("neither $EZER_HOME nor a home directory could be resolved")
 }
 
 /// Serializes tests that mutate the process-global `GROK_HOME` env var so they

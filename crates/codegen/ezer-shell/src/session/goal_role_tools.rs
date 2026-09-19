@@ -95,7 +95,7 @@ impl RoleToolNames {
     /// Explicit-pair path: names come from the role's `describe_subagent_type` summary (the `name_override`-aware client name per kind).
     /// `{TOOLSET_TOOLS}` enumerates the toolset.
     pub(crate) fn from_summary(
-        summary: &ezer_tools::implementations::grok_build::task::types::SubagentTypeSummary,
+        summary: &ezer_tools::implementations::ezer_build::task::types::SubagentTypeSummary,
     ) -> Self {
         let get = |kind: ToolKind| summary.tool_names.get(&kind).cloned();
         Self::from_parts(
@@ -216,7 +216,7 @@ fn enumerate_toolset_tools(tool_names: &std::collections::HashMap<ToolKind, Stri
 #[cfg(test)]
 pub(crate) mod tests {
     use super::*;
-    use ezer_tools::implementations::grok_build::task::types::SubagentTypeSummary;
+    use ezer_tools::implementations::ezer_build::task::types::SubagentTypeSummary;
 
     /// Build a `SubagentTypeSummary` from `(ToolKind, name)` pairs for the per-agent_type rendering tests.
     /// Shared with the planner / classifier / strategist render tests.
@@ -260,7 +260,7 @@ pub(crate) mod tests {
     }
 
     #[test]
-    fn from_summary_uses_grok_build_names() {
+    fn from_summary_uses_ezer_build_names() {
         // A grok-build toolset: client names match the literal defaults.
         let tn = RoleToolNames::from_summary(&summary_with(&[
             (ToolKind::Read, "read_file"),
@@ -332,7 +332,7 @@ pub(crate) mod tests {
     }
 
     #[test]
-    fn from_summary_write_falls_back_to_edit_on_default_grok_build_host() {
+    fn from_summary_write_falls_back_to_edit_on_default_ezer_build_host() {
         // Default grok-build host: the pre-spawn describe probe exposes only `Edit` (`search_replace`); `Write` is injection-only and absent
         // The planner gate accepts this toolset, so `{WRITE_TOOL}` must name the real mutator (`search_replace`), not the literal `write` default
         let tn = RoleToolNames::from_summary(&summary_with(&[
@@ -438,7 +438,7 @@ pub(crate) mod tests {
     }
 
     #[test]
-    fn parent_and_summary_renders_agree_on_default_grok_build_mutator() {
+    fn parent_and_summary_renders_agree_on_default_ezer_build_mutator() {
         // The explicit-pair `primary` render comes from `from_summary`; the inherit/fail-open `fallback` render comes from `from_parent`
         // Both must name the SAME mutator on the default grok-build host (Edit-only toolset)
         // So a fail-open retry can never disagree with the first attempt's `{WRITE_TOOL}`

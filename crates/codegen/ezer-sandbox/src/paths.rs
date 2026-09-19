@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 
 // ── Grok state directory ────────────────────────────────────────────────────
 
-/// ezer state directory (`$GROK_HOME` or `~/.ezer`).
+/// ezer state directory (`$EZER_HOME` or `~/.ezer`).
 pub(crate) fn grok_home() -> PathBuf {
     ezer_config::grok_home()
 }

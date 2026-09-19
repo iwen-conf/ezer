@@ -39,7 +39,7 @@ fn stop_entry_from_task(task: &ezer_tools::types::TaskSnapshot) -> StopBackgroun
 }
 
 fn stop_entry_from_subagent(
-    summary: &ezer_tools::implementations::grok_build::task::types::ActiveSubagentSummary,
+    summary: &ezer_tools::implementations::ezer_build::task::types::ActiveSubagentSummary,
 ) -> StopBackgroundTask {
     StopBackgroundTask {
         id: summary.subagent_id.clone(),
@@ -52,12 +52,12 @@ fn stop_entry_from_subagent(
 }
 
 fn stop_cron_from_scheduled(
-    task: &ezer_tools::implementations::grok_build::scheduler::types::ScheduledTask,
+    task: &ezer_tools::implementations::ezer_build::scheduler::types::ScheduledTask,
 ) -> StopSessionCron {
     StopSessionCron {
         id: task.id.clone(),
         schedule:
-            ezer_tools::implementations::grok_build::scheduler::interval::interval_to_human(
+            ezer_tools::implementations::ezer_build::scheduler::interval::interval_to_human(
                 task.interval_secs,
             ),
         recurring: task.recurring,
@@ -147,8 +147,8 @@ impl SessionActor {
 
     pub(crate) async fn list_active_subagents(
         &self,
-    ) -> Vec<ezer_tools::implementations::grok_build::task::types::ActiveSubagentSummary> {
-        use ezer_tools::implementations::grok_build::task::types::{
+    ) -> Vec<ezer_tools::implementations::ezer_build::task::types::ActiveSubagentSummary> {
+        use ezer_tools::implementations::ezer_build::task::types::{
             SubagentEvent, SubagentListActiveRequest,
         };
         let Some(ref event_tx) = self.tool_context.subagent_event_tx else {
@@ -437,7 +437,7 @@ mod stop_gate_snapshot_tests {
     #[test]
     fn subagent_summary_maps_to_stop_entry() {
         let summary =
-            ezer_tools::implementations::grok_build::task::types::ActiveSubagentSummary {
+            ezer_tools::implementations::ezer_build::task::types::ActiveSubagentSummary {
                 subagent_id: "sub-1".into(),
                 subagent_type: "explore".into(),
                 description: "d".repeat(2000),
@@ -474,7 +474,7 @@ mod stop_gate_snapshot_tests {
     #[test]
     fn scheduled_task_maps_to_stop_cron() {
         let task =
-            ezer_tools::implementations::grok_build::scheduler::types::ScheduledTask::new(
+            ezer_tools::implementations::ezer_build::scheduler::types::ScheduledTask::new(
                 300,
                 "check the build".into(),
                 true,

@@ -279,7 +279,7 @@ pub fn hook_origin(spec: &HookSpec) -> HookOrigin {
     match spec.layer {
         HookProvenance::SystemManaged => HookOrigin::SystemManaged,
         HookProvenance::Managed => HookOrigin::Managed,
-        // Both requirements tiers display as the requirements origin; only the policy exemption distinguishes root-owned from `$GROK_HOME`
+        // Both requirements tiers display as the requirements origin; only the policy exemption distinguishes root-owned from `$EZER_HOME`
         HookProvenance::Requirements | HookProvenance::UserRequirements => HookOrigin::Requirements,
         HookProvenance::User => HookOrigin::UserConfig,
         HookProvenance::Plugin => HookOrigin::Plugin,

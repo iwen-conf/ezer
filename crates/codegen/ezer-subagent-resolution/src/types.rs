@@ -71,11 +71,11 @@ pub struct ResumeSourceData {
     pub child_session_id: String,
 }
 
-impl From<ezer_tools::implementations::grok_build::task::types::SubagentResumeSource>
+impl From<ezer_tools::implementations::ezer_build::task::types::SubagentResumeSource>
     for ResumeSourceData
 {
     fn from(
-        source: ezer_tools::implementations::grok_build::task::types::SubagentResumeSource,
+        source: ezer_tools::implementations::ezer_build::task::types::SubagentResumeSource,
     ) -> Self {
         ResumeSourceData {
             subagent_id: source.subagent_id,

@@ -1,8 +1,8 @@
 use tokio::sync::mpsc;
-use ezer_tools::implementations::grok_build::task::coordinator::{
+use ezer_tools::implementations::ezer_build::task::coordinator::{
     ActiveMessageAdmission, ChildControl, LocalBoxFuture, SendBoxFuture, SubagentProgress,
 };
-use ezer_tools::implementations::grok_build::task::types::ActiveAgentMessageDelivery;
+use ezer_tools::implementations::ezer_build::task::types::ActiveAgentMessageDelivery;
 use xai_message_delivery_core::DeliveryEnvelope;
 
 use super::prompt_turn_receipt::{PromptTurnReceipt, cancel_shell_child_turn};
@@ -15,7 +15,7 @@ pub(crate) struct ShellChildRuntime {
     pub(crate) active_message_target_session_id: String,
     pub(crate) active_message_target_agent_id: xai_message_delivery_core::AgentId,
     pub(crate) active_message_target_generation:
-        ezer_tools::implementations::grok_build::task::root_control::AgentMessageGeneration,
+        ezer_tools::implementations::ezer_build::task::root_control::AgentMessageGeneration,
     pub(crate) child_signals: crate::session::signals::SessionSignalsHandle,
     /// Held by the worker until promotion succeeds.
     /// `None` means the caller still owns the join handle, so a cancel during promotion can wait for the actor to exit.

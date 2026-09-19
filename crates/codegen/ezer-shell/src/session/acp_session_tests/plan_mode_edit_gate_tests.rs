@@ -1,8 +1,8 @@
 use super::support::*;
 use super::*;
 async fn build_gate_actor() -> SessionActor {
-    use ezer_tools::implementations::grok_build::enter_plan_mode::EnterPlanModeTool;
-    use ezer_tools::implementations::grok_build::exit_plan_mode::ExitPlanModeTool;
+    use ezer_tools::implementations::ezer_build::enter_plan_mode::EnterPlanModeTool;
+    use ezer_tools::implementations::ezer_build::exit_plan_mode::ExitPlanModeTool;
     use ezer_tools::registry::types::ToolConfig;
     let (gateway_tx, mut gateway_rx) =
         tokio::sync::mpsc::unbounded_channel::<xai_acp_lib::AcpClientMessage>();

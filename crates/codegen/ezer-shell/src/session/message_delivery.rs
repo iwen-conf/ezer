@@ -1,8 +1,8 @@
 use std::sync::Arc;
 
 use tokio::sync::{mpsc, oneshot};
-use ezer_tools::implementations::grok_build::task::coordinator::ActiveMessageAdmission;
-use ezer_tools::implementations::grok_build::task::types::ActiveAgentMessageDelivery;
+use ezer_tools::implementations::ezer_build::task::coordinator::ActiveMessageAdmission;
+use ezer_tools::implementations::ezer_build::task::types::ActiveAgentMessageDelivery;
 use xai_message_delivery_core::{
     AgentSource, DeliveryEnvelope, DeliveryIdentity, HumanSource, Operation, OperationSet,
     authorize_operation,
@@ -189,7 +189,7 @@ pub(crate) struct CoordinatorAgentDeliveryGrant {
     target_session_id: String,
     target_agent_id: xai_message_delivery_core::AgentId,
     target_generation:
-        ezer_tools::implementations::grok_build::task::root_control::AgentMessageGeneration,
+        ezer_tools::implementations::ezer_build::task::root_control::AgentMessageGeneration,
     delivery: ActiveAgentMessageDelivery,
 }
 
@@ -197,7 +197,7 @@ impl CoordinatorAgentDeliveryGrant {
     pub(crate) fn new(
         target_session_id: String,
         target_agent_id: xai_message_delivery_core::AgentId,
-        target_generation: ezer_tools::implementations::grok_build::task::root_control::AgentMessageGeneration,
+        target_generation: ezer_tools::implementations::ezer_build::task::root_control::AgentMessageGeneration,
         delivery: ActiveAgentMessageDelivery,
     ) -> Self {
         CoordinatorAgentDeliveryGrant {

@@ -82,7 +82,7 @@ struct AuthEntry {
 
 pub fn default_auth_path() -> anyhow::Result<PathBuf> {
     let grok = ezer_config::user_grok_home()
-        .ok_or_else(|| anyhow::anyhow!("no user ezer home (set $GROK_HOME or $HOME)"))?;
+        .ok_or_else(|| anyhow::anyhow!("no user ezer home (set $EZER_HOME or $HOME)"))?;
     Ok(grok.join("auth.json"))
 }
 

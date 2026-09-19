@@ -5,7 +5,7 @@
 use agent_client_protocol as acp;
 use ezer_shell::agent::config::UiConfig;
 use ezer_shell::util::config::DISPLAY_REFRESH_DEFAULT_AUTO_CADENCE_ENABLED;
-use ezer_tools::implementations::grok_build::ask_user_question;
+use ezer_tools::implementations::ezer_build::ask_user_question;
 
 /// Stable identity for a setting. We deliberately do NOT use a `SettingId` enum: enum renames would ripple through
 /// call sites.

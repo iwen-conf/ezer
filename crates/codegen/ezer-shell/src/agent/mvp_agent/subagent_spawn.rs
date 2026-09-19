@@ -16,7 +16,7 @@ impl MvpAgent {
             return;
         };
         let agent_ref = LocalRef::new(self);
-        let limits = ezer_tools::implementations::grok_build::task::admission::SubagentLimits {
+        let limits = ezer_tools::implementations::ezer_build::task::admission::SubagentLimits {
             max_concurrent: self.cfg.borrow().subagents_max_concurrent,
             behavior: self.cfg.borrow().subagents_limit_behavior,
         };
@@ -76,24 +76,24 @@ impl MvpAgent {
         parent_session_id: &str,
         agent_address: String,
         text: String,
-        operation: ezer_tools::implementations::grok_build::task::types::ActiveAgentMessageOperation,
-    ) -> ezer_tools::implementations::grok_build::task::types::ActiveAgentMessageOutcome {
-        use ezer_tools::implementations::grok_build::task::backend::SubagentBackend;
+        operation: ezer_tools::implementations::ezer_build::task::types::ActiveAgentMessageOperation,
+    ) -> ezer_tools::implementations::ezer_build::task::types::ActiveAgentMessageOutcome {
+        use ezer_tools::implementations::ezer_build::task::backend::SubagentBackend;
         if !self
             .cfg
             .borrow()
             .is_feature_enabled(crate::agent::config::Feature::ActiveAgentMessages)
         {
-            return ezer_tools::implementations::grok_build::task::types::ActiveAgentMessageOutcome::Unsupported;
+            return ezer_tools::implementations::ezer_build::task::types::ActiveAgentMessageOutcome::Unsupported;
         }
         if self
             .session_handle_waiting_for_load(&acp::SessionId::new(parent_session_id))
             .await
             .is_none()
         {
-            return ezer_tools::implementations::grok_build::task::types::ActiveAgentMessageOutcome::NotFoundOrNotOwned;
+            return ezer_tools::implementations::ezer_build::task::types::ActiveAgentMessageOutcome::NotFoundOrNotOwned;
         }
-        let request = match ezer_tools::implementations::grok_build::task::types::ActiveAgentMessageRequest::try_new_from_human(
+        let request = match ezer_tools::implementations::ezer_build::task::types::ActiveAgentMessageRequest::try_new_from_human(
             agent_address,
             text,
             operation,
@@ -101,7 +101,7 @@ impl MvpAgent {
             Ok(request) => request,
             Err(outcome) => return outcome,
         };
-        ezer_tools::implementations::grok_build::task::backend::ChannelBackend::for_coordinator_session(
+        ezer_tools::implementations::ezer_build::task::backend::ChannelBackend::for_coordinator_session(
                 self.subagent_event_tx.clone(),
                 parent_session_id,
             )

@@ -259,7 +259,7 @@ fn session_tracker(
 /// Primary bounds are the sandbox root (`/workspace`) and the user-global ezer home.
 const REPOS_MANIFEST_MAX_ANCESTOR_HOPS: usize = 16;
 /// Directories to probe for [`REPOS_MANIFEST_RELATIVE_PATH`], starting at `root_cwd` (the agent cwd after a single-repo rewrite) and walking up.
-/// Does not escape the sandbox workspace or load `~/.ezer/repos.json` / `$GROK_HOME/repos.json` (user-global, not a provisioned workspace).
+/// Does not escape the sandbox workspace or load `~/.ezer/repos.json` / `$EZER_HOME/repos.json` (user-global, not a provisioned workspace).
 fn repos_manifest_search_dirs(start: &std::path::Path) -> Vec<std::path::PathBuf> {
     let rel = ezer_workspace_types::rpc::repos::REPOS_MANIFEST_RELATIVE_PATH;
     let home = xai_dirs::home_dir();

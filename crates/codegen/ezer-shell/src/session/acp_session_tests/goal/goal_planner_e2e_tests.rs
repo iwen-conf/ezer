@@ -6,7 +6,7 @@ use super::*;
 use std::sync::Arc as StdArc;
 use std::sync::atomic::{AtomicUsize, Ordering as SeqOrd};
 use tempfile::TempDir;
-use ezer_tools::implementations::grok_build::task::types::{
+use ezer_tools::implementations::ezer_build::task::types::{
     SubagentCancelTarget, SubagentEvent, SubagentResult, SubagentSpawnRequest,
 };
 

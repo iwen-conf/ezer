@@ -2233,7 +2233,7 @@
         use crate::acp::meta::NotificationMeta;
         use crate::scrollback::block::RenderBlock;
         use crate::scrollback::blocks::tool::ToolCallBlock;
-        use ezer_tools::implementations::grok_build::send_subagent_message::{
+        use ezer_tools::implementations::ezer_build::send_subagent_message::{
             SEND_SUBAGENT_MESSAGE_TOOL_NAME, SendSubagentMessageOutput,
         };
         use ezer_tools::types::output::ToolOutput;

@@ -1,11 +1,11 @@
 use super::*;
 use tokio_util::sync::CancellationToken;
-use ezer_tools::implementations::grok_build::task::backend::{ChannelBackend, SubagentBackend};
-use ezer_tools::implementations::grok_build::task::coordinator::{
+use ezer_tools::implementations::ezer_build::task::backend::{ChannelBackend, SubagentBackend};
+use ezer_tools::implementations::ezer_build::task::coordinator::{
     ActiveMessageAdmission, ChildCompletion, ChildControl, ChildRunOutput, ChildRunRequest,
     ChildRunner, CoordinatorConfig, LocalBoxFuture, SendBoxFuture, StartedChild, SubagentProgress,
 };
-use ezer_tools::implementations::grok_build::task::types::{
+use ezer_tools::implementations::ezer_build::task::types::{
     ActiveAgentMessageDelivery, ActiveAgentMessageOperation, ActiveAgentMessageOutcome,
     ActiveAgentMessageRequest, SubagentDescribeOutcome, SubagentOwner, SubagentRequest,
     SubagentValidateTypeOutcome,
@@ -59,7 +59,7 @@ struct SnapshotProbeRunner {
 impl ChildRunner for SnapshotProbeRunner {
     type Control = SnapshotProbeControl;
     type RootControl =
-        ezer_tools::implementations::grok_build::task::root_control::NoRootControl;
+        ezer_tools::implementations::ezer_build::task::root_control::NoRootControl;
     type CompletionData = ();
     type RunFuture = LocalBoxFuture<ChildRunOutput<()>>;
     type ValidateFuture = LocalBoxFuture<SubagentValidateTypeOutcome>;
@@ -161,7 +161,7 @@ async fn send_active_message_freezes_parent_turn_before_first_poll() {
     let local = tokio::task::LocalSet::new();
     await_with_timeout(local.run_until(async {
         let (coordinator_sender, receiver) =
-            ezer_tools::implementations::grok_build::task::coordinator::SubagentCoordinator::<
+            ezer_tools::implementations::ezer_build::task::coordinator::SubagentCoordinator::<
                 SnapshotProbeRunner,
             >::channel();
         let backend = ChannelBackend::for_coordinator_session(coordinator_sender, "parent");
@@ -184,7 +184,7 @@ async fn send_active_message_freezes_parent_turn_before_first_poll() {
             ..Default::default()
         };
         let coordinator =
-            ezer_tools::implementations::grok_build::task::coordinator::SubagentCoordinator::from_channel(
+            ezer_tools::implementations::ezer_build::task::coordinator::SubagentCoordinator::from_channel(
                 receiver,
                 runner,
                 config,
@@ -240,7 +240,7 @@ async fn rejected_delivery(
     let local = tokio::task::LocalSet::new();
     await_with_timeout(local.run_until(async {
         let (coordinator_sender, receiver) =
-            ezer_tools::implementations::grok_build::task::coordinator::SubagentCoordinator::<
+            ezer_tools::implementations::ezer_build::task::coordinator::SubagentCoordinator::<
                 SnapshotProbeRunner,
             >::channel();
         let backend = ChannelBackend::for_coordinator_session(coordinator_sender, "parent");
@@ -256,7 +256,7 @@ async fn rejected_delivery(
             live_prompt_index: std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0)),
             started: started_tx,
         };
-        let coordinator = ezer_tools::implementations::grok_build::task::coordinator::SubagentCoordinator::from_channel(
+        let coordinator = ezer_tools::implementations::ezer_build::task::coordinator::SubagentCoordinator::from_channel(
             receiver,
             runner,
             CoordinatorConfig {

@@ -53,13 +53,13 @@ impl Default for ChangelogManager {
 
 impl ChangelogManager {
     pub fn new() -> Self {
-        // Prefer the live `$GROK_HOME` over the `grok_home()` OnceLock
+        // Prefer the live `$EZER_HOME` over the `grok_home()` OnceLock
         // A home injected by the PTY e2e harness must beat a path some earlier init cached in the same process
         Self::from_env_home()
     }
 
     /// Resolve cache paths from the live process environment (not the `grok_home()` OnceLock).
-    /// A seeded `$GROK_HOME` set on the pager process is always honoured even if some earlier init path cached a different home.
+    /// A seeded `$EZER_HOME` set on the pager process is always honoured even if some earlier init path cached a different home.
     fn from_env_home() -> Self {
         let home = std::env::var_os("GROK_HOME")
             .map(std::path::PathBuf::from)
@@ -103,7 +103,7 @@ impl ChangelogManager {
             entries = json_handle.join().ok().flatten();
         });
 
-        // If the CDN is unreachable (CI sandboxes, airplane mode), fall back to any on-disk seed under `$GROK_HOME`
+        // If the CDN is unreachable (CI sandboxes, airplane mode), fall back to any on-disk seed under `$EZER_HOME`
         // This applies even when offline mode was not requested, keeping PTY/integration tests deterministic
         if markdown.is_none() {
             markdown = read_cache(&self.md_cache);
@@ -209,7 +209,7 @@ fn fetch_blocking(url: &str) -> anyhow::Result<String> {
 mod tests {
     use super::*;
 
-    /// Build a manager pointing at `home` directly, bypassing the global `$GROK_HOME` env so tests never race the parallel harness.
+    /// Build a manager pointing at `home` directly, bypassing the global `$EZER_HOME` env so tests never race the parallel harness.
     fn manager_for(home: &std::path::Path) -> ChangelogManager {
         ChangelogManager {
             md_cache: home.join("CHANGELOG.md"),

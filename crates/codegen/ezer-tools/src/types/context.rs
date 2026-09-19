@@ -1,4 +1,4 @@
-use crate::implementations::grok_build::read_file::MAX_LINES_READ;
+use crate::implementations::ezer_build::read_file::MAX_LINES_READ;
 use std::collections::HashMap;
 
 /// Client-configurable truncation settings. All fields are optional — `None` means "use the tool's built-in default".

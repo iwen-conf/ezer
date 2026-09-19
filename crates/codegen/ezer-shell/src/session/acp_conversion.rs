@@ -535,7 +535,7 @@ pub(crate) fn acp_tool_update(
             ))
         }
         ToolOutput::SendSubagentMessage(send) => {
-            use ezer_tools::implementations::grok_build::send_subagent_message::SendSubagentMessageDisposition;
+            use ezer_tools::implementations::ezer_build::send_subagent_message::SendSubagentMessageDisposition;
 
             let status = match send.disposition() {
                 SendSubagentMessageDisposition::Accepted
@@ -751,7 +751,7 @@ mod tests {
 
     #[test]
     fn test_acp_tool_update_send_subagent_message_outcomes_are_terminal() {
-        use ezer_tools::implementations::grok_build::send_subagent_message::SendSubagentMessageOutput::*;
+        use ezer_tools::implementations::ezer_build::send_subagent_message::SendSubagentMessageOutput::*;
 
         for (send, expected_status) in [
             (
@@ -765,7 +765,7 @@ mod tests {
             (Saturated { max_in_flight: 8 }, acp::ToolCallStatus::Failed),
             (
                 QuotaExceeded {
-                    kind: ezer_tools::implementations::grok_build::task::types::ActiveAgentMessageQuotaKind::AttemptOutbound,
+                    kind: ezer_tools::implementations::ezer_build::task::types::ActiveAgentMessageQuotaKind::AttemptOutbound,
                     limit: 32,
                 },
                 acp::ToolCallStatus::Failed,
@@ -824,7 +824,7 @@ mod tests {
         let output = ToolOutput::Todo(TodoWriteOutput::TodosUpdated(TodoWriteSuccess {
             summary_for_prompt: "tasks".to_string(),
             todos: vec![],
-            state: ezer_tools::implementations::grok_build::todo::TodoState::default(),
+            state: ezer_tools::implementations::ezer_build::todo::TodoState::default(),
         }));
         let update = acp_tool_update(&output, "call-1", None, None).unwrap();
         assert_eq!(update.fields.status, Some(acp::ToolCallStatus::Completed));
@@ -833,7 +833,7 @@ mod tests {
     #[test]
     fn test_turn_end_plan_cleanup_preserves_semantics_and_priority() {
         use crate::tools::todo::plan_entry_from_todo_item;
-        use ezer_tools::implementations::grok_build::todo::{
+        use ezer_tools::implementations::ezer_build::todo::{
             TodoItem, TodoPriority, TodoStatus,
         };
 
@@ -909,16 +909,16 @@ mod tests {
         let output = ToolOutput::Todo(TodoWriteOutput::TodosUpdated(TodoWriteSuccess {
             summary_for_prompt: "tasks".to_string(),
             todos: vec![
-                ezer_tools::implementations::grok_build::todo::TodoItem {
+                ezer_tools::implementations::ezer_build::todo::TodoItem {
                     content: "Task 1".to_string(),
                     priority:
-                        ezer_tools::implementations::grok_build::todo::TodoPriority::Medium,
+                        ezer_tools::implementations::ezer_build::todo::TodoPriority::Medium,
                     status:
-                        ezer_tools::implementations::grok_build::todo::TodoStatus::Completed,
+                        ezer_tools::implementations::ezer_build::todo::TodoStatus::Completed,
                     meta: None,
                 },
             ],
-            state: ezer_tools::implementations::grok_build::todo::TodoState::default(),
+            state: ezer_tools::implementations::ezer_build::todo::TodoState::default(),
         }));
         let plan = acp_plan_update(&output).unwrap();
         let [entry] = plan.entries.as_slice() else {

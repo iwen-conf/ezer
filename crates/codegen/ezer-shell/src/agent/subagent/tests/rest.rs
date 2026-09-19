@@ -5,7 +5,7 @@ use crate::session::storage::UnfinishedSubagent;
 use crate::test_support::lsp_runtime::{ctx_with_toggle, test_gateway};
 use crate::upload::trace::SubagentSpawnedRef;
 use ezer_sampling_types::SyntheticReason;
-use ezer_tools::implementations::grok_build::task::backend::ChannelBackend;
+use ezer_tools::implementations::ezer_build::task::backend::ChannelBackend;
 #[test]
 fn normalize_forked_context_strips_project_layout() {
     use ezer_sampling_types::conversation::ConversationItem;

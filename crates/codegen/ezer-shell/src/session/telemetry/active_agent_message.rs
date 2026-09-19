@@ -14,10 +14,10 @@ use ezer_telemetry::events::{
     ActiveAgentMessageSafePointTrigger as SafePointTrigger, ActiveAgentMessageSettled as Settled,
     ActiveAgentMessageSettlementDisposition as SettlementDisposition,
 };
-use ezer_tools::implementations::grok_build::send_subagent_message::{
+use ezer_tools::implementations::ezer_build::send_subagent_message::{
     SendSubagentMessageInput, SendSubagentMessageOutput,
 };
-use ezer_tools::implementations::grok_build::task::types::ActiveAgentMessageOperation;
+use ezer_tools::implementations::ezer_build::task::types::ActiveAgentMessageOperation;
 use ezer_tools::types::output::ToolOutput;
 
 #[derive(Debug, PartialEq, Eq)]
@@ -176,8 +176,8 @@ fn emit_immediate_events<S: ActiveAgentMessageEventSink + ?Sized>(
         SendSubagentMessageOutput::Saturated { .. } => (Outcome::Saturated, None),
         SendSubagentMessageOutput::QuotaExceeded { kind, limit } => {
             let kind = match kind {
-                ezer_tools::implementations::grok_build::task::types::ActiveAgentMessageQuotaKind::SenderTargetInFlight => QuotaKind::SenderTargetInFlight,
-                ezer_tools::implementations::grok_build::task::types::ActiveAgentMessageQuotaKind::AttemptOutbound => QuotaKind::AttemptOutbound,
+                ezer_tools::implementations::ezer_build::task::types::ActiveAgentMessageQuotaKind::SenderTargetInFlight => QuotaKind::SenderTargetInFlight,
+                ezer_tools::implementations::ezer_build::task::types::ActiveAgentMessageQuotaKind::AttemptOutbound => QuotaKind::AttemptOutbound,
                 _ => return,
             };
             quota_hit = Some(QuotaHit {

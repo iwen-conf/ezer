@@ -83,7 +83,7 @@ pub fn load_config_file(path: &Path) -> std::io::Result<toml::Value> {
 }
 
 pub fn load_from_disk() -> std::io::Result<toml::Value> {
-    // Live `$EZER_HOME` / `$GROK_HOME`: `user_grok_home()` / `grok_home()` are OnceLock
+    // Live `$EZER_HOME` / `$EZER_HOME`: `user_grok_home()` / `grok_home()` are OnceLock
     // and miss EnvGuard/tests (same reason user `config.toml` persist resolves live). A
     // stale cache would read a different file than the last settings write.
     if let Some(home) = resolve_grok_home() {
@@ -92,7 +92,7 @@ pub fn load_from_disk() -> std::io::Result<toml::Value> {
     load_user_config_layer(resolve_grok_home().as_deref(), USER_CONFIG_FILENAME)
 }
 
-/// User config filename (`$GROK_HOME/config.toml`), shared by the loaders here.
+/// User config filename (`$EZER_HOME/config.toml`), shared by the loaders here.
 pub const USER_CONFIG_FILENAME: &str = "config.toml";
 
 /// Managed config filename, shared by the loaders in this module.
@@ -101,17 +101,17 @@ pub const MANAGED_CONFIG_FILENAME: &str = "managed_config.toml";
 /// Requirements (cloud-cache) filename, synced from the server alongside the managed config.
 pub const REQUIREMENTS_FILENAME: &str = "requirements.toml";
 
-/// Unsigned folder-trust store (`$GROK_HOME/trusted_folders.toml`).
+/// Unsigned folder-trust store (`$EZER_HOME/trusted_folders.toml`).
 pub const TRUSTED_FOLDERS_FILENAME: &str = "trusted_folders.toml";
 
-/// User-global sandbox profile definitions (`$GROK_HOME/sandbox.toml`).
+/// User-global sandbox profile definitions (`$EZER_HOME/sandbox.toml`).
 pub const SANDBOX_CONFIG_FILENAME: &str = "sandbox.toml";
 
-/// Legacy project-hook trust list (`$GROK_HOME/trusted-hook-projects`).
+/// Legacy project-hook trust list (`$EZER_HOME/trusted-hook-projects`).
 /// Migrated into [`TRUSTED_FOLDERS_FILENAME`] on the next unsandboxed start.
 pub const TRUSTED_HOOK_PROJECTS_FILENAME: &str = "trusted-hook-projects";
 
-/// Plugin trust list (`$GROK_HOME/trusted-plugins`).
+/// Plugin trust list (`$EZER_HOME/trusted-plugins`).
 pub const TRUSTED_PLUGINS_FILENAME: &str = "trusted-plugins";
 
 pub fn load_managed_config() -> std::io::Result<toml::Value> {
@@ -199,13 +199,13 @@ pub fn managed_config_layers_at(
 pub enum HookProvenance {
     /// `/etc/ezer/managed_config.toml` (root-owned).
     SystemManaged,
-    /// `$GROK_HOME/managed_config.toml` (server-synced, user-writable).
+    /// `$EZER_HOME/managed_config.toml` (server-synced, user-writable).
     Managed,
     /// System-tier `requirements.toml` (root-owned, e.g. `/etc/ezer`).
     Requirements,
-    /// `$GROK_HOME/requirements.toml` (user-writable).
+    /// `$EZER_HOME/requirements.toml` (user-writable).
     UserRequirements,
-    /// `$GROK_HOME/config.toml`.
+    /// `$EZER_HOME/config.toml`.
     User,
     /// A JSON hook file (the hooks directory, a vendor settings file, or a configured hooks path).
     File,
@@ -227,7 +227,7 @@ impl Default for HookProvenance {
 impl HookProvenance {
     /// Root-owned admin policy tiers; the user cannot disable or skip their hooks.
     /// Every disable path must consult this predicate rather than re-derive the rule from names or paths.
-    /// `$GROK_HOME` tiers (`Managed`, `UserRequirements`) never qualify: the user owns that directory and can rewrite or repoint it.
+    /// `$EZER_HOME` tiers (`Managed`, `UserRequirements`) never qualify: the user owns that directory and can rewrite or repoint it.
     pub fn is_managed_policy(self) -> bool {
         matches!(self, Self::SystemManaged | Self::Requirements)
     }
@@ -590,7 +590,7 @@ mod tests {
         assert_eq!(cmd, Some("${HOME}/u.sh"));
     }
 
-    /// The user-writable `$GROK_HOME/requirements.toml` stamps `UserRequirements`, never the exempt `Requirements`.
+    /// The user-writable `$EZER_HOME/requirements.toml` stamps `UserRequirements`, never the exempt `Requirements`.
     /// A file the user owns cannot grant itself the no-disable exemption.
     #[test]
     fn user_requirements_layer_is_not_managed_policy() {

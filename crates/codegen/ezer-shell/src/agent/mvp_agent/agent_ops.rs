@@ -6,7 +6,7 @@ use super::*;
 use crate::sampling::EffortTarget;
 use ezer_login::PreferredAuthMethod;
 use crate::upload::trace::PromptMetadataParams;
-use ezer_tools::implementations::grok_build::task::backend::SubagentBackend;
+use ezer_tools::implementations::ezer_build::task::backend::SubagentBackend;
 use xai_tty_utils::ProcessScope;
 struct SessionConfigInputs {
     model_id: acp::ModelId,
@@ -2218,8 +2218,8 @@ impl MvpAgent {
     /// So IC authenticates and meters Imagine usage per-user.
     pub(super) fn prepare_image_gen_config(
         &self,
-    ) -> ezer_tools::implementations::grok_build::image_gen::ImageGenConfig {
-        use ezer_tools::implementations::grok_build::image_gen::ImageGenConfig;
+    ) -> ezer_tools::implementations::ezer_build::image_gen::ImageGenConfig {
+        use ezer_tools::implementations::ezer_build::image_gen::ImageGenConfig;
         let sampling_config = self.sampling_config.borrow();
         let Some(ref api_key) = sampling_config.api_key else {
             return ImageGenConfig::Disabled;
@@ -2254,15 +2254,15 @@ impl MvpAgent {
     /// The tool talks directly to the deployer service.
     pub(super) fn prepare_app_builder_deployer_config(
         &self,
-    ) -> ezer_tools::implementations::grok_build::app_builder::AppBuilderDeployerConfig {
-        use ezer_tools::implementations::grok_build::app_builder::AppBuilderDeployerConfig;
+    ) -> ezer_tools::implementations::ezer_build::app_builder::AppBuilderDeployerConfig {
+        use ezer_tools::implementations::ezer_build::app_builder::AppBuilderDeployerConfig;
         AppBuilderDeployerConfig::Disabled
     }
     /// Video tools call the xAI API directly.
     pub(super) fn prepare_video_gen_config(
         &self,
-    ) -> ezer_tools::implementations::grok_build::video_gen::VideoGenConfig {
-        use ezer_tools::implementations::grok_build::video_gen::VideoGenConfig;
+    ) -> ezer_tools::implementations::ezer_build::video_gen::VideoGenConfig {
+        use ezer_tools::implementations::ezer_build::video_gen::VideoGenConfig;
         let cfg = self.cfg.borrow();
         if !cfg.resolve_video_gen().value {
             return VideoGenConfig::Disabled;
@@ -2349,8 +2349,8 @@ impl MvpAgent {
     /// Params resolution (TOML > env > remote settings > default): `proxy_endpoint`: `[toolset.web_fetch] proxy_endpoint` > `EZER_WEB_FETCH_PROXY` > remote settings > None `allowed_domains`: `[toolset.web_fetch] allowed_domains` > remote settings > built-in defaults `allow_local`: `[toolset.web_fetch] allow_local` > `EZER_WEB_FETCH_ALLOW_LOCAL` > false
     pub(super) fn prepare_web_fetch_config(
         &self,
-    ) -> ezer_tools::implementations::grok_build::web_fetch::WebFetchConfig {
-        use ezer_tools::implementations::grok_build::web_fetch::WebFetchConfig;
+    ) -> ezer_tools::implementations::ezer_build::web_fetch::WebFetchConfig {
+        use ezer_tools::implementations::ezer_build::web_fetch::WebFetchConfig;
         let cfg = self.cfg.borrow();
         if cfg.disable_web_search {
             return WebFetchConfig::Disabled;
@@ -2512,7 +2512,7 @@ impl MvpAgent {
             subagent_sampling_semaphore: Arc::new(
                 tokio::sync::Semaphore::new(cfg.subagents_sampling_limit),
             ),
-            monitor_event_buffer: ezer_tools::implementations::grok_build::monitor::types::MonitorEventBuffer::default(),
+            monitor_event_buffer: ezer_tools::implementations::ezer_build::monitor::types::MonitorEventBuffer::default(),
             bundle_sync_in_flight: Arc::new(std::sync::atomic::AtomicBool::new(false)),
             post_unblock_jwt_retry_in_flight: Arc::new(
                 std::sync::atomic::AtomicBool::new(false),
@@ -2902,8 +2902,8 @@ impl MvpAgent {
     pub(crate) async fn cancel_subagent(
         &self,
         subagent_id: &str,
-    ) -> ezer_tools::implementations::grok_build::task::types::SubagentCancelOutcome {
-        ezer_tools::implementations::grok_build::task::backend::ChannelBackend::new(
+    ) -> ezer_tools::implementations::ezer_build::task::types::SubagentCancelOutcome {
+        ezer_tools::implementations::ezer_build::task::backend::ChannelBackend::new(
                 self.subagent_event_tx.event_sender().0,
             )
             .cancel(subagent_id)
@@ -2913,9 +2913,9 @@ impl MvpAgent {
         &self,
         parent_session_id: &str,
     ) -> Vec<
-        ezer_tools::implementations::grok_build::task::types::SubagentInspection,
+        ezer_tools::implementations::ezer_build::task::types::SubagentInspection,
     > {
-        let backend = ezer_tools::implementations::grok_build::task::backend::ChannelBackend::new(
+        let backend = ezer_tools::implementations::ezer_build::task::backend::ChannelBackend::new(
             self.subagent_event_tx.event_sender().0,
         );
         let sid = acp::SessionId::new(parent_session_id);
@@ -2937,9 +2937,9 @@ impl MvpAgent {
         &self,
         subagent_id: &str,
     ) -> Option<
-        ezer_tools::implementations::grok_build::task::types::SubagentInspection,
+        ezer_tools::implementations::ezer_build::task::types::SubagentInspection,
     > {
-        ezer_tools::implementations::grok_build::task::backend::ChannelBackend::new(
+        ezer_tools::implementations::ezer_build::task::backend::ChannelBackend::new(
                 self.subagent_event_tx.event_sender().0,
             )
             .inspect(subagent_id)
@@ -2951,9 +2951,9 @@ impl MvpAgent {
         block: bool,
         timeout_ms: Option<u64>,
     ) -> Option<
-        ezer_tools::implementations::grok_build::task::types::SubagentSnapshot,
+        ezer_tools::implementations::ezer_build::task::types::SubagentSnapshot,
     > {
-        ezer_tools::implementations::grok_build::task::backend::ChannelBackend::new(
+        ezer_tools::implementations::ezer_build::task::backend::ChannelBackend::new(
                 self.subagent_event_tx.event_sender().0,
             )
             .query(subagent_id, block, timeout_ms)
@@ -2964,7 +2964,7 @@ impl MvpAgent {
         parent_session_id: &str,
         prompt_id: &str,
     ) -> Vec<crate::upload::trace::SubagentSpawnedRef> {
-        ezer_tools::implementations::grok_build::task::backend::ChannelBackend::new(
+        ezer_tools::implementations::ezer_build::task::backend::ChannelBackend::new(
                 self.subagent_event_tx.event_sender().0,
             )
             .spawned_refs_for_prompt(parent_session_id, prompt_id)
@@ -4018,7 +4018,7 @@ impl MvpAgent {
         let resolved = match agent_name.as_deref() {
             Some("browser-use") | Some("browser_use") => AgentDefinition::browser_use(),
             Some("ezer-build-concise") | Some("ezer_concise") => {
-                AgentDefinition::grok_build_concise()
+                AgentDefinition::ezer_build_concise()
             }
             Some(path) if std::path::Path::new(path).is_absolute() => {
                 match AgentDefinition::from_file(path) {
@@ -4029,15 +4029,15 @@ impl MvpAgent {
                             error = %e,
                             "Failed to load agent definition from file, falling back to default"
                         );
-                        AgentDefinition::grok_build_plan()
+                        AgentDefinition::ezer_build_plan()
                     }
                 }
             }
             Some(name) => {
                 ezer_agent::discovery::by_name_in_cwd(name, cwd)
-                    .unwrap_or_else(AgentDefinition::grok_build_plan)
+                    .unwrap_or_else(AgentDefinition::ezer_build_plan)
             }
-            None => AgentDefinition::grok_build_plan(),
+            None => AgentDefinition::ezer_build_plan(),
         };
         if !grok_agent_env_set && !config_agent_explicitly_set
             && model_requires_strict_harness && let Some(required) = model_agent_type

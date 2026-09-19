@@ -2845,7 +2845,7 @@ impl WorkspaceHandle {
             .clone()
             .unwrap_or_else(|| (*parent.effective_tool_config()).clone());
         let active_agent_message_id = ezer_tools::registry::types::ToolConfig::for_tool::<
-            ezer_tools::implementations::grok_build::SendSubagentMessageTool,
+            ezer_tools::implementations::ezer_build::SendSubagentMessageTool,
         >()
         .id;
         baseline.tools.retain(|tool| {
@@ -4398,7 +4398,7 @@ pub(crate) async fn build_local_workspace(
     .map_err(|e| WorkspaceError::HubError(format!("failed to create workspace: {e}")))?;
     Ok(ws_handle)
 }
-/// Resolve `$EZER_WORKSPACE_HOME`, the workspace-owned on-disk state root. `<grok_home>/workspace`, where `<grok_home>` honours `$GROK_HOME` and otherwise falls back to `~/.ezer` (see [`ezer_config::grok_home`]).
+/// Resolve `$EZER_WORKSPACE_HOME`, the workspace-owned on-disk state root. `<grok_home>/workspace`, where `<grok_home>` honours `$EZER_HOME` and otherwise falls back to `~/.ezer` (see [`ezer_config::grok_home`]).
 pub fn resolve_workspace_home() -> std::path::PathBuf {
     if let Ok(p) = std::env::var("EZER_WORKSPACE_HOME")
         && !p.trim().is_empty()

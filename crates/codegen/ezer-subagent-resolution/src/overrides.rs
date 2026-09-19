@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use std::path::Path;
 
 use serde::de::DeserializeOwned;
-use ezer_tools::implementations::grok_build::task::types::SubagentRuntimeOverrides;
+use ezer_tools::implementations::ezer_build::task::types::SubagentRuntimeOverrides;
 use xai_tool_types::{SubagentCapabilityMode, SubagentIsolationMode};
 
 use crate::config::{SubagentPersona, SubagentRole};
@@ -198,7 +198,7 @@ fn resolve_persona_instructions(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use ezer_tools::implementations::grok_build::task::types::ModelOverrideProvenance;
+    use ezer_tools::implementations::ezer_build::task::types::ModelOverrideProvenance;
 
     /// Helper to build an overrides struct with only the fields we care about.
     fn make_overrides(

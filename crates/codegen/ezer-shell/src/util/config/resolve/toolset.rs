@@ -1,6 +1,6 @@
 use crate::util::config::RemoteSettings;
 use toml::Value as TomlValue;
-use ezer_tools::implementations::grok_build::ask_user_question;
+use ezer_tools::implementations::ezer_build::ask_user_question;
 
 /// Resolve whether the bash-harness shadows that swap `find` for `bfs` and `grep` for `ugrep` are enabled.
 /// Precedence (highest first): `requirements.toml` (org policy, wins outright) > a truthy `DISABLE_EMBEDDED_SEARCH_TOOLS` master (forces off) > env > `config.toml` `[toolset.bash]` > `managed_config.toml` > default-on.
@@ -352,7 +352,7 @@ fn resolve_ask_user_question_timeout_secs_from_tiers(
         .or(managed)
         .or(remote)
         .unwrap_or(
-            ezer_tools::implementations::grok_build::ask_user_question::RESPONSE_TIMEOUT
+            ezer_tools::implementations::ezer_build::ask_user_question::RESPONSE_TIMEOUT
                 .as_secs(),
         )
 }
@@ -368,7 +368,7 @@ fn resolve_ask_user_question_timeout_secs(
 ) -> u64 {
     resolve_ask_user_question_timeout_secs_from_tiers(
         ask_user_question_timeout_secs_from_toml(requirements),
-        ezer_tools::implementations::grok_build::ask_user_question::response_timeout_env_secs(),
+        ezer_tools::implementations::ezer_build::ask_user_question::response_timeout_env_secs(),
         ask_user_question_timeout_secs_from_toml(user),
         ask_user_question_timeout_secs_from_toml(managed)
             .or_else(|| ask_user_question_timeout_secs_from_toml(system_managed)),
@@ -382,7 +382,7 @@ fn resolve_ask_user_question_timeout_secs(
 /// Both fields resolve to concrete values, so the tool's legacy env fallback only runs for consumers that skip this resolver.
 pub(crate) fn resolve_ask_user_question_params_from_disk(
     remote: Option<&RemoteSettings>,
-) -> ezer_tools::implementations::grok_build::ask_user_question::AskUserQuestionParams {
+) -> ezer_tools::implementations::ezer_build::ask_user_question::AskUserQuestionParams {
     let requirements = crate::config::load_merged_requirements();
     let layers = match crate::config::ConfigLayers::load() {
         Ok(l) => Some(l),
@@ -394,7 +394,7 @@ pub(crate) fn resolve_ask_user_question_params_from_disk(
     let user = layers.as_ref().map(|l| &l.user);
     let managed = layers.as_ref().map(|l| &l.managed);
     let system_managed = layers.as_ref().map(|l| &l.system_managed);
-    ezer_tools::implementations::grok_build::ask_user_question::AskUserQuestionParams {
+    ezer_tools::implementations::ezer_build::ask_user_question::AskUserQuestionParams {
         timeout_enabled: Some(
             resolve_ask_user_question_timeout_enabled(
                 requirements.as_ref(),
@@ -594,7 +594,7 @@ mod web_search_domains_tests {
 mod ask_user_question_timeout_tests {
     use super::*;
     use crate::agent::config::ConfigSource;
-    use ezer_tools::implementations::grok_build::ask_user_question::RESPONSE_TIMEOUT_ENV;
+    use ezer_tools::implementations::ezer_build::ask_user_question::RESPONSE_TIMEOUT_ENV;
 
     // Both env vars are process-global (a dev exports the secs var for TUI repro); serialize and force them unset so these tests can't go flaky
     static ENV_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
@@ -669,7 +669,7 @@ mod ask_user_question_timeout_tests {
 
     #[test]
     fn timeout_secs_tier_precedence() {
-        let d = ezer_tools::implementations::grok_build::ask_user_question::RESPONSE_TIMEOUT
+        let d = ezer_tools::implementations::ezer_build::ask_user_question::RESPONSE_TIMEOUT
             .as_secs();
         let r = resolve_ask_user_question_timeout_secs_from_tiers;
         assert_eq!(r(None, None, None, None, None), d);
@@ -683,7 +683,7 @@ mod ask_user_question_timeout_tests {
     #[test]
     fn timeout_secs_rejects_non_positive_layers() {
         let _g = guard();
-        let d = ezer_tools::implementations::grok_build::ask_user_question::RESPONSE_TIMEOUT
+        let d = ezer_tools::implementations::ezer_build::ask_user_question::RESPONSE_TIMEOUT
             .as_secs();
         // user 0 and managed negative are dropped; remote fills the gap.
         let zero = toml_ask("timeout_secs = 0");

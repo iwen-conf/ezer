@@ -1388,7 +1388,7 @@ pub struct Config {
     pub subagents_sampling_limit: usize,
     #[serde(skip)]
     pub subagents_limit_behavior:
-        ezer_tools::implementations::grok_build::task::admission::LimitBehavior,
+        ezer_tools::implementations::ezer_build::task::admission::LimitBehavior,
     #[serde(skip)]
     pub workflow_max_concurrent_agents: usize,
     #[serde(skip)]
@@ -1437,7 +1437,7 @@ pub struct Config {
     /// Resolved by [`crate::config::ToolsConfig::resolve`].
     #[serde(skip)]
     pub zdr_video_output_s3:
-        Option<ezer_tools::implementations::grok_build::video_gen::ZdrVideoOutputS3Config>,
+        Option<ezer_tools::implementations::ezer_build::video_gen::ZdrVideoOutputS3Config>,
     /// Whether to enrich path-not-found errors with CWD reminders, "dropped repo folder" correction, and similar-name suggestions. Default `false`. Enabled via remote settings.
     /// Serialized to `config.json` on GCS so traces can distinguish which sessions had path-not-found hints active.
     #[serde(default)]
@@ -1663,9 +1663,9 @@ impl Default for Config {
             subagents_enabled: true,
             subagents_max_depth: crate::config::SubagentsConfig::DEFAULT_MAX_DEPTH,
             subagents_max_concurrent:
-                ezer_tools::implementations::grok_build::task::admission::DEFAULT_MAX_CONCURRENT,
+                ezer_tools::implementations::ezer_build::task::admission::DEFAULT_MAX_CONCURRENT,
             subagents_sampling_limit:
-                ezer_tools::implementations::grok_build::task::admission::DEFAULT_MAX_CONCURRENT,
+                ezer_tools::implementations::ezer_build::task::admission::DEFAULT_MAX_CONCURRENT,
             subagents_limit_behavior: Default::default(),
             workflow_max_concurrent_agents:
                 crate::session::workflow::host_service::DEFAULT_WORKFLOW_MAX_CONCURRENT_AGENTS,
@@ -2542,7 +2542,7 @@ impl Config {
     /// `imagine_tools_disabled` is a remote force-off (env/config cannot re-enable).
     /// Otherwise: requirement > env > `[features]` > remote > default.
     pub(crate) fn resolve_image_gen(&self) -> Resolved<bool> {
-        use ezer_tools::implementations::grok_build::IMAGE_GEN_TOOL_NAME;
+        use ezer_tools::implementations::ezer_build::IMAGE_GEN_TOOL_NAME;
         if let Some(pinned) = self.requirements.image_gen.pinned() {
             return Resolved::new(pinned, ConfigSource::Requirement);
         }
@@ -2566,7 +2566,7 @@ impl Config {
     /// `image_edit` tool gate.
     /// Same denylist / requirement pattern as [`Self::resolve_image_gen`]; no `[features]` key (defaults on).
     pub(crate) fn resolve_image_edit(&self) -> Resolved<bool> {
-        use ezer_tools::implementations::grok_build::IMAGE_EDIT_TOOL_NAME;
+        use ezer_tools::implementations::ezer_build::IMAGE_EDIT_TOOL_NAME;
         if let Some(pinned) = self.requirements.image_edit.pinned() {
             return Resolved::new(pinned, ConfigSource::Requirement);
         }
@@ -2583,7 +2583,7 @@ impl Config {
     /// Registered as a pair; denylisting either tool name (or `video_gen`) disables both.
     /// Otherwise same precedence as [`Self::resolve_image_gen`].
     pub(crate) fn resolve_video_gen(&self) -> Resolved<bool> {
-        use ezer_tools::implementations::grok_build::{
+        use ezer_tools::implementations::ezer_build::{
             IMAGE_TO_VIDEO_TOOL_NAME, REFERENCE_TO_VIDEO_TOOL_NAME,
         };
         if let Some(pinned) = self.requirements.video_gen.pinned() {

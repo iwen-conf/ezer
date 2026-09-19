@@ -260,21 +260,21 @@ mod tests {
                 tool.id()
             );
         }
-        covered(crate::implementations::grok_build::SearchReplaceTool);
-        covered(crate::implementations::grok_build::BashTool);
-        covered(crate::implementations::grok_build::TodoWriteTool);
-        covered(crate::implementations::grok_build::WorkflowTool);
-        covered(crate::implementations::grok_build::ImageGenTool);
-        covered(crate::implementations::grok_build::ImageEditTool);
-        covered(crate::implementations::grok_build::ImageToVideoTool);
-        covered(crate::implementations::grok_build::ReferenceToVideoTool);
-        covered(crate::implementations::grok_build::AskUserQuestionTool);
+        covered(crate::implementations::ezer_build::SearchReplaceTool);
+        covered(crate::implementations::ezer_build::BashTool);
+        covered(crate::implementations::ezer_build::TodoWriteTool);
+        covered(crate::implementations::ezer_build::WorkflowTool);
+        covered(crate::implementations::ezer_build::ImageGenTool);
+        covered(crate::implementations::ezer_build::ImageEditTool);
+        covered(crate::implementations::ezer_build::ImageToVideoTool);
+        covered(crate::implementations::ezer_build::ReferenceToVideoTool);
+        covered(crate::implementations::ezer_build::AskUserQuestionTool);
         covered(crate::implementations::opencode::OpenCodeWriteTool);
         covered(crate::implementations::opencode::OpenCodeEditTool);
         covered(crate::implementations::opencode::OpenCodeBashTool);
         covered(crate::implementations::opencode::OpenCodeTodoWriteTool);
         covered(crate::implementations::codex::ApplyPatchTool);
-        covered(crate::implementations::grok_build_hashline::HashlineEditTool);
+        covered(crate::implementations::ezer_build_hashline::HashlineEditTool);
     }
     /// Spellings with no instantiable definition site in this crate
     /// (client-facing renames) and the deliberate absences.

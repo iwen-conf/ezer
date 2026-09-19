@@ -4,7 +4,7 @@ use super::support::{
 use super::*;
 use crate::session::storage::prepare_replay_lines;
 use crate::test_support::lsp_runtime::test_gateway;
-use ezer_tools::implementations::grok_build::task::{
+use ezer_tools::implementations::ezer_build::task::{
     backend::ChannelBackend, types::SubagentEvent,
 };
 

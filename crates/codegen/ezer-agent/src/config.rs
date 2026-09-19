@@ -8,8 +8,8 @@ use std::path::{Path, PathBuf};
 use std::sync::{Mutex, OnceLock};
 use strum::{AsRefStr, Display, EnumIter, EnumString, IntoStaticStr};
 use ezer_tools::implementations::codex;
-use ezer_tools::implementations::grok_build;
-use ezer_tools::implementations::grok_build_concise;
+use ezer_tools::implementations::ezer_build;
+use ezer_tools::implementations::ezer_build_concise;
 use ezer_tools::implementations::memory;
 use ezer_tools::implementations::opencode;
 use ezer_tools::implementations::search_tool;
@@ -117,45 +117,45 @@ Write prompts the way you would brief a senior engineer:
 - Do NOT summarize or re-explain what the user said \u{2014} get to work immediately";
 /// Bash tool with clearer model-facing names: `run_terminal_cmd` becomes `run_terminal_command` and `is_background` becomes `background`.
 fn bash_tool_config() -> ToolConfig {
-    ToolConfig::from(&grok_build::BashTool)
+    ToolConfig::from(&ezer_build::BashTool)
         .with_name("run_terminal_command")
         .with_param_rename("is_background", "background")
 }
 /// Task/subagent tool with clearer model-facing names: `task` becomes `spawn_subagent` and `run_in_background` becomes `background`.
 fn task_tool_config() -> ToolConfig {
-    ToolConfig::from(&grok_build::TaskTool)
+    ToolConfig::from(&ezer_build::TaskTool)
         .with_name("spawn_subagent")
         .with_param_rename("run_in_background", "background")
 }
 /// Task output tool renamed for clarity: `get_task_output` becomes `get_command_or_subagent_output`.
 fn task_output_tool_config() -> ToolConfig {
-    ToolConfig::from(&grok_build::TaskOutputTool).with_name("get_command_or_subagent_output")
+    ToolConfig::from(&ezer_build::TaskOutputTool).with_name("get_command_or_subagent_output")
 }
 /// `wait_tasks` becomes `wait_commands_or_subagents`.
 fn wait_tasks_tool_config() -> ToolConfig {
-    ToolConfig::from(&grok_build::WaitTasksTool).with_name("wait_commands_or_subagents")
+    ToolConfig::from(&ezer_build::WaitTasksTool).with_name("wait_commands_or_subagents")
 }
 /// `kill_task` becomes `kill_command_or_subagent`.
 fn kill_task_tool_config() -> ToolConfig {
-    ToolConfig::from(&grok_build::KillTaskTool).with_name("kill_command_or_subagent")
+    ToolConfig::from(&ezer_build::KillTaskTool).with_name("kill_command_or_subagent")
 }
 /// Complete workspace-executable toolset for hub registration.
 /// Extends `default_ezer_build_toolset()` with tools injected by `AgentBuilder` or available only in specific modes.
 /// In proxy mode the workspace server executes all tools; the shell has zero local dispatch.
-pub fn workspace_grok_build_toolset() -> ToolServerConfig {
-    let mut tools = default_grok_build_toolset().tools;
+pub fn workspace_ezer_build_toolset() -> ToolServerConfig {
+    let mut tools = default_ezer_build_toolset().tools;
     tools.push((&opencode::OpenCodeWriteTool).into());
-    tools.push((&grok_build::EnterPlanModeTool).into());
-    tools.push((&grok_build::ExitPlanModeTool).into());
-    tools.push((&grok_build::AskUserQuestionTool).into());
-    tools.push((&grok_build::WebSearchTool).into());
-    tools.push((&grok_build::ImageGenTool).into());
-    tools.push((&grok_build::ImageToVideoTool).into());
-    tools.push((&grok_build::ReferenceToVideoTool).into());
-    tools.push((&grok_build::WebFetchTool).into());
+    tools.push((&ezer_build::EnterPlanModeTool).into());
+    tools.push((&ezer_build::ExitPlanModeTool).into());
+    tools.push((&ezer_build::AskUserQuestionTool).into());
+    tools.push((&ezer_build::WebSearchTool).into());
+    tools.push((&ezer_build::ImageGenTool).into());
+    tools.push((&ezer_build::ImageToVideoTool).into());
+    tools.push((&ezer_build::ReferenceToVideoTool).into());
+    tools.push((&ezer_build::WebFetchTool).into());
     tools.push((&memory::search_tool::MemorySearchImpl).into());
     tools.push((&memory::get_tool::MemoryGetImpl).into());
-    tools.push((&grok_build::LspTool).into());
+    tools.push((&ezer_build::LspTool).into());
     ToolServerConfig {
         tools,
         behavior_preset: None,
@@ -166,10 +166,10 @@ pub fn workspace_grok_build_toolset() -> ToolServerConfig {
 pub fn api_backed_tool_ids() -> Vec<String> {
     #[allow(unused_mut)]
     let mut ids = vec![
-        ToolConfig::from(&grok_build::WebSearchTool).id,
-        ToolConfig::from(&grok_build::ImageGenTool).id,
-        ToolConfig::from(&grok_build::ImageToVideoTool).id,
-        ToolConfig::from(&grok_build::ReferenceToVideoTool).id,
+        ToolConfig::from(&ezer_build::WebSearchTool).id,
+        ToolConfig::from(&ezer_build::ImageGenTool).id,
+        ToolConfig::from(&ezer_build::ImageToVideoTool).id,
+        ToolConfig::from(&ezer_build::ReferenceToVideoTool).id,
     ];
     ids
 }
@@ -178,16 +178,16 @@ fn grok_computer_toolset() -> ToolServerConfig {
     #[allow(unused_mut)]
     let mut tools = vec![
         bash_tool_config(),
-        (&grok_build::ReadFileTool).into(),
-        (&grok_build::SearchReplaceTool).into(),
+        (&ezer_build::ReadFileTool).into(),
+        (&ezer_build::SearchReplaceTool).into(),
         (&opencode::OpenCodeWriteTool).into(),
-        (&grok_build::ListDirTool).into(),
-        (&grok_build::GrepTool).into(),
-        (&grok_build::KillTerminalCommandTool).into(),
-        (&grok_build::GetTerminalCommandOutputTool).into(),
-        (&grok_build::SchedulerCreateTool).into(),
-        (&grok_build::SchedulerDeleteTool).into(),
-        (&grok_build::SchedulerListTool).into(),
+        (&ezer_build::ListDirTool).into(),
+        (&ezer_build::GrepTool).into(),
+        (&ezer_build::KillTerminalCommandTool).into(),
+        (&ezer_build::GetTerminalCommandOutputTool).into(),
+        (&ezer_build::SchedulerCreateTool).into(),
+        (&ezer_build::SchedulerDeleteTool).into(),
+        (&ezer_build::SchedulerListTool).into(),
     ];
     ToolServerConfig {
         tools,
@@ -199,9 +199,9 @@ fn grok_computer_toolset() -> ToolServerConfig {
 /// A new preset is covered the moment it becomes resolvable.
 fn native_toolset_presets() -> Vec<(&'static str, ToolServerConfig)> {
     vec![
-        ("ezer-build", workspace_grok_build_toolset()),
-        ("ezer-build-concise", grok_build_concise_toolset()),
-        ("ezer-build-plan", grok_build_plan_toolset()),
+        ("ezer-build", workspace_ezer_build_toolset()),
+        ("ezer-build-concise", ezer_build_concise_toolset()),
+        ("ezer-build-plan", ezer_build_plan_toolset()),
         ("codex", codex_toolset()),
         ("explore", explore_toolset()),
         ("plan", plan_toolset()),
@@ -240,98 +240,98 @@ pub fn toolset_for_preset(preset: &str) -> Option<ToolServerConfig> {
         .map(|(_, toolset)| toolset)
         .or_else(|| registered_toolset_preset(&normalized))
 }
-fn default_grok_build_toolset() -> ToolServerConfig {
-    grok_build_core_toolset_with(true, true)
+fn default_ezer_build_toolset() -> ToolServerConfig {
+    ezer_build_core_toolset_with(true, true)
 }
 fn default_agent_toolset() -> ToolServerConfig {
-    grok_build_core_toolset(true)
+    ezer_build_core_toolset(true)
 }
 /// Same as the parent ezer-build list, without `workflow`.
 /// The usual `general-purpose` spawn path must not add that tool and then strip it.
 fn general_purpose_toolset() -> ToolServerConfig {
-    grok_build_core_toolset(false)
+    ezer_build_core_toolset(false)
 }
-fn grok_build_core_toolset(include_workflow: bool) -> ToolServerConfig {
-    grok_build_core_toolset_with(include_workflow, false)
+fn ezer_build_core_toolset(include_workflow: bool) -> ToolServerConfig {
+    ezer_build_core_toolset_with(include_workflow, false)
 }
-fn grok_build_core_toolset_with(
+fn ezer_build_core_toolset_with(
     include_workflow: bool,
     include_send_feedback: bool,
 ) -> ToolServerConfig {
     let mut tools = vec![
         bash_tool_config(),
-        (&grok_build::ReadFileTool).into(),
-        (&grok_build::SearchReplaceTool).into(),
-        (&grok_build::ListDirTool).into(),
-        (&grok_build::GrepTool).into(),
+        (&ezer_build::ReadFileTool).into(),
+        (&ezer_build::SearchReplaceTool).into(),
+        (&ezer_build::ListDirTool).into(),
+        (&ezer_build::GrepTool).into(),
         kill_task_tool_config(),
-        (&grok_build::TodoWriteTool).into(),
+        (&ezer_build::TodoWriteTool).into(),
         task_output_tool_config(),
         wait_tasks_tool_config(),
         task_tool_config(),
-        (&grok_build::SchedulerCreateTool).into(),
-        (&grok_build::SchedulerDeleteTool).into(),
-        (&grok_build::SchedulerListTool).into(),
-        (&grok_build::MonitorTool).into(),
+        (&ezer_build::SchedulerCreateTool).into(),
+        (&ezer_build::SchedulerDeleteTool).into(),
+        (&ezer_build::SchedulerListTool).into(),
+        (&ezer_build::MonitorTool).into(),
         (&search_tool::SearchTool).into(),
         (&use_tool::UseTool).into(),
-        (&grok_build::UpdateGoalTool).into(),
+        (&ezer_build::UpdateGoalTool).into(),
     ];
     if include_workflow {
-        tools.push((&grok_build::WorkflowTool).into());
+        tools.push((&ezer_build::WorkflowTool).into());
     }
     if include_send_feedback {
-        tools.push((&grok_build::SendFeedbackTool).into());
+        tools.push((&ezer_build::SendFeedbackTool).into());
     }
     ToolServerConfig {
         tools,
         behavior_preset: None,
     }
 }
-fn grok_build_concise_toolset() -> ToolServerConfig {
+fn ezer_build_concise_toolset() -> ToolServerConfig {
     ToolServerConfig {
         tools: vec![
-            (&grok_build_concise::BashConciseTool).into(),
-            (&grok_build_concise::ReadFileConciseTool).into(),
-            (&grok_build_concise::SearchReplaceConciseTool).into(),
-            (&grok_build::ListDirTool).into(),
-            (&grok_build::GrepTool).into(),
+            (&ezer_build_concise::BashConciseTool).into(),
+            (&ezer_build_concise::ReadFileConciseTool).into(),
+            (&ezer_build_concise::SearchReplaceConciseTool).into(),
+            (&ezer_build::ListDirTool).into(),
+            (&ezer_build::GrepTool).into(),
             kill_task_tool_config(),
-            (&grok_build::TodoWriteTool).into(),
+            (&ezer_build::TodoWriteTool).into(),
             task_output_tool_config(),
-            (&grok_build::SchedulerCreateTool).into(),
-            (&grok_build::SchedulerDeleteTool).into(),
-            (&grok_build::SchedulerListTool).into(),
-            (&grok_build::MonitorTool).into(),
-            (&grok_build::UpdateGoalTool).into(),
-            (&grok_build::WorkflowTool).into(),
+            (&ezer_build::SchedulerCreateTool).into(),
+            (&ezer_build::SchedulerDeleteTool).into(),
+            (&ezer_build::SchedulerListTool).into(),
+            (&ezer_build::MonitorTool).into(),
+            (&ezer_build::UpdateGoalTool).into(),
+            (&ezer_build::WorkflowTool).into(),
         ],
         behavior_preset: None,
     }
 }
 /// Hashline toolset: anchor-based read/edit/search and standard utilities.
 /// `hashline_tools` should be the 3 hashline `ToolConfig` entries; they carry the scheme parameters as tool params.
-pub fn grok_build_hashline_toolset(
+pub fn ezer_build_hashline_toolset(
     hashline_tools: Vec<ezer_tools::registry::types::ToolConfig>,
 ) -> ToolServerConfig {
     let mut tools: Vec<ezer_tools::registry::types::ToolConfig> = vec![bash_tool_config()];
     tools.extend(hashline_tools);
     tools.extend([
-        (&grok_build::ListDirTool).into(),
+        (&ezer_build::ListDirTool).into(),
         kill_task_tool_config(),
-        (&grok_build::TodoWriteTool).into(),
+        (&ezer_build::TodoWriteTool).into(),
         task_output_tool_config(),
         wait_tasks_tool_config(),
         task_tool_config(),
-        (&grok_build::WebSearchTool).into(),
-        (&grok_build::SchedulerCreateTool).into(),
-        (&grok_build::SchedulerDeleteTool).into(),
-        (&grok_build::SchedulerListTool).into(),
-        (&grok_build::MonitorTool).into(),
+        (&ezer_build::WebSearchTool).into(),
+        (&ezer_build::SchedulerCreateTool).into(),
+        (&ezer_build::SchedulerDeleteTool).into(),
+        (&ezer_build::SchedulerListTool).into(),
+        (&ezer_build::MonitorTool).into(),
         (&search_tool::SearchTool).into(),
         (&use_tool::UseTool).into(),
-        (&grok_build::UpdateGoalTool).into(),
-        (&grok_build::WorkflowTool).into(),
+        (&ezer_build::UpdateGoalTool).into(),
+        (&ezer_build::WorkflowTool).into(),
     ]);
     ToolServerConfig {
         tools,
@@ -347,7 +347,7 @@ fn codex_toolset() -> ToolServerConfig {
             (&codex::CodexListDirTool).into(),
             (&codex::CodexGrepFilesTool).into(),
             kill_task_tool_config(),
-            (&grok_build::TodoWriteTool).into(),
+            (&ezer_build::TodoWriteTool).into(),
             task_output_tool_config(),
             (&search_tool::SearchTool).into(),
             (&use_tool::UseTool).into(),
@@ -361,9 +361,9 @@ fn codex_toolset() -> ToolServerConfig {
 fn explore_toolset() -> ToolServerConfig {
     ToolServerConfig {
         tools: vec![
-            (&grok_build::ReadFileTool).into(),
-            (&grok_build::ListDirTool).into(),
-            (&grok_build::GrepTool).into(),
+            (&ezer_build::ReadFileTool).into(),
+            (&ezer_build::ListDirTool).into(),
+            (&ezer_build::GrepTool).into(),
         ],
         behavior_preset: None,
     }
@@ -374,11 +374,11 @@ fn explore_toolset() -> ToolServerConfig {
 fn plan_toolset() -> ToolServerConfig {
     ToolServerConfig {
         tools: vec![
-            (&grok_build::ReadFileTool).into(),
-            (&grok_build::ListDirTool).into(),
-            (&grok_build::GrepTool).into(),
-            // (&grok_build::SkillTool).into(),
-            (&grok_build::TodoWriteTool).into(),
+            (&ezer_build::ReadFileTool).into(),
+            (&ezer_build::ListDirTool).into(),
+            (&ezer_build::GrepTool).into(),
+            // (&ezer_build::SkillTool).into(),
+            (&ezer_build::TodoWriteTool).into(),
             // search_replace and run_terminal_command intentionally omitted (read-only)
         ],
         behavior_preset: None,
@@ -386,31 +386,31 @@ fn plan_toolset() -> ToolServerConfig {
 }
 /// Extends the default `ezer-build` toolset with plan mode tools.
 /// This allows the agent to enter a structured planning phase before writing code, with user-approved plans.
-fn grok_build_plan_toolset() -> ToolServerConfig {
+fn ezer_build_plan_toolset() -> ToolServerConfig {
     ToolServerConfig {
         tools: vec![
             // Standard grok-build tools
             bash_tool_config(),
-            (&grok_build::ReadFileTool).into(),
-            (&grok_build::SearchReplaceTool).into(),
-            (&grok_build::ListDirTool).into(),
-            (&grok_build::GrepTool).into(),
+            (&ezer_build::ReadFileTool).into(),
+            (&ezer_build::SearchReplaceTool).into(),
+            (&ezer_build::ListDirTool).into(),
+            (&ezer_build::GrepTool).into(),
             kill_task_tool_config(),
-            (&grok_build::TodoWriteTool).into(),
+            (&ezer_build::TodoWriteTool).into(),
             task_output_tool_config(),
             task_tool_config(),
-            (&grok_build::SchedulerCreateTool).into(),
-            (&grok_build::SchedulerDeleteTool).into(),
-            (&grok_build::SchedulerListTool).into(),
-            (&grok_build::MonitorTool).into(),
+            (&ezer_build::SchedulerCreateTool).into(),
+            (&ezer_build::SchedulerDeleteTool).into(),
+            (&ezer_build::SchedulerListTool).into(),
+            (&ezer_build::MonitorTool).into(),
             (&search_tool::SearchTool).into(),
             (&use_tool::UseTool).into(),
-            (&grok_build::UpdateGoalTool).into(),
-            (&grok_build::WorkflowTool).into(),
+            (&ezer_build::UpdateGoalTool).into(),
+            (&ezer_build::WorkflowTool).into(),
             // Plan mode tools
-            (&grok_build::EnterPlanModeTool).into(),
-            (&grok_build::ExitPlanModeTool).into(),
-            (&grok_build::AskUserQuestionTool).into(),
+            (&ezer_build::EnterPlanModeTool).into(),
+            (&ezer_build::ExitPlanModeTool).into(),
+            (&ezer_build::AskUserQuestionTool).into(),
         ],
         behavior_preset: None,
     }
@@ -422,9 +422,9 @@ fn orchestrator_toolset() -> ToolServerConfig {
         tools: vec![
             // Research tools
             bash_tool_config(),
-            (&grok_build::ReadFileTool).into(),
-            (&grok_build::ListDirTool).into(),
-            (&grok_build::GrepTool).into(),
+            (&ezer_build::ReadFileTool).into(),
+            (&ezer_build::ListDirTool).into(),
+            (&ezer_build::GrepTool).into(),
             // Subagent orchestration
             task_tool_config(),
             task_output_tool_config(),
@@ -434,24 +434,24 @@ fn orchestrator_toolset() -> ToolServerConfig {
             (&search_tool::SearchTool).into(),
             (&use_tool::UseTool).into(),
             // Planning and user interaction
-            (&grok_build::TodoWriteTool).into(),
-            (&grok_build::EnterPlanModeTool).into(),
-            (&grok_build::ExitPlanModeTool).into(),
-            (&grok_build::AskUserQuestionTool).into(),
-            (&grok_build::UpdateGoalTool).into(),
-            (&grok_build::WorkflowTool).into(),
+            (&ezer_build::TodoWriteTool).into(),
+            (&ezer_build::EnterPlanModeTool).into(),
+            (&ezer_build::ExitPlanModeTool).into(),
+            (&ezer_build::AskUserQuestionTool).into(),
+            (&ezer_build::UpdateGoalTool).into(),
+            (&ezer_build::WorkflowTool).into(),
             // Scheduling and monitoring
-            (&grok_build::SchedulerCreateTool).into(),
-            (&grok_build::SchedulerDeleteTool).into(),
-            (&grok_build::SchedulerListTool).into(),
-            (&grok_build::MonitorTool).into(),
+            (&ezer_build::SchedulerCreateTool).into(),
+            (&ezer_build::SchedulerDeleteTool).into(),
+            (&ezer_build::SchedulerListTool).into(),
+            (&ezer_build::MonitorTool).into(),
             // Web tools
-            (&grok_build::WebSearchTool).into(),
-            (&grok_build::WebFetchTool).into(),
+            (&ezer_build::WebSearchTool).into(),
+            (&ezer_build::WebFetchTool).into(),
             // Imagine
-            (&grok_build::ImageGenTool).into(),
-            (&grok_build::ImageToVideoTool).into(),
-            (&grok_build::ReferenceToVideoTool).into(),
+            (&ezer_build::ImageGenTool).into(),
+            (&ezer_build::ImageToVideoTool).into(),
+            (&ezer_build::ReferenceToVideoTool).into(),
             // Memory
             (&memory::MemorySearchImpl).into(),
             (&memory::MemoryGetImpl).into(),
@@ -464,58 +464,58 @@ fn orchestrator_toolset() -> ToolServerConfig {
 }
 /// Same as `ezer_build_plan_toolset` but excludes `TaskTool`, `TaskOutputTool`, and `KillTaskTool`.
 /// Use this when the shell does not have subagent infrastructure wired up.
-fn grok_build_plan_no_subagents_toolset() -> ToolServerConfig {
+fn ezer_build_plan_no_subagents_toolset() -> ToolServerConfig {
     ToolServerConfig {
         tools: vec![
             // Standard grok-build tools, minus TaskTool only
             // KillTaskTool and TaskOutputTool are kept because BashTool's background mode requires them
             bash_tool_config(),
-            (&grok_build::ReadFileTool).into(),
-            (&grok_build::SearchReplaceTool).into(),
-            (&grok_build::ListDirTool).into(),
-            (&grok_build::GrepTool).into(),
+            (&ezer_build::ReadFileTool).into(),
+            (&ezer_build::SearchReplaceTool).into(),
+            (&ezer_build::ListDirTool).into(),
+            (&ezer_build::GrepTool).into(),
             kill_task_tool_config(),
-            (&grok_build::TodoWriteTool).into(),
+            (&ezer_build::TodoWriteTool).into(),
             task_output_tool_config(),
-            (&grok_build::SchedulerCreateTool).into(),
-            (&grok_build::SchedulerDeleteTool).into(),
-            (&grok_build::SchedulerListTool).into(),
-            (&grok_build::MonitorTool).into(),
+            (&ezer_build::SchedulerCreateTool).into(),
+            (&ezer_build::SchedulerDeleteTool).into(),
+            (&ezer_build::SchedulerListTool).into(),
+            (&ezer_build::MonitorTool).into(),
             (&search_tool::SearchTool).into(),
             (&use_tool::UseTool).into(),
-            (&grok_build::UpdateGoalTool).into(),
-            (&grok_build::WorkflowTool).into(),
+            (&ezer_build::UpdateGoalTool).into(),
+            (&ezer_build::WorkflowTool).into(),
             // Plan mode tools
-            (&grok_build::EnterPlanModeTool).into(),
-            (&grok_build::ExitPlanModeTool).into(),
-            (&grok_build::AskUserQuestionTool).into(),
+            (&ezer_build::EnterPlanModeTool).into(),
+            (&ezer_build::ExitPlanModeTool).into(),
+            (&ezer_build::AskUserQuestionTool).into(),
         ],
         behavior_preset: None,
     }
 }
 /// Same as `default_ezer_build_toolset` with the `AskUserQuestionTool` added, allowing the agent to ask structured questions without full plan mode.
-fn grok_build_ask_user_toolset() -> ToolServerConfig {
+fn ezer_build_ask_user_toolset() -> ToolServerConfig {
     ToolServerConfig {
         tools: vec![
             bash_tool_config(),
-            (&grok_build::ReadFileTool).into(),
-            (&grok_build::SearchReplaceTool).into(),
-            (&grok_build::ListDirTool).into(),
-            (&grok_build::GrepTool).into(),
+            (&ezer_build::ReadFileTool).into(),
+            (&ezer_build::SearchReplaceTool).into(),
+            (&ezer_build::ListDirTool).into(),
+            (&ezer_build::GrepTool).into(),
             kill_task_tool_config(),
-            (&grok_build::TodoWriteTool).into(),
+            (&ezer_build::TodoWriteTool).into(),
             task_output_tool_config(),
             wait_tasks_tool_config(),
             task_tool_config(),
-            (&grok_build::SchedulerCreateTool).into(),
-            (&grok_build::SchedulerDeleteTool).into(),
-            (&grok_build::SchedulerListTool).into(),
-            (&grok_build::MonitorTool).into(),
+            (&ezer_build::SchedulerCreateTool).into(),
+            (&ezer_build::SchedulerDeleteTool).into(),
+            (&ezer_build::SchedulerListTool).into(),
+            (&ezer_build::MonitorTool).into(),
             (&search_tool::SearchTool).into(),
             (&use_tool::UseTool).into(),
-            (&grok_build::UpdateGoalTool).into(),
-            (&grok_build::WorkflowTool).into(),
-            (&grok_build::AskUserQuestionTool).into(),
+            (&ezer_build::UpdateGoalTool).into(),
+            (&ezer_build::WorkflowTool).into(),
+            (&ezer_build::AskUserQuestionTool).into(),
         ],
         behavior_preset: None,
     }
@@ -676,18 +676,18 @@ pub fn is_strict_harness_agent_type(name: &str) -> bool {
 impl BuiltinAgentName {
     pub fn definition(self) -> AgentDefinition {
         match self {
-            Self::GrokBuild => AgentDefinition::default_grok_build(),
-            Self::GrokBuildConcise => AgentDefinition::grok_build_concise(),
-            Self::GrokBuildPlan => AgentDefinition::grok_build_plan(),
-            Self::GrokBuildPlanNoSubagents => AgentDefinition::grok_build_plan_no_subagents(),
-            Self::GrokBuildAskUser => AgentDefinition::grok_build_ask_user(),
+            Self::GrokBuild => AgentDefinition::default_ezer_build(),
+            Self::GrokBuildConcise => AgentDefinition::ezer_build_concise(),
+            Self::GrokBuildPlan => AgentDefinition::ezer_build_plan(),
+            Self::GrokBuildPlanNoSubagents => AgentDefinition::ezer_build_plan_no_subagents(),
+            Self::GrokBuildAskUser => AgentDefinition::ezer_build_ask_user(),
             Self::Codex => AgentDefinition::codex(),
             Self::Opencode => AgentDefinition::opencode(),
             Self::GeneralPurpose => AgentDefinition::general_purpose(),
             Self::Explore => AgentDefinition::explore(),
             Self::Plan => AgentDefinition::plan(),
             Self::BrowserUse => AgentDefinition::browser_use(),
-            Self::GrokBuildOrchestrator => AgentDefinition::grok_build_orchestrator(),
+            Self::GrokBuildOrchestrator => AgentDefinition::ezer_build_orchestrator(),
         }
     }
     /// Built-in agents available as subagents via the Task tool.
@@ -1446,9 +1446,9 @@ impl AgentDefinition {
             scope: AgentScope::BuiltIn,
         }
     }
-    pub fn default_grok_build() -> Self {
+    pub fn default_ezer_build() -> Self {
         Self {
-            tool_config: default_grok_build_toolset(),
+            tool_config: default_ezer_build_toolset(),
             ..Self::base(
                 BuiltinAgentName::GrokBuild,
                 "ezer agent for software engineering tasks.",
@@ -1456,9 +1456,9 @@ impl AgentDefinition {
         }
     }
     /// Concise output format for SFT/RL.
-    pub fn grok_build_concise() -> Self {
+    pub fn ezer_build_concise() -> Self {
         Self {
-            tool_config: grok_build_concise_toolset(),
+            tool_config: ezer_build_concise_toolset(),
             agents_md: false,
             ..Self::base(
                 BuiltinAgentName::GrokBuildConcise,
@@ -1466,27 +1466,27 @@ impl AgentDefinition {
             )
         }
     }
-    pub fn grok_build_plan() -> Self {
+    pub fn ezer_build_plan() -> Self {
         Self {
-            tool_config: grok_build_plan_toolset(),
+            tool_config: ezer_build_plan_toolset(),
             ..Self::base(
                 BuiltinAgentName::GrokBuildPlan,
                 "ezer agent with plan mode support.",
             )
         }
     }
-    pub fn grok_build_plan_no_subagents() -> Self {
+    pub fn ezer_build_plan_no_subagents() -> Self {
         Self {
-            tool_config: grok_build_plan_no_subagents_toolset(),
+            tool_config: ezer_build_plan_no_subagents_toolset(),
             ..Self::base(
                 BuiltinAgentName::GrokBuildPlanNoSubagents,
                 "ezer agent with plan mode (no subagents).",
             )
         }
     }
-    pub fn grok_build_ask_user() -> Self {
+    pub fn ezer_build_ask_user() -> Self {
         Self {
-            tool_config: grok_build_ask_user_toolset(),
+            tool_config: ezer_build_ask_user_toolset(),
             ..Self::base(
                 BuiltinAgentName::GrokBuildAskUser,
                 "ezer agent with ask-user-question tool.",
@@ -1560,7 +1560,7 @@ impl AgentDefinition {
     }
     /// GBL model with full Ezer tools that delegates coding/exploration to subagents.
     /// Subagent overrides are applied in `handle_subagent_request`.
-    pub fn grok_build_orchestrator() -> Self {
+    pub fn ezer_build_orchestrator() -> Self {
         Self {
             tool_config: orchestrator_toolset(),
             inject_default_tools: false,
@@ -1655,7 +1655,7 @@ mod tests {
         assert!(plan.tools.len() < gb.tools.len());
     }
     fn feedback_tool_id() -> String {
-        ToolConfig::from(&grok_build::SendFeedbackTool).id
+        ToolConfig::from(&ezer_build::SendFeedbackTool).id
     }
     fn contains_feedback(config: &ToolServerConfig) -> bool {
         let id = feedback_tool_id();
@@ -1664,8 +1664,8 @@ mod tests {
     fn grok_computer_exclusive_ids() -> Vec<String> {
         #[allow(unused_mut)]
         let mut ids: Vec<String> = vec![
-            ToolConfig::from(&grok_build::GetTerminalCommandOutputTool).id,
-            ToolConfig::from(&grok_build::KillTerminalCommandTool).id,
+            ToolConfig::from(&ezer_build::GetTerminalCommandOutputTool).id,
+            ToolConfig::from(&ezer_build::KillTerminalCommandTool).id,
         ];
         ids
     }
@@ -1708,7 +1708,7 @@ mod tests {
             );
         }
         for (name, config) in [
-            ("core", grok_build_core_toolset(true)),
+            ("core", ezer_build_core_toolset(true)),
             ("general-purpose", general_purpose_toolset()),
             ("hashline", ezer_hashline_toolset(vec![])),
         ] {
@@ -1717,7 +1717,7 @@ mod tests {
                 "toolset `{name}` leaked send_feedback"
             );
         }
-        let workspace = workspace_grok_build_toolset();
+        let workspace = workspace_ezer_build_toolset();
         assert_eq!(
             workspace
                 .tools
@@ -1776,24 +1776,24 @@ mod tests {
         let ids: std::collections::HashSet<&str> = gc.tools.iter().map(|t| t.id.as_str()).collect();
         assert!(
             ids.contains(
-                ToolConfig::from(&grok_build::GetTerminalCommandOutputTool)
+                ToolConfig::from(&ezer_build::GetTerminalCommandOutputTool)
                     .id
                     .as_str()
             )
         );
         assert!(
             ids.contains(
-                ToolConfig::from(&grok_build::KillTerminalCommandTool)
+                ToolConfig::from(&ezer_build::KillTerminalCommandTool)
                     .id
                     .as_str()
             )
         );
-        assert!(!ids.contains(ToolConfig::from(&grok_build::TaskOutputTool).id.as_str()));
-        assert!(!ids.contains(ToolConfig::from(&grok_build::KillTaskTool).id.as_str()));
-        assert!(!ids.contains(ToolConfig::from(&grok_build::TaskTool).id.as_str()));
+        assert!(!ids.contains(ToolConfig::from(&ezer_build::TaskOutputTool).id.as_str()));
+        assert!(!ids.contains(ToolConfig::from(&ezer_build::KillTaskTool).id.as_str()));
+        assert!(!ids.contains(ToolConfig::from(&ezer_build::TaskTool).id.as_str()));
         for t in &gc.tools {
-            if t.id == ToolConfig::from(&grok_build::GetTerminalCommandOutputTool).id
-                || t.id == ToolConfig::from(&grok_build::KillTerminalCommandTool).id
+            if t.id == ToolConfig::from(&ezer_build::GetTerminalCommandOutputTool).id
+                || t.id == ToolConfig::from(&ezer_build::KillTerminalCommandTool).id
             {
                 assert!(t.name_override.is_none(), "tool `{}` must not rename", t.id);
             }
@@ -1817,26 +1817,26 @@ mod tests {
         let gc_ids: std::collections::HashSet<&str> =
             gc.tools.iter().map(|t| t.id.as_str()).collect();
         for excluded in [
-            ToolConfig::from(&grok_build::LspTool).id,
-            ToolConfig::from(&grok_build::EnterPlanModeTool).id,
-            ToolConfig::from(&grok_build::ExitPlanModeTool).id,
+            ToolConfig::from(&ezer_build::LspTool).id,
+            ToolConfig::from(&ezer_build::EnterPlanModeTool).id,
+            ToolConfig::from(&ezer_build::ExitPlanModeTool).id,
         ] {
             assert!(
                 !gc_ids.contains(excluded.as_str()),
                 "ezer-computer preset must not advertise `{excluded}`"
             );
         }
-        let full = workspace_grok_build_toolset();
+        let full = workspace_ezer_build_toolset();
         let full_ids: std::collections::HashSet<&str> =
             full.tools.iter().map(|t| t.id.as_str()).collect();
         for present in [
-            ToolConfig::from(&grok_build::LspTool).id,
-            ToolConfig::from(&grok_build::EnterPlanModeTool).id,
-            ToolConfig::from(&grok_build::ExitPlanModeTool).id,
+            ToolConfig::from(&ezer_build::LspTool).id,
+            ToolConfig::from(&ezer_build::EnterPlanModeTool).id,
+            ToolConfig::from(&ezer_build::ExitPlanModeTool).id,
         ] {
             assert!(
                 full_ids.contains(present.as_str()),
-                "workspace_grok_build_toolset must ship `{present}`"
+                "workspace_ezer_build_toolset must ship `{present}`"
             );
         }
     }
@@ -2266,7 +2266,7 @@ description: Test default tool config
         let def = AgentDefinition::parse(content).unwrap();
         assert!(
             !def.tool_config.tools.is_empty(),
-            "default tool_config should have grok_build tools"
+            "default tool_config should have ezer_build tools"
         );
     }
     #[test]
@@ -2342,8 +2342,8 @@ description: Test default tool config
         }))
         .unwrap();
         assert!(!def.include_browser_verification());
-        assert!(AgentDefinition::grok_build_plan().include_browser_verification());
-        assert!(AgentDefinition::grok_build_plan_no_subagents().include_browser_verification());
+        assert!(AgentDefinition::ezer_build_plan().include_browser_verification());
+        assert!(AgentDefinition::ezer_build_plan_no_subagents().include_browser_verification());
     }
     #[test]
     fn test_from_json_has_default_toolset_with_task_tool() {
@@ -2621,7 +2621,7 @@ description: Test default tool config
         assert_eq!(recovered.mcp_inheritance, def.mcp_inheritance);
     }
     fn def_with_template(tpl: crate::prompt::context::TemplateOverride) -> AgentDefinition {
-        let mut def = AgentDefinition::default_grok_build();
+        let mut def = AgentDefinition::default_ezer_build();
         def.system_prompt = tpl;
         def
     }

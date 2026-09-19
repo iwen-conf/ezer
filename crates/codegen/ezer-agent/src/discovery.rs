@@ -778,7 +778,7 @@ mod tests {
     }
 
     #[test]
-    fn test_by_name_builtin_grok_build() {
+    fn test_by_name_builtin_ezer_build() {
         let def = by_name("ezer-build");
         assert!(def.is_some());
         assert_eq!(def.unwrap().name, "ezer-build");
@@ -1505,7 +1505,7 @@ mod tests {
         let registry = make_plugin_registry("plugin-one", PluginScope::User, vec![]);
         let plugin = registry.get("plugin-one").unwrap();
 
-        let mut def = AgentDefinition::default_grok_build();
+        let mut def = AgentDefinition::default_ezer_build();
         def.prompt_body = Some("Body ${CLAUDE_PLUGIN_ROOT}/x".to_string());
         def.system_prompt =
             TemplateOverride::Custom("Data at ${CLAUDE_PLUGIN_DATA}/db".to_string());

@@ -1143,9 +1143,9 @@ async fn file_toolset_override_e2e_to_finalized_toolset() {
         web_search_config: ezer_tools::implementations::web_search::WebSearchConfig::default(),
         web_fetch_config: Default::default(),
         lsp: None,
-        image_gen_config: ezer_tools::implementations::grok_build::image_gen::ImageGenConfig::default(),
-        video_gen_config: ezer_tools::implementations::grok_build::video_gen::VideoGenConfig::default(),
-        app_builder_deployer_config: ezer_tools::implementations::grok_build::app_builder::AppBuilderDeployerConfig::default(),
+        image_gen_config: ezer_tools::implementations::ezer_build::image_gen::ImageGenConfig::default(),
+        video_gen_config: ezer_tools::implementations::ezer_build::video_gen::VideoGenConfig::default(),
+        app_builder_deployer_config: ezer_tools::implementations::ezer_build::app_builder::AppBuilderDeployerConfig::default(),
         api_key_provider: None,
         auth_provider: None,
         attribution_callback: None,
@@ -3867,7 +3867,7 @@ async fn cached_token_fallthrough_falls_to_grok_com_without_credentials() {
 /// Verifies the 4-state matrix of `(disable_zdr_incompatible_tools, zdr_video_output_s3)`: | ZDR flag | S3 config | Result | |----------|-----------|---------------------------------------------| | false | None | Enabled, no S3 (normal non-ZDR mode) | | true | None | Disabled (ZDR with no escape hatch) | | false | Some | Enabled, S3 **not** threaded (non-ZDR) | | true | Some | Enabled, S3 threaded (ZDR with upload path) |
 #[tokio::test(flavor = "current_thread")]
 async fn prepare_video_gen_config_disabled_when_zdr_flag_set() {
-    use ezer_tools::implementations::grok_build::video_gen::{
+    use ezer_tools::implementations::ezer_build::video_gen::{
         S3AccessCredentials, VideoGenConfig, ZdrVideoOutputS3Config,
     };
     fn zdr_s3() -> ZdrVideoOutputS3Config {
@@ -3925,7 +3925,7 @@ async fn prepare_video_gen_config_disabled_when_zdr_flag_set() {
 }
 #[tokio::test(flavor = "current_thread")]
 async fn prepare_video_gen_config_respects_feature_flag() {
-    use ezer_tools::implementations::grok_build::video_gen::VideoGenConfig;
+    use ezer_tools::implementations::ezer_build::video_gen::VideoGenConfig;
     let agent = build_minimal_agent_for_tests();
     agent.sampling_config.borrow_mut().api_key = Some("test-key".to_string());
     assert!(matches!(
@@ -3942,7 +3942,7 @@ async fn prepare_video_gen_config_respects_feature_flag() {
 /// Guards against accidentally disabling a paid feature when tier info hasn't loaded.
 #[tokio::test(flavor = "current_thread")]
 async fn prepare_image_gen_config_fails_open_without_auth() {
-    use ezer_tools::implementations::grok_build::image_gen::ImageGenConfig;
+    use ezer_tools::implementations::ezer_build::image_gen::ImageGenConfig;
     let agent = build_minimal_agent_for_tests();
     agent.sampling_config.borrow_mut().api_key = Some("test-key".to_string());
     let ImageGenConfig::Enabled {
@@ -3961,7 +3961,7 @@ async fn prepare_image_gen_config_fails_open_without_auth() {
 /// If this header is dropped, opted-out users' imagine prompts are logged/retained server-side.
 #[tokio::test(flavor = "current_thread")]
 async fn prepare_image_gen_config_sends_client_identifier_header() {
-    use ezer_tools::implementations::grok_build::image_gen::ImageGenConfig;
+    use ezer_tools::implementations::ezer_build::image_gen::ImageGenConfig;
     let agent = build_minimal_agent_for_tests();
     agent.sampling_config.borrow_mut().api_key = Some("test-key".to_string());
     let ImageGenConfig::Enabled { extra_headers, .. } = agent.prepare_image_gen_config() else {
@@ -3979,7 +3979,7 @@ async fn prepare_image_gen_config_sends_client_identifier_header() {
 /// Same contract for video generation (also a direct API call).
 #[tokio::test(flavor = "current_thread")]
 async fn prepare_video_gen_config_sends_client_identifier_header() {
-    use ezer_tools::implementations::grok_build::video_gen::VideoGenConfig;
+    use ezer_tools::implementations::ezer_build::video_gen::VideoGenConfig;
     let agent = build_minimal_agent_for_tests();
     agent.sampling_config.borrow_mut().api_key = Some("test-key".to_string());
     let VideoGenConfig::Enabled { extra_headers, .. } = agent.prepare_video_gen_config() else {

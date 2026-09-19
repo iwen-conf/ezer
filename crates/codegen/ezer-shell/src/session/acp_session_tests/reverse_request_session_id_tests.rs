@@ -1,10 +1,10 @@
 //! Regression guard: every blocking reverse-request (permission, `ask_user_question`, plan-approval) must carry a non-empty `sessionId`.
 //! Otherwise Tier-2 routing silently drops it (`server.rs`).
 //! The invariant holds today; these tests pin it.
-use ezer_tools::implementations::grok_build::ask_user_question::{
+use ezer_tools::implementations::ezer_build::ask_user_question::{
     AskUserQuestionExtRequest, AskUserQuestionMode,
 };
-use ezer_tools::implementations::grok_build::exit_plan_mode::ExitPlanModeExtRequest;
+use ezer_tools::implementations::ezer_build::exit_plan_mode::ExitPlanModeExtRequest;
 
 #[test]
 fn ask_user_question_request_carries_session_id() {

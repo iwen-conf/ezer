@@ -46,7 +46,7 @@
   },
   {
     "category": "features",
-    "description": "**Session search index** can now be disabled via GROK_SESSION_SEARCH or [features] session_search for hosts sharing $GROK_HOME.",
+    "description": "**Session search index** can now be disabled via GROK_SESSION_SEARCH or [features] session_search for hosts sharing $EZER_HOME.",
     "breaking_change": false
   },
   {

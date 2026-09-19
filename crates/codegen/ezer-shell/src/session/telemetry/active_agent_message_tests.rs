@@ -164,7 +164,7 @@ fn immediate_projection_covers_every_current_tool_outcome() {
         (Send::Saturated { max_in_flight: 8 }, Outcome::Saturated),
         (
             Send::QuotaExceeded {
-                kind: ezer_tools::implementations::grok_build::task::types::ActiveAgentMessageQuotaKind::AttemptOutbound,
+                kind: ezer_tools::implementations::ezer_build::task::types::ActiveAgentMessageQuotaKind::AttemptOutbound,
                 limit: 32,
             },
             Outcome::QuotaExceeded,

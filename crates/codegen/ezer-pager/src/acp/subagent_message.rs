@@ -8,7 +8,7 @@
 
 use agent_client_protocol as acp;
 use serde::Deserialize;
-use ezer_tools::implementations::grok_build::send_subagent_message::{
+use ezer_tools::implementations::ezer_build::send_subagent_message::{
     SEND_SUBAGENT_MESSAGE_TOOL_NAME, SendSubagentMessageDisposition, SendSubagentMessageOutput,
 };
 use ezer_tools::tool_taxonomy::{CanonicalToolMeta, TOOL_META_KEY, TOOL_META_VERSION};

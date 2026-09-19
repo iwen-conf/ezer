@@ -396,7 +396,7 @@ impl SessionActor {
             .borrow()
             .tool_bridge()
             .update_resource(
-                ezer_tools::implementations::grok_build::task::types::CurrentPromptIdResource(
+                ezer_tools::implementations::ezer_build::task::types::CurrentPromptIdResource(
                     prompt_id.clone(),
                 ),
             )
@@ -466,7 +466,7 @@ impl SessionActor {
         };
         let session_dir = crate::session::persistence::session_dir(&self.session_info);
         let backend =
-            ezer_tools::implementations::grok_build::task::backend::ChannelBackend::new(
+            ezer_tools::implementations::ezer_build::task::backend::ChannelBackend::new(
                 event_tx,
             );
         let (cmd_tx, mut cmd_rx) = mpsc::unbounded_channel();
@@ -491,12 +491,12 @@ impl SessionActor {
     #[cfg(test)]
     pub(super) async fn list_running_subagents(
         &self,
-    ) -> Vec<ezer_tools::implementations::grok_build::task::types::SubagentInspection> {
+    ) -> Vec<ezer_tools::implementations::ezer_build::task::types::SubagentInspection> {
         self.reconcile_live_orphaned_subagents().await;
         let Some(event_tx) = self.tool_context.subagent_event_tx.clone() else {
             return Vec::new();
         };
-        ezer_tools::implementations::grok_build::task::backend::ChannelBackend::new(event_tx)
+        ezer_tools::implementations::ezer_build::task::backend::ChannelBackend::new(event_tx)
             .list_running(self.session_info.id.0.as_ref())
             .await
     }
@@ -627,7 +627,7 @@ impl SessionActor {
         let Some(buffer) = &self.tool_context.monitor_event_buffer else {
             return;
         };
-        for event in ezer_tools::implementations::grok_build::monitor::types::drain_owned(
+        for event in ezer_tools::implementations::ezer_build::monitor::types::drain_owned(
             buffer,
             Some(self.session_info.id.0.as_ref()),
         ) {
@@ -677,7 +677,7 @@ impl SessionActor {
         notifications: &[PendingNotification],
         task_output_tool_name: &str,
     ) -> Vec<acp::ContentBlock> {
-        use ezer_tools::implementations::grok_build::monitor::types::MonitorEventNotification;
+        use ezer_tools::implementations::ezer_build::monitor::types::MonitorEventNotification;
 
         let completion_task_ids: std::collections::HashSet<&str> = notifications
             .iter()
@@ -809,7 +809,7 @@ mod live_orphan_hook_tests {
     use crate::agent::subagent::{LIVE_ORPHAN_RECONCILE_REASON, SubagentMeta};
     use crate::extensions::notification::SessionUpdate;
     use crate::session::persistence::PersistenceMsg;
-    use ezer_tools::implementations::grok_build::task::types::{
+    use ezer_tools::implementations::ezer_build::task::types::{
         SubagentEvent, SubagentInspection, SubagentSnapshot, SubagentSnapshotStatus,
     };
 

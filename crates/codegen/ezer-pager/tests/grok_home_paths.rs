@@ -30,7 +30,7 @@ fn grok_home_override_path_helpers() {
         "$EZER_HOME/memory/MEMORY.md"
     );
 
-    // The copy toast abbreviates paths the same way, so a custom $GROK_HOME outside $HOME still shows the short form
+    // The copy toast abbreviates paths the same way, so a custom $EZER_HOME outside $HOME still shows the short form
     assert_eq!(
         ezer_pager::clipboard::display_copy_path(&grok_home.join("last-copy.txt")),
         "$EZER_HOME/last-copy.txt"

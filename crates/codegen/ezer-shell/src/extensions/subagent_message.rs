@@ -2,8 +2,8 @@
 
 use agent_client_protocol as acp;
 use serde::{Deserialize, Serialize};
-use ezer_tools::implementations::grok_build::send_subagent_message::resolve_delivery;
-use ezer_tools::implementations::grok_build::task::types::{
+use ezer_tools::implementations::ezer_build::send_subagent_message::resolve_delivery;
+use ezer_tools::implementations::ezer_build::task::types::{
     ActiveAgentMessageOutcome, MAX_ACTIVE_AGENT_MESSAGE_BYTES,
 };
 

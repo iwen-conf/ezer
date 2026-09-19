@@ -963,7 +963,7 @@ async fn cancel_running_task_teardown_clears_running_and_pending_work() {
             agent
                 .tool_bridge()
                 .update_resource(
-                    ezer_tools::implementations::grok_build::task::types::CurrentPromptIdResource(
+                    ezer_tools::implementations::ezer_build::task::types::CurrentPromptIdResource(
                         "running".to_string(),
                     ),
                 )
@@ -1285,7 +1285,7 @@ async fn cancel_running_task_teardown_clears_running_and_pending_work() {
                 .await;
             let scoped_prompt_id = bridge
                 .read_resource::<
-                    ezer_tools::implementations::grok_build::task::types::CurrentPromptIdResource,
+                    ezer_tools::implementations::ezer_build::task::types::CurrentPromptIdResource,
                 >()
                 .await;
             assert!(
@@ -2530,7 +2530,7 @@ async fn cancel_propagates_to_sampler_handle_so_no_further_emission() {
             agent
                 .tool_bridge()
                 .update_resource(
-                    ezer_tools::implementations::grok_build::task::types::CurrentPromptIdResource(
+                    ezer_tools::implementations::ezer_build::task::types::CurrentPromptIdResource(
                         "running".to_string(),
                     ),
                 )

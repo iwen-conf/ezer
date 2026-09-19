@@ -1,4 +1,4 @@
-use crate::implementations::grok_build::send_subagent_message::SendSubagentMessageOutput;
+use crate::implementations::ezer_build::send_subagent_message::SendSubagentMessageOutput;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use strip_ansi_escapes::strip_str;
@@ -124,7 +124,7 @@ impl MediaGenOutput {
         .to_string()
     }
 }
-use crate::implementations::grok_build::todo::{TodoItem, TodoState};
+use crate::implementations::ezer_build::todo::{TodoItem, TodoState};
 use crate::implementations::skills::skill::SkillOutput;
 use crate::util::truncate::{DEFAULT_SOFT_WRAP_WIDTH, soft_wrap_lines};
 /// Result of running a tool through the ToolRunner pipeline. This is the **single return type**
@@ -591,12 +591,12 @@ pub enum ToolOutput {
     AskUserQuestion(AskUserQuestionOutput),
     #[serde(alias = "SendAgentMessage")]
     SendSubagentMessage(SendSubagentMessageOutput),
-    Monitor(crate::implementations::grok_build::monitor::types::MonitorOutput),
-    SchedulerCreate(crate::implementations::grok_build::scheduler::create::SchedulerCreateOutput),
-    SchedulerDelete(crate::implementations::grok_build::scheduler::delete::SchedulerDeleteOutput),
-    SchedulerList(crate::implementations::grok_build::scheduler::list::SchedulerListOutput),
-    UpdateGoal(crate::implementations::grok_build::update_goal::UpdateGoalOutput),
-    Workflow(crate::implementations::grok_build::workflow::WorkflowToolOutput),
+    Monitor(crate::implementations::ezer_build::monitor::types::MonitorOutput),
+    SchedulerCreate(crate::implementations::ezer_build::scheduler::create::SchedulerCreateOutput),
+    SchedulerDelete(crate::implementations::ezer_build::scheduler::delete::SchedulerDeleteOutput),
+    SchedulerList(crate::implementations::ezer_build::scheduler::list::SchedulerListOutput),
+    UpdateGoal(crate::implementations::ezer_build::update_goal::UpdateGoalOutput),
+    Workflow(crate::implementations::ezer_build::workflow::WorkflowToolOutput),
     /// Dynamic output for runtime-registered tools (MCP, test tools, etc.)
     Dynamic(DynamicOutput),
     /// Generic text output for tools that produce simple formatted text
@@ -641,7 +641,7 @@ impl ToolOutput {
             ToolOutput::SendSubagentMessage(output) => {
                 matches!(
                 output.disposition(),
-                crate::implementations::grok_build::send_subagent_message::SendSubagentMessageDisposition::Rejected
+                crate::implementations::ezer_build::send_subagent_message::SendSubagentMessageDisposition::Rejected
             )
             }
             ToolOutput::Todo(
@@ -1280,13 +1280,13 @@ impl xai_tool_runtime::ToolOutput for MCPOutput {}
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::implementations::grok_build::todo::{TodoPriority, TodoStatus};
+    use crate::implementations::ezer_build::todo::{TodoPriority, TodoStatus};
     use serde_json::json;
     use xai_tool_types::KillTaskResult;
     use xai_tool_types::TaskOutputResult;
     #[test]
     fn send_subagent_message_error_classification_is_closed() {
-        use crate::implementations::grok_build::send_subagent_message::SendSubagentMessageOutput::*;
+        use crate::implementations::ezer_build::send_subagent_message::SendSubagentMessageOutput::*;
         for (output, is_error) in [
             (
                 Accepted {
@@ -1299,7 +1299,7 @@ mod tests {
             (Saturated { max_in_flight: 8 }, true),
             (
                 QuotaExceeded {
-                    kind: crate::implementations::grok_build::task::types::ActiveAgentMessageQuotaKind::AttemptOutbound,
+                    kind: crate::implementations::ezer_build::task::types::ActiveAgentMessageQuotaKind::AttemptOutbound,
                     limit: 32,
                 },
                 true,

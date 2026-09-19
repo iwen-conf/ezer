@@ -1253,10 +1253,10 @@ pub(super) mod paste_key_tests {
     /// Build a `QuestionViewState` already in `InputMode` focus.
     pub(in crate::app::agent_view) fn make_question_view_state_in_input_mode()
     -> crate::views::question_view::QuestionViewState {
-        let question = ezer_tools::implementations::grok_build::ask_user_question::Question {
+        let question = ezer_tools::implementations::ezer_build::ask_user_question::Question {
             question: "Pick one?".to_string(),
             options: vec![
-                ezer_tools::implementations::grok_build::ask_user_question::QuestionOption {
+                ezer_tools::implementations::ezer_build::ask_user_question::QuestionOption {
                     label: "A".to_string(),
                     description: "Option A".to_string(),
                     preview: None,

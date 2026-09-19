@@ -690,7 +690,7 @@ fn nearest_project_mcp_definition(cwd: &std::path::Path, server_name: &str) -> O
         .find(|path| mcp_server_defined_at(path, server_name))
 }
 
-/// User `$GROK_HOME/config.toml`. [`config_path`] is live (`grok_home()` is OnceLock).
+/// User `$EZER_HOME/config.toml`. [`config_path`] is live (`grok_home()` is OnceLock).
 fn is_user_config_path(path: &std::path::Path) -> bool {
     path == config_path().as_path()
 }
@@ -1757,7 +1757,7 @@ pub fn load_cli_plugin_registry(cwd: &std::path::Path) -> ezer_agent::plugins::P
 }
 
 fn config_path() -> PathBuf {
-    // Live `$GROK_HOME` first: `grok_home()` is OnceLock and misses EnvGuard/tests.
+    // Live `$EZER_HOME` first: `grok_home()` is OnceLock and misses EnvGuard/tests.
     xai_dirs::resolve_grok_home()
         .unwrap_or_else(crate::util::grok_home::grok_home)
         .join("config.toml")

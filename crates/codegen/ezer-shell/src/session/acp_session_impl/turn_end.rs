@@ -130,12 +130,12 @@ impl SessionActor {
     pub(super) async fn outstanding_reply_for_prompt(
         &self,
         prompt_id: &str,
-    ) -> Option<ezer_tools::implementations::grok_build::task::types::SubagentOutstandingReply>
+    ) -> Option<ezer_tools::implementations::ezer_build::task::types::SubagentOutstandingReply>
     {
         let Some(tx) = &self.tool_context.subagent_event_tx else {
             return Some(Default::default());
         };
-        use ezer_tools::implementations::grok_build::task::types::{
+        use ezer_tools::implementations::ezer_build::task::types::{
             SubagentEvent, SubagentOutstandingRequest,
         };
         let (respond_to, rx) = tokio::sync::oneshot::channel();
@@ -156,7 +156,7 @@ impl SessionActor {
     /// Delegates to [`super::turn::UsageDrainOutcome::report_incomplete`].
     pub(super) fn usage_incomplete_from_reply(
         reply: Option<
-            &ezer_tools::implementations::grok_build::task::types::SubagentOutstandingReply,
+            &ezer_tools::implementations::ezer_build::task::types::SubagentOutstandingReply,
         >,
     ) -> bool {
         super::turn::UsageDrainOutcome::from_outstanding_reply(reply).report_incomplete()
@@ -166,7 +166,7 @@ impl SessionActor {
         let Some(tx) = &self.tool_context.subagent_event_tx else {
             return;
         };
-        use ezer_tools::implementations::grok_build::task::types::{
+        use ezer_tools::implementations::ezer_build::task::types::{
             SubagentClearUsageNotAppliedRequest, SubagentEvent,
         };
         let _ = tx.send(SubagentEvent::ClearUsageNotApplied(

@@ -6,7 +6,7 @@ use crate::session::telemetry::{
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::Arc;
-use ezer_tools::implementations::grok_build::task::types::ActiveAgentMessageOperation;
+use ezer_tools::implementations::ezer_build::task::types::ActiveAgentMessageOperation;
 
 const STEER_TEXT: &str = "steer text";
 const INTERJECT_TEXT: &str = "interject text";

@@ -1167,7 +1167,7 @@ fn subagents_config_parses_max_depth_from_toml() {
 }
 #[test]
 fn subagent_limit_counts_resolve_env_over_toml_over_remote_over_default() {
-    use ezer_tools::implementations::grok_build::task::admission;
+    use ezer_tools::implementations::ezer_build::task::admission;
     let resolve = SubagentsConfig::resolve_max_concurrent;
     assert_eq!(resolve(Some("3"), Some(2), Some(4)), 3);
     assert_eq!(resolve(None, Some(2), Some(4)), 2);
@@ -1183,7 +1183,7 @@ fn subagent_limit_counts_resolve_env_over_toml_over_remote_over_default() {
 #[test]
 fn subagent_sampling_limit_applies_precedence_and_clamps() {
     use crate::agent::subagent::MAX_SUBAGENT_SAMPLING_LIMIT;
-    use ezer_tools::implementations::grok_build::task::admission::DEFAULT_MAX_CONCURRENT;
+    use ezer_tools::implementations::ezer_build::task::admission::DEFAULT_MAX_CONCURRENT;
     let resolve = |env: Option<&str>, config: Option<i64>, remote: Option<u32>| SubagentsConfig::resolve_sampling_limit(
         env,
         config,
@@ -1228,7 +1228,7 @@ fn subagent_sampling_limit_defaults_to_resolved_subagents_max_concurrent() {
 }
 #[test]
 fn subagent_limit_behavior_resolves_env_over_toml_over_remote_over_queue() {
-    use ezer_tools::implementations::grok_build::task::admission::LimitBehavior;
+    use ezer_tools::implementations::ezer_build::task::admission::LimitBehavior;
     let resolve = SubagentsConfig::resolve_limit_behavior;
     assert_eq!(
             resolve(Some("fail"), Some("queue"), Some("queue")),

@@ -326,7 +326,7 @@ async fn build_session_routed_handlers_covers_finalized_toolset() {
 async fn build_session_routed_handlers_preserves_renamed_active_message_kind() {
     let handle = make_handle();
     let mut renamed = ezer_tools::registry::types::ToolConfig::for_tool::<
-        ezer_tools::implementations::grok_build::SendSubagentMessageTool,
+        ezer_tools::implementations::ezer_build::SendSubagentMessageTool,
     >();
     renamed.name_override = Some("relay_to_subagent".to_owned());
     let session = handle

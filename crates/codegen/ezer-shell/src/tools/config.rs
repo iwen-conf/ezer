@@ -1,7 +1,7 @@
 use crate::models;
 use serde::{Deserialize, Serialize};
 use ezer_sampler::SamplerConfig;
-use ezer_tools::implementations::grok_build;
+use ezer_tools::implementations::ezer_build;
 use ezer_tools::registry::types::ToolConfig;
 
 /// The tool-server binary defaults to a 5-minute foreground ceiling (`DEFAULT_MAX_TIMEOUT_MS`).
@@ -119,7 +119,7 @@ impl WebFetchToolConfig {
         remote_proxy: Option<&str>,
         remote_domains: Option<&[String]>,
         context_window_tokens: Option<u64>,
-    ) -> ezer_tools::implementations::grok_build::web_fetch::WebFetchParams {
+    ) -> ezer_tools::implementations::ezer_build::web_fetch::WebFetchParams {
         use crate::agent::config::env_string;
 
         let proxy_endpoint = self
@@ -139,7 +139,7 @@ impl WebFetchToolConfig {
             .allow_local
             .or_else(|| ezer_config::env_bool("EZER_WEB_FETCH_ALLOW_LOCAL"));
 
-        ezer_tools::implementations::grok_build::web_fetch::WebFetchParams {
+        ezer_tools::implementations::ezer_build::web_fetch::WebFetchParams {
             proxy_endpoint,
             allowed_domains,
             context_window_tokens,
@@ -332,9 +332,9 @@ impl FileToolset {
     ) -> Result<Vec<ToolConfig>, String> {
         match self {
             Self::Standard => Ok(vec![
-                ToolConfig::for_tool::<grok_build::ReadFileTool>(),
-                ToolConfig::for_tool::<grok_build::SearchReplaceTool>(),
-                ToolConfig::for_tool::<grok_build::GrepTool>(),
+                ToolConfig::for_tool::<ezer_build::ReadFileTool>(),
+                ToolConfig::for_tool::<ezer_build::SearchReplaceTool>(),
+                ToolConfig::for_tool::<ezer_build::GrepTool>(),
             ]),
             Self::Hashline => {
                 hashline_config.validate()?;

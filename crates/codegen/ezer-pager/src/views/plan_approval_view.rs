@@ -1,7 +1,7 @@
 use agent_client_protocol as acp;
 use xai_acp_lib::AcpResult;
 
-pub use ezer_tools::implementations::grok_build::exit_plan_mode::{
+pub use ezer_tools::implementations::ezer_build::exit_plan_mode::{
     ExitPlanModeExtRequest, ExitPlanModeExtResponse,
 };
 

@@ -18,8 +18,8 @@ use agent_client_protocol as acp;
 use tokio::sync::mpsc;
 use xai_acp_lib::AcpAgentGatewaySender as GatewaySender;
 use ezer_telemetry::region::Region;
-use ezer_tools::implementations::grok_build::task::coordinator::{self, ChildCompletion};
-use ezer_tools::implementations::grok_build::task::types::{
+use ezer_tools::implementations::ezer_build::task::coordinator::{self, ChildCompletion};
+use ezer_tools::implementations::ezer_build::task::types::{
     SubagentRequest, SubagentResult, SubagentSnapshot,
 };
 /// Floor keeps the pool responsive when `available_parallelism` is tiny.
@@ -73,7 +73,7 @@ pub(crate) fn spawn_pipeline_parent(
         .or_else(|| tracing::Span::current().id())
 }
 pub(crate) fn subagent_coordinator_channel() -> (
-    ezer_tools::implementations::grok_build::task::backend::SubagentCoordinatorSender,
+    ezer_tools::implementations::ezer_build::task::backend::SubagentCoordinatorSender,
     coordinator::SubagentCoordinatorReceiver,
 ) {
     coordinator::SubagentCoordinator::<ShellChildRunner>::channel()
@@ -90,14 +90,14 @@ pub(crate) async fn join_worker_task<T>(task: tokio::task::JoinHandle<T>, panic_
 impl coordinator::ChildRunner for ShellChildRunner {
     type Control = crate::agent::subagent::ShellChildRuntime;
     type RootControl =
-        ezer_tools::implementations::grok_build::task::root_control::NoRootControl;
+        ezer_tools::implementations::ezer_build::task::root_control::NoRootControl;
     type CompletionData = crate::agent::subagent::ShellCompletionData;
     type RunFuture = coordinator::LocalBoxFuture<coordinator::ChildRunOutput<Self::CompletionData>>;
     type ValidateFuture = coordinator::LocalBoxFuture<
-        ezer_tools::implementations::grok_build::task::types::SubagentValidateTypeOutcome,
+        ezer_tools::implementations::ezer_build::task::types::SubagentValidateTypeOutcome,
     >;
     type DescribeFuture = coordinator::LocalBoxFuture<
-        ezer_tools::implementations::grok_build::task::types::SubagentDescribeOutcome,
+        ezer_tools::implementations::ezer_build::task::types::SubagentDescribeOutcome,
     >;
     fn run(&self, mut run: coordinator::ChildRunRequest<Self::Control>) -> Self::RunFuture {
         let agent_ref = self.agent_ref.clone();
@@ -260,7 +260,7 @@ impl coordinator::ChildRunner for ShellChildRunner {
                         subagent_type,
                         "DescribeType for unknown/evicted parent session, replying Unavailable",
                     );
-                    ezer_tools::implementations::grok_build::task::types::SubagentDescribeOutcome::Unavailable
+                    ezer_tools::implementations::ezer_build::task::types::SubagentDescribeOutcome::Unavailable
                 }
             }
         })
@@ -351,7 +351,7 @@ fn log_limit_notice(notice: coordinator::SubagentLimitNotice) {
 pub(crate) fn spawn_subagent_coordinator(
     agent_ref: LocalRef<MvpAgent>,
     rx: coordinator::SubagentCoordinatorReceiver,
-    limits: ezer_tools::implementations::grok_build::task::admission::SubagentLimits,
+    limits: ezer_tools::implementations::ezer_build::task::admission::SubagentLimits,
 ) {
     let runner = ShellChildRunner {
         agent_ref,
@@ -360,7 +360,7 @@ pub(crate) fn spawn_subagent_coordinator(
     let limit_sink: coordinator::SubagentLimitSink = std::sync::Arc::new(log_limit_notice);
     let config = coordinator::CoordinatorConfig {
         foreground_budget:
-            ezer_tools::implementations::grok_build::task::backend::env_duration_or(
+            ezer_tools::implementations::ezer_build::task::backend::env_duration_or(
                 "EZER_SUBAGENT_AWAIT_BUDGET_MS",
                 std::time::Duration::from_secs(600),
             ),
@@ -502,7 +502,7 @@ pub(crate) fn inject_subagent_completed_prompt(params: InjectParams) {
     let Some(cmd_tx) = parent_cmd_tx else {
         return;
     };
-    let summary = ezer_tools::implementations::grok_build::task::completion_summary(
+    let summary = ezer_tools::implementations::ezer_build::task::completion_summary(
         request, result, snapshot,
     );
     let message = ezer_tools::reminders::task_completion::format_subagent_completion(

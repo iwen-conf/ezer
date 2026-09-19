@@ -17,7 +17,7 @@
 //! The persisted file is written atomically with owner-only (`0600`) permissions.
 //!
 //! The store is rooted at a fresh [`xai_dirs::resolve_grok_home`], never `grok_home()` or a cwd-relative `./.ezer`.
-//! Home is `None` when `$GROK_HOME` and the user home are unset, or when the resolved home is relative.
+//! Home is `None` when `$EZER_HOME` and the user home are unset, or when the resolved home is relative.
 //! In that no-home environment [`TrustStore::load`] yields an empty store that trusts nothing and persists nothing.
 //! So a cloned repo can never ship a `./.ezer/trusted_folders.toml` that self-trusts its own checkout (fail closed).
 
@@ -445,7 +445,7 @@ fn workspace_id(path: &Path) -> PathBuf {
     workspace_key(path.ancestors().find(|p| p.exists()).unwrap_or(path))
 }
 
-/// Fresh `$GROK_HOME` or `<home>/.ezer`. Does not call `grok_home()` and does not create directories.
+/// Fresh `$EZER_HOME` or `<home>/.ezer`. Does not call `grok_home()` and does not create directories.
 pub(crate) fn trust_store_home() -> Option<PathBuf> {
     xai_dirs::resolve_grok_home()
 }

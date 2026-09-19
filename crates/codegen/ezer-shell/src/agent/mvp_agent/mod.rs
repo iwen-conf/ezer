@@ -758,12 +758,12 @@ pub struct MvpAgent {
     >,
     /// Unified sender for all subagent coordinator events.
     /// LEADER-SAFE(shared): channel is multi-producer, coordinator drains.
-    subagent_event_tx: ezer_tools::implementations::grok_build::task::backend::SubagentCoordinatorSender,
+    subagent_event_tx: ezer_tools::implementations::ezer_build::task::backend::SubagentCoordinatorSender,
     /// Receiver for subagent events. Taken once by `start_subagent_coordinator()`.
     /// `None` after the coordinator drain task has been spawned.
     subagent_event_rx: RefCell<
         Option<
-            ezer_tools::implementations::grok_build::task::coordinator::SubagentCoordinatorReceiver,
+            ezer_tools::implementations::ezer_build::task::coordinator::SubagentCoordinatorReceiver,
         >,
     >,
     /// Shell-only presentation state; lifecycle lives in the channel actor.
@@ -774,7 +774,7 @@ pub struct MvpAgent {
     /// Shared buffer for mid-turn monitor event notifications.
     /// Pushed by the `InjectNotification` handler when a turn is active and the notification has `Next` priority.
     /// Drained by the session turn loop (`inject_pending_monitor_events`) into a hidden synthetic user message.
-    monitor_event_buffer: ezer_tools::implementations::grok_build::monitor::types::MonitorEventBuffer,
+    monitor_event_buffer: ezer_tools::implementations::ezer_build::monitor::types::MonitorEventBuffer,
     /// The process launch directory, captured once at construction.
     /// The deferred launch-dir init paths share this one value instead of each re-calling `std::env::current_dir()`.
     /// A re-call could drift if the process cwd ever changes after startup.
@@ -1848,7 +1848,7 @@ impl MvpAgent {
             auto_gc_policy,
         ));
     }
-    /// The caller resolves the home: read here, $GROK_HOME would be read when the blocking thread starts.
+    /// The caller resolves the home: read here, $EZER_HOME would be read when the blocking thread starts.
     /// This deletes worktrees under what it finds.
     pub(super) fn reclaim_worktrees(
         grok_home: anyhow::Result<std::path::PathBuf>,

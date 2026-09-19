@@ -133,7 +133,7 @@ pub(super) fn open_doctor_fix_question(
     plan: Box<crate::diagnostics::FixPlan>,
 ) {
     use crate::views::question_view::{LocalQuestionKind, QuestionViewState};
-    use ezer_tools::implementations::grok_build::ask_user_question::{
+    use ezer_tools::implementations::ezer_build::ask_user_question::{
         Question, QuestionOption,
     };
 

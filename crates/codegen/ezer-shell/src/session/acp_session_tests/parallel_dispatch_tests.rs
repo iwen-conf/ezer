@@ -13,8 +13,8 @@ fn at<T>(xs: &[T], i: usize) -> &T {
     x
 }
 
-use ezer_tools::implementations::grok_build::task::backend::SubagentBackend;
-use ezer_tools::implementations::grok_build::task::types::{
+use ezer_tools::implementations::ezer_build::task::backend::SubagentBackend;
+use ezer_tools::implementations::ezer_build::task::types::{
     ActiveAgentMessageOutcome, ActiveAgentMessageRequest, SubagentCancelOutcome,
     SubagentDescribeOutcome, SubagentRequest, SubagentResult, SubagentSnapshot,
     SubagentValidateTypeOutcome,
@@ -137,7 +137,7 @@ fn active_message_event_names(
 
 #[test]
 fn active_message_outputs_distinguish_uncertain_from_proved_rejection() {
-    use ezer_tools::implementations::grok_build::send_subagent_message::SendSubagentMessageOutput;
+    use ezer_tools::implementations::ezer_build::send_subagent_message::SendSubagentMessageOutput;
     use ezer_tools::types::output::ToolOutput;
 
     for (label, output, expected) in [
@@ -173,8 +173,8 @@ fn active_message_outputs_distinguish_uncertain_from_proved_rejection() {
 
 #[tokio::test(flavor = "current_thread")]
 async fn generic_tool_completion_chokepoint_has_exact_active_message_cardinality() {
-    use ezer_tools::implementations::grok_build::task::backend::SubagentBackendResource;
-    use ezer_tools::implementations::grok_build::task::types::{
+    use ezer_tools::implementations::ezer_build::task::backend::SubagentBackendResource;
+    use ezer_tools::implementations::ezer_build::task::types::{
         MAX_ACTIVE_AGENT_MESSAGE_BYTES, SubagentDepthCounter,
     };
 
@@ -453,8 +453,8 @@ async fn incremental_dispatch_surfaces_fast_tool_before_slow_sibling() {
 /// `lock_path_for_args` is the per-call key `execute_tool_calls` Phase 2 uses to bucket concurrent calls into per-file `tokio::sync::Mutex` groups.
 /// The compat toolset input types use `path`, and ezer_build's `read_file` uses `target_file`.
 #[test]
-fn lock_path_for_args_matches_grok_build_file_path() {
-    // grok_build search_replace / opencode EditTool / WriteTool / etc.
+fn lock_path_for_args_matches_ezer_build_file_path() {
+    // ezer_build search_replace / opencode EditTool / WriteTool / etc.
     let args = serde_json::json!({
         "file_path": "/repo/src/main.rs",
         "old_string": "foo",
@@ -519,8 +519,8 @@ fn lock_path_for_args_matches_path_arg() {
 }
 
 #[test]
-fn lock_path_for_args_matches_grok_build_target_file() {
-    // grok_build read_file uses #[serde(rename = "target_file")].
+fn lock_path_for_args_matches_ezer_build_target_file() {
+    // ezer_build read_file uses #[serde(rename = "target_file")].
     let args = serde_json::json!({
         "target_file": "/repo/src/main.rs",
     });
@@ -593,8 +593,8 @@ fn lock_path_for_args_buckets_parallel_compat_strreplace_to_same_lock() {
 }
 
 #[test]
-fn lock_path_for_args_buckets_grok_build_and_compat_to_same_lock_for_same_file() {
-    // A mixed batch of grok_build search_replace and compat.
+fn lock_path_for_args_buckets_ezer_build_and_compat_to_same_lock_for_same_file() {
+    // A mixed batch of ezer_build search_replace and compat.
     // StrReplace in the same turn must still serialize on the shared file path.
     // That mix is possible if the harness ever exposes both toolsets, or during a toolset migration file_path takes precedence over path when both are present, but neither tool emits both keys today.
     let grok = serde_json::json!({

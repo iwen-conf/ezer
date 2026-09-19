@@ -1629,7 +1629,7 @@ impl MvpAgent {
             });
             crate::agent::subagent::reconcile_orphaned_subagents_with_backend(
                 unfinished_subagents,
-                &ezer_tools::implementations::grok_build::task::backend::ChannelBackend::new(
+                &ezer_tools::implementations::ezer_build::task::backend::ChannelBackend::new(
                     self.subagent_event_tx.event_sender().0,
                 ),
                 &session_dir,
@@ -1665,8 +1665,8 @@ impl MvpAgent {
             available_keys = ?available.keys().take(10).collect::<Vec<_>>(),
             "load_session: restoring persisted model (debug)"
         );
-        let is_grok_build = persisted_model.0.starts_with("ezer-build");
-        let same_family_fallback = if is_grok_build {
+        let is_ezer_build = persisted_model.0.starts_with("ezer-build");
+        let same_family_fallback = if is_ezer_build {
             available
                 .keys()
                 .find(|id| id.0.starts_with("ezer-build"))

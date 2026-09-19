@@ -1035,7 +1035,7 @@ url = "https://denied.corp.com/mcp"
     }
 
     /// A repo-declared definition is discoverable while the folder is trusted and gone once it is not; user-tier and plugin-tier definitions survive either way.
-    /// Runs in a re-exec of this binary: discovery reads `$GROK_HOME/config.toml` through the process-wide `grok_home()` `OnceLock`, so only a fresh process can isolate it.
+    /// Runs in a re-exec of this binary: discovery reads `$EZER_HOME/config.toml` through the process-wide `grok_home()` `OnceLock`, so only a fresh process can isolate it.
     #[test]
     fn discovery_drops_project_definitions_for_untrusted_folder() {
         let grok_home = tempfile::tempdir().unwrap();

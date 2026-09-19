@@ -213,7 +213,7 @@ async fn test_compacted_history_minimal_no_state_context() {
 /// A prior change routed ezer-build to keep `recent_messages`, which survive only as `Tool call omitted...` stubs (dead tokens).
 /// Mirrors `summary_before_recent_compaction_with_no_user_query_yields_three_messages` for ezer-build (`summary_before_recent = false`).
 #[tokio::test]
-async fn grok_build_compaction_drops_working_tail_regression_206460() {
+async fn ezer_build_compaction_drops_working_tail_regression_206460() {
     let conversation = vec![
         ConversationItem::system("You are a helpful assistant."),
         ConversationItem::user(

@@ -3,7 +3,7 @@
 use super::support::*;
 use super::*;
 use agent_client_protocol as acp;
-use ezer_tools::implementations::grok_build::exit_plan_mode::ExitPlanModeExtRequest;
+use ezer_tools::implementations::ezer_build::exit_plan_mode::ExitPlanModeExtRequest;
 
 const SEED_PLAN: &str = "# OLD mixed-batch plan seed unique-c91e04";
 const NEW_PLAN: &str = "# NEW mixed-batch plan body unique-a7f3c2";
@@ -44,8 +44,8 @@ async fn seeded_active_plan_actor_with_edit_tools() -> (
     tempfile::TempDir,
     std::path::PathBuf,
 ) {
-    use ezer_tools::implementations::grok_build::enter_plan_mode::EnterPlanModeTool;
-    use ezer_tools::implementations::grok_build::exit_plan_mode::ExitPlanModeTool;
+    use ezer_tools::implementations::ezer_build::enter_plan_mode::EnterPlanModeTool;
+    use ezer_tools::implementations::ezer_build::exit_plan_mode::ExitPlanModeTool;
     use ezer_tools::registry::types::ToolConfig;
 
     let (gateway_tx, gateway_rx) =
@@ -199,8 +199,8 @@ async fn mixed_permission_cancel_skips_exit_reverse_request() {
     local
         .run_until(async {
             use ezer_paths::AbsPathBuf;
-            use ezer_tools::implementations::grok_build::enter_plan_mode::EnterPlanModeTool;
-            use ezer_tools::implementations::grok_build::exit_plan_mode::ExitPlanModeTool;
+            use ezer_tools::implementations::ezer_build::enter_plan_mode::EnterPlanModeTool;
+            use ezer_tools::implementations::ezer_build::exit_plan_mode::ExitPlanModeTool;
             use ezer_tools::registry::types::ToolConfig;
             use ezer_workspace::permission::{ClientType, spawn_permission_manager};
 

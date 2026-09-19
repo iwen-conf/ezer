@@ -1,4 +1,4 @@
-//! Slash command MRU / recency (`$GROK_HOME/slash-mru.json`).
+//! Slash command MRU / recency (`$EZER_HOME/slash-mru.json`).
 //!
 //! A flat map from canonical command name to `last_used` timestamp.
 //! Tiebreaks use recency decay (7-day half-life, 0.1 floor); the map is bounded to [`MAX_ENTRIES`] entries.

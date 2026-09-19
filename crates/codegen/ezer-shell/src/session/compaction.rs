@@ -1423,7 +1423,7 @@ impl SessionActor {
                         self.tool_context.subagent_event_tx
                     {
                         let (tx, rx) = tokio::sync::oneshot::channel();
-                        use ezer_tools::implementations::grok_build::task::types::{
+                        use ezer_tools::implementations::ezer_build::task::types::{
                             SubagentEvent, SubagentListActiveRequest,
                         };
                         let _ =
@@ -1506,7 +1506,7 @@ impl SessionActor {
                             );
                             ScheduledLoopSummary {
                                 task_id: t.id,
-                                interval: ezer_tools::implementations::grok_build::scheduler::interval::interval_to_human(
+                                interval: ezer_tools::implementations::ezer_build::scheduler::interval::interval_to_human(
                                     t.interval_secs,
                                 ),
                                 next_fire_at,

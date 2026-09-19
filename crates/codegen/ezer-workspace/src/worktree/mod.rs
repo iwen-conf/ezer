@@ -2949,12 +2949,12 @@ pub fn worktree_auto_gc_layer_from_settings(
     }
 }
 
-/// Load `$GROK_HOME/config.toml` through the shell's config pipeline and pull out `[worktree.auto_gc]`.
+/// Load `$EZER_HOME/config.toml` through the shell's config pipeline and pull out `[worktree.auto_gc]`.
 ///
 /// `ezer_config::load_config_file` is the same reader the shell uses (`$VAR` expansion, `[[version_overrides]]`,
 /// redacted parse-error logging), so a table that the shell honors is honored here too.
 /// Returns `None` when the file is unreadable or malformed, or the table is absent or fails to deserialize.
-/// Takes `home` so the document-to-settings path is testable without touching `$GROK_HOME`.
+/// Takes `home` so the document-to-settings path is testable without touching `$EZER_HOME`.
 fn load_local_worktree_auto_gc_settings(
     home: &Path,
 ) -> Option<ezer_config_types::WorktreeAutoGcSettings> {
@@ -2985,7 +2985,7 @@ fn worktree_auto_gc_settings_from_config(
         .ok()
 }
 
-/// Remote-blind (env and `$GROK_HOME/config.toml` only): opts in only when local `[worktree.auto_gc] enabled = true`, else returns `None`.
+/// Remote-blind (env and `$EZER_HOME/config.toml` only): opts in only when local `[worktree.auto_gc] enabled = true`, else returns `None`.
 /// A forced dry-run would stamp the shared throttle and block the shell agent's remote-aware pass over the same DB, so skip instead.
 ///
 /// An explicit local opt-in makes the local layer (over built-in defaults) win for this pass: remote `worktree_auto_gc`
@@ -2999,7 +2999,7 @@ fn resolve_worktree_auto_gc_local_in(
 }
 
 /// Pure opt-in decision (no IO): `None` unless local config explicitly enables the pass.
-/// Split out of `resolve_worktree_auto_gc_local_in` so the fail-safe is testable without touching `$GROK_HOME`.
+/// Split out of `resolve_worktree_auto_gc_local_in` so the fail-safe is testable without touching `$EZER_HOME`.
 fn local_auto_gc_policy(
     local: Option<&ezer_config_types::WorktreeAutoGcSettings>,
 ) -> Option<xai_fast_worktree::ResolvedWorktreeAutoGc> {

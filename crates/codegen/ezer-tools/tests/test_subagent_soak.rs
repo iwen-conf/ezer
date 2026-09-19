@@ -21,13 +21,13 @@ use tokio_util::sync::CancellationToken;
 
 use ezer_test_support::env::env_parse;
 use ezer_test_support::resources::{ResourceGrowth, ResourceSnapshot};
-use ezer_tools::implementations::grok_build::task::admission::SubagentLimits;
-use ezer_tools::implementations::grok_build::task::backend::{ChannelBackend, SubagentBackend};
-use ezer_tools::implementations::grok_build::task::coordinator::{
+use ezer_tools::implementations::ezer_build::task::admission::SubagentLimits;
+use ezer_tools::implementations::ezer_build::task::backend::{ChannelBackend, SubagentBackend};
+use ezer_tools::implementations::ezer_build::task::coordinator::{
     ChildCompletion, ChildControl, ChildRunOutput, ChildRunRequest, ChildRunner, CoordinatorConfig,
     LocalBoxFuture, MAX_COMPLETED_ENTRIES, StartedChild, SubagentCoordinator, SubagentProgress,
 };
-use ezer_tools::implementations::grok_build::task::types::{
+use ezer_tools::implementations::ezer_build::task::types::{
     SubagentDescribeOutcome, SubagentOwner, SubagentRegistryCounts, SubagentRequest,
     SubagentResult, SubagentValidateTypeOutcome,
 };
@@ -312,7 +312,7 @@ struct SoakRunner {
 impl ChildRunner for SoakRunner {
     type Control = SoakControl;
     type RootControl =
-        ezer_tools::implementations::grok_build::task::root_control::NoRootControl;
+        ezer_tools::implementations::ezer_build::task::root_control::NoRootControl;
     type CompletionData = ();
     type RunFuture = LocalBoxFuture<ChildRunOutput<()>>;
     type ValidateFuture = LocalBoxFuture<SubagentValidateTypeOutcome>;

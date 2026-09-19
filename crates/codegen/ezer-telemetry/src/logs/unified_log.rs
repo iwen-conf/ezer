@@ -210,7 +210,7 @@ fn open_writer() -> Option<LogWriter> {
 }
 
 /// Open (creating if needed) a writer for an explicit path. Split from [`open_writer`] so a writer re-points at its own
-/// path when healing a stale handle rather than re-resolving `$GROK_HOME`. That also makes the healing path testable
+/// path when healing a stale handle rather than re-resolving `$EZER_HOME`. That also makes the healing path testable
 /// against a temp directory.
 fn open_writer_at(path: PathBuf) -> Option<LogWriter> {
     if let Some(parent) = path.parent()

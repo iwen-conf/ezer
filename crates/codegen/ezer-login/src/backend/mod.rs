@@ -8,7 +8,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::Arc;
 use tokio::sync::{mpsc, oneshot};
-mod grok;
+mod xai;
 /// The inputs of one login attempt.
 pub struct LoginRequest<'a> {
     pub auth_manager: &'a Arc<AuthManager>,
@@ -49,7 +49,7 @@ pub trait AuthBackend {
         diagnostic_uploader: Option<DiagnosticUploader>,
     ) -> Arc<dyn TokenRefresher>;
 }
-pub type ActiveAuthBackend = grok::GrokAuthBackend;
+pub type ActiveAuthBackend = xai::GrokAuthBackend;
 /// Reports a URL the way a user says it, without the scheme.
 pub fn host_of(url: &str) -> String {
     url.strip_prefix("https://")

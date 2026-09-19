@@ -25,7 +25,7 @@ const ADMIN_TIERS: [(PolicyLayerTier, &str); 3] = [
     (PolicyLayerTier::SystemRequirements, SYS_REQ),
     (PolicyLayerTier::SystemManaged, SYS_MANAGED),
 ];
-/// Every user-owned tier: both are the server-synced `$GROK_HOME` files.
+/// Every user-owned tier: both are the server-synced `$EZER_HOME` files.
 const USER_TIERS: [(PolicyLayerTier, &str); 2] = [
     (PolicyLayerTier::UserRequirements, USER_REQ),
     (PolicyLayerTier::UserManaged, USER_MANAGED),

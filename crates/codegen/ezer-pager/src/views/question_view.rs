@@ -18,7 +18,7 @@ use ratatui::style::{Modifier, Style};
 use ratatui::text::{Line, Span};
 use xai_acp_lib::AcpResult;
 use ezer_markdown::StreamingMarkdownRenderer;
-pub use ezer_tools::implementations::grok_build::ask_user_question::{
+pub use ezer_tools::implementations::ezer_build::ask_user_question::{
     AskUserQuestionMode, Question, QuestionOption,
 };
 
@@ -801,11 +801,11 @@ impl QuestionViewState {
     /// included for single-select only, verbatim from the option.
     pub fn build_accepted_response(
         &self,
-    ) -> ezer_tools::implementations::grok_build::ask_user_question::AskUserQuestionExtResponse
+    ) -> ezer_tools::implementations::ezer_build::ask_user_question::AskUserQuestionExtResponse
     {
         use indexmap::IndexMap;
         use std::collections::HashMap;
-        use ezer_tools::implementations::grok_build::ask_user_question::{
+        use ezer_tools::implementations::ezer_build::ask_user_question::{
             AskUserQuestionExtResponse, QuestionAnnotation,
         };
 
@@ -883,7 +883,7 @@ impl QuestionViewState {
     /// After sending, `response_tx` is consumed (set to `None`) to prevent double-send.
     pub fn send_ext_response(
         &mut self,
-        response: ezer_tools::implementations::grok_build::ask_user_question::AskUserQuestionExtResponse,
+        response: ezer_tools::implementations::ezer_build::ask_user_question::AskUserQuestionExtResponse,
     ) -> bool {
         let Some(tx) = self.response_tx.take() else {
             return false;

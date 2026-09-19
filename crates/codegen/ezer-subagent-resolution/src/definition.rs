@@ -6,7 +6,7 @@ use std::path::Path;
 use ezer_agent::config::{AgentDefinition, IsolationMode};
 use ezer_agent::plugins::PluginRegistry;
 use ezer_agent::prompt::context::{PromptAudience, PromptContext};
-use ezer_tools::implementations::grok_build::task::types::{
+use ezer_tools::implementations::ezer_build::task::types::{
     SubagentCapabilityModeExt, SubagentRuntimeOverrides, prune_orphaned_background_task_tools,
 };
 use ezer_tools::registry::types::ToolConfig;
@@ -234,7 +234,7 @@ pub fn apply_child_tool_policy(
         prune_orphaned_background_task_tools(&mut definition.tool_config);
     }
     definition.tool_config.tools.retain(|tool| {
-        !ezer_tools::implementations::grok_build::is_workflow_tool(tool.kind, &tool.id)
+        !ezer_tools::implementations::ezer_build::is_workflow_tool(tool.kind, &tool.id)
     });
 }
 /// Resolve runtime overrides and definition defaults in the production order.
@@ -350,7 +350,7 @@ mod tests {
             resolve_agent_definition("general-purpose", &context(cwd.path(), &toggles)).unwrap();
         assert!(
             definition.tool_config.tools.iter().all(|tool| {
-                !ezer_tools::implementations::grok_build::is_workflow_tool(tool.kind, &tool.id)
+                !ezer_tools::implementations::ezer_build::is_workflow_tool(tool.kind, &tool.id)
             }),
             "general-purpose must declare its own list without workflow"
         );
@@ -372,7 +372,7 @@ mod tests {
         definition
             .tool_config
             .tools
-            .push((&ezer_tools::implementations::grok_build::WorkflowTool).into());
+            .push((&ezer_tools::implementations::ezer_build::WorkflowTool).into());
         let before: Vec<String> = definition
             .tool_config
             .tools
@@ -403,7 +403,7 @@ mod tests {
         definition
             .tool_config
             .tools
-            .push((&ezer_tools::implementations::grok_build::WorkflowTool).into());
+            .push((&ezer_tools::implementations::ezer_build::WorkflowTool).into());
         apply_child_tool_policy(&mut definition, None, true);
         assert!(
             definition
@@ -432,7 +432,7 @@ mod tests {
         assert!(definition.tool_config.tools.iter().all(|tool| {
             tool.kind != Some(ToolKind::Workflow)
                 && tool.id.rsplit(':').next()
-                    != Some(ezer_tools::implementations::grok_build::WORKFLOW_TOOL_NAME)
+                    != Some(ezer_tools::implementations::ezer_build::WORKFLOW_TOOL_NAME)
         }));
     }
     #[test]

@@ -12,8 +12,8 @@ use serde_json::Value;
 use xai_computer_hub_sdk::ToolServerHandler;
 use ezer_tools::computer::types::KillOutcome;
 use ezer_tools::computer::types::TaskKind;
-use ezer_tools::implementations::grok_build::scheduler::interval::interval_to_human;
-use ezer_tools::implementations::grok_build::scheduler::types::{
+use ezer_tools::implementations::ezer_build::scheduler::interval::interval_to_human;
+use ezer_tools::implementations::ezer_build::scheduler::types::{
     SchedulerCommand, SchedulerHandle,
 };
 use ezer_tools::registry::types::FinalizedToolset;
@@ -354,7 +354,7 @@ async fn tasks_snapshot(toolset: &FinalizedToolset) -> TasksSnapshotResponse {
 async fn list_session_todos(
     toolset: &ezer_tools::registry::types::FinalizedToolset,
 ) -> Vec<ezer_workspace_types::rpc::workspace::TodoSummaryWire> {
-    use ezer_tools::implementations::grok_build::todo::{TodoState, TodoStatus};
+    use ezer_tools::implementations::ezer_build::todo::{TodoState, TodoStatus};
     use ezer_tools::types::resources::State;
     use ezer_workspace_types::rpc::workspace::TodoSummaryWire;
     let res = toolset.resources.lock().await;

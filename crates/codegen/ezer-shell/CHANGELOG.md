@@ -647,7 +647,7 @@
 - **New StopCancelled hook event** now reports when a turn ends without completing (interrupt, permission reject, max turns, etc.).
 - **Recurring /loop tasks** now show a one-line expiry notice in the transcript when they auto-expire after 7 days.
 - **Web search** can now be restricted to allowed or excluded domains via [toolset.web_search] in config.toml.
-- **Session search index** can now be disabled via EZER_SESSION_SEARCH or [features] session_search for hosts sharing $GROK_HOME.
+- **Session search index** can now be disabled via EZER_SESSION_SEARCH or [features] session_search for hosts sharing $EZER_HOME.
 - **Drag to select and copy** values on the /session-info tab; c and y shortcuts also work.
 - **Double-click now selects a word** by default and triple-click selects the whole paragraph.
 - **New follow-up behavior setting** lets queued messages send immediately as interjections instead of waiting for the turn to finish.
@@ -1024,7 +1024,7 @@
 
 - **Plugin subagents** now inherit the parent session’s connected MCP servers (default `mcpInheritance: all`), so `search_tool` / `use_tool` work the same as for local agents. Plugin agents still cannot declare their own MCP servers, hooks, or elevated permission modes.
 - **`!cmd` commands** now allow up to one hour before timing out.
-- **npm package** now installs the native binary under `$GROK_HOME/bin` (honoring the same override as the Rust CLI).
+- **npm package** now installs the native binary under `$EZER_HOME/bin` (honoring the same override as the Rust CLI).
 - **Startup warnings** now point to `/doctor` for details and fixes.
 - **Dashboard hover and clicks** no longer miss the gaps between items in wide mode.
 - **Shift/Alt+Enter** now inserts a newline while editing a queued prompt.

@@ -109,7 +109,7 @@ impl ConfigFileWatcher {
         // We snapshot `$HOME` here so the closure can tell `<home>/.claude.json` apart from a project-level `<cwd>/.claude.json` purely by path Canonicalize `$HOME` ONCE up front. `notify` backends may deliver canonicalized event paths. macOS FSEvents resolves symlinks, returning `/private/var/...` where `xai_dirs::home_dir()` returned `/var/...`
         let user_home_buf: Option<PathBuf> =
             xai_dirs::home_dir().map(|h| dunce::canonicalize(&h).unwrap_or(h));
-        // Follow dest may live outside `$GROK_HOME`. Classify against the live
+        // Follow dest may live outside `$EZER_HOME`. Classify against the live
         // dest (not a startup snapshot) so A→B retargets still match B writes.
         let dest_watch = FollowDestWatch::start(&grok_home_buf, tx.clone());
 
@@ -222,7 +222,7 @@ impl ConfigFileWatcher {
     }
 }
 
-/// Snapshot the follow dest of `$GROK_HOME/config.toml`. Canonicalize for notify path match.
+/// Snapshot the follow dest of `$EZER_HOME/config.toml`. Canonicalize for notify path match.
 fn resolve_global_config_dest(grok_home: &Path) -> Option<PathBuf> {
     let slot = grok_home.join("config.toml");
     ezer_config::fs_atomic::resolve_atomic_destination(&slot)

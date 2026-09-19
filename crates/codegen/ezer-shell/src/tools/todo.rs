@@ -1,11 +1,11 @@
 //! Types are canonical in `ezer-tools`.
 //! This module adds conversions between ACP plan entries and `TodoItem` since `ezer-tools` is protocol-agnostic.
 
-pub use ezer_tools::implementations::grok_build::todo::TodoId;
-pub use ezer_tools::implementations::grok_build::todo::TodoItem;
-pub use ezer_tools::implementations::grok_build::todo::TodoPriority;
-pub use ezer_tools::implementations::grok_build::todo::TodoState;
-pub use ezer_tools::implementations::grok_build::todo::TodoStatus;
+pub use ezer_tools::implementations::ezer_build::todo::TodoId;
+pub use ezer_tools::implementations::ezer_build::todo::TodoItem;
+pub use ezer_tools::implementations::ezer_build::todo::TodoPriority;
+pub use ezer_tools::implementations::ezer_build::todo::TodoState;
+pub use ezer_tools::implementations::ezer_build::todo::TodoStatus;
 
 use agent_client_protocol as acp;
 

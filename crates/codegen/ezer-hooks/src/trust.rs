@@ -28,7 +28,7 @@ pub fn list_trusted_projects_with_file(trust_file: &Path) -> std::io::Result<Vec
 
 // ── Hook enable/disable ─────────────────────────────────────────────────
 
-/// Disabled hooks are listed in `$GROK_HOME/disabled-hooks`, one hook name per line.
+/// Disabled hooks are listed in `$EZER_HOME/disabled-hooks`, one hook name per line.
 pub fn is_hook_disabled(hook_name: &str) -> bool {
     match disabled_hooks_file_path() {
         Some(file) => is_hook_disabled_with_file(hook_name, &file),
@@ -91,10 +91,10 @@ fn is_hook_disabled_with_file(hook_name: &str, file: &Path) -> bool {
         .any(|l| !l.trim().is_empty() && !l.trim().starts_with('#') && l.trim() == hook_name)
 }
 
-/// Disable a hook by name (append to `$GROK_HOME/disabled-hooks`).
+/// Disable a hook by name (append to `$EZER_HOME/disabled-hooks`).
 pub fn disable_hook(hook_name: &str) -> Result<(), String> {
     let file = disabled_hooks_file_path()
-        .ok_or_else(|| "no user ezer home (set $GROK_HOME or $HOME)".to_string())?;
+        .ok_or_else(|| "no user ezer home (set $EZER_HOME or $HOME)".to_string())?;
     disable_hook_with_file(hook_name, &file)
 }
 
@@ -115,7 +115,7 @@ fn disable_hook_with_file(hook_name: &str, file: &Path) -> Result<(), String> {
     Ok(())
 }
 
-/// Enable a hook by name (remove from `$GROK_HOME/disabled-hooks`).
+/// Enable a hook by name (remove from `$EZER_HOME/disabled-hooks`).
 pub fn enable_hook(hook_name: &str) -> Result<bool, String> {
     match disabled_hooks_file_path() {
         Some(file) => enable_hook_with_file(hook_name, &file),
@@ -157,7 +157,7 @@ fn enable_hook_with_file(hook_name: &str, file: &Path) -> Result<bool, String> {
     Ok(true)
 }
 
-/// Returns the path to `$GROK_HOME/disabled-hooks`, or `None` when no user ezer home resolves.
+/// Returns the path to `$EZER_HOME/disabled-hooks`, or `None` when no user ezer home resolves.
 fn disabled_hooks_file_path() -> Option<PathBuf> {
     Some(ezer_config::user_grok_home()?.join("disabled-hooks"))
 }

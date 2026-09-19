@@ -21,10 +21,10 @@ use super::handle_request::{
 };
 use crate::test_support::lsp_runtime::{ctx_with_toggle, test_gateway_with_receiver};
 use ezer_subagent_resolution::resolve_effective_overrides;
-use ezer_tools::implementations::grok_build::task::coordinator::{
+use ezer_tools::implementations::ezer_build::task::coordinator::{
     ChildCompletion, CompletionDisposition,
 };
-use ezer_tools::implementations::grok_build::task::terminal_snapshot;
+use ezer_tools::implementations::ezer_build::task::terminal_snapshot;
 use ezer_tools::reminders::task_completion::INLINE_SUBAGENT_OUTPUT_BYTES;
 fn test_snapshot(
     request: &SubagentRequest,

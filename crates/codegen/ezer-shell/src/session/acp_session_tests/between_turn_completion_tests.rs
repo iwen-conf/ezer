@@ -1,4 +1,4 @@
-use ezer_tools::implementations::grok_build::task::types::{
+use ezer_tools::implementations::ezer_build::task::types::{
     SubagentCompletionSummary, SubagentSnapshot, SubagentSnapshotStatus,
 };
 use ezer_tools::reminders::task_completion::format_between_turn_completions;

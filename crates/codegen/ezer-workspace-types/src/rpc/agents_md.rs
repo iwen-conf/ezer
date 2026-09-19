@@ -31,7 +31,7 @@ pub struct AgentConfigFile {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum InstructionSource {
-    /// `$GROK_HOME` and the vendor homes.
+    /// `$EZER_HOME` and the vendor homes.
     Home,
     /// A `[paths] extra_rule_dirs` entry.
     Configured,

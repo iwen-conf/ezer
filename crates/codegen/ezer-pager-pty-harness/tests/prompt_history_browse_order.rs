@@ -1,7 +1,7 @@
 //! E2E: the Up browse is one reverse-chronological list holding every kind of thing typed at the composer, interleaved in send order.
 //!
 //! The panel paints oldest at the top, so a newest-first list lands on strictly descending rows.
-//! `#` notes need `[features] remember_mode = true`, which the run seeds into the sandbox `$GROK_HOME/config.toml`.
+//! `#` notes need `[features] remember_mode = true`, which the run seeds into the sandbox `$EZER_HOME/config.toml`.
 
 use std::time::Duration;
 

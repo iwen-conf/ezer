@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use tokio::sync::{mpsc, oneshot};
-use ezer_tools::implementations::grok_build::workflow::{
+use ezer_tools::implementations::ezer_build::workflow::{
     WorkflowControl, WorkflowLaunchAck, WorkflowLaunchRequest, WorkflowSource, WorkflowToolInput,
 };
 
@@ -11,7 +11,7 @@ use crate::session::workflow::tracker::WorkflowRunStatus;
 
 async fn request(
     tx: &mpsc::UnboundedSender<
-        ezer_tools::implementations::grok_build::workflow::WorkflowLaunchEnvelope,
+        ezer_tools::implementations::ezer_build::workflow::WorkflowLaunchEnvelope,
     >,
     source: WorkflowSource,
 ) -> WorkflowLaunchAck {

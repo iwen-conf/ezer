@@ -5,7 +5,7 @@ use std::sync::Arc;
 use std::sync::atomic::Ordering;
 use std::time::Duration;
 
-use ezer_tools::implementations::grok_build::scheduler::types::{
+use ezer_tools::implementations::ezer_build::scheduler::types::{
     ScheduledTask, SchedulerCommand, SchedulerHandle,
 };
 

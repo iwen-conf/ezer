@@ -17,9 +17,9 @@ use ezer_sampling_types::ReasoningEffort;
 use ezer_telemetry::region;
 use ezer_telemetry::region::Parent;
 use ezer_telemetry::subagent_spawn::{SubagentSpawnPhase, phase_region};
-use ezer_tools::implementations::grok_build::task::types::ActiveAgentMessageSource;
-use ezer_tools::implementations::grok_build::task::types::SubagentCapabilityModeExt;
-use ezer_tools::implementations::{grok_build, opencode};
+use ezer_tools::implementations::ezer_build::task::types::ActiveAgentMessageSource;
+use ezer_tools::implementations::ezer_build::task::types::SubagentCapabilityModeExt;
+use ezer_tools::implementations::{ezer_build, opencode};
 use ezer_tools::types::tool::ToolKind;
 static SUBAGENTS_ACTIVE: ezer_telemetry::activity::ActivityGauge =
     ezer_telemetry::activity::ActivityGauge::work(
@@ -324,7 +324,7 @@ pub(super) fn task_model_override_error(
     )
 )]
 pub(crate) async fn run_shell_child(
-    run: grok_build::task::coordinator::ChildRunRequest<ShellChildRuntime>,
+    run: ezer_build::task::coordinator::ChildRunRequest<ShellChildRuntime>,
     mut ctx: SubagentSpawnContext,
     mut completion_data: ShellCompletionData,
     gateway: GatewaySender,
@@ -333,7 +333,7 @@ pub(crate) async fn run_shell_child(
     if let Some(tp) = run.request.spawn_root.traceparent() {
         ezer_otel::link_current_span_to_meta(&serde_json::json!({ "traceparent": tp }));
     }
-    let grok_build::task::coordinator::ChildRunRequest {
+    let ezer_build::task::coordinator::ChildRunRequest {
         mut request,
         cancellation: cancel_token,
         reporter,
@@ -1247,8 +1247,8 @@ pub(crate) async fn run_shell_child(
     }
     if let Some(scope) = agent_memory_scope {
         let memory_tools: Vec<ezer_tools::registry::types::ToolConfig> = vec![
-            (&grok_build::ReadFileTool).into(),
-            (&grok_build::SearchReplaceTool).into(),
+            (&ezer_build::ReadFileTool).into(),
+            (&ezer_build::SearchReplaceTool).into(),
             (&opencode::OpenCodeWriteTool).into(),
         ];
         for tc in memory_tools {

@@ -464,7 +464,7 @@ async fn parent_compact_and_available_skill_execute_but_other_slashes_stay_inert
 
             *actor.agent.borrow_mut() = test_agent_with_tools(vec![
                 ezer_tools::registry::types::ToolConfig::for_tool::<
-                    ezer_tools::implementations::grok_build::ReadFileTool,
+                    ezer_tools::implementations::ezer_build::ReadFileTool,
                 >(),
             ])
             .await;
@@ -757,7 +757,7 @@ async fn shared_command_availability_syncs_classic_goal_harness() {
 /// A `/goal <objective>` whose planner pauses the goal ends the turn without ever calling the model.
 #[tokio::test(flavor = "current_thread")]
 async fn goal_set_with_failed_planner_makes_no_inference_request() {
-    use ezer_tools::implementations::grok_build::task::types::{SubagentEvent, SubagentResult};
+    use ezer_tools::implementations::ezer_build::task::types::{SubagentEvent, SubagentResult};
 
     let local = tokio::task::LocalSet::new();
     local

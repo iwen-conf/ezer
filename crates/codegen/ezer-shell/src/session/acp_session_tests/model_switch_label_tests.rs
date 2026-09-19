@@ -97,7 +97,7 @@ async fn zero_turn_rebuild_renders_switch_target_label() {
 
             actor
                 .handle_rebuild_agent_for_definition(
-                    ezer_agent::AgentDefinition::default_grok_build(),
+                    ezer_agent::AgentDefinition::default_ezer_build(),
                     SWITCH_TARGET_LABEL.to_owned(),
                 )
                 .await

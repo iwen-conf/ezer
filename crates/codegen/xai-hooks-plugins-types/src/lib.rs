@@ -38,7 +38,7 @@ pub enum PluginOrigin {
     ProjectGrok,
     /// Project `.claude/plugins/`.
     ProjectClaude,
-    /// `$GROK_HOME/plugins/`.
+    /// `$EZER_HOME/plugins/`.
     UserGrok,
     /// `~/.claude/plugins/`.
     UserClaude,

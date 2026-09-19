@@ -28,7 +28,7 @@ use crate::permission::shell_access::{
 use crate::permission::state::PermissionState;
 use crate::permission::types::{AccessKind, Decision, RequestPathContext};
 use ezer_mcp::servers::parse_mcp_qualified_name;
-use ezer_tools::implementations::grok_build::web_fetch::{
+use ezer_tools::implementations::ezer_build::web_fetch::{
     DomainMatcher, domain::normalize_domain,
 };
 use ezer_tools::types::resources::resolve_model_path;

@@ -12,7 +12,7 @@ use crate::appearance::permission_cursor::DefaultSelectedPermission;
 
 use ezer_shell::agent::config::UiConfig;
 use ezer_shell::util::config::DISPLAY_REFRESH_DEFAULT_AUTO_CADENCE_ENABLED;
-use ezer_tools::implementations::grok_build::ask_user_question;
+use ezer_tools::implementations::ezer_build::ask_user_question;
 
 // Int bounds for `max_thoughts_width`. `pub(crate)` so the dispatcher's clamp and the shell helper's defensive
 // clamp share these bounds.

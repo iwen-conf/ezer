@@ -72,7 +72,7 @@ use ezer_sampler::SamplerConfig as SamplingConfig;
 use ezer_sampling_types::truncate_bytes;
 use ezer_tools::computer::local::LocalTerminalBackend;
 use ezer_tools::implementations::BashToolInput;
-use ezer_tools::implementations::grok_build::web_fetch::WebFetchConfig;
+use ezer_tools::implementations::ezer_build::web_fetch::WebFetchConfig;
 use ezer_tools::types::ToolInput;
 use ezer_tools::types::compat::CompatConfig;
 use ezer_tools::types::output::{
@@ -934,17 +934,17 @@ pub(crate) struct SessionActor {
     pub(crate) goal_update_rx: std::cell::RefCell<
         Option<
             tokio::sync::mpsc::UnboundedReceiver<
-                ezer_tools::implementations::grok_build::update_goal::UpdateGoalEnvelope,
+                ezer_tools::implementations::ezer_build::update_goal::UpdateGoalEnvelope,
             >,
         >,
     >,
     pub(crate) goal_update_tx: tokio::sync::mpsc::UnboundedSender<
-        ezer_tools::implementations::grok_build::update_goal::UpdateGoalEnvelope,
+        ezer_tools::implementations::ezer_build::update_goal::UpdateGoalEnvelope,
     >,
     pub(crate) workflow_manager:
         Arc<tokio::sync::Mutex<crate::session::workflow::manager::WorkflowManager>>,
     pub(crate) workflow_launch_tx: tokio::sync::mpsc::UnboundedSender<
-        ezer_tools::implementations::grok_build::workflow::WorkflowLaunchEnvelope,
+        ezer_tools::implementations::ezer_build::workflow::WorkflowLaunchEnvelope,
     >,
     pub(crate) goal_classifier_enabled: bool,
     /// Master switch for the goal planner subagent.
@@ -983,7 +983,7 @@ pub(crate) struct SessionActor {
     /// Subsequent prompt-flow ticks then don't repeat the pause-on-load check.
     pub(crate) goal_plan_reconciled: std::sync::atomic::AtomicBool,
     pub(crate) pending_classifier_completions: parking_lot::Mutex<
-        VecDeque<ezer_tools::implementations::grok_build::update_goal::UpdateGoalInput>,
+        VecDeque<ezer_tools::implementations::ezer_build::update_goal::UpdateGoalInput>,
     >,
     /// [`Self::account_not_achieved_without_sampler`].
     pub(crate) goal_classifier_in_flight: std::sync::atomic::AtomicBool,
@@ -1284,13 +1284,13 @@ impl SessionActor {
                 && (self.memory.backend_params.is_some()
                     || self.memory.configured_storage.is_some()),
             scheduler: tool_names.iter().any(|n| {
-                n == ezer_tools::implementations::grok_build::SCHEDULER_CREATE_TOOL_NAME
+                n == ezer_tools::implementations::ezer_build::SCHEDULER_CREATE_TOOL_NAME
             }),
             hooks: self.hook_registry.borrow().is_some(),
             plugins: self.plugin_registry.borrow().is_some(),
             goal,
             workflows: tool_names.iter().any(|n| {
-                n == ezer_tools::implementations::grok_build::workflow::WORKFLOW_TOOL_NAME
+                n == ezer_tools::implementations::ezer_build::workflow::WORKFLOW_TOOL_NAME
             }),
             workflow_management: false,
         }

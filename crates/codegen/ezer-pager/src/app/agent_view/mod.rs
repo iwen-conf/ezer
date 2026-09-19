@@ -1997,7 +1997,7 @@ fn resolve_action(action_id: Option<ActionId>) -> Option<InputOutcome> {
 fn question_visible_h(
     scroll_region: Option<(u16, u16)>,
     prompt_height: u16,
-    question: &ezer_tools::implementations::grok_build::ask_user_question::Question,
+    question: &ezer_tools::implementations::ezer_build::ask_user_question::Question,
     content_w: usize,
     preview: Option<&str>,
     fullscreen: bool,

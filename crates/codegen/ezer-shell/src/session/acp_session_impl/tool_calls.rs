@@ -97,7 +97,7 @@ fn record_tool_span_outcome(
 pub(super) fn tool_output_span_outcome(
     result: &Result<ToolRunResult, xai_tool_runtime::ToolError>,
 ) -> &'static str {
-    use ezer_tools::implementations::grok_build::send_subagent_message::SendSubagentMessageDisposition;
+    use ezer_tools::implementations::ezer_build::send_subagent_message::SendSubagentMessageDisposition;
     match result {
         Ok(tool_result) => match &tool_result.output {
             ToolsToolOutput::SendSubagentMessage(output) => match output.disposition() {
@@ -215,7 +215,7 @@ pub(super) enum PlanEditGate {
 /// `apply_patch` is `AccessKind::Tool` (its files are named inside the patch text) and is always rejected: it could touch anything.
 /// `enter_plan_mode` / `exit_plan_mode` map to `AccessKind::Read` and are likewise never gated.
 fn access_kind_for_resolved_tool(tool_name: &str, tool_input: &ToolInput) -> AccessKind {
-    if tool_name == ezer_tools::implementations::grok_build::SEND_FEEDBACK_TOOL_NAME {
+    if tool_name == ezer_tools::implementations::ezer_build::SEND_FEEDBACK_TOOL_NAME {
         return match tool_input {
             ToolInput::SendFeedback(_) | ToolInput::Dynamic(_) => {
                 AccessKind::Tool("send_feedback".to_owned())
@@ -257,7 +257,7 @@ pub(super) enum PlanApprovalOutcome {
 }
 impl PlanApprovalOutcome {
     fn from_response(
-        resp: &ezer_tools::implementations::grok_build::exit_plan_mode::ExitPlanModeExtResponse,
+        resp: &ezer_tools::implementations::ezer_build::exit_plan_mode::ExitPlanModeExtResponse,
     ) -> Self {
         match resp.outcome.as_str() {
             "approved" => Self::Approved,
@@ -1976,11 +1976,11 @@ impl SessionActor {
         tool_call_id: &acp::ToolCallId,
         plan_content: Option<String>,
     ) -> Result<
-        ezer_tools::implementations::grok_build::exit_plan_mode::ExitPlanModeExtResponse,
+        ezer_tools::implementations::ezer_build::exit_plan_mode::ExitPlanModeExtResponse,
         acp::Error,
     > {
         use agent_client_protocol::Client as _;
-        use ezer_tools::implementations::grok_build::exit_plan_mode::{
+        use ezer_tools::implementations::ezer_build::exit_plan_mode::{
             ExitPlanModeExtRequest, ExitPlanModeExtResponse,
         };
         let ext_req = ExitPlanModeExtRequest {
@@ -2312,7 +2312,7 @@ impl SessionActor {
             ),
             ToolInput::Dynamic(_)
                 if wire_name
-                    == ezer_tools::implementations::grok_build::SEND_FEEDBACK_TOOL_NAME =>
+                    == ezer_tools::implementations::ezer_build::SEND_FEEDBACK_TOOL_NAME =>
             {
                 (
                     "Feedback drafted".to_string(),
@@ -2417,7 +2417,7 @@ impl SessionActor {
                     let rest = rest.get(rest.find('"')? + 1..)?;
                     Some(rest.get(..rest.find('"')?)?.to_string())
                 };
-                use ezer_tools::implementations::grok_build::workflow::WorkflowSource;
+                use ezer_tools::implementations::ezer_build::workflow::WorkflowSource;
                 let inline_name = match &w.source {
                     WorkflowSource::Script { script } => script_name(script),
                     _ => None,
@@ -3229,7 +3229,7 @@ mod exit_plan_tail_predicate_tests {
         assert!(!is_file_backed_exit_plan_kind(Some(ToolKind::Edit)));
         assert!(!is_file_backed_exit_plan_kind(None));
         assert!(is_file_backed_exit_plan_input(&ToolInput::ExitPlanMode(
-            ezer_tools::implementations::grok_build::exit_plan_mode::ExitPlanModeInput {}
+            ezer_tools::implementations::ezer_build::exit_plan_mode::ExitPlanModeInput {}
         )));
     }
     fn mixed(calls: Vec<crate::sampling::types::ToolCallResponse>) -> bool {
@@ -3363,7 +3363,7 @@ mod plan_mode_edit_gate_tests {
         plan_mode_edit_gate(tracker, input, &AccessKind::from(input))
     }
     fn search_replace(path: &str) -> ToolInput {
-        use ezer_tools::implementations::grok_build::search_replace::SearchReplaceInput;
+        use ezer_tools::implementations::ezer_build::search_replace::SearchReplaceInput;
         ToolInput::SearchReplace(SearchReplaceInput {
             file_path: path.into(),
             old_string: "a".into(),
@@ -3486,7 +3486,7 @@ mod plan_approval_helper_tests {
         PlanApprovalOutcome, ResumeAction, ext_method_no_client, resume_action_for,
         revise_plan_message,
     };
-    use ezer_tools::implementations::grok_build::exit_plan_mode::ExitPlanModeExtResponse;
+    use ezer_tools::implementations::ezer_build::exit_plan_mode::ExitPlanModeExtResponse;
     fn resp(outcome: &str) -> ExitPlanModeExtResponse {
         ExitPlanModeExtResponse {
             outcome: outcome.into(),

@@ -4,8 +4,8 @@ use super::parent_interject::ParentInterjectSignal;
 use super::*;
 use crate::session::telemetry::ActiveAgentMessageSafePointTrigger;
 use std::sync::Arc;
-use ezer_tools::implementations::grok_build::task::coordinator::ActiveMessageAdmission;
-use ezer_tools::implementations::grok_build::task::types::{
+use ezer_tools::implementations::ezer_build::task::coordinator::ActiveMessageAdmission;
+use ezer_tools::implementations::ezer_build::task::types::{
     ActiveAgentMessage, ActiveAgentMessageDelivery, ActiveAgentMessageOperation,
     ActiveAgentMessageSource,
 };

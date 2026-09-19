@@ -33,7 +33,7 @@ pub struct AgentBuilder {
     notification_handle: ToolNotificationHandle,
     owner_session_id: Option<String>,
     parent_scheduler_handle:
-        Option<ezer_tools::implementations::grok_build::scheduler::types::SchedulerHandle>,
+        Option<ezer_tools::implementations::ezer_build::scheduler::types::SchedulerHandle>,
     definition: Option<AgentDefinition>,
     /// Pre-rendered persona IO summaries for the task tool description.
     persona_summaries: Vec<String>,
@@ -64,12 +64,12 @@ pub struct AgentBuilder {
     web_search_config: ezer_tools::implementations::web_search::WebSearchConfig,
     /// When true, web search and X search go to the agentic sampler as native server-side tools instead of registering as local Function tools.
     backend_search: bool,
-    web_fetch_config: ezer_tools::implementations::grok_build::web_fetch::WebFetchConfig,
+    web_fetch_config: ezer_tools::implementations::ezer_build::web_fetch::WebFetchConfig,
     lsp: Option<std::sync::Arc<dyn ezer_tools::implementations::lsp::LspBackend>>,
-    image_gen_config: ezer_tools::implementations::grok_build::image_gen::ImageGenConfig,
-    video_gen_config: ezer_tools::implementations::grok_build::video_gen::VideoGenConfig,
+    image_gen_config: ezer_tools::implementations::ezer_build::image_gen::ImageGenConfig,
+    video_gen_config: ezer_tools::implementations::ezer_build::video_gen::VideoGenConfig,
     app_builder_deployer_config:
-        ezer_tools::implementations::grok_build::app_builder::AppBuilderDeployerConfig,
+        ezer_tools::implementations::ezer_build::app_builder::AppBuilderDeployerConfig,
     write_file_enabled: bool,
     active_agent_messages_enabled: bool,
     subagents_enabled: bool,
@@ -104,7 +104,7 @@ pub struct AgentBuilder {
     project_trusted: bool,
 }
 fn ensure_plan_mode_tools(tool_config: &mut ezer_tools::registry::types::ToolServerConfig) {
-    use ezer_tools::implementations::grok_build;
+    use ezer_tools::implementations::ezer_build;
     let existing: std::collections::HashSet<&str> =
         tool_config.tools.iter().map(|tc| tc.id.as_str()).collect();
     let missing_enter = !existing.contains("Ezer:enter_plan_mode");
@@ -114,17 +114,17 @@ fn ensure_plan_mode_tools(tool_config: &mut ezer_tools::registry::types::ToolSer
     if missing_enter {
         tool_config
             .tools
-            .push((&grok_build::EnterPlanModeTool).into());
+            .push((&ezer_build::EnterPlanModeTool).into());
     }
     if missing_exit {
         tool_config
             .tools
-            .push((&grok_build::ExitPlanModeTool).into());
+            .push((&ezer_build::ExitPlanModeTool).into());
     }
     if missing_ask {
         tool_config
             .tools
-            .push((&grok_build::AskUserQuestionTool).into());
+            .push((&ezer_build::AskUserQuestionTool).into());
     }
 }
 /// Single copy of the params-merge loop the per-tool param injections share.
@@ -383,7 +383,7 @@ impl AgentBuilder {
     /// Share the parent's scheduler handle so scheduled tasks survive subagent exit.
     pub fn with_parent_scheduler_handle(
         mut self,
-        handle: ezer_tools::implementations::grok_build::scheduler::types::SchedulerHandle,
+        handle: ezer_tools::implementations::ezer_build::scheduler::types::SchedulerHandle,
     ) -> Self {
         self.parent_scheduler_handle = Some(handle);
         self
@@ -404,7 +404,7 @@ impl AgentBuilder {
     /// `Disabled` (default) does not register the tool; flagged via remote `web_fetch_enabled` and the `EZER_WEB_FETCH` env.
     pub fn with_web_fetch_config(
         mut self,
-        config: ezer_tools::implementations::grok_build::web_fetch::WebFetchConfig,
+        config: ezer_tools::implementations::ezer_build::web_fetch::WebFetchConfig,
     ) -> Self {
         self.web_fetch_config = config;
         self
@@ -418,21 +418,21 @@ impl AgentBuilder {
     }
     pub fn with_image_gen_config(
         mut self,
-        config: ezer_tools::implementations::grok_build::image_gen::ImageGenConfig,
+        config: ezer_tools::implementations::ezer_build::image_gen::ImageGenConfig,
     ) -> Self {
         self.image_gen_config = config;
         self
     }
     pub fn with_video_gen_config(
         mut self,
-        config: ezer_tools::implementations::grok_build::video_gen::VideoGenConfig,
+        config: ezer_tools::implementations::ezer_build::video_gen::VideoGenConfig,
     ) -> Self {
         self.video_gen_config = config;
         self
     }
     pub fn with_app_builder_deployer_config(
         mut self,
-        config: ezer_tools::implementations::grok_build::app_builder::AppBuilderDeployerConfig,
+        config: ezer_tools::implementations::ezer_build::app_builder::AppBuilderDeployerConfig,
     ) -> Self {
         self.app_builder_deployer_config = config;
         self
@@ -545,7 +545,7 @@ impl AgentBuilder {
         if let Some(ref def) = self.definition {
             return def.clone();
         }
-        let mut def = AgentDefinition::default_grok_build();
+        let mut def = AgentDefinition::default_ezer_build();
         if let Some(ref name) = self.name {
             def.name = name.clone();
         }
@@ -598,7 +598,7 @@ impl AgentBuilder {
         &self,
         child: BuiltinAgentName,
     ) -> Result<ChildToolPreview, AgentBuildError> {
-        use ezer_tools::implementations::grok_build::task::types::{
+        use ezer_tools::implementations::ezer_build::task::types::{
             SubagentCapabilityModeExt, prune_orphaned_background_task_tools,
         };
         debug_assert!(self.prompt_audience == PromptAudience::Primary);
@@ -690,7 +690,7 @@ impl AgentBuilder {
                 definition.name
             )));
         }
-        let is_parent_grok_build = matches!(
+        let is_parent_ezer_build = matches!(
             definition.builtin_name,
             Some(
                 BuiltinAgentName::GrokBuild
@@ -700,7 +700,7 @@ impl AgentBuilder {
             )
         );
         if self.prompt_audience == PromptAudience::Primary
-            && is_parent_grok_build
+            && is_parent_ezer_build
             && !tool_config
                 .tools
                 .iter()
@@ -708,7 +708,7 @@ impl AgentBuilder {
         {
             tool_config
                 .tools
-                .push((&ezer_tools::implementations::grok_build::SendFeedbackTool).into());
+                .push((&ezer_tools::implementations::ezer_build::SendFeedbackTool).into());
         }
         if definition.inject_default_tools {
             if self.memory_backend.is_some() {
@@ -721,34 +721,34 @@ impl AgentBuilder {
                     .push((&memory::get_tool::MemoryGetImpl).into());
             }
             if self.web_search_config.is_enabled() {
-                use ezer_tools::implementations::grok_build;
-                tool_config.tools.push((&grok_build::WebSearchTool).into());
+                use ezer_tools::implementations::ezer_build;
+                tool_config.tools.push((&ezer_build::WebSearchTool).into());
             }
             if self.web_fetch_config.is_enabled() {
-                use ezer_tools::implementations::grok_build;
-                tool_config.tools.push((&grok_build::WebFetchTool).into());
+                use ezer_tools::implementations::ezer_build;
+                tool_config.tools.push((&ezer_build::WebFetchTool).into());
             }
             if self.lsp.is_some() {
                 tool_config
                     .tools
-                    .push((&ezer_tools::implementations::grok_build::LspTool).into());
+                    .push((&ezer_tools::implementations::ezer_build::LspTool).into());
             }
             if self.image_gen_config.image_gen_enabled() {
                 tool_config
                     .tools
-                    .push((&ezer_tools::implementations::grok_build::ImageGenTool).into());
+                    .push((&ezer_tools::implementations::ezer_build::ImageGenTool).into());
             }
             if self.image_gen_config.image_edit_enabled() {
                 tool_config
                     .tools
-                    .push((&ezer_tools::implementations::grok_build::ImageEditTool).into());
+                    .push((&ezer_tools::implementations::ezer_build::ImageEditTool).into());
             }
             if self.video_gen_config.is_enabled() {
                 tool_config
                     .tools
-                    .push((&ezer_tools::implementations::grok_build::ImageToVideoTool).into());
+                    .push((&ezer_tools::implementations::ezer_build::ImageToVideoTool).into());
                 tool_config.tools.push(
-                    (&ezer_tools::implementations::grok_build::ReferenceToVideoTool).into(),
+                    (&ezer_tools::implementations::ezer_build::ReferenceToVideoTool).into(),
                 );
             }
             let has_write_tool = tool_config
@@ -769,12 +769,12 @@ impl AgentBuilder {
             }
         }
         let active_agent_message = ezer_tools::registry::types::ToolConfig::for_tool::<
-            ezer_tools::implementations::grok_build::SendSubagentMessageTool,
+            ezer_tools::implementations::ezer_build::SendSubagentMessageTool,
         >();
         let is_active_agent_message = |tool: &ezer_tools::registry::types::ToolConfig| {
             tool.kind == Some(ToolKind::ActiveAgentMessage) || tool.id == active_agent_message.id
         };
-        use ezer_tools::implementations::grok_build::task::types::SubagentCapabilityModeExt;
+        use ezer_tools::implementations::ezer_build::task::types::SubagentCapabilityModeExt;
         let within_capability_ceiling = self.prompt_audience == PromptAudience::Primary
             || definition
                 .capability_mode
@@ -792,13 +792,13 @@ impl AgentBuilder {
                 .retain(|tool| !is_active_agent_message(tool));
         }
         if self.memory_backend.is_none() {
-            let grok_build_ns = ezer_tools::types::tool::ToolNamespace::GrokBuild.to_string();
+            let ezer_build_ns = ezer_tools::types::tool::ToolNamespace::GrokBuild.to_string();
             let mem_search_id = format!(
-                "{grok_build_ns}:{}",
+                "{ezer_build_ns}:{}",
                 ezer_tools::implementations::memory::MEMORY_SEARCH_TOOL_NAME
             );
             let mem_get_id = format!(
-                "{grok_build_ns}:{}",
+                "{ezer_build_ns}:{}",
                 ezer_tools::implementations::memory::MEMORY_GET_TOOL_NAME
             );
             tool_config
@@ -807,11 +807,11 @@ impl AgentBuilder {
         }
         if self.prompt_audience == crate::prompt::context::PromptAudience::Subagent {
             let feedback_id = ezer_tools::registry::types::ToolConfig::for_tool::<
-                ezer_tools::implementations::grok_build::SendFeedbackTool,
+                ezer_tools::implementations::ezer_build::SendFeedbackTool,
             >()
             .id;
             let feedback_name =
-                ezer_tools::implementations::grok_build::SEND_FEEDBACK_TOOL_NAME;
+                ezer_tools::implementations::ezer_build::SEND_FEEDBACK_TOOL_NAME;
             tool_config.tools.retain(|tool| {
                 !matches!(
                     tool.kind,
@@ -910,7 +910,7 @@ impl AgentBuilder {
                     .retain(|tc| !lifecycle.contains(&short_tool_name(&tc.id)));
             }
         }
-        if let ezer_tools::implementations::grok_build::web_fetch::WebFetchConfig::Enabled {
+        if let ezer_tools::implementations::ezer_build::web_fetch::WebFetchConfig::Enabled {
             ref params,
         } = self.web_fetch_config
             && let Ok(params_value) = serde_json::to_value(params)
@@ -1099,7 +1099,7 @@ impl AgentBuilder {
         }
         if self.prompt_audience == crate::prompt::context::PromptAudience::Subagent {
             tool_config.tools.retain(|tool| {
-                !ezer_tools::implementations::grok_build::is_workflow_tool(tool.kind, &tool.id)
+                !ezer_tools::implementations::ezer_build::is_workflow_tool(tool.kind, &tool.id)
             });
         }
         let use_backend_search = self.backend_search;
@@ -1535,8 +1535,8 @@ mod tests {
         audience: PromptAudience,
     ) -> usize {
         use ezer_tools::computer::local::LocalTerminalBackend;
-        use ezer_tools::implementations::grok_build::task::types::SubagentCapabilityModeExt;
-        let mut definition = crate::config::AgentDefinition::default_grok_build();
+        use ezer_tools::implementations::ezer_build::task::types::SubagentCapabilityModeExt;
+        let mut definition = crate::config::AgentDefinition::default_ezer_build();
         definition.capability_mode = ceiling;
         if let (Some(mode), PromptAudience::Subagent) = (ceiling, audience) {
             mode.filter_tool_config(&mut definition.tool_config);
@@ -1544,7 +1544,7 @@ mod tests {
         if predeclared {
             definition.tool_config.tools.push(
                 ezer_tools::registry::types::ToolConfig::for_tool::<
-                    ezer_tools::implementations::grok_build::SendSubagentMessageTool,
+                    ezer_tools::implementations::ezer_build::SendSubagentMessageTool,
                 >(),
             );
         }
@@ -1612,12 +1612,12 @@ mod tests {
     #[tokio::test]
     async fn active_agent_messages_are_present_in_enabled_child_toolsets() {
         use ezer_tools::computer::local::LocalTerminalBackend;
-        let mut definition = crate::config::AgentDefinition::default_grok_build();
+        let mut definition = crate::config::AgentDefinition::default_ezer_build();
         definition
             .tool_config
             .tools
             .push(ezer_tools::registry::types::ToolConfig::for_tool::<
-                ezer_tools::implementations::grok_build::SendSubagentMessageTool,
+                ezer_tools::implementations::ezer_build::SendSubagentMessageTool,
             >());
         let definitions = AgentBuilder::new(
             std::env::temp_dir(),
@@ -1643,11 +1643,11 @@ mod tests {
     #[tokio::test]
     async fn active_agent_messages_never_inject_into_curated_toolsets() {
         use ezer_tools::computer::local::LocalTerminalBackend;
-        let mut definition = crate::config::AgentDefinition::default_grok_build();
+        let mut definition = crate::config::AgentDefinition::default_ezer_build();
         definition.inject_default_tools = false;
         definition.tool_config.tools =
             vec![ezer_tools::registry::types::ToolConfig::for_tool::<
-                ezer_tools::implementations::grok_build::SendSubagentMessageTool,
+                ezer_tools::implementations::ezer_build::SendSubagentMessageTool,
             >()];
         let build = |enabled| {
             AgentBuilder::new(
@@ -1933,7 +1933,7 @@ mod tests {
             "snapshot-gated-skill",
             "---\nname: snapshot-gated-skill\ndescription: gated\npaths: \"src/**\"\n---\nbody\n",
         );
-        let mut definition = crate::config::AgentDefinition::default_grok_build();
+        let mut definition = crate::config::AgentDefinition::default_ezer_build();
         definition.skills = vec!["snapshot-plain-skill".to_string()];
         let agent = AgentBuilder::new(
             tmp.path().to_path_buf(),
@@ -2001,61 +2001,61 @@ mod tests {
         let cases: &[PagerFlagCase] = &[
             PagerFlagCase {
                 label: "ezer-build / subagents+ask_user",
-                profile: AgentDefinition::default_grok_build,
+                profile: AgentDefinition::default_ezer_build,
                 subagents: true,
                 ask_user: true,
             },
             PagerFlagCase {
                 label: "ezer-build / subagents / no-ask-user",
-                profile: AgentDefinition::default_grok_build,
+                profile: AgentDefinition::default_ezer_build,
                 subagents: true,
                 ask_user: false,
             },
             PagerFlagCase {
                 label: "ezer-build / no-subagents / ask_user",
-                profile: AgentDefinition::default_grok_build,
+                profile: AgentDefinition::default_ezer_build,
                 subagents: false,
                 ask_user: true,
             },
             PagerFlagCase {
                 label: "ezer-build / no-subagents / no-ask-user",
-                profile: AgentDefinition::default_grok_build,
+                profile: AgentDefinition::default_ezer_build,
                 subagents: false,
                 ask_user: false,
             },
             PagerFlagCase {
                 label: "ezer-build-ask-user / subagents",
-                profile: AgentDefinition::grok_build_ask_user,
+                profile: AgentDefinition::ezer_build_ask_user,
                 subagents: true,
                 ask_user: true,
             },
             PagerFlagCase {
                 label: "ezer-build-ask-user / no-subagents",
-                profile: AgentDefinition::grok_build_ask_user,
+                profile: AgentDefinition::ezer_build_ask_user,
                 subagents: false,
                 ask_user: true,
             },
             PagerFlagCase {
                 label: "ezer-build-plan",
-                profile: AgentDefinition::grok_build_plan,
+                profile: AgentDefinition::ezer_build_plan,
                 subagents: true,
                 ask_user: true,
             },
             PagerFlagCase {
                 label: "ezer-build-plan / no-ask-user",
-                profile: AgentDefinition::grok_build_plan,
+                profile: AgentDefinition::ezer_build_plan,
                 subagents: true,
                 ask_user: false,
             },
             PagerFlagCase {
                 label: "ezer-build-plan-no-subagents",
-                profile: AgentDefinition::grok_build_plan_no_subagents,
+                profile: AgentDefinition::ezer_build_plan_no_subagents,
                 subagents: false,
                 ask_user: true,
             },
             PagerFlagCase {
                 label: "ezer-build-plan-no-subagents / no-ask-user",
-                profile: AgentDefinition::grok_build_plan_no_subagents,
+                profile: AgentDefinition::ezer_build_plan_no_subagents,
                 subagents: false,
                 ask_user: false,
             },
@@ -2154,7 +2154,7 @@ mod tests {
             Arc::new(LocalTerminalBackend::new()),
             ToolNotificationHandle::noop(),
         )
-        .from_definition(crate::config::AgentDefinition::default_grok_build())
+        .from_definition(crate::config::AgentDefinition::default_ezer_build())
         .with_prompt_audience(PromptAudience::Subagent)
         .with_subagents_enabled(true)
         .build()
@@ -2200,7 +2200,7 @@ mod tests {
                 Arc::new(LocalTerminalBackend::new()),
                 ToolNotificationHandle::noop(),
             )
-            .from_definition(crate::config::AgentDefinition::default_grok_build())
+            .from_definition(crate::config::AgentDefinition::default_ezer_build())
             .with_subagents_enabled(true),
         )
         .build()
@@ -2270,7 +2270,7 @@ mod tests {
     /// "Read-only" follows the read-only capability allowlist, so a child handed a generating tool loses the prefix.
     #[tokio::test]
     async fn explore_fragment_drops_read_only_prefix_when_image_generation_is_enabled() {
-        use ezer_tools::implementations::grok_build::image_gen::ImageGenConfig;
+        use ezer_tools::implementations::ezer_build::image_gen::ImageGenConfig;
         let image_gen = ImageGenConfig::Enabled {
             api_key: "test-key".into(),
             base_url: "https://api.x.ai/v1".into(),
@@ -2347,20 +2347,20 @@ mod tests {
         use ezer_tools::notification::ToolNotificationHandle;
         use ezer_tools::registry::types::ToolConfig;
         let feedback_id =
-            ToolConfig::for_tool::<ezer_tools::implementations::grok_build::SendFeedbackTool>()
+            ToolConfig::for_tool::<ezer_tools::implementations::ezer_build::SendFeedbackTool>()
                 .id;
-        let mut kindless_feedback_id = crate::config::AgentDefinition::default_grok_build();
+        let mut kindless_feedback_id = crate::config::AgentDefinition::default_ezer_build();
         kindless_feedback_id.tool_config.tools = vec![ToolConfig::from_id(&feedback_id)];
         kindless_feedback_id.inject_default_tools = false;
-        let mut kindless_feedback_name = crate::config::AgentDefinition::default_grok_build();
+        let mut kindless_feedback_name = crate::config::AgentDefinition::default_ezer_build();
         kindless_feedback_name.tool_config.tools = vec![
             ToolConfig::from_id("custom:tool")
-                .with_name(ezer_tools::implementations::grok_build::SEND_FEEDBACK_TOOL_NAME),
+                .with_name(ezer_tools::implementations::ezer_build::SEND_FEEDBACK_TOOL_NAME),
         ];
         kindless_feedback_name.inject_default_tools = false;
         for definition in [
-            crate::config::AgentDefinition::default_grok_build(),
-            crate::config::AgentDefinition::grok_build_ask_user(),
+            crate::config::AgentDefinition::default_ezer_build(),
+            crate::config::AgentDefinition::ezer_build_ask_user(),
             kindless_feedback_id,
             kindless_feedback_name,
         ] {
@@ -2416,7 +2416,7 @@ mod tests {
     async fn top_level_session_still_receives_workflow() {
         let names = workflow_tool_names(
             crate::prompt::context::PromptAudience::Primary,
-            crate::config::AgentDefinition::default_grok_build(),
+            crate::config::AgentDefinition::default_ezer_build(),
         )
         .await;
         assert!(
@@ -2440,7 +2440,7 @@ mod tests {
     async fn workflow_spawned_agent_does_not_receive_workflow() {
         let names = workflow_tool_names(
             crate::prompt::context::PromptAudience::Subagent,
-            crate::config::AgentDefinition::default_grok_build(),
+            crate::config::AgentDefinition::default_ezer_build(),
         )
         .await;
         assert!(
@@ -2450,7 +2450,7 @@ mod tests {
     }
     #[tokio::test]
     async fn custom_child_toolset_cannot_reintroduce_workflow() {
-        use ezer_tools::implementations::grok_build::{ReadFileTool, WorkflowTool};
+        use ezer_tools::implementations::ezer_build::{ReadFileTool, WorkflowTool};
         let mut definition = crate::config::AgentDefinition::general_purpose();
         definition.inject_default_tools = false;
         definition.tool_config.tools = vec![
@@ -2473,12 +2473,12 @@ mod tests {
     async fn child_workflow_strip_leaves_unrelated_tools() {
         let primary = workflow_tool_names(
             crate::prompt::context::PromptAudience::Primary,
-            crate::config::AgentDefinition::default_grok_build(),
+            crate::config::AgentDefinition::default_ezer_build(),
         )
         .await;
         let child = workflow_tool_names(
             crate::prompt::context::PromptAudience::Subagent,
-            crate::config::AgentDefinition::default_grok_build(),
+            crate::config::AgentDefinition::default_ezer_build(),
         )
         .await;
         assert!(
@@ -2517,7 +2517,7 @@ mod tests {
     async fn curated_empty_toolset_fails_agent_build() {
         use ezer_tools::computer::local::LocalTerminalBackend;
         use ezer_tools::notification::ToolNotificationHandle;
-        let mut profile = crate::config::AgentDefinition::default_grok_build();
+        let mut profile = crate::config::AgentDefinition::default_ezer_build();
         profile.tool_config = Default::default();
         profile.inject_default_tools = false;
         let result = AgentBuilder::new(
@@ -2541,10 +2541,10 @@ mod tests {
     #[tokio::test]
     async fn plan_mode_injected_ask_user_question_receives_params() {
         use ezer_tools::computer::local::LocalTerminalBackend;
-        use ezer_tools::implementations::grok_build::ask_user_question::AskUserQuestionParams;
+        use ezer_tools::implementations::ezer_build::ask_user_question::AskUserQuestionParams;
         use ezer_tools::notification::ToolNotificationHandle;
         use ezer_tools::types::resources::Params;
-        let profile = crate::config::AgentDefinition::default_grok_build();
+        let profile = crate::config::AgentDefinition::default_ezer_build();
         assert!(
             !profile
                 .tool_config
@@ -2578,7 +2578,7 @@ mod tests {
     #[tokio::test]
     async fn non_interactive_build_stamps_ask_user_question_params() {
         use ezer_tools::computer::local::LocalTerminalBackend;
-        use ezer_tools::implementations::grok_build::ask_user_question::AskUserQuestionParams;
+        use ezer_tools::implementations::ezer_build::ask_user_question::AskUserQuestionParams;
         use ezer_tools::notification::ToolNotificationHandle;
         use ezer_tools::types::resources::Params;
         let agent = AgentBuilder::new(
@@ -2586,7 +2586,7 @@ mod tests {
             Arc::new(LocalTerminalBackend::new()),
             ToolNotificationHandle::noop(),
         )
-        .from_definition(crate::config::AgentDefinition::default_grok_build())
+        .from_definition(crate::config::AgentDefinition::default_ezer_build())
         .with_is_non_interactive(true)
         .build()
         .await
@@ -2601,7 +2601,7 @@ mod tests {
     async fn build_with_tools(tools: Vec<String>, disallowed: Vec<String>) -> crate::agent::Agent {
         use ezer_tools::computer::local::LocalTerminalBackend;
         use ezer_tools::notification::ToolNotificationHandle;
-        let mut def = crate::config::AgentDefinition::default_grok_build();
+        let mut def = crate::config::AgentDefinition::default_ezer_build();
         def.tools = tools;
         def.disallowed_tools = disallowed;
         AgentBuilder::new(
@@ -2620,7 +2620,7 @@ mod tests {
     ) -> Vec<String> {
         use ezer_tools::computer::local::LocalTerminalBackend;
         use ezer_tools::notification::ToolNotificationHandle;
-        let mut def = crate::config::AgentDefinition::default_grok_build();
+        let mut def = crate::config::AgentDefinition::default_ezer_build();
         def.tools = own_tools;
         def.session_tools_allowlist = Some(session_allow);
         let agent = AgentBuilder::new(
@@ -2749,7 +2749,7 @@ mod tests {
         assert_eq!(agent.definition().allowed_subagent_types, None);
         use ezer_tools::computer::local::LocalTerminalBackend;
         use ezer_tools::notification::ToolNotificationHandle;
-        let mut def = crate::config::AgentDefinition::default_grok_build();
+        let mut def = crate::config::AgentDefinition::default_ezer_build();
         def.disallowed_tools = vec!["Agent".into()];
         let agent = AgentBuilder::new(
             std::env::temp_dir(),
@@ -2765,10 +2765,10 @@ mod tests {
     #[tokio::test]
     async fn spawning_blocked_disables_all_background_bash_modes() {
         use ezer_tools::computer::local::LocalTerminalBackend;
-        use ezer_tools::implementations::grok_build::bash::BashParams;
+        use ezer_tools::implementations::ezer_build::bash::BashParams;
         use ezer_tools::notification::ToolNotificationHandle;
         use ezer_tools::types::resources::Params;
-        let mut definition = crate::config::AgentDefinition::default_grok_build();
+        let mut definition = crate::config::AgentDefinition::default_ezer_build();
         definition.tools = vec!["run_terminal_cmd".into()];
         let bash_params = serde_json::json!({
             "max_timeout_secs": 36_000.0,
@@ -2986,10 +2986,10 @@ mod tests {
     #[tokio::test]
     async fn requested_enabled_web_tools_survive_allowlist() {
         use ezer_tools::computer::local::LocalTerminalBackend;
-        use ezer_tools::implementations::grok_build::web_fetch::WebFetchConfig;
+        use ezer_tools::implementations::ezer_build::web_fetch::WebFetchConfig;
         use ezer_tools::implementations::web_search::WebSearchConfig;
         use ezer_tools::notification::ToolNotificationHandle;
-        let mut definition = crate::config::AgentDefinition::default_grok_build();
+        let mut definition = crate::config::AgentDefinition::default_ezer_build();
         definition.tools = vec![
             "read_file".into(),
             "grep".into(),
@@ -3133,7 +3133,7 @@ mod tests {
         } else {
             WebSearchConfig::Disabled
         };
-        let mut def = crate::config::AgentDefinition::default_grok_build();
+        let mut def = crate::config::AgentDefinition::default_ezer_build();
         def.disallowed_tools = disallowed_tools.iter().map(|s| s.to_string()).collect();
         def.tool_overrides = tool_overrides;
         AgentBuilder::new(

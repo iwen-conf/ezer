@@ -122,7 +122,7 @@ pub struct EnvironmentConfig {
     /// Extra CLI args passed to the pager binary.
     #[serde(default)]
     pub args: Vec<String>,
-    /// Optional `config.toml` written into the run's isolated `$GROK_HOME` before spawn.
+    /// Optional `config.toml` written into the run's isolated `$EZER_HOME` before spawn.
     /// For example, `[ui] keep_text_selection` keeps selection highlights alive long enough to assert on.
     #[serde(default)]
     pub config_toml: Option<String>,

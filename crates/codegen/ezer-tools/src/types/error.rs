@@ -1,6 +1,6 @@
-use crate::implementations::grok_build::bash::BashError;
-use crate::implementations::grok_build::todo::TodoError;
-use crate::implementations::grok_build::web_fetch::WebFetchError;
+use crate::implementations::ezer_build::bash::BashError;
+use crate::implementations::ezer_build::todo::TodoError;
+use crate::implementations::ezer_build::web_fetch::WebFetchError;
 
 /// Error type for SearchReplace tool operations.
 #[derive(thiserror::Error, Debug)]

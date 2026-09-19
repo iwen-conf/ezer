@@ -36,8 +36,8 @@ use ezer_agent::config::{McpInheritance, ModelOverride, PermissionMode};
 use ezer_sampling_types::conversation::ConversationItem;
 use ezer_session_events::types::CancellationCategory;
 use ezer_subagent_resolution::ResumeSourceData;
-use ezer_tools::implementations::grok_build::monitor::types::MonitorEventBuffer;
-use ezer_tools::implementations::grok_build::task::types::*;
+use ezer_tools::implementations::ezer_build::monitor::types::MonitorEventBuffer;
+use ezer_tools::implementations::ezer_build::task::types::*;
 use ezer_tools::types::tool::ToolKind;
 use ezer_workspace::file_system::AsyncFileSystem;
 use xai_hunk_tracker::HunkTrackerHandle;
@@ -48,7 +48,7 @@ pub(crate) use spawn::{
     emit_subagent_notification, spawn_subagent_coordinator, subagent_coordinator_channel,
     worker_runtime,
 };
-pub(crate) use ezer_tools::implementations::grok_build::task::coordinator::{
+pub(crate) use ezer_tools::implementations::ezer_build::task::coordinator::{
     ChildRunOutput, StartedChild,
 };
 mod attempt_store;
@@ -240,7 +240,7 @@ pub(crate) struct SubagentSpawnContext {
     /// Parent's scheduler handle.
     /// When `Some`, the subagent reuses the parent's scheduler actor so scheduled tasks survive subagent exit.
     pub parent_scheduler_handle:
-        Option<ezer_tools::implementations::grok_build::scheduler::types::SchedulerHandle>,
+        Option<ezer_tools::implementations::ezer_build::scheduler::types::SchedulerHandle>,
     /// Parent's session environment variables (.envrc and color settings), shared so the child inherits the same env without re-loading.
     pub session_env: Arc<HashMap<String, String>>,
     /// Parent's memory config, shared so the child can access the same cross-session memory store.
@@ -248,11 +248,11 @@ pub(crate) struct SubagentSpawnContext {
     /// Parent's selected memory implementation, retained even when memory is disabled.
     pub memory_mode: crate::config::MemoryMode,
     pub web_search_sampling_config: Option<ezer_sampler::SamplerConfig>,
-    pub web_fetch_config: ezer_tools::implementations::grok_build::web_fetch::WebFetchConfig,
-    pub image_gen_config: ezer_tools::implementations::grok_build::image_gen::ImageGenConfig,
-    pub video_gen_config: ezer_tools::implementations::grok_build::video_gen::VideoGenConfig,
+    pub web_fetch_config: ezer_tools::implementations::ezer_build::web_fetch::WebFetchConfig,
+    pub image_gen_config: ezer_tools::implementations::ezer_build::image_gen::ImageGenConfig,
+    pub video_gen_config: ezer_tools::implementations::ezer_build::video_gen::VideoGenConfig,
     pub app_builder_deployer_config:
-        ezer_tools::implementations::grok_build::app_builder::AppBuilderDeployerConfig,
+        ezer_tools::implementations::ezer_build::app_builder::AppBuilderDeployerConfig,
     pub write_file_enabled: bool,
     pub active_agent_messages_enabled: bool,
     /// Whether goal mode (`/goal`) is enabled.
@@ -2520,7 +2520,7 @@ fn completed_finish_from_inspection(
 #[tracing::instrument(skip_all)]
 pub(crate) async fn reconcile_orphaned_subagents_with_backend(
     unfinished: &[crate::session::storage::UnfinishedSubagent],
-    backend: &ezer_tools::implementations::grok_build::task::backend::ChannelBackend,
+    backend: &ezer_tools::implementations::ezer_build::task::backend::ChannelBackend,
     session_dir: &Path,
     parent_session_id: &str,
     gateway: &GatewaySender,
@@ -2653,7 +2653,7 @@ pub(crate) async fn reconcile_orphaned_subagents_with_backend(
 /// Persist-first plus the per-parent lock make a second tick, sequential or overlapping, a no-op.
 #[tracing::instrument(level = "debug", skip_all)]
 pub(crate) async fn reconcile_live_orphaned_subagents(
-    backend: &ezer_tools::implementations::grok_build::task::backend::ChannelBackend,
+    backend: &ezer_tools::implementations::ezer_build::task::backend::ChannelBackend,
     session_dir: &Path,
     parent_session_id: &str,
     gateway: &GatewaySender,

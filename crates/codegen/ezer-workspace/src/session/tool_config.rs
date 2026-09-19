@@ -374,9 +374,9 @@ impl SessionContextFactory for WorkspaceSessionContextFactory {
         session_env: Arc<HashMap<String, String>>,
         backend: Arc<dyn ezer_tools::computer::types::TerminalBackend>,
     ) -> ezer_tools::registry::types::SessionContext {
-        use ezer_tools::implementations::grok_build::app_builder::AppBuilderDeployerConfig;
-        use ezer_tools::implementations::grok_build::image_gen::ImageGenConfig;
-        use ezer_tools::implementations::grok_build::video_gen::VideoGenConfig;
+        use ezer_tools::implementations::ezer_build::app_builder::AppBuilderDeployerConfig;
+        use ezer_tools::implementations::ezer_build::image_gen::ImageGenConfig;
+        use ezer_tools::implementations::ezer_build::video_gen::VideoGenConfig;
         use ezer_tools::implementations::web_search::WebSearchConfig;
         let fs = Arc::new(ezer_tools::computer::local::LocalFs)
             as Arc<dyn ezer_tools::computer::types::AsyncFileSystem>;
@@ -494,9 +494,9 @@ fn build_proxy_headers(base_url: &str) -> indexmap::IndexMap<String, String> {
     headers
 }
 /// Enabled with default params unless `EZER_DISABLE_WEB_FETCH=1` is set.
-fn build_web_fetch_config() -> ezer_tools::implementations::grok_build::web_fetch::WebFetchConfig
+fn build_web_fetch_config() -> ezer_tools::implementations::ezer_build::web_fetch::WebFetchConfig
 {
-    use ezer_tools::implementations::grok_build::web_fetch::{WebFetchConfig, WebFetchParams};
+    use ezer_tools::implementations::ezer_build::web_fetch::{WebFetchConfig, WebFetchParams};
     if std::env::var("EZER_DISABLE_WEB_FETCH").is_ok_and(|v| v == "1" || v == "true") {
         return WebFetchConfig::Disabled;
     }

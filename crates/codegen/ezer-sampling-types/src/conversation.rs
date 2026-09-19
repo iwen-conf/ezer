@@ -4639,7 +4639,7 @@ mod tests {
     // Idempotent (current-format rows produce zero siblings); verified by `upgrade_is_idempotent_on_post_pr_rows`
 
     #[test]
-    fn upgrade_legacy_reasoning_singular_grok_build_shape() {
+    fn upgrade_legacy_reasoning_singular_ezer_build_shape() {
         // Synthetic fixture with truncated text and an encrypted stub for readability
         // The assistant row carries `reasoning: { text, encrypted, id }` inline, the earlier shape
         let raw = serde_json::json!({

@@ -4904,7 +4904,7 @@ mod status_line_draw_tests {
     use ratatui::buffer::Buffer;
     use ratatui::layout::Rect;
     use ratatui::style::Color;
-    use ezer_tools::implementations::grok_build::ask_user_question::{
+    use ezer_tools::implementations::ezer_build::ask_user_question::{
         Question, QuestionOption,
     };
     fn draw_script(output: &str, rows: u16) -> Buffer {

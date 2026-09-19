@@ -701,13 +701,13 @@ fn make_ask_user_question_args(
     xai_acp_lib::AcpArgs<acp::ExtRequest>,
     tokio::sync::oneshot::Receiver<xai_acp_lib::AcpResult<acp::ExtResponse>>,
 ) {
-    use ezer_tools::implementations::grok_build::ask_user_question::{
+    use ezer_tools::implementations::ezer_build::ask_user_question::{
         AskUserQuestionExtRequest, Question, QuestionOption,
     };
     let req = AskUserQuestionExtRequest {
         session_id: "test-session".into(),
         tool_call_id: tool_call_id.into(),
-        mode: ezer_tools::implementations::grok_build::ask_user_question::AskUserQuestionMode::Default,
+        mode: ezer_tools::implementations::ezer_build::ask_user_question::AskUserQuestionMode::Default,
         questions: vec![Question {
                 question: "ACP-driven question".into(),
                 options: vec![QuestionOption {

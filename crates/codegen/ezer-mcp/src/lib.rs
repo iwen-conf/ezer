@@ -12,7 +12,7 @@
 //!    (`ezer_mcp::rmcp::*`).
 //!
 //! 2. **Owns MCP-specific integration code**:
-//!    - [`credentials`]: on-disk `$GROK_HOME/mcp_credentials.json` store and the rmcp `CredentialStore` adapter.
+//!    - [`credentials`]: on-disk `$EZER_HOME/mcp_credentials.json` store and the rmcp `CredentialStore` adapter.
 //!    - `auth_status`: decides auth for HTTP servers from what is on disk.
 //!    - [`oauth`]: browser-based OAuth flow with cross-process and in-process dedup.
 //!    - [`oauth_config`]: BYO OAuth config types parsed out of `config.toml`.

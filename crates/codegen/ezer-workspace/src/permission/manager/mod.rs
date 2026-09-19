@@ -30,7 +30,7 @@ use crate::permission::types::{
     PermissionRequest, PermissionResolution, PromptPolicy,
 };
 use ezer_paths::AbsPathBuf;
-use ezer_tools::implementations::grok_build::web_fetch::{
+use ezer_tools::implementations::ezer_build::web_fetch::{
     DomainMatcher, config::DEFAULT_ALLOWED_DOMAINS, domain::normalize_domain,
 };
 

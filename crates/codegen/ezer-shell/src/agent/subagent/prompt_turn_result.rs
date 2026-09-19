@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use crate::session::commands::{PromptCompletionKind, PromptTurnResult};
-use ezer_tools::implementations::grok_build::task::types::SubagentResult;
+use ezer_tools::implementations::ezer_build::task::types::SubagentResult;
 
 pub(super) enum PromptTurnResultMode {
     Initial { requires_structured_output: bool },

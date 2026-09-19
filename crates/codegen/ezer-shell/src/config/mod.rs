@@ -292,7 +292,7 @@ impl SubagentsConfig {
             env,
             config,
             remote,
-            ezer_tools::implementations::grok_build::task::admission::DEFAULT_MAX_CONCURRENT,
+            ezer_tools::implementations::ezer_build::task::admission::DEFAULT_MAX_CONCURRENT,
         )
     }
     /// Resolve the subagent turn-sampling limit, clamped to [`crate::agent::subagent::MAX_SUBAGENT_SAMPLING_LIMIT`].
@@ -334,8 +334,8 @@ impl SubagentsConfig {
         env: Option<&str>,
         config: Option<&str>,
         remote: Option<&str>,
-    ) -> ezer_tools::implementations::grok_build::task::admission::LimitBehavior {
-        use ezer_tools::implementations::grok_build::task::admission::LimitBehavior;
+    ) -> ezer_tools::implementations::ezer_build::task::admission::LimitBehavior {
+        use ezer_tools::implementations::ezer_build::task::admission::LimitBehavior;
         for (source, value) in [("env", env), ("config", config), ("remote", remote)] {
             let Some(value) = value else { continue };
             if value.eq_ignore_ascii_case("fail") {
@@ -628,7 +628,7 @@ pub struct ToolsConfig {
     /// Optional S3 bucket config for ZDR video output. When present (and valid), video tools presign an upload URL and pass it to the API.
     /// The generated video then lands in a team-owned bucket instead of being downloaded locally. Only effective when `disable_zdr_incompatible_tools` is `true`. Populated from `[tools.zdr_video_output_s3]` in config.
     pub zdr_video_output_s3:
-        Option<ezer_tools::implementations::grok_build::video_gen::ZdrVideoOutputS3Config>,
+        Option<ezer_tools::implementations::ezer_build::video_gen::ZdrVideoOutputS3Config>,
     pub media_gen: MediaGenToolsConfig,
 }
 impl ToolsConfig {
@@ -652,7 +652,7 @@ impl ToolsConfig {
                 .and_then(|s3_val| match s3_val
                     .clone()
                     .try_into::<
-                        ezer_tools::implementations::grok_build::video_gen::ZdrVideoOutputS3Config,
+                        ezer_tools::implementations::ezer_build::video_gen::ZdrVideoOutputS3Config,
                     >()
                 {
                     Ok(cfg) if cfg.is_valid() => Some(cfg),

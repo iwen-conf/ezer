@@ -18,7 +18,7 @@ impl RoleCapability {
     /// Keyed on the `can_*` flags (`can_search` for grep, `can_execute` for terminal/bash).
     fn is_satisfied(
         self,
-        summary: &ezer_tools::implementations::grok_build::task::types::SubagentTypeSummary,
+        summary: &ezer_tools::implementations::ezer_build::task::types::SubagentTypeSummary,
     ) -> bool {
         match self {
             Self::Skeptic => summary.can_read && summary.can_search,
@@ -35,7 +35,7 @@ pub(crate) struct PanelResolveCache {
     /// Maps a harness `agent_type` to its describe outcome (the coordinator's answer for the role's `general-purpose` toolset on that harness).
     describe: std::collections::HashMap<
         String,
-        ezer_tools::implementations::grok_build::task::types::SubagentDescribeOutcome,
+        ezer_tools::implementations::ezer_build::task::types::SubagentDescribeOutcome,
     >,
 }
 
@@ -47,7 +47,7 @@ fn role_tool_names_from(
     cache: &PanelResolveCache,
     inherit: &crate::session::goal_role_tools::RoleToolNames,
 ) -> crate::session::goal_role_tools::RoleToolNames {
-    use ezer_tools::implementations::grok_build::task::types::SubagentDescribeOutcome;
+    use ezer_tools::implementations::ezer_build::task::types::SubagentDescribeOutcome;
     // `override_.agent_type` is the committed harness; the cache is keyed on it.
     match override_.agent_type.as_deref() {
         Some(harness) => match cache.describe.get(harness) {
@@ -630,7 +630,7 @@ impl SessionActor {
         choice: &crate::agent::config::GoalRoleModelChoice,
         capability: RoleCapability,
         event_tx: &tokio::sync::mpsc::UnboundedSender<
-            ezer_tools::implementations::grok_build::task::types::SubagentEvent,
+            ezer_tools::implementations::ezer_build::task::types::SubagentEvent,
         >,
     ) -> (
         crate::session::goal_planner::RoleSpawnOverride,
@@ -669,17 +669,17 @@ impl SessionActor {
         pair: &crate::util::config::GoalRoleModel,
         capability: RoleCapability,
         event_tx: &tokio::sync::mpsc::UnboundedSender<
-            ezer_tools::implementations::grok_build::task::types::SubagentEvent,
+            ezer_tools::implementations::ezer_build::task::types::SubagentEvent,
         >,
         available_models: &indexmap::IndexMap<String, crate::agent::config::ModelEntry>,
         cache: &mut PanelResolveCache,
     ) -> crate::session::goal_planner::RoleSpawnOverride {
         use crate::session::events::{Event, GoalRoleModelFailOpenReason as Reason};
         use crate::session::goal_planner::RoleSpawnOverride;
-        use ezer_tools::implementations::grok_build::task::backend::{
+        use ezer_tools::implementations::ezer_build::task::backend::{
             ChannelBackend, SubagentBackend,
         };
-        use ezer_tools::implementations::grok_build::task::types::SubagentDescribeOutcome;
+        use ezer_tools::implementations::ezer_build::task::types::SubagentDescribeOutcome;
 
         let fail_open = |reason: Reason| {
             self.emit_event(Event::GoalRoleModelFailOpen {
@@ -1690,9 +1690,9 @@ impl SessionActor {
         &self,
         current_tokens: i64,
         purpose: DrainPurpose,
-        extra: Vec<ezer_tools::implementations::grok_build::update_goal::UpdateGoalEnvelope>,
+        extra: Vec<ezer_tools::implementations::ezer_build::update_goal::UpdateGoalEnvelope>,
     ) {
-        use ezer_tools::implementations::grok_build::update_goal::{
+        use ezer_tools::implementations::ezer_build::update_goal::{
             RejectReason, UpdateGoalAck,
         };
         if !self.goal_harness_enabled() {
@@ -2176,10 +2176,10 @@ impl SessionActor {
         attempt: u32,
         outcome: crate::session::goal_classifier::GoalClassifierOutcome,
         notify: &crate::session::goal_orchestrator::GoalNotifySender,
-    ) -> ezer_tools::implementations::grok_build::update_goal::UpdateGoalAck {
+    ) -> ezer_tools::implementations::ezer_build::update_goal::UpdateGoalAck {
         use crate::session::goal_classifier::GoalClassifierOutcome;
         use crate::session::goal_tracker::GoalClassifierVerdict;
-        use ezer_tools::implementations::grok_build::update_goal::UpdateGoalAck;
+        use ezer_tools::implementations::ezer_build::update_goal::UpdateGoalAck;
 
         let current_tokens = self.chat_state_handle.get_total_tokens().await as i64;
         let (tokens_used, finished_marginal) = self.goal_tokens(current_tokens);
@@ -2321,7 +2321,7 @@ impl SessionActor {
 #[cfg(test)]
 mod role_capability_tests {
     use super::RoleCapability;
-    use ezer_tools::implementations::grok_build::task::types::SubagentTypeSummary;
+    use ezer_tools::implementations::ezer_build::task::types::SubagentTypeSummary;
 
     fn summary(can_read: bool, can_search: bool, can_execute: bool) -> SubagentTypeSummary {
         SubagentTypeSummary {
@@ -2352,7 +2352,7 @@ mod role_tool_names_tests {
     use super::{PanelResolveCache, role_tool_names_from};
     use crate::session::goal_planner::RoleSpawnOverride;
     use crate::session::goal_role_tools::RoleToolNames;
-    use ezer_tools::implementations::grok_build::task::types::{
+    use ezer_tools::implementations::ezer_build::task::types::{
         SubagentDescribeOutcome, SubagentTypeSummary,
     };
     use ezer_tools::types::tool::ToolKind;

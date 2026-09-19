@@ -68,7 +68,7 @@ pub enum PluginOrigin {
     ProjectGrok,
     /// Project `.claude/plugins/`.
     ProjectClaude,
-    /// `$GROK_HOME/plugins/`.
+    /// `$EZER_HOME/plugins/`.
     UserGrok,
     /// `~/.claude/plugins/`.
     UserClaude,
@@ -194,7 +194,7 @@ impl DiscoveryConfig {
 
 // ── Discovery entry point ─────────────────────────────────────────────
 
-/// User plugin directories in priority order: `$GROK_HOME/plugins` then `~/.claude/plugins`.
+/// User plugin directories in priority order: `$EZER_HOME/plugins` then `~/.claude/plugins`.
 /// Plugins are intentionally not discovered from legacy `~/.ezer/plugins`.
 /// Trust, persisted data, and install paths all resolve under `grok_home()`, so a legacy scan would be half-initialized.
 fn user_plugin_dirs(home: Option<&Path>, grok: Option<&Path>) -> Vec<(PathBuf, PluginOrigin)> {
@@ -306,7 +306,7 @@ pub fn discover_plugins(
         }
     }
 
-    // 4-5. User plugins: $GROK_HOME/plugins, legacy ~/.grok/plugins, ~/.claude/plugins.
+    // 4-5. User plugins: $EZER_HOME/plugins, legacy ~/.grok/plugins, ~/.claude/plugins.
     // Gate the grok plugins dir on user_grok_home() so a project's .grok/plugins is never scanned as user-global when no home resolves
     let grok = ezer_config::user_grok_home();
     let plugin_dirs = user_plugin_dirs(xai_dirs::home_dir().as_deref(), grok.as_deref());

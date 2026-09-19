@@ -6,7 +6,7 @@ const ENV_AGENT_ID: &str = "EZER_AGENT_ID";
 static AGENT_ID: OnceLock<String> = OnceLock::new();
 static AGENT_INSTANCE_ID: OnceLock<String> = OnceLock::new();
 
-/// Returns the stable agent ID: `EZER_AGENT_ID` if set, else the value cached in `$GROK_HOME/agent_id`.
+/// Returns the stable agent ID: `EZER_AGENT_ID` if set, else the value cached in `$EZER_HOME/agent_id`.
 /// Otherwise a machine-derived UUID is computed once and persisted there.
 /// The first call in a process may block while the computation runs; [`prefetch_agent_id`] starts it early.
 pub fn agent_id() -> String {
@@ -107,7 +107,7 @@ fn read_agent_id_cache(path: &std::path::Path) -> std::io::Result<Option<String>
 }
 
 /// Self-cycle / hop-limit / unreadable-but-replaceable leaves can be rewritten
-/// under `$GROK_HOME`. EIO must not clobber a file we could not read.
+/// under `$EZER_HOME`. EIO must not clobber a file we could not read.
 fn cache_error_is_replaceable_leaf(e: &std::io::Error, path: &std::path::Path) -> bool {
     if matches!(
         e.kind(),

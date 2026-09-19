@@ -177,8 +177,8 @@ impl Drop for BlockingWaitGuard {
 }
 pub(crate) fn subagent_foreground_wait(
     state: Arc<BlockingWaitState>,
-) -> ezer_tools::implementations::grok_build::task::types::SubagentForegroundWait {
-    ezer_tools::implementations::grok_build::task::types::SubagentForegroundWait::new(
+) -> ezer_tools::implementations::ezer_build::task::types::SubagentForegroundWait {
+    ezer_tools::implementations::ezer_build::task::types::SubagentForegroundWait::new(
         move || Box::new(BlockingWaitGuard::enter(Arc::clone(&state))),
     )
 }
@@ -205,11 +205,11 @@ pub struct ToolContext {
     /// `None` if subagent support is not enabled.
     pub subagent_event_tx: Option<
         tokio::sync::mpsc::UnboundedSender<
-            ezer_tools::implementations::grok_build::task::types::SubagentEvent,
+            ezer_tools::implementations::ezer_build::task::types::SubagentEvent,
         >,
     >,
     pub subagent_coordinator_sender: Option<
-        ezer_tools::implementations::grok_build::task::backend::SubagentCoordinatorSender,
+        ezer_tools::implementations::ezer_build::task::backend::SubagentCoordinatorSender,
     >,
     /// Shared LSP runtime, cloned cheaply (Arc) from parent to child.
     pub lsp: Option<Arc<dyn ezer_tools::implementations::lsp::LspBackend>>,
@@ -222,7 +222,7 @@ pub struct ToolContext {
     /// The session turn loop (`inject_pending_monitor_events`) drains events pushed here.
     /// They are injected as ONE hidden synthetic user message before the next sampling step.
     pub monitor_event_buffer:
-        Option<ezer_tools::implementations::grok_build::monitor::types::MonitorEventBuffer>,
+        Option<ezer_tools::implementations::ezer_build::monitor::types::MonitorEventBuffer>,
     pub task_completion_reservations:
         Option<ezer_tools::reminders::task_completion::TaskCompletionReservations>,
     pub task_wake_suppressed:

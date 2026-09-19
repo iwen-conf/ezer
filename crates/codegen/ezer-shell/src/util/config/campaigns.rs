@@ -72,7 +72,7 @@ fn dismiss_campaign_ids_at(
     use fs2::FileExt as _;
     let _guard = DISMISS_LOCK.lock().unwrap_or_else(|p| p.into_inner());
     let path = campaigns_state_path(home);
-    // Cross-process advisory lock over the read-modify-write: in leader mode several grok processes share `$GROK_HOME`
+    // Cross-process advisory lock over the read-modify-write: in leader mode several grok processes share `$EZER_HOME`
     // The in-process mutex alone would let one process overwrite another's update
     // The lock is best-effort; a lock failure still proceeds
     let lock = std::fs::OpenOptions::new()

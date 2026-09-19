@@ -21,28 +21,28 @@ impl RunShellChildTestRunner {
     }
 }
 
-impl ezer_tools::implementations::grok_build::task::coordinator::ChildRunner
+impl ezer_tools::implementations::ezer_build::task::coordinator::ChildRunner
     for RunShellChildTestRunner
 {
     type Control = ShellChildRuntime;
     type RootControl =
-        ezer_tools::implementations::grok_build::task::root_control::NoRootControl;
+        ezer_tools::implementations::ezer_build::task::root_control::NoRootControl;
     type CompletionData = ShellCompletionData;
-    type RunFuture = ezer_tools::implementations::grok_build::task::coordinator::LocalBoxFuture<
+    type RunFuture = ezer_tools::implementations::ezer_build::task::coordinator::LocalBoxFuture<
         ChildRunOutput<ShellCompletionData>,
     >;
     type ValidateFuture =
-        ezer_tools::implementations::grok_build::task::coordinator::LocalBoxFuture<
+        ezer_tools::implementations::ezer_build::task::coordinator::LocalBoxFuture<
             SubagentValidateTypeOutcome,
         >;
     type DescribeFuture =
-        ezer_tools::implementations::grok_build::task::coordinator::LocalBoxFuture<
+        ezer_tools::implementations::ezer_build::task::coordinator::LocalBoxFuture<
             SubagentDescribeOutcome,
         >;
 
     fn run(
         &self,
-        run: ezer_tools::implementations::grok_build::task::coordinator::ChildRunRequest<
+        run: ezer_tools::implementations::ezer_build::task::coordinator::ChildRunRequest<
             Self::Control,
         >,
     ) -> Self::RunFuture {
@@ -135,10 +135,10 @@ async fn assert_wake_setup_failure_preserves_prior_durable_state(
 ) {
     use crate::session::storage::StorageAdapter;
     use ezer_sampling_types::conversation::ConversationItem;
-    use ezer_tools::implementations::grok_build::task::backend::{
+    use ezer_tools::implementations::ezer_build::task::backend::{
         ChannelBackend, SubagentBackend,
     };
-    use ezer_tools::implementations::grok_build::task::coordinator::{
+    use ezer_tools::implementations::ezer_build::task::coordinator::{
         CoordinatorConfig, SubagentCoordinator,
     };
 
@@ -308,10 +308,10 @@ async fn acknowledge_parent_usage(mut parent_cmd_rx: mpsc::UnboundedReceiver<Ses
 async fn unpublished_wake_completion_preserves_prior_durable_state_and_worktree() {
     xai_test_utils::require_git!();
     use crate::session::storage::StorageAdapter;
-    use ezer_tools::implementations::grok_build::task::backend::{
+    use ezer_tools::implementations::ezer_build::task::backend::{
         ChannelBackend, SubagentBackend,
     };
-    use ezer_tools::implementations::grok_build::task::coordinator::{
+    use ezer_tools::implementations::ezer_build::task::coordinator::{
         CoordinatorConfig, SubagentCoordinator,
     };
     use xai_test_utils::git::{run_git, seed_repo_with_remote};
@@ -459,10 +459,10 @@ async fn unpublished_wake_completion_preserves_prior_durable_state_and_worktree(
 #[tokio::test(flavor = "current_thread")]
 async fn ordinary_spawn_with_failed_metadata_write_persists_output_and_disposes_worktree() {
     xai_test_utils::require_git!();
-    use ezer_tools::implementations::grok_build::task::backend::{
+    use ezer_tools::implementations::ezer_build::task::backend::{
         ChannelBackend, SubagentBackend,
     };
-    use ezer_tools::implementations::grok_build::task::coordinator::{
+    use ezer_tools::implementations::ezer_build::task::coordinator::{
         CoordinatorConfig, SubagentCoordinator,
     };
     use xai_test_utils::git::seed_repo_with_remote;
@@ -536,10 +536,10 @@ async fn ordinary_spawn_with_failed_metadata_write_persists_output_and_disposes_
 #[tokio::test(flavor = "current_thread")]
 async fn ordinary_spawn_disposes_worktree_when_only_remote_settings_enable_snapshot() {
     xai_test_utils::require_git!();
-    use ezer_tools::implementations::grok_build::task::backend::{
+    use ezer_tools::implementations::ezer_build::task::backend::{
         ChannelBackend, SubagentBackend,
     };
-    use ezer_tools::implementations::grok_build::task::coordinator::{
+    use ezer_tools::implementations::ezer_build::task::coordinator::{
         CoordinatorConfig, SubagentCoordinator,
     };
     use xai_test_utils::git::seed_repo_with_remote;
@@ -609,10 +609,10 @@ async fn ordinary_spawn_disposes_worktree_when_only_remote_settings_enable_snaps
 /// ahead of the first turn, and teardown releases it.
 #[tokio::test(flavor = "current_thread")]
 async fn ordinary_spawn_binds_the_child_workspace_session_before_its_first_turn() {
-    use ezer_tools::implementations::grok_build::task::backend::{
+    use ezer_tools::implementations::ezer_build::task::backend::{
         ChannelBackend, SubagentBackend,
     };
-    use ezer_tools::implementations::grok_build::task::coordinator::{
+    use ezer_tools::implementations::ezer_build::task::coordinator::{
         CoordinatorConfig, SubagentCoordinator,
     };
 
@@ -685,10 +685,10 @@ async fn ordinary_spawn_binds_the_child_workspace_session_before_its_first_turn(
 
 #[tokio::test(flavor = "current_thread")]
 async fn unacked_wake_start_and_abort_fail_closed_without_parking_runner() {
-    use ezer_tools::implementations::grok_build::task::backend::{
+    use ezer_tools::implementations::ezer_build::task::backend::{
         ChannelBackend, SubagentBackend,
     };
-    use ezer_tools::implementations::grok_build::task::coordinator::{
+    use ezer_tools::implementations::ezer_build::task::coordinator::{
         CoordinatorConfig, SubagentCoordinator,
     };
 
@@ -815,10 +815,10 @@ async fn unacked_wake_start_and_abort_fail_closed_without_parking_runner() {
 
 #[tokio::test(flavor = "current_thread")]
 async fn rejected_deferred_start_restores_prior_without_publication() {
-    use ezer_tools::implementations::grok_build::task::backend::{
+    use ezer_tools::implementations::ezer_build::task::backend::{
         ChannelBackend, SubagentBackend,
     };
-    use ezer_tools::implementations::grok_build::task::coordinator::{
+    use ezer_tools::implementations::ezer_build::task::coordinator::{
         CoordinatorConfig, SubagentCoordinator,
     };
 
@@ -939,10 +939,10 @@ async fn rejected_deferred_start_restores_prior_without_publication() {
 
 #[tokio::test(flavor = "current_thread")]
 async fn started_wake_with_failed_metadata_write_preserves_prior_durable_artifacts() {
-    use ezer_tools::implementations::grok_build::task::backend::{
+    use ezer_tools::implementations::ezer_build::task::backend::{
         ChannelBackend, SubagentBackend,
     };
-    use ezer_tools::implementations::grok_build::task::coordinator::{
+    use ezer_tools::implementations::ezer_build::task::coordinator::{
         CoordinatorConfig, SubagentCoordinator,
     };
 

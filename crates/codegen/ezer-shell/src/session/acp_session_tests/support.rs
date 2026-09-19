@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 use super::*;
-use ezer_tools::implementations::grok_build::task::types::{
+use ezer_tools::implementations::ezer_build::task::types::{
     SubagentCompletionSummary, SubagentSnapshot, SubagentSnapshotStatus,
 };
 pub(crate) fn at<T>(xs: &[T], i: usize) -> &T {
@@ -74,20 +74,20 @@ pub(crate) async fn test_agent_backend_search(
 }
 #[cfg(test)]
 pub(crate) async fn test_agent_with_goal_tool() -> ezer_agent::Agent {
-    use ezer_tools::implementations::grok_build::update_goal::UpdateGoalTool;
+    use ezer_tools::implementations::ezer_build::update_goal::UpdateGoalTool;
     use ezer_tools::registry::types::ToolConfig;
     test_agent_with_tools(vec![ToolConfig::for_tool::<UpdateGoalTool>()]).await
 }
 #[cfg(test)]
-pub(crate) async fn test_grok_build_agent_with_todo() -> ezer_agent::Agent {
-    use ezer_tools::implementations::grok_build::todo::TodoWriteTool;
+pub(crate) async fn test_ezer_build_agent_with_todo() -> ezer_agent::Agent {
+    use ezer_tools::implementations::ezer_build::todo::TodoWriteTool;
     use ezer_tools::registry::types::ToolConfig;
     test_agent_with_tools(vec![ToolConfig::for_tool::<TodoWriteTool>()]).await
 }
 #[cfg(test)]
 pub(crate) async fn test_agent_with_active_message_tool() -> ezer_agent::Agent {
-    use ezer_tools::implementations::grok_build::send_subagent_message::SendSubagentMessageTool;
-    use ezer_tools::implementations::grok_build::todo::TodoWriteTool;
+    use ezer_tools::implementations::ezer_build::send_subagent_message::SendSubagentMessageTool;
+    use ezer_tools::implementations::ezer_build::todo::TodoWriteTool;
     use ezer_tools::registry::types::ToolConfig;
     test_agent_with_tools(vec![
         ToolConfig::for_tool::<SendSubagentMessageTool>(),
@@ -97,8 +97,8 @@ pub(crate) async fn test_agent_with_active_message_tool() -> ezer_agent::Agent {
 }
 #[cfg(test)]
 pub(crate) async fn test_agent_with_plan_tools() -> ezer_agent::Agent {
-    use ezer_tools::implementations::grok_build::enter_plan_mode::EnterPlanModeTool;
-    use ezer_tools::implementations::grok_build::exit_plan_mode::ExitPlanModeTool;
+    use ezer_tools::implementations::ezer_build::enter_plan_mode::EnterPlanModeTool;
+    use ezer_tools::implementations::ezer_build::exit_plan_mode::ExitPlanModeTool;
     use ezer_tools::registry::types::ToolConfig;
     test_agent_with_tools(vec![
         ToolConfig::for_tool::<EnterPlanModeTool>(),
@@ -115,7 +115,7 @@ pub(crate) async fn test_agent_with_tools(
             tools,
             behavior_preset: None,
         },
-        ezer_agent::AgentDefinition::default_grok_build(),
+        ezer_agent::AgentDefinition::default_ezer_build(),
         std::sync::Arc::new(ezer_tools::computer::local::LocalTerminalBackend::new()),
     )
     .await
@@ -124,7 +124,7 @@ pub(crate) async fn test_agent_with_tools(
 pub(crate) async fn test_agent_with_user_message_template(
     template: ezer_agent::prompt::user_message::UserMessageTemplate,
 ) -> ezer_agent::Agent {
-    let mut definition = ezer_agent::AgentDefinition::default_grok_build();
+    let mut definition = ezer_agent::AgentDefinition::default_ezer_build();
     definition.user_message_template = template;
     test_agent_from_config(
         ezer_tools::registry::types::ToolServerConfig {
@@ -1063,7 +1063,7 @@ pub(crate) fn spawn_fake_coordinator(
     actor: &mut SessionActor,
     buffer: Vec<SubagentCompletionSummary>,
 ) -> FakeCoordinator {
-    use ezer_tools::implementations::grok_build::task::types::SubagentEvent;
+    use ezer_tools::implementations::ezer_build::task::types::SubagentEvent;
     let fake = FakeCoordinator {
         suppress_seen: Arc::default(),
         returned: Arc::default(),

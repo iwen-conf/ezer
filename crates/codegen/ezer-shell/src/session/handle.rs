@@ -151,7 +151,7 @@ pub struct SessionHandle {
         Option<ezer_tools::notification::types::ToolNotificationHandle>,
     /// Subagents inherit the parent's handle so scheduled tasks survive the subagent's exit.
     pub scheduler_handle:
-        Option<ezer_tools::implementations::grok_build::scheduler::types::SchedulerHandle>,
+        Option<ezer_tools::implementations::ezer_build::scheduler::types::SchedulerHandle>,
     pub registry_write_order: RegistryWriteOrder,
 }
 #[derive(Clone, Default)]

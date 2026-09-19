@@ -561,8 +561,8 @@ impl ToolBridge {
     /// registered or the actor has stopped.
     pub async fn list_scheduled_tasks(
         &self,
-    ) -> Vec<crate::implementations::grok_build::scheduler::types::ScheduledTask> {
-        use crate::implementations::grok_build::scheduler::types::{
+    ) -> Vec<crate::implementations::ezer_build::scheduler::types::ScheduledTask> {
+        use crate::implementations::ezer_build::scheduler::types::{
             SchedulerCommand, SchedulerHandle,
         };
         let sender = {
@@ -589,7 +589,7 @@ impl ToolBridge {
         &self,
         task_id: &str,
     ) -> Result<bool, xai_tool_runtime::ToolError> {
-        use crate::implementations::grok_build::scheduler::types::{
+        use crate::implementations::ezer_build::scheduler::types::{
             SchedulerCommand, SchedulerHandle,
         };
         let sender = {
@@ -618,7 +618,7 @@ impl ToolBridge {
                     "Scheduler actor dropped reply",
                 )
             })?
-            .map_err(crate::implementations::grok_build::scheduler::types::scheduler_tool_error)
+            .map_err(crate::implementations::ezer_build::scheduler::types::scheduler_tool_error)
     }
 
     /// Move a foreground command to background by tool_call_id.
@@ -758,7 +758,7 @@ mod tests {
         let bridge = ToolBridge::for_test();
         let toolset = bridge.toolset();
 
-        // PascalCase + grok_build's snake_case in one registry
+        // PascalCase + ezer_build's snake_case in one registry
         // to exercise the lookup on the literal name strings each
         // namespace ships.
         register_fixture(&toolset, "Write", ToolKind::Write, "fixture_write");

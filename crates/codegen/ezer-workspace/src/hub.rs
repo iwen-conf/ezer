@@ -764,7 +764,7 @@ mod tests {
             .create_session_with_config(
                 "gate",
                 None,
-                Some(ezer_agent::workspace_grok_build_toolset()),
+                Some(ezer_agent::workspace_ezer_build_toolset()),
                 crate::capability::CapabilityMode::All,
                 None,
                 false,

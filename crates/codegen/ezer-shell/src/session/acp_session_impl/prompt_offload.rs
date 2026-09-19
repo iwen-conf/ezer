@@ -7,7 +7,7 @@ use crate::session::prompt_parser::{ParsedPrompt, PromptLayout};
 use std::ops::Range;
 use ezer_telemetry::region;
 use ezer_telemetry::region::Parent;
-use ezer_tools::implementations::grok_build::read_file::{
+use ezer_tools::implementations::ezer_build::read_file::{
     MAX_LINES_READ, READ_FILE_MAX_TOKENS, exceeds_read_cap,
 };
 use ezer_tools::types::resources::TruncationCfg;

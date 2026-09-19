@@ -1,7 +1,7 @@
 //! First-run BYOK `config.toml` for standalone ezer.
 //!
 //! Written only when the user home has no `config.toml` yet and this is not a
-//! `$GROK_HOME`-only test override. The template is OpenAI Responses-first and
+//! `$EZER_HOME`-only test override. The template is OpenAI Responses-first and
 //! points at the WorkBuddy2API-Hub style gateway.
 
 use std::fmt::Write as _;
@@ -103,7 +103,7 @@ session_summary = "{key}"
 
 /// Whether this process should seed a missing `config.toml`.
 ///
-/// Tests and legacy `$GROK_HOME` overrides must not receive a surprise write.
+/// Tests and legacy `$EZER_HOME` overrides must not receive a surprise write.
 /// A real first run (no env, or `$EZER_HOME`) does.
 pub fn should_write_first_run_config() -> bool {
     if ezer_env::env_bool("EZER_SKIP_DEFAULT_CONFIG") == Some(true) {

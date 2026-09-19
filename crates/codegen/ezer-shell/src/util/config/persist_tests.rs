@@ -3,7 +3,7 @@ use super::super::mcp::{McpConfig, parse_mcp_config_with_oauth};
 use super::*;
 use toml::Value as TomlValue;
 use toml::map::Map as TomlMap;
-/// First-run `ensure` creates a 0-byte `$GROK_HOME/config.toml`.
+/// First-run `ensure` creates a 0-byte `$EZER_HOME/config.toml`.
 /// Empty and whitespace-only files must parse as an empty table so the first settings write is not "refusing to overwrite unparseable".
 /// Non-empty garbage still refuses.
 #[test]

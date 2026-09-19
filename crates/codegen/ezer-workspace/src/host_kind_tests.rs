@@ -12,8 +12,8 @@ use std::future::Future;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use xai_computer_hub_sdk::{AuthCredential, SharedAuthProvider};
-use ezer_tools::implementations::grok_build::image_gen::ImageGenClient;
-use ezer_tools::implementations::grok_build::video_gen::VideoGenClient;
+use ezer_tools::implementations::ezer_build::image_gen::ImageGenClient;
+use ezer_tools::implementations::ezer_build::video_gen::VideoGenClient;
 use ezer_tools::implementations::web_search::WebSearchConfig;
 use ezer_tools::implementations::web_search::client::WebSearchClient;
 use ezer_tools::registry::types::{FinalizedToolset, ToolServerConfig};
@@ -57,7 +57,7 @@ fn only_a_daemon_streams_fs_changes() {
 /// same catalog with exactly those tools cut, in the same order.
 #[test]
 fn daemon_catalog_is_the_sandbox_catalog_minus_the_api_backed_tools() {
-    let full = ezer_agent::workspace_grok_build_toolset();
+    let full = ezer_agent::workspace_ezer_build_toolset();
     let sandbox = WorkspaceHostKind::Sandbox.default_toolset();
     let daemon = WorkspaceHostKind::Daemon.default_toolset();
     let full_ids = unqualified_ids(&full);

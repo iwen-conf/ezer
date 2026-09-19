@@ -14,7 +14,7 @@
 //!
 //! ## Files
 //!
-//! `$GROK_HOME/memtrace/<start-ts>-<pid>.jsonl` (and a `.1` after 4 MiB rotation) plus `<stem>-jemalloc-<seq>.txt` threshold dumps.
+//! `$EZER_HOME/memtrace/<start-ts>-<pid>.jsonl` (and a `.1` after 4 MiB rotation) plus `<stem>-jemalloc-<seq>.txt` threshold dumps.
 //! Files are created lazily on the first event so short-lived CLI invocations leave no debris.
 //! Traces contain **process memory numbers only** (no user content), so they are safe to ship for analysis.
 //!

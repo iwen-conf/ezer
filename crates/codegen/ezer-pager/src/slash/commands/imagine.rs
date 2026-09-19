@@ -1,5 +1,5 @@
 use agent_client_protocol as acp;
-use ezer_tools::implementations::grok_build::{
+use ezer_tools::implementations::ezer_build::{
     IMAGE_GEN_TOOL_NAME, IMAGINE_COMMAND_NAME, imagine_instruction, imagine_usage_message,
 };
 

@@ -220,16 +220,23 @@ Start with [custom models](crates/codegen/ezer-pager/docs/user-guide/11-custom-m
 
 ## De-branding leftovers
 
-Shipping crate folders and package names are `ezer-*`. These `rg -i grok` hits remain on purpose and are **not** crate paths:
+Shipping crate folders and package names are `ezer-*`. After
+`cargo build --release -p ezer-pager-bin`, `strings target/release/ezer | rg -i grok`
+no longer contains `xai-grok-*` crate paths. Remaining hits:
 
-| Kind | Examples | In `ezer` binary? |
-|------|----------|-------------------|
-| Internal APIs | `grok_home()`, `GrokComConfig`, `GrokBuildEnvironment`, `ClientType::GrokPager` | Symbol / type names if the binary is unstripped |
-| Theme ids | `groknight`, `grokday` | Yes — first-party theme names |
-| Optional OAuth | `grok.com` copy behind `EZER_ENABLE_XAI_LOGIN=1` | Only if that login path is linked |
-| Historical `xai-*` crates | `xai-dirs`, `xai-crash-handler`, … | Panic `file!()` paths (`crates/codegen/xai-…`) — no `grok` |
-| npm platform packages | `crates/codegen/ezer-pager/npm/grok-*` | No — not linked into the Rust CLI |
-| Docs | this README's fork/history notes | No |
+| Kind | Examples | Why left |
+|------|----------|----------|
+| Internal APIs / serde | `grok_home()`, `grok_com_config`, `GrokComConfig`, `GrokBuildEnvironment`, `ClientType::GrokPager` | Wire/config compatibility; renaming would break sessions |
+| `GROK_HOME` env alias | still accepted next to `EZER_HOME` | Existing installs / scripts |
+| Shell snapshot markers | `__GROK_BASH_STATE_*`, `grok_snap_*` | Persistent-shell replay format |
+| Theme ids | `groknight`, `grokday` | First-party theme names |
+| Optional xAI hosts | `grok.com`, `cli-chat-proxy.grok.com`, `computer-hub.grok.com` | Linked with optional `EZER_ENABLE_XAI_LOGIN` / remote sync; not required for BYOK |
+| Metrics | `grok_workspace_*`, `grok_leader` | Prometheus series names |
+| Historical `xai-*` crates | `xai-dirs`, `xai-crash-handler`, … | Panic `file!()` paths without `grok` |
+| npm platform packages | `crates/codegen/ezer-pager/npm/grok-*` | Not linked into the Rust CLI |
+| Docs | this README | History / leftovers note |
+
+User-facing `ezer --help` / `ezer --version` have no `grok`. This cloud VM cannot reach `192.168.0.63`; no LAN live tests were run.
 
 ## Development
 

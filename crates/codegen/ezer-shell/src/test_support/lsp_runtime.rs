@@ -87,7 +87,7 @@ pub(crate) fn ctx_with_toggle(toggle: HashMap<String, bool>) -> SubagentSpawnCon
         gcs_upload_method: None,
         hook_registry: None,
         parent_depth: 0,
-        subagents_max_depth: ezer_tools::implementations::grok_build::task::MAX_SUBAGENT_DEPTH,
+        subagents_max_depth: ezer_tools::implementations::ezer_build::task::MAX_SUBAGENT_DEPTH,
         workflow_max_concurrent_agents:
             crate::session::workflow::host_service::DEFAULT_WORKFLOW_MAX_CONCURRENT_AGENTS,
         media_gen_batch_limits: ezer_tools::media_gen_limits::MediaGenBatchLimits::default(),
@@ -127,7 +127,7 @@ pub(crate) fn ctx_with_toggle(toggle: HashMap<String, bool>) -> SubagentSpawnCon
         parent_notification_handle: None,
         parent_scheduler_handle: None,
         subagent_sampling_semaphore: std::sync::Arc::new(tokio::sync::Semaphore::new(
-            ezer_tools::implementations::grok_build::task::admission::DEFAULT_MAX_CONCURRENT,
+            ezer_tools::implementations::ezer_build::task::admission::DEFAULT_MAX_CONCURRENT,
         )),
     }
 }
