@@ -1,7 +1,7 @@
 //! Shared commit-scope checks for the settings and model loads.
 
 use super::{ModelsCacheScope, SettingsCacheManager};
-use ezer_login::{AuthManager, GrokAuth, GrokComConfig};
+use ezer_login::{AuthManager, EzerAuth, EzerComConfig};
 
 /// Remote fetch enabled, no repair pending, and the live origin still matches
 /// the one the value was fetched under.
@@ -18,7 +18,7 @@ fn origin_still_current(current_origin: &str, expected_origin: &str) -> bool {
 /// auth is still absent.
 fn identity_still_current(
     expected_identity: &str,
-    auth_config: Option<&GrokComConfig>,
+    auth_config: Option<&EzerComConfig>,
     alpha: Option<&str>,
 ) -> bool {
     match resolve_disk_auth(auth_config.cloned()) {
@@ -51,7 +51,7 @@ pub(in crate::agent::remote_config) fn evaluate_commit(
     current_origin: &str,
     expected_origin: &str,
     expected_identity: &str,
-    auth_config: Option<&GrokComConfig>,
+    auth_config: Option<&EzerComConfig>,
     alpha: Option<&str>,
 ) -> Commit {
     if crate::managed_config::policy_repair_pending() {
@@ -89,12 +89,12 @@ pub(in crate::agent::remote_config) fn evaluate_models_commit(
 }
 
 pub(in crate::agent::remote_config) fn resolve_disk_auth(
-    grok_com_config: Option<GrokComConfig>,
-) -> Option<GrokAuth> {
-    let grok_home = crate::util::grok_home::grok_home();
+    ezer_com_config: Option<EzerComConfig>,
+) -> Option<EzerAuth> {
+    let ezer_home = crate::util::ezer_home::ezer_home();
     AuthManager::new_with_proxy_base_url(
-        &grok_home,
-        grok_com_config.unwrap_or_default(),
+        &ezer_home,
+        ezer_com_config.unwrap_or_default(),
         crate::agent::config::EndpointsConfig::from_effective_config().proxy_url(),
     )
     .current()

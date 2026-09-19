@@ -3,7 +3,7 @@ use clap::Subcommand;
 use ezer_login::{AuthManager, try_ensure_fresh_auth};
 use ezer_shell::agent::config::Config as AgentConfig;
 use ezer_shell::session::merge::MergedSession;
-use ezer_shell::util::grok_home::grok_home;
+use ezer_shell::util::ezer_home::ezer_home;
 #[derive(Debug, clap::Args, Clone)]
 pub struct SessionsArgs {
     #[command(subcommand)]
@@ -38,14 +38,14 @@ pub async fn run(args: SessionsArgs, agent_config: &AgentConfig) -> Result<()> {
     // deployment_key and a custom xai_api_base_url. Otherwise we still proceed so the SessionRegistryClient can use
     // the deployment_key when talking to the custom proxy.
     let auth = try_ensure_fresh_auth(
-        &agent_config.grok_com_config,
+        &agent_config.ezer_com_config,
         agent_config.endpoints.proxy_url(),
     )
     .await;
 
     let auth_manager = std::sync::Arc::new(AuthManager::new_with_proxy_base_url(
-        &grok_home(),
-        agent_config.grok_com_config.clone(),
+        &ezer_home(),
+        agent_config.ezer_com_config.clone(),
         agent_config.endpoints.proxy_url(),
     ));
 
@@ -90,7 +90,7 @@ pub async fn run(args: SessionsArgs, agent_config: &AgentConfig) -> Result<()> {
                 offset: 0,
                 include_content: true,
             };
-            let root = grok_home();
+            let root = ezer_home();
 
             let remote_limit = (limit * 3).max(100) as i64;
             let (local_resp, remote_results) = tokio::join!(

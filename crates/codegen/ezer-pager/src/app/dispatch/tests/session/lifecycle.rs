@@ -908,7 +908,7 @@ fn switch_model_without_session_sends_nothing_to_server() {
     let mut app = test_app_with_agent();
     let id = AgentId(0);
     app.agents.get_mut(&id).unwrap().session.session_id = None;
-    let model_id = acp::ModelId::new(std::sync::Arc::from("grok-4.5"));
+    let model_id = acp::ModelId::new(std::sync::Arc::from("test-model-4.5"));
     let effects = dispatch(
         Action::SwitchModel {
             model_id,
@@ -1143,7 +1143,7 @@ fn new_session_starts_with_prompt_focused() {
 fn switch_model_deferred_when_no_session_id() {
     let mut app = test_app_with_agent();
     let id = AgentId(0);
-    let model_id = acp::ModelId::new(std::sync::Arc::from("grok-4.5"));
+    let model_id = acp::ModelId::new(std::sync::Arc::from("test-model-4.5"));
     app.agents.get_mut(&id).unwrap().session.session_id = None;
     let effects = dispatch(
         Action::SwitchModel {
@@ -1237,7 +1237,7 @@ fn deferred_switch_prefers_authoritative_current_as_prev() {
 fn deferred_model_switch_applied_on_session_created() {
     let mut app = test_app_with_agent();
     let id = AgentId(0);
-    let model_id = acp::ModelId::new(std::sync::Arc::from("grok-4.5"));
+    let model_id = acp::ModelId::new(std::sync::Arc::from("test-model-4.5"));
     let session_id: acp::SessionId = "new-session".into();
     app.agents.get_mut(&id).unwrap().session.session_id = None;
     app.agents
@@ -1277,7 +1277,7 @@ fn deferred_model_switch_applied_on_session_created() {
 #[test]
 fn deferred_model_switch_applied_on_worktree_session_created() {
     let mut app = test_app_git();
-    let model_id = acp::ModelId::new(std::sync::Arc::from("grok-4.5"));
+    let model_id = acp::ModelId::new(std::sync::Arc::from("test-model-4.5"));
     dispatch(
         Action::NewWorktreeSession {
             load_session_id: None,
@@ -1474,7 +1474,7 @@ fn an_api_key_run_writes_no_answer_on_either_path() {
     );
 }
 /// The index a click or a number key carries is only worth anything if it reaches the right url.
-#[serial_test::serial(GROK_TEST_OPEN_URL_FILE)]
+#[serial_test::serial(EZER_TEST_OPEN_URL_FILE)]
 #[test]
 fn a_consent_link_opens_the_url_its_label_stands_for() {
     use crate::app::consent::{ConsentSegment, ConsentState};
@@ -1543,13 +1543,13 @@ fn finish_trust_resolves_and_replays_startup() {
     );
 }
 /// Accepting the trust question persists the grant to the store and resolves trust.
-/// The test is GROK_HOME-isolated so the write hits a temp store, not the real one.
-#[serial_test::serial(GROK_HOME)]
+/// The test is EZER_HOME-isolated so the write hits a temp store, not the real one.
+#[serial_test::serial(EZER_HOME)]
 #[test]
 fn trust_folder_grants_and_resolves() {
     use ezer_workspace::trust::TrustStore;
     let home = tempfile::tempdir().expect("home tempdir");
-    unsafe { std::env::set_var("GROK_HOME", home.path()) };
+    unsafe { std::env::set_var("EZER_HOME", home.path()) };
     simulate_release_build();
     let (_repo, workspace, mut app) = pending_trust_workspace();
     let _ = dispatch(Action::TrustFolder, &mut app);
@@ -1559,11 +1559,11 @@ fn trust_folder_grants_and_resolves() {
         "accepting must persist the trust grant for the workspace",
     );
 }
-#[serial_test::serial(GROK_HOME)]
+#[serial_test::serial(EZER_HOME)]
 #[test]
 fn trust_folder_quits_when_store_unreadable() {
     let home = tempfile::tempdir().expect("home tempdir");
-    unsafe { std::env::set_var("GROK_HOME", home.path()) };
+    unsafe { std::env::set_var("EZER_HOME", home.path()) };
     simulate_release_build();
     let store_path = home.path().join("trusted_folders.toml");
     let before = b"[[[not-toml";
@@ -1593,13 +1593,13 @@ fn trust_folder_quits_when_store_unreadable() {
         "unread store must name the next step: {msg}"
     );
 }
-#[serial_test::serial(GROK_HOME)]
+#[serial_test::serial(EZER_HOME)]
 #[test]
 fn trust_folder_continues_session_only_when_embedded_and_persist_denied() {
     let home = tempfile::tempdir().expect("home tempdir");
     let blocker = home.path().join("not-a-dir");
     std::fs::write(&blocker, b"x").unwrap();
-    unsafe { std::env::set_var("GROK_HOME", &blocker) };
+    unsafe { std::env::set_var("EZER_HOME", &blocker) };
     simulate_release_build();
     let (_repo, workspace, mut app) = pending_trust_workspace();
     app.leader_mode = false;
@@ -3114,7 +3114,7 @@ fn set_plan_mode_on_from_off_emits_set_session_mode() {
 /// Real-world repro: the peek panel is OPEN for the selected row (it auto-opens on render).
 /// The close is driven END-TO-END through `handle_input` (Ctrl+X twice) exactly as the event loop does.
 /// Verifies the selection moves to the next row AND the peek follows it, the path the direct-`dispatch_dashboard_stop` tests above don't exercise.
-#[serial_test::serial(GROK_AGENT_DASHBOARD)]
+#[serial_test::serial(EZER_AGENT_DASHBOARD)]
 #[test]
 fn dashboard_stop_with_peek_open_moves_selection_and_peek_down_one() {
     use crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
@@ -3214,7 +3214,7 @@ fn dashboard_stop_with_peek_open_moves_selection_and_peek_down_one() {
 /// Regression: the same Ctrl+X double-press path driven END-TO-END through `DashboardState::handle_input`.
 /// That wipes the just-set `delete_confirm`, so the dispatcher sees a fresh state and sets it again instead of deleting.
 /// The session never deletes no matter how many times the user presses Ctrl+X.
-#[serial_test::serial(GROK_AGENT_DASHBOARD)]
+#[serial_test::serial(EZER_AGENT_DASHBOARD)]
 #[test]
 fn dashboard_stop_double_press_via_handle_key_deletes_top_level() {
     use crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
@@ -3324,7 +3324,7 @@ mod welcome_workspace_mode {
     };
     use crate::views::welcome::WelcomeWorkspaceMode;
     #[test]
-    #[serial_test::serial(GROK_CHAT_LOCAL_WORKSPACE_ACK)]
+    #[serial_test::serial(EZER_CHAT_LOCAL_WORKSPACE_ACK)]
     fn welcome_new_session_sets_own_override() {
         let _ack = ezer_test_support::EnvGuard::set(
             crate::app::session_startup::EZER_CHAT_LOCAL_WORKSPACE_ACK_ENV,
@@ -3431,14 +3431,14 @@ mod welcome_workspace_mode {
         set_active_local_workspace(None).unwrap();
     }
     #[test]
-    #[serial_test::serial(GROK_CHAT_LOCAL_WORKSPACE_ACK)]
+    #[serial_test::serial(EZER_CHAT_LOCAL_WORKSPACE_ACK)]
     fn confirm_ack_skips_reapply_and_sets_oneshot() {
         let _ack = ezer_test_support::EnvGuard::unset(
             crate::app::session_startup::EZER_CHAT_LOCAL_WORKSPACE_ACK_ENV,
         );
         let home = tempfile::tempdir().unwrap();
         let _home =
-            ezer_test_support::EnvGuard::set("GROK_HOME", home.path().to_str().unwrap());
+            ezer_test_support::EnvGuard::set("EZER_HOME", home.path().to_str().unwrap());
         set_active_local_workspace(None).unwrap();
         let tmp = tempfile::tempdir().unwrap();
         let mut app = test_app();
@@ -3468,7 +3468,7 @@ mod welcome_workspace_mode {
         set_active_local_workspace(None).unwrap();
     }
     #[test]
-    #[serial_test::serial(GROK_CHAT_LOCAL_WORKSPACE_ACK)]
+    #[serial_test::serial(EZER_CHAT_LOCAL_WORKSPACE_ACK)]
     fn welcome_local_worktree_always_keeps_oneshot_until_create() {
         let _ack = ezer_test_support::EnvGuard::set(
             crate::app::session_startup::EZER_CHAT_LOCAL_WORKSPACE_ACK_ENV,
@@ -3509,7 +3509,7 @@ mod welcome_workspace_mode {
         set_active_local_workspace(None).unwrap();
     }
     #[test]
-    #[serial_test::serial(GROK_CHAT_LOCAL_WORKSPACE_ACK)]
+    #[serial_test::serial(EZER_CHAT_LOCAL_WORKSPACE_ACK)]
     fn failed_worktree_create_clears_welcome_oneshot() {
         let _ack = ezer_test_support::EnvGuard::set(
             crate::app::session_startup::EZER_CHAT_LOCAL_WORKSPACE_ACK_ENV,
@@ -3544,14 +3544,14 @@ mod welcome_workspace_mode {
         set_active_local_workspace(None).unwrap();
     }
     #[test]
-    #[serial_test::serial(GROK_CHAT_LOCAL_WORKSPACE_ACK)]
+    #[serial_test::serial(EZER_CHAT_LOCAL_WORKSPACE_ACK)]
     fn confirm_ack_honors_worktree_always() {
         let _ack = ezer_test_support::EnvGuard::unset(
             crate::app::session_startup::EZER_CHAT_LOCAL_WORKSPACE_ACK_ENV,
         );
         let home = tempfile::tempdir().unwrap();
         let _home =
-            ezer_test_support::EnvGuard::set("GROK_HOME", home.path().to_str().unwrap());
+            ezer_test_support::EnvGuard::set("EZER_HOME", home.path().to_str().unwrap());
         set_active_local_workspace(None).unwrap();
         let tmp = tempfile::tempdir().unwrap();
         let mut app = test_app();
@@ -3797,7 +3797,7 @@ mod welcome_workspace_mode {
         set_active_local_workspace(None).unwrap();
     }
     #[test]
-    #[serial_test::serial(GROK_CHAT_LOCAL_WORKSPACE_ACK)]
+    #[serial_test::serial(EZER_CHAT_LOCAL_WORKSPACE_ACK)]
     fn pick_in_worktree_no_git_clears_history_bypass() {
         let _ack = ezer_test_support::EnvGuard::set(
             crate::app::session_startup::EZER_CHAT_LOCAL_WORKSPACE_ACK_ENV,

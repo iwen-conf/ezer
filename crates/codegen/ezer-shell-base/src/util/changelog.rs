@@ -1,6 +1,6 @@
 //! Changelog fetching from CDN with local disk cache.
 //!
-//! Both markdown (`*.external.md`) and JSON (`*.external.json`) changelogs are published per-version to the CDN at `x.ai/cli/changelogs/`.
+//! Both markdown (`*.external.md`) and JSON (`*.external.json`) changelogs are published per-version to the CDN at `ezer/cli/changelogs/`.
 //!
 //! `ChangelogManager::fetch()` retrieves both formats in parallel and returns a `Changelog` with optional markdown and structured entries.
 //! Consumers pick the format they need:
@@ -9,8 +9,8 @@
 
 use std::path::PathBuf;
 
-/// CDN base for all changelogs (proxies to GCS, cache-friendly).
-const CHANGELOG_BASE: &str = "https://x.ai/cli/changelogs";
+/// Empty in BYOK builds. Operators may set `$EZER_CHANGELOG_CDN` to a non-xAI base.
+const CHANGELOG_BASE: &str = "";
 const FETCH_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(3);
 
 /// A single structured changelog entry from the published JSON changelog. Shape must match the output of `render_external_json` in `changelog.sh`: `{category, description, breaking_change}`
@@ -53,18 +53,18 @@ impl Default for ChangelogManager {
 
 impl ChangelogManager {
     pub fn new() -> Self {
-        // Prefer the live `$EZER_HOME` over the `grok_home()` OnceLock
+        // Prefer the live `$EZER_HOME` over the `ezer_home()` OnceLock
         // A home injected by the PTY e2e harness must beat a path some earlier init cached in the same process
         Self::from_env_home()
     }
 
-    /// Resolve cache paths from the live process environment (not the `grok_home()` OnceLock).
+    /// Resolve cache paths from the live process environment (not the `ezer_home()` OnceLock).
     /// A seeded `$EZER_HOME` set on the pager process is always honoured even if some earlier init path cached a different home.
     fn from_env_home() -> Self {
-        let home = std::env::var_os("GROK_HOME")
+        let home = std::env::var_os("EZER_HOME")
             .map(std::path::PathBuf::from)
             .filter(|p| !p.as_os_str().is_empty())
-            .unwrap_or_else(crate::util::grok_home::grok_home);
+            .unwrap_or_else(crate::util::ezer_home::ezer_home);
         Self {
             md_cache: home.join("CHANGELOG.md"),
             json_cache: home.join("CHANGELOG.json"),
@@ -76,15 +76,15 @@ impl ChangelogManager {
     /// JSON is cached only after a successful parse; the markdown cache is write-through since it's consumed as raw text.
     pub fn fetch(&self) -> Changelog {
         // Always re-resolve from env so a caller holding an older manager (or a stale OnceLock) still reads the live harness home.
-        // BYOK: never hit x.ai/cli changelogs. Disk cache only unless `$EZER_CHANGELOG_CDN` is a non-xAI base
-        // or the user opted into grok.com login (`EZER_ENABLE_XAI_LOGIN`).
+        // BYOK: never hit ezer/cli changelogs. Disk cache only unless `$EZER_CHANGELOG_CDN` is a non-xAI base
+        // or the user opted into ezer.com login (`EZER_ENABLE_XAI_LOGIN`).
         let offline = changelog_offline()
             || (!ezer_env::xai_login_enabled() && !changelog_cdn_allowed());
         Self::from_env_home().fetch_with(offline, CHANGELOG_BASE)
     }
 
     /// Fetch using this manager's already-resolved cache paths, an explicit offline flag, and an explicit CDN base. Split out of [`fetch`] so unit tests can drive it against a temp home without touching process-global env.
-    /// Mutating `GROK_HOME` / `EZER_CHANGELOG_OFFLINE` races across the parallel test harness. Passing an unreachable `base` forces a deterministic CDN miss instead of depending on whether the sandbox happens to block network.
+    /// Mutating `EZER_HOME` / `EZER_CHANGELOG_OFFLINE` races across the parallel test harness. Passing an unreachable `base` forces a deterministic CDN miss instead of depending on whether the sandbox happens to block network.
     /// Production callers always go through [`fetch`].
     fn fetch_with(&self, offline: bool, base: &str) -> Changelog {
         if offline {
@@ -182,7 +182,7 @@ fn changelog_cdn_allowed() -> bool {
     let lower = base.to_ascii_lowercase();
     !lower.is_empty()
         && !lower.contains("x.ai")
-        && !lower.contains("grok.com")
+        && !lower.contains("example.test")
         && !lower.contains("x.com")
 }
 

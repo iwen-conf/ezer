@@ -19,9 +19,8 @@ pub const RATE_LIMITED_USER_MESSAGE_OAUTH: &str =
     "You\u{2019}ve hit the rate limit for your plan. Upgrade your account or try again later.";
 
 /// API key / team rate-limit copy.
-/// Personal grok.com upgrades do not raise API team limits; admins purchase credits or a higher spend-based tier.
-/// See https://docs.x.ai/developers/rate-limits#rate-limit-tiers
-pub const RATE_LIMITED_USER_MESSAGE_API_KEY: &str = "You\u{2019}ve hit your team\u{2019}s API rate limit. Ask a team admin to purchase more credits for higher limits, or try again later. See https://docs.x.ai/developers/rate-limits#rate-limit-tiers";
+/// Personal ezer.com upgrades do not raise API team limits; admins purchase credits or a higher spend-based tier.
+pub const RATE_LIMITED_USER_MESSAGE_API_KEY: &str = "You\u{2019}ve hit your team\u{2019}s API rate limit. Ask a team admin to purchase more credits for higher limits, or try again later.";
 
 /// Well-known free-usage exhaustion code CCP returns on HTTP 429.
 /// Matches `prod_util_well_known_errors::SUBSCRIPTION_FREE_USAGE_EXHAUSTED`.
@@ -39,7 +38,7 @@ pub fn is_free_usage_exhausted_error(detail: &str) -> bool {
 }
 
 /// User-facing text for an ACP -32003 rate-limit error. The free-usage code wins first (consumer-only; checked before the API-key rewrite).
-/// An API-key caller whose detail pushes the personal SuperGrok upsell gets the team credits copy instead. Otherwise the body is shown after stripping the `API error (status …):` prefix (SamplingError Display).
+/// An API-key caller whose detail pushes the personal MaxTier upsell gets the team credits copy instead. Otherwise the body is shown after stripping the `API error (status …):` prefix (SamplingError Display).
 /// An empty detail falls back to the OAuth or API-key message. Callers that show this in UI should still run their usual sanitizer (scrub/cap).
 pub fn format_rate_limited_user_message(
     server_detail: Option<&str>,
@@ -77,11 +76,11 @@ fn strip_sampling_api_error_prefix(detail: &str) -> &str {
     detail.trim()
 }
 
-/// IC sometimes reuses OAuth free-tier upsell copy on 429s ("upgrade to a ezer subscription" / grok.com/supergrok).
-/// That is wrong for API-key / team auth: higher limits come from credits and spend-based rate-limit tiers, not a personal SuperGrok plan.
+/// IC sometimes reuses OAuth free-tier upsell copy on 429s ("upgrade to a ezer subscription" / ezer.com/upgrade).
+/// That is wrong for API-key / team auth: higher limits come from credits and spend-based rate-limit tiers, not a personal MaxTier plan.
 fn pushes_consumer_subscription_upsell(detail: &str) -> bool {
     let d = detail.to_ascii_lowercase();
-    d.contains("grok.com/supergrok") || d.contains("upgrade to a ezer subscription")
+    d.contains("ezer.com/upgrade") || d.contains("upgrade to a ezer subscription")
 }
 
 /// User-facing copy for capacity/overload failures (stream `overloaded_error`, HTTP 529, proxy-wrapped 5xx).
@@ -534,10 +533,7 @@ mod tests {
         assert!(RATE_LIMITED_USER_MESSAGE_OAUTH.contains("Upgrade your account"));
         assert!(RATE_LIMITED_USER_MESSAGE_API_KEY.contains("team"));
         assert!(RATE_LIMITED_USER_MESSAGE_API_KEY.contains("credits"));
-        assert!(
-            RATE_LIMITED_USER_MESSAGE_API_KEY
-                .contains("https://docs.x.ai/developers/rate-limits#rate-limit-tiers")
-        );
+        assert!(RATE_LIMITED_USER_MESSAGE_API_KEY.contains("try again later"));
         assert!(!RATE_LIMITED_USER_MESSAGE_API_KEY.contains("Upgrade your account"));
     }
 
@@ -549,8 +545,8 @@ mod tests {
         assert_eq!(format_rate_limited_user_message(Some(&wire), false), body);
         assert_eq!(format_rate_limited_user_message(Some(&wire), true), body);
 
-        // Team console rate-limit copy has no personal SuperGrok upsell; it passes through as-is
-        let team = "resource-exhausted: Too many requests for team abc. See https://console.x.ai/team/default/rate-limits.";
+        // Team console rate-limit copy has no personal MaxTier upsell; it passes through as-is
+        let team = "resource-exhausted: Too many requests for team abc. See https://console.ezer/team/default/rate-limits.";
         let team_wire = format!("API error (status 429 Too Many Requests): {team}");
         assert_eq!(
             format_rate_limited_user_message(Some(&team_wire), true),
@@ -566,11 +562,11 @@ mod tests {
     fn format_rate_limited_api_key_rewrites_consumer_subscription_upsell() {
         let body = "Some resource has been exhausted: You are sending requests too quickly. \
              Please slow down, or upgrade to a ezer subscription for higher limits: \
-             https://grok.com/supergrok";
+             https://example.test/upgrade";
         let wire = format!("API error (status 429 Too Many Requests): {body}");
         // OAuth keeps the IC body (personal plan upgrade is correct).
         assert_eq!(format_rate_limited_user_message(Some(&wire), false), body);
-        // API key must not push grok.com SuperGrok; it gets the team credits / rate-limit tiers copy
+        // API key must not push ezer.com MaxTier; it gets the team credits / rate-limit tiers copy
         assert_eq!(
             format_rate_limited_user_message(Some(&wire), true),
             RATE_LIMITED_USER_MESSAGE_API_KEY

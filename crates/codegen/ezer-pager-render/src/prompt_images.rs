@@ -2531,7 +2531,7 @@ mod tests {
     #[test]
     fn file_url_single_slash_rejected_at_anchor_gate() {
         // Single-slash `file:` is not a drop anchor and is rejected before URL parsing, so it always falls through to text.
-        let pasted = "file:/tmp/should_not_exist_abc_grok_pager.png";
+        let pasted = "file:/tmp/should_not_exist_abc_ezer_pager.png";
         assert!(try_read_image_from_path(pasted).is_none());
     }
 
@@ -3271,7 +3271,7 @@ mod tests {
     fn dropped_path_nonexistent_bare_path_not_intercepted() {
         // A bare path to a non-existent file is NOT intercepted: the user might just have typed `/etc/passwd` as part of prose
         // (The image branch already filters on file existence; this mirrors that for the non-image branch.)
-        let entries = dropped_paths("/tmp/definitely_does_not_exist_xyz_grok_pager.txt");
+        let entries = dropped_paths("/tmp/definitely_does_not_exist_xyz_ezer_pager.txt");
         assert!(
             entries.is_empty(),
             "bare nonexistent path must fall through to prose; got {entries:?}"

@@ -254,21 +254,21 @@ async fn donation_entry_points_are_inert_without_a_hub() {
     let handle = make_handle();
     assert!(
         handle
-            .trace_donation_reporter("prod_grok_workspace")
+            .trace_donation_reporter("prod_ezer_workspace")
             .await
             .is_none(),
         "trace export must stay inert without a connection"
     );
     assert!(
         handle
-            .log_donation_layer("prod_grok_workspace")
+            .log_donation_layer("prod_ezer_workspace")
             .await
             .is_none(),
         "log export must stay inert without a connection"
     );
     assert!(
         handle
-            .metric_donation_reporter("prod_grok_workspace")
+            .metric_donation_reporter("prod_ezer_workspace")
             .await
             .is_none(),
         "metric export must stay inert without a connection"
@@ -1625,7 +1625,7 @@ fn rewind_metric_helpers_record_observable_effects() {
 async fn client_ext_sink_receives_emitted_notification() {
     let handle = make_handle();
     assert!(!handle.has_client_ext_sink());
-    handle.emit_client_ext("x.ai/noop".to_string(), serde_json::json!({}));
+    handle.emit_client_ext("ezer/noop".to_string(), serde_json::json!({}));
     let captured = Arc::new(parking_lot::Mutex::new(Vec::new()));
     let sink_captured = captured.clone();
     handle.set_client_ext_sink(Arc::new(move |method, params| {
@@ -1633,7 +1633,7 @@ async fn client_ext_sink_receives_emitted_notification() {
     }));
     assert!(handle.has_client_ext_sink());
     handle.emit_client_ext(
-        "x.ai/search/fuzzy/status".to_string(),
+        "ezer/search/fuzzy/status".to_string(),
         serde_json::json!({"a": 1}),
     );
     let got = captured.lock();
@@ -1641,11 +1641,11 @@ async fn client_ext_sink_receives_emitted_notification() {
     let Some(first) = got.first() else {
         panic!("expected one captured emit: {got:?}");
     };
-    assert_eq!(first.0, "x.ai/search/fuzzy/status");
+    assert_eq!(first.0, "ezer/search/fuzzy/status");
     assert_eq!(first.1, serde_json::json!({"a": 1}));
 }
 /// End-to-end local streaming: open and change a fuzzy search over real files, then run the notification driver.
-/// A correctly-shaped `x.ai/search/fuzzy/status` must be delivered through the sink with the match.
+/// A correctly-shaped `ezer/search/fuzzy/status` must be delivered through the sink with the match.
 #[tokio::test]
 async fn fuzzy_change_streams_status_through_sink() {
     use crate::file_system::TargetClientId;
@@ -1656,7 +1656,7 @@ async fn fuzzy_change_streams_status_through_sink() {
     let captured = Arc::new(parking_lot::Mutex::new(Vec::<serde_json::Value>::new()));
     let sink_captured = captured.clone();
     handle.set_client_ext_sink(Arc::new(move |method, params| {
-        if method == "x.ai/search/fuzzy/status" {
+        if method == "ezer/search/fuzzy/status" {
             sink_captured.lock().push(params);
         }
     }));
@@ -1760,7 +1760,7 @@ async fn events_jsonl_captures_turn_tool_toggle_and_mcp_variants() {
             sid,
             &BeforeTurnPayload {
                 turn_number: 7,
-                model_id: "grok-4".to_owned(),
+                model_id: "test-model-4".to_owned(),
                 yolo_mode: false,
                 conversation_message_count: 5,
                 session_relationship: "subagent".to_owned(),
@@ -1789,7 +1789,7 @@ async fn events_jsonl_captures_turn_tool_toggle_and_mcp_variants() {
                 outcome: TurnHookOutcome::Completed,
                 duration_ms: 1234,
                 tool_call_count: 1,
-                model_id: "grok-4".to_owned(),
+                model_id: "test-model-4".to_owned(),
                 written_repo_paths: Vec::new(),
                 cancellation_category: None,
                 cancellation_context: None,
@@ -1817,7 +1817,7 @@ async fn events_jsonl_captures_turn_tool_toggle_and_mcp_variants() {
     assert_eq!(ts.get("turn_number").unwrap_or(&serde_json::Value::Null), 7);
     assert_eq!(
         ts.get("model_id").unwrap_or(&serde_json::Value::Null),
-        "grok-4"
+        "test-model-4"
     );
     assert_eq!(
         ts.get("yolo_mode").unwrap_or(&serde_json::Value::Null),
@@ -1917,7 +1917,7 @@ async fn before_turn_hooks_sync_session_yolo_mode() {
             "main",
             &BeforeTurnPayload {
                 turn_number: 1,
-                model_id: "grok-4".to_owned(),
+                model_id: "test-model-4".to_owned(),
                 yolo_mode: true,
                 ..Default::default()
             },
@@ -1929,7 +1929,7 @@ async fn before_turn_hooks_sync_session_yolo_mode() {
             "main",
             &TurnHookRequest::Before(BeforeTurnPayload {
                 turn_number: 2,
-                model_id: "grok-4".to_owned(),
+                model_id: "test-model-4".to_owned(),
                 yolo_mode: false,
                 ..Default::default()
             }),
@@ -1949,7 +1949,7 @@ async fn before_turn_hooks_sync_session_yolo_mode() {
             "never-bound",
             &TurnHookRequest::Before(BeforeTurnPayload {
                 turn_number: 1,
-                model_id: "grok-4".to_owned(),
+                model_id: "test-model-4".to_owned(),
                 yolo_mode: true,
                 ..Default::default()
             }),
@@ -1971,7 +1971,7 @@ async fn before_turn_yolo_transition_emits_yolo_toggled_event() {
                 sid,
                 &BeforeTurnPayload {
                     turn_number: turn,
-                    model_id: "grok-4".to_owned(),
+                    model_id: "test-model-4".to_owned(),
                     yolo_mode: yolo,
                     ..Default::default()
                 },
@@ -2032,7 +2032,7 @@ async fn events_disabled_keeps_noop_and_writes_nothing() {
             sid,
             &BeforeTurnPayload {
                 turn_number: 1,
-                model_id: "grok-4".to_owned(),
+                model_id: "test-model-4".to_owned(),
                 yolo_mode: false,
                 conversation_message_count: 0,
                 session_relationship: "primary".to_owned(),
@@ -2053,7 +2053,7 @@ async fn events_disabled_keeps_noop_and_writes_nothing() {
                 outcome: TurnHookOutcome::Completed,
                 duration_ms: 1,
                 tool_call_count: 1,
-                model_id: "grok-4".to_owned(),
+                model_id: "test-model-4".to_owned(),
                 written_repo_paths: Vec::new(),
                 cancellation_category: None,
                 cancellation_context: None,
@@ -2082,7 +2082,7 @@ async fn session_end_evicts_event_writer_without_data_loss() {
             sid,
             &BeforeTurnPayload {
                 turn_number: 1,
-                model_id: "grok-4".to_owned(),
+                model_id: "test-model-4".to_owned(),
                 yolo_mode: false,
                 conversation_message_count: 0,
                 session_relationship: "primary".to_owned(),
@@ -6657,7 +6657,7 @@ async fn strict_bind_without_explicit_toolset_fails_closed_end_to_end() {
     let resolved = resolver(
         xai_tool_protocol::SessionId::new("bind-e2e-strict").unwrap(),
         Some(serde_json::json!({
-            "metadata": {"preset": "grok-computer", "capability_mode": "all"},
+            "metadata": {"preset": "ezer-computer", "capability_mode": "all"},
         })),
     )
     .await
@@ -6708,7 +6708,7 @@ async fn strict_bind_with_explicit_toolset_serves_it_end_to_end() {
     let resolved = resolver(
         xai_tool_protocol::SessionId::new("bind-e2e-tools").unwrap(),
         Some(serde_json::json!({
-            "metadata": {"tools": [{"id": "GrokBuild:read_file"}]},
+            "metadata": {"tools": [{"id": "EzerBuild:read_file"}]},
         })),
     )
     .await
@@ -6749,7 +6749,7 @@ async fn rejected_rebind_config_keeps_resolve_error_end_to_end() {
     let first = resolver(
         sid.clone(),
         Some(serde_json::json!({
-            "metadata": {"tools": [{"id": "GrokBuild:read_file"}]},
+            "metadata": {"tools": [{"id": "EzerBuild:read_file"}]},
         })),
     )
     .await
@@ -6758,7 +6758,7 @@ async fn rejected_rebind_config_keeps_resolve_error_end_to_end() {
     let second = resolver(
         sid,
         Some(serde_json::json!({
-            "metadata": {"tools": [{"id": "GrokBuild:read_file", "params_json": "{not json"}]},
+            "metadata": {"tools": [{"id": "EzerBuild:read_file", "params_json": "{not json"}]},
         })),
     )
     .await
@@ -6781,7 +6781,7 @@ async fn explicit_empty_toolset_rebind_never_swaps_session_tools() {
     let first = resolver(
         sid.clone(),
         Some(serde_json::json!({
-            "metadata": {"tools": [{"id": "GrokBuild:read_file"}]},
+            "metadata": {"tools": [{"id": "EzerBuild:read_file"}]},
         })),
     )
     .await
@@ -6810,7 +6810,7 @@ async fn strict_rebind_with_corrected_toolset_heals_end_to_end() {
     let sid = xai_tool_protocol::SessionId::new("bind-e2e-heal").unwrap();
     let first = resolver(
         sid.clone(),
-        Some(serde_json::json!({"metadata": {"preset": "grok-computer"}})),
+        Some(serde_json::json!({"metadata": {"preset": "ezer-computer"}})),
     )
     .await
     .expect("fail-closed bind still succeeds with an RPC-only advertise");
@@ -6818,7 +6818,7 @@ async fn strict_rebind_with_corrected_toolset_heals_end_to_end() {
     let second = resolver(
         sid,
         Some(serde_json::json!({
-            "metadata": {"tools": [{"id": "GrokBuild:read_file"}]},
+            "metadata": {"tools": [{"id": "EzerBuild:read_file"}]},
         })),
     )
     .await
@@ -6839,10 +6839,10 @@ fn owner_full_bind_metadata() -> serde_json::Value {
         "metadata": {
             "capability_mode": "all",
             "tools": [
-                {"id": "GrokBuild:read_file"},
-                {"id": "GrokBuild:search_replace"},
-                {"id": "GrokBuild:grep"},
-                {"id": "GrokBuild:list_dir"},
+                {"id": "EzerBuild:read_file"},
+                {"id": "EzerBuild:search_replace"},
+                {"id": "EzerBuild:grep"},
+                {"id": "EzerBuild:list_dir"},
             ],
         },
     })
@@ -7000,10 +7000,10 @@ async fn bind_flow_rebinds_keep_backend_and_task_alive_end_to_end() {
     let sid = xai_tool_protocol::SessionId::new("bind-e2e-bg").unwrap();
     let bg_metadata = serde_json::json!({
         "metadata": {"tools": [
-            {"id": "GrokBuild:read_file"},
-            {"id": "GrokBuild:run_terminal_cmd"},
-            {"id": "GrokBuild:get_task_output"},
-            {"id": "GrokBuild:kill_task"},
+            {"id": "EzerBuild:read_file"},
+            {"id": "EzerBuild:run_terminal_cmd"},
+            {"id": "EzerBuild:get_task_output"},
+            {"id": "EzerBuild:kill_task"},
         ]},
     });
     let first = resolver(sid.clone(), Some(bg_metadata.clone()))
@@ -7044,7 +7044,7 @@ async fn bind_flow_rebinds_keep_backend_and_task_alive_end_to_end() {
     let swapped = resolver(
         sid,
         Some(serde_json::json!({
-            "metadata": {"tools": [{"id": "GrokBuild:read_file"}]},
+            "metadata": {"tools": [{"id": "EzerBuild:read_file"}]},
         })),
     )
     .await
@@ -7299,7 +7299,7 @@ async fn no_upload_queue_registers_no_inflight_enqueue() {
             "main",
             &BeforeTurnPayload {
                 turn_number: 1,
-                model_id: "grok-4".to_owned(),
+                model_id: "test-model-4".to_owned(),
                 yolo_mode: false,
                 conversation_message_count: 0,
                 session_relationship: "primary".to_owned(),
@@ -7331,7 +7331,7 @@ async fn compute_turn_injections_after_returns_skipped_ack_without_queue() {
                 outcome: TurnHookOutcome::Completed,
                 duration_ms: 10,
                 tool_call_count: 0,
-                model_id: "grok-4".to_owned(),
+                model_id: "test-model-4".to_owned(),
                 written_repo_paths: Vec::new(),
                 cancellation_category: None,
                 cancellation_context: None,
@@ -7361,7 +7361,7 @@ async fn compute_turn_injections_after_returns_skipped_ack_without_queue() {
                 outcome: TurnHookOutcome::Completed,
                 duration_ms: 10,
                 tool_call_count: 0,
-                model_id: "grok-4".to_owned(),
+                model_id: "test-model-4".to_owned(),
                 written_repo_paths: Vec::new(),
                 cancellation_category: None,
                 cancellation_context: None,
@@ -7411,7 +7411,7 @@ async fn after_turn_decodes_cancellation_fields_into_events_jsonl() {
             sid,
             &BeforeTurnPayload {
                 turn_number: 2,
-                model_id: "grok-4".to_owned(),
+                model_id: "test-model-4".to_owned(),
                 yolo_mode: false,
                 conversation_message_count: 0,
                 session_relationship: "primary".to_owned(),
@@ -7427,7 +7427,7 @@ async fn after_turn_decodes_cancellation_fields_into_events_jsonl() {
                 outcome: TurnHookOutcome::Cancelled,
                 duration_ms: 10,
                 tool_call_count: 0,
-                model_id: "grok-4".to_owned(),
+                model_id: "test-model-4".to_owned(),
                 written_repo_paths: Vec::new(),
                 cancellation_category: Some("permission_rejected".to_owned()),
                 cancellation_context: Some(serde_json::json!({ "recovery": false })),
@@ -8041,11 +8041,11 @@ async fn tool_state_upload_registers_producer() {
     let _env = crate::session::tool_config::TOOL_STATE_ENV_LOCK
         .lock()
         .unwrap_or_else(|e| e.into_inner());
-    unsafe { std::env::set_var("GROK_WORKSPACE_TOOL_STATE_ENABLED", "true") };
+    unsafe { std::env::set_var("EZER_WORKSPACE_TOOL_STATE_ENABLED", "true") };
     let (handle, _queue, _home) = make_handle_with_queue(false);
     assert_eq!(handle.shared.producer_tasks.len(), 0);
     handle.spawn_tool_state_upload("main", 1);
-    unsafe { std::env::remove_var("GROK_WORKSPACE_TOOL_STATE_ENABLED") };
+    unsafe { std::env::remove_var("EZER_WORKSPACE_TOOL_STATE_ENABLED") };
     drop(_env);
     assert_eq!(
         handle.shared.producer_tasks.len(),

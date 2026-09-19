@@ -652,7 +652,7 @@ pub struct AppView {
     /// `/usage` itself stays available for session token/cost unless [`Self::has_external_auth_provider`].
     pub usage_visible: bool,
     /// External `auth_provider_command` deployment.
-    /// No grok.com billing session exists; `/usage` and credit UI stay off.
+    /// No ezer.com billing session exists; `/usage` and credit UI stay off.
     pub has_external_auth_provider: bool,
     /// `AuthMeta::backend_billed`: the agent's backend handles billing itself.
     pub backend_billed: bool,
@@ -671,18 +671,18 @@ pub struct AppView {
     /// Periodic billing poll requested (credits >= 99%).
     pub billing_poll_wanted: bool,
     /// Leader-mode session roster (FleetView dashboard).
-    /// Populated from `x.ai/sessions/list` polls and `x.ai/sessions/changed` broadcasts.
+    /// Populated from `ezer/sessions/list` polls and `ezer/sessions/changed` broadcasts.
     /// Empty in non-leader mode, which gates roster rendering.
     pub leader_roster: Vec<crate::app::roster::RosterEntry>,
     /// Local on-disk session list (dormant/idle sessions) shown on the dashboard when NOT in leader mode.
     /// There is no live leader roster to poll outside leader mode.
-    /// We fetch the same `x.ai/session/list` the resume picker uses and render those as idle rows.
+    /// We fetch the same `ezer/session/list` the resume picker uses and render those as idle rows.
     pub dashboard_local_sessions: Vec<crate::app::roster::RosterEntry>,
     /// Whether the dashboard is currently loading local sessions (non-leader mode).
     pub dashboard_sessions_loading: bool,
     pub(crate) workspace_membership: crate::app::workspace_membership::WorkspaceMembership,
     /// Server-authoritative shared prompt queues, keyed by `sessionId`.
-    /// Reconciled from `x.ai/queue/changed` broadcasts so every client renders the same ordered queue (including prompts queued by other clients).
+    /// Reconciled from `ezer/queue/changed` broadcasts so every client renders the same ordered queue (including prompts queued by other clients).
     /// Empty in non-leader mode.
     pub shared_prompt_queues:
         std::collections::HashMap<String, Vec<crate::app::prompt_queue::QueueEntryWire>>,
@@ -704,7 +704,7 @@ pub struct AppView {
     pub cancel_rewind_enabled: bool,
     /// Whether session recap (`/recap` and the automatic away recap) is rolled out.
     /// Resolved by the shell and advertised on ACP initialize (`sessionRecap`).
-    /// When false, the pager must not request recaps (zero `x.ai/recap` traffic).
+    /// When false, the pager must not request recaps (zero `ezer/recap` traffic).
     pub session_recap_available: bool,
     /// Shell-advertised eligibility for the `/feedback` trace-upload offer, exactly as received (initialize meta / auth-meta refreshes).
     /// Read it through [`Self::feedback_trace_offer`], which subtracts the latch.
@@ -902,7 +902,7 @@ pub struct AppView {
     /// Automatically enabled by `plan_mode`.
     pub ask_user: bool,
     /// Process-wide gateway light-frontend from CLI `--chat` only.
-    /// Stamps `_meta["x.ai/session"].kind = "chat"` and omits Build agent profiles on create/load while set.
+    /// Stamps `_meta["ezer/session"].kind = "chat"` and omits Build agent profiles on create/load while set.
     /// `/chat` does **not** set this (uses [`Self::deferred_startup`] one-shot state instead).
     pub chat_mode: bool,
     /// Post-turn CreatePlan review. ACP connect seed for backends that implement ExecutePlan.
@@ -985,7 +985,7 @@ pub struct AppView {
     pub consent_state: crate::app::consent::ConsentState,
     /// Scopes the consent answer, the only identity the pager has for it.
     pub account_email: Option<String>,
-    /// Login button label from `AuthMethod.name` (e.g., "grok.com", "Acme Corp").
+    /// Login button label from `AuthMethod.name` (e.g., "example.test", "Acme Corp").
     pub login_label: Option<String>,
     /// The auth method ID to use for login.
     pub login_method_id: Option<acp::AuthMethodId>,
@@ -1047,7 +1047,7 @@ pub struct AppView {
         std::collections::BTreeSet<(String, ezer_telemetry::events::AnnouncementCtaSurface)>,
     /// Access gate from `ezer_build_access_gate`. `Some` means blocked.
     pub gate: Option<ezer_login::GateInfo>,
-    /// User-friendly subscription tier name (e.g. "SuperGrok", "Free").
+    /// User-friendly subscription tier name (e.g. "MaxTier", "Free").
     pub subscription_tier: Option<String>,
     /// When the pager started auto-checking subscriptions (for 10-min timeout).
     pub paywall_check_started: Option<std::time::Instant>,
@@ -2005,7 +2005,7 @@ impl AppView {
             &self.dashboard_local_sessions
         }
     }
-    /// Reconcile the shared prompt queue for a session from a `x.ai/queue/changed` broadcast.
+    /// Reconcile the shared prompt queue for a session from a `ezer/queue/changed` broadcast.
     /// Returns `(old_id, new_id)` for echoes retired via the kind-and-text fallback (re-keyed: the old id never appears in any broadcast).
     /// The caller routes these through `AgentView::note_queue_echo_rekeyed` so per-agent state moves with the message instead of leaking.
     pub fn apply_queue_changed(
@@ -2071,7 +2071,7 @@ impl AppView {
     }
     /// Push an optimistic echo row for a server-authoritative prompt the pager just sent.
     /// (A plain prompt or agent-bound kind typed while a turn is running.)
-    /// The row is keyed by `prompt_id` so the authoritative `x.ai/queue/changed` broadcast replaces it (matched by `id`) rather than duplicating it.
+    /// The row is keyed by `prompt_id` so the authoritative `ezer/queue/changed` broadcast replaces it (matched by `id`) rather than duplicating it.
     pub fn push_optimistic_prompt_echo(
         &mut self,
         session_id: &str,
@@ -3888,7 +3888,7 @@ fn handle_welcome_input(ev: &Event, ctx: &mut WelcomeInputCtx<'_>) -> InputOutco
                 if let Some(rect) = ctx.gate_url_rect
                     && rect.contains(ratatui::layout::Position::new(mouse.column, mouse.row))
                 {
-                    return InputOutcome::Action(Action::OpenSupergrokUrl);
+                    return InputOutcome::Action(Action::OpenUpgradeUrl);
                 }
                 if let Some(rect) = ctx.upgrade_cta_rect
                     && rect.contains(ratatui::layout::Position::new(mouse.column, mouse.row))
@@ -4118,7 +4118,7 @@ fn dispatch_zdr_menu_action(index: usize) -> InputOutcome {
 /// "Refresh" (ctrl-r) is handled as a direct key shortcut, not a menu item.
 fn dispatch_access_gate_menu_action(index: usize) -> InputOutcome {
     match index {
-        0 => InputOutcome::Action(Action::OpenSupergrokUrl),
+        0 => InputOutcome::Action(Action::OpenUpgradeUrl),
         1 => InputOutcome::Action(Action::Logout),
         2 => InputOutcome::Action(Action::Quit),
         _ => InputOutcome::Unchanged,
@@ -4644,8 +4644,8 @@ impl AppView {
                             }
                             if !has_access && !self.access_gate_shown_logged {
                                 self.access_gate_shown_logged = true;
-                                ezer_telemetry::session_ctx::log_event(ezer_telemetry::events::SuperGrokUpsellShown {
-                                    source: ezer_telemetry::events::SuperGrokUpsell::WelcomeScreen,
+                                ezer_telemetry::session_ctx::log_event(ezer_telemetry::events::UpgradeUpsellShown {
+                                    source: ezer_telemetry::events::UpgradeUpsell::WelcomeScreen,
                                     auth_method: self
                                         .login_method_id
                                         .as_ref()

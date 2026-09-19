@@ -1097,7 +1097,7 @@ pub(crate) async fn spawn_session_actor(
             tracing::info!(
                 session_id = %session_info.id.0,
                 acp_mcp_servers = acp_server_count,
-                "Registered in-process SDK MCP servers (x.ai/mcp/sdk_call)"
+                "Registered in-process SDK MCP servers (ezer/mcp/sdk_call)"
             );
         }
         Arc::new(TokioMutex::new(state))
@@ -1408,15 +1408,15 @@ pub(crate) async fn spawn_session_actor(
         "Creating feedback manager"
     );
     let feedback_client_type = match client_type {
-        ClientType::GrokTUI => prod_mc_cli_chat_proxy_types::feedback_types::ClientType::Tui,
-        ClientType::GrokWeb => prod_mc_cli_chat_proxy_types::feedback_types::ClientType::Web,
+        ClientType::EzerTUI => prod_mc_cli_chat_proxy_types::feedback_types::ClientType::Tui,
+        ClientType::EzerWeb => prod_mc_cli_chat_proxy_types::feedback_types::ClientType::Web,
         ClientType::Nebula => prod_mc_cli_chat_proxy_types::feedback_types::ClientType::Nebula,
         ClientType::Extension => {
             prod_mc_cli_chat_proxy_types::feedback_types::ClientType::Extension
         }
         ClientType::Generic => prod_mc_cli_chat_proxy_types::feedback_types::ClientType::Agent,
         ClientType::Desktop => prod_mc_cli_chat_proxy_types::feedback_types::ClientType::Desktop,
-        ClientType::GrokPager => prod_mc_cli_chat_proxy_types::feedback_types::ClientType::Tui,
+        ClientType::EzerPager => prod_mc_cli_chat_proxy_types::feedback_types::ClientType::Tui,
     };
     let user_cfg = feedback_flags.user;
     let feedback_config = FeedbackManagerConfig {
@@ -2269,7 +2269,7 @@ pub(crate) async fn spawn_session_actor(
                     "ask_user_question reverse-request must carry a non-empty sessionId (design §5.4)"
                 );
                 let ext_request = agent_client_protocol::ExtRequest::new(
-                    "x.ai/ask_user_question",
+                    "ezer/ask_user_question",
                     serde_json::value::to_raw_value(&ext_req)
                         .expect("AskUserQuestionExtRequest serialization should not fail")
                         .into(),

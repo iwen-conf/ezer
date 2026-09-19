@@ -1973,7 +1973,7 @@ mod permission_scope_key_tests {
 }
 #[cfg(test)]
 mod question_no_freeform_tests {
-    //! Freeform ("Other") gating for `no_freeform` question modals, e.g. the SuperGrok upsell.
+    //! Freeform ("Other") gating for `no_freeform` question modals, e.g. the MaxTier upsell.
     //! Regression tests for the bug where clicking under the last option of the upsell selected the (hidden) freeform row.
     //! That let the user type into a modal that offers no free text.
     use super::super::test_fixtures::make_agent;

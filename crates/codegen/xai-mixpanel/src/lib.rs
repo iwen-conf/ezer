@@ -30,7 +30,7 @@ const REQUEST_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(10);
 
 impl Mixpanel {
     /// Create a new Mixpanel client with the given project token.
-    #[allow(clippy::disallowed_methods)] // transport-neutral crate; the grok CLI injects a policy client via with_client
+    #[allow(clippy::disallowed_methods)] // transport-neutral crate; the ezer CLI injects a policy client via with_client
     pub fn new(token: impl Into<String>) -> Self {
         Self {
             token: token.into(),

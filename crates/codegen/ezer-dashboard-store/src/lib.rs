@@ -50,8 +50,8 @@ pub use types::{
 };
 
 /// The canonical store path under a ezer home.
-/// The caller resolves the ezer home (nothing in this crate reads `GROK_HOME`); tests pass a temp dir.
+/// The caller resolves the ezer home (nothing in this crate reads `EZER_HOME`); tests pass a temp dir.
 /// [`WorkspaceStore::open`] creates the dedicated subdirectory 0700, and every sibling file the store ever creates lives inside it.
-pub fn default_db_path(grok_home: &Path) -> PathBuf {
-    grok_home.join("dashboard").join("workspace.db")
+pub fn default_db_path(ezer_home: &Path) -> PathBuf {
+    ezer_home.join("dashboard").join("workspace.db")
 }

@@ -6,12 +6,12 @@
 //! Inbound ACP is pumped through `acp_handler::handle` and user intent is driven through `dispatch`.
 //! Effects run through the real `effects::execute` (the same loop `event_loop::run` performs, minus the terminal).
 //!
-//! Env sandboxing follows this crate's `serial(GROK_HOME)` idiom.
-//! `grok_home()` is process-cached (OnceLock), so disk assertions always go through [`effective_grok_home`] rather than assuming the temp dir won.
+//! Env sandboxing follows this crate's `serial(EZER_HOME)` idiom.
+//! `ezer_home()` is process-cached (OnceLock), so disk assertions always go through [`effective_ezer_home`] rather than assuming the temp dir won.
 //!
 //! The scenarios are `#[ignore]`d in the shared lib test binary.
-//! The harness mutates process-global env (proxy URLs, `XAI_API_KEY`, `EZER_LEADER_SOCKET`, `GROK_HOME`) for a real agent's whole lifetime.
-//! In a several-thousand-test process that mutation poisons concurrently-running tests; `grok_home()`'s OnceLock is usually already pinned too.
+//! The harness mutates process-global env (proxy URLs, `XAI_API_KEY`, `EZER_LEADER_SOCKET`, `EZER_HOME`) for a real agent's whole lifetime.
+//! In a several-thousand-test process that mutation poisons concurrently-running tests; `ezer_home()`'s OnceLock is usually already pinned too.
 //! Run on demand:
 //!
 //! ```bash
@@ -59,9 +59,9 @@ async fn bounded<T>(what: &str, fut: impl std::future::Future<Output = T>) -> T 
         .unwrap_or_else(|_| panic!("leader-cluster bring-up timed out: {what}"))
 }
 
-/// The ezer home the agent actually persisted under: `grok_home()` is process-cached, so an earlier test in this binary may have pinned it.
-fn effective_grok_home() -> PathBuf {
-    ezer_config::grok_home()
+/// The ezer home the agent actually persisted under: `ezer_home()` is process-cached, so an earlier test in this binary may have pinned it.
+fn effective_ezer_home() -> PathBuf {
+    ezer_config::ezer_home()
 }
 
 /// Concatenated agent-message text across a view's scrollback (copy of the acp_handler tests' helper; that one is test-mod private).
@@ -259,7 +259,7 @@ struct PagerLeaderCluster {
     server: MockInferenceServer,
     server_cancel: CancellationToken,
     /// The current generation's server/agent/bridge tasks.
-    /// `kill_leader` aborts and drains them so a respawn can never race a still-running old agent on the same GROK_HOME.
+    /// `kill_leader` aborts and drains them so a respawn can never race a still-running old agent on the same EZER_HOME.
     /// (Two agents writing one updates.jsonl is the corruption the real leader's flock exists to prevent.)
     generation_tasks: Vec<tokio::task::JoinHandle<()>>,
     client_count: Arc<AtomicUsize>,
@@ -272,22 +272,22 @@ struct PagerLeaderCluster {
     /// Field order matters: `_flock` drops first, removing its lock/sock files while the env still points at the sandbox.
     /// Then the guards restore the env, then the temp home is deleted.
     _env: Vec<crate::test_util::EnvVarGuard>,
-    _grok_home: TempDir,
+    _ezer_home: TempDir,
 }
 
 impl PagerLeaderCluster {
     /// Stand up the cluster.
-    /// Callers MUST be `#[serial_test::serial(GROK_HOME)]` (env mutation) and run inside a current-thread `LocalSet`.
+    /// Callers MUST be `#[serial_test::serial(EZER_HOME)]` (env mutation) and run inside a current-thread `LocalSet`.
     async fn start() -> Self {
         ezer_extra_ca::ensure_default_crypto_provider();
 
         let server = MockInferenceServer::start().await.expect("mock server");
-        let grok_home = TempDir::new().unwrap();
+        let ezer_home = TempDir::new().unwrap();
         let workdir = TempDir::new().unwrap();
-        let sock_path = grok_home.path().join("leader-cluster.sock");
+        let sock_path = ezer_home.path().join("leader-cluster.sock");
 
         let env = vec![
-            crate::test_util::EnvVarGuard::set("GROK_HOME", grok_home.path()),
+            crate::test_util::EnvVarGuard::set("EZER_HOME", ezer_home.path()),
             crate::test_util::EnvVarGuard::set("EZER_CLI_CHAT_PROXY_BASE_URL", server.url()),
             crate::test_util::EnvVarGuard::set("EZER_XAI_API_BASE_URL", server.url()),
             crate::test_util::EnvVarGuard::set("XAI_API_KEY", "test-key-for-ci"),
@@ -317,7 +317,7 @@ impl PagerLeaderCluster {
             authenticated: false,
             _flock: flock,
             _env: env,
-            _grok_home: grok_home,
+            _ezer_home: ezer_home,
         };
         cluster.spawn_leader_generation().await;
         cluster
@@ -392,7 +392,7 @@ impl PagerLeaderCluster {
         );
         // Abort and drain the generation's agent/bridge tasks (the server task has already run its socket cleanup above)
         // Channel-closure teardown is only eventual
-        // Without the drain an old agent task could still run against the same GROK_HOME when the next generation's agent starts
+        // Without the drain an old agent task could still run against the same EZER_HOME when the next generation's agent starts
         for task in self.generation_tasks.drain(..) {
             task.abort();
             let _ = task.await;
@@ -433,8 +433,8 @@ impl PagerLeaderCluster {
                 name,
                 ClientMode::Stdio,
                 LeaderEnvUrls {
-                    grok_ws_url: String::new(),
-                    grok_ws_origin: String::new(),
+                    ezer_ws_url: String::new(),
+                    ezer_ws_origin: String::new(),
                 },
                 LeaderClientCapabilities {
                     client_version: Some("0.0.0-test".to_string()),

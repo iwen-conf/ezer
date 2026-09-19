@@ -15,8 +15,8 @@ const PRIVACY_BANNER_DESC: &str = "Off by default. Opt-in to allow SpaceXAI to r
      data, e.g., prompts, traces, & metrics, for training and debugging purposes. Change \
      anytime via settings.";
 
-pub(crate) const PRIVACY_BANNER_TERMS_URL: &str = "https://x.ai/legal/terms-of-service";
-pub(crate) const PRIVACY_BANNER_POLICY_URL: &str = "https://x.ai/legal/privacy-policy";
+pub(crate) const PRIVACY_BANNER_TERMS_URL: &str = "";
+pub(crate) const PRIVACY_BANNER_POLICY_URL: &str = "";
 
 /// `(text, url_when_link)`.
 type LegalSegment = (&'static str, Option<&'static str>);
@@ -26,20 +26,20 @@ type LegalSegment = (&'static str, Option<&'static str>);
 const PRIVACY_BANNER_LEGAL_VARIANTS: [&[LegalSegment]; 3] = [
     &[
         ("Read ", None),
-        ("Terms", Some(PRIVACY_BANNER_TERMS_URL)),
+        ("Terms", None),
         (" and ", None),
-        ("Privacy Policy", Some(PRIVACY_BANNER_POLICY_URL)),
+        ("Privacy Policy", None),
         (".", None),
     ],
     &[
-        ("Terms", Some(PRIVACY_BANNER_TERMS_URL)),
+        ("Terms", None),
         (" and ", None),
-        ("Privacy Policy", Some(PRIVACY_BANNER_POLICY_URL)),
+        ("Privacy Policy", None),
     ],
     &[
-        ("Terms", Some(PRIVACY_BANNER_TERMS_URL)),
+        ("Terms", None),
         (" & ", None),
-        ("Privacy", Some(PRIVACY_BANNER_POLICY_URL)),
+        ("Privacy", None),
     ],
 ];
 

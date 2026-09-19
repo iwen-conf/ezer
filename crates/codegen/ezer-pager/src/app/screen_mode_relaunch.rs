@@ -142,7 +142,7 @@ pub(crate) fn build_screen_mode_relaunch_args(
             continue;
         }
 
-        // Bare positional prompt (e.g. `grok "fix the bug"`), which must not re-fire on resume.
+        // Bare positional prompt (e.g. `ezer "fix the bug"`), which must not re-fire on resume.
         // Clap positionals never start with `-`
         // Values for earlier flags were already consumed above, so any remaining bare word here is the prompt
         continue;
@@ -150,7 +150,7 @@ pub(crate) fn build_screen_mode_relaunch_args(
 
     out.push(OsString::from("--resume"));
     out.push(OsString::from(session_id));
-    // Keep a CLI mode flag for hand-pasted resume hints that omit GROK_SCREEN_MODE.
+    // Keep a CLI mode flag for hand-pasted resume hints that omit EZER_SCREEN_MODE.
     if want_minimal {
         out.push(OsString::from("--minimal"));
     } else {
@@ -537,7 +537,7 @@ mod tests {
 
     #[test]
     fn double_dash_and_following_positionals_dropped() {
-        // `grok --no-leader -- "fix the bug"`: everything after `--` is the prompt
+        // `ezer --no-leader -- "fix the bug"`: everything after `--` is the prompt
         // The separator itself must go too, or the appended `--resume <id>` would be parsed as positional prompt words
         let out = build_screen_mode_relaunch_args(
             args(&["ezer", "--no-leader", "--", "fix the bug"]),
@@ -558,7 +558,7 @@ mod tests {
             args(&[
                 "ezer",
                 "--model",
-                "grok-4",
+                "test-model-4",
                 "--cwd",
                 "/tmp/proj",
                 "--leader-socket",
@@ -575,7 +575,7 @@ mod tests {
             as_strs(&out),
             vec![
                 "--model",
-                "grok-4",
+                "test-model-4",
                 "--cwd",
                 "/tmp/proj",
                 "--leader-socket",
@@ -594,7 +594,7 @@ mod tests {
     #[test]
     fn keeps_equals_form_and_short_model_flag() {
         let out = build_screen_mode_relaunch_args(
-            args(&["ezer", "-m", "grok-4", "--cwd=/tmp/proj", "--no-leader"]),
+            args(&["ezer", "-m", "test-model-4", "--cwd=/tmp/proj", "--no-leader"]),
             "sid",
             false,
         );
@@ -602,7 +602,7 @@ mod tests {
             as_strs(&out),
             vec![
                 "-m",
-                "grok-4",
+                "test-model-4",
                 "--cwd=/tmp/proj",
                 "--no-leader",
                 "--resume",
@@ -628,7 +628,7 @@ mod tests {
 
     #[test]
     fn resume_without_value_then_flag_is_not_eaten() {
-        // `grok --resume --no-leader` (resume most-recent; next token is a flag).
+        // `ezer --resume --no-leader` (resume most-recent; next token is a flag).
         let out = build_screen_mode_relaunch_args(
             args(&["ezer", "--resume", "--no-leader"]),
             "sid",
@@ -737,7 +737,7 @@ mod tests {
 
     #[test]
     fn failed_relaunch_hint_includes_screen_mode_env() {
-        // Recovery command must carry GROK_SCREEN_MODE so following the hint after a failed `/fullscreen` does not reopen minimal/inline
+        // Recovery command must carry EZER_SCREEN_MODE so following the hint after a failed `/fullscreen` does not reopen minimal/inline
         // The explicit flag keeps the resume in the right mode if the env is dropped
         assert_eq!(
             screen_mode_relaunch_resume_hint("abc-sid", false),

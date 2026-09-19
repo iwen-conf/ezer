@@ -1067,9 +1067,9 @@ fn configured_report_reaches_pass_state_only_for_exact_managed_alias() {
 fn shell_aliases_expand_to_exact_argv_and_bypass_is_explicit() {
     let temp = tempfile::tempdir().unwrap();
     let capture = temp.path().join("capture");
-    let grok = temp.path().join("ezer");
+    let ezer = temp.path().join("ezer");
     std::fs::write(
-        &grok,
+        &ezer,
         format!(
             "#!/bin/sh\nprintf '%s\\n' \"$@\" > '{}'\n",
             capture.display()
@@ -1077,7 +1077,7 @@ fn shell_aliases_expand_to_exact_argv_and_bypass_is_explicit() {
     )
     .unwrap();
     use std::os::unix::fs::PermissionsExt as _;
-    std::fs::set_permissions(&grok, std::fs::Permissions::from_mode(0o755)).unwrap();
+    std::fs::set_permissions(&ezer, std::fs::Permissions::from_mode(0o755)).unwrap();
 
     if let Some(bash) = find_on_path("bash") {
         let rc = temp.path().join("bashrc");
@@ -1174,16 +1174,16 @@ fn shell_aliases_expand_to_exact_argv_and_bypass_is_explicit() {
 
     if let Some(fish) = find_on_path("fish") {
         let fish_capture = temp.path().join("fish-capture");
-        let fish_grok = temp.path().join("fish-ezer");
+        let fish_ezer = temp.path().join("fish-ezer");
         std::fs::write(
-            &fish_grok,
+            &fish_ezer,
             format!(
                 "#!/bin/sh\nprintf '%s\\n' \"$@\" > '{}'\n",
                 fish_capture.display()
             ),
         )
         .unwrap();
-        std::fs::set_permissions(&fish_grok, std::fs::Permissions::from_mode(0o755)).unwrap();
+        std::fs::set_permissions(&fish_ezer, std::fs::Permissions::from_mode(0o755)).unwrap();
         let rc = temp.path().join("config.fish");
         std::fs::write(&rc, "alias ssh 'fish-ezer wrap ssh'\n").unwrap();
         let command = format!(

@@ -4,15 +4,15 @@ use std::sync::Arc;
 /// User token (xAI users) sends `Bearer` and `X-XAI-Token-Auth: ezer-cli`.
 /// Deployment key takes precedence when both are present.
 #[derive(Clone)]
-pub struct GrokAuthCredentials {
+pub struct EzerAuthCredentials {
     pub user_token: Option<String>,
     pub deployment_key: Option<String>,
     pub alpha_test_key: Option<String>,
     auth_manager: Option<Arc<crate::AuthManager>>,
 }
-impl std::fmt::Debug for GrokAuthCredentials {
+impl std::fmt::Debug for EzerAuthCredentials {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("GrokAuthCredentials")
+        f.debug_struct("EzerAuthCredentials")
             .field(
                 "user_token",
                 &self.user_token.as_ref().map(|_| "<redacted>"),
@@ -32,7 +32,7 @@ impl std::fmt::Debug for GrokAuthCredentials {
             .finish()
     }
 }
-impl GrokAuthCredentials {
+impl EzerAuthCredentials {
     /// Static credentials from a snapshot token. No refresh capability.
     pub fn new(user_token: Option<String>) -> Self {
         Self {
@@ -64,7 +64,7 @@ impl GrokAuthCredentials {
     /// Return a snapshot with the live token from the internal `AuthManager` if available, falling back to the static `user_token`.
     /// Uses `current_or_expired()` instead of `current()` so a token in the early-invalidation refresh window is still returned.
     /// Such a token is expired for proactive refresh but still accepted by the server.
-    pub fn resolve(&self) -> GrokAuthCredentials {
+    pub fn resolve(&self) -> EzerAuthCredentials {
         if let Some(ref am) = self.auth_manager
             && let Some(auth) = am.current_or_expired()
         {
@@ -77,7 +77,7 @@ impl GrokAuthCredentials {
     }
     /// Async resolve via the internal `AuthManager::get_valid_token()` (memory, then disk, then an active OIDC refresh).
     /// Falls back to sync `resolve()` on error so transient refresh failures don't drop the bearer.
-    pub async fn resolve_async(&self) -> GrokAuthCredentials {
+    pub async fn resolve_async(&self) -> EzerAuthCredentials {
         let Some(ref am) = self.auth_manager else {
             return self.clone();
         };
@@ -110,28 +110,28 @@ impl GrokAuthCredentials {
         builder
     }
 }
-impl ezer_auth::HttpAuth for GrokAuthCredentials {
+impl ezer_auth::HttpAuth for EzerAuthCredentials {
     fn apply(&self, builder: RequestBuilder, base_url: &str) -> RequestBuilder {
-        GrokAuthCredentials::apply(self, builder, base_url)
+        EzerAuthCredentials::apply(self, builder, base_url)
     }
 }
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{AuthManager, AuthMode, GrokAuth, GrokComConfig};
+    use crate::{AuthManager, AuthMode, EzerAuth, EzerComConfig};
     use chrono::{Duration, Utc};
     use std::sync::Arc;
     fn make_manager_with_token(
         expires_at: chrono::DateTime<Utc>,
     ) -> (Arc<AuthManager>, tempfile::TempDir) {
         let dir = tempfile::tempdir().unwrap();
-        let mgr = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
-        let auth = GrokAuth {
+        let mgr = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
+        let auth = EzerAuth {
             key: "test-bearer-token".into(),
             auth_mode: AuthMode::External,
             expires_at: Some(expires_at),
             create_time: Utc::now(),
-            ..GrokAuth::test_default()
+            ..EzerAuth::test_default()
         };
         mgr.hot_swap(auth);
         (mgr, dir)
@@ -139,14 +139,14 @@ mod tests {
     #[test]
     fn resolve_returns_token_when_not_expired() {
         let (mgr, _dir) = make_manager_with_token(Utc::now() + Duration::hours(1));
-        let creds = GrokAuthCredentials::new(None).with_auth_manager(mgr);
+        let creds = EzerAuthCredentials::new(None).with_auth_manager(mgr);
         let resolved = creds.resolve();
         assert_eq!(resolved.user_token.as_deref(), Some("test-bearer-token"));
     }
     #[test]
     fn resolve_returns_token_during_early_invalidation_window() {
         let (mgr, _dir) = make_manager_with_token(Utc::now() + Duration::minutes(3));
-        let creds = GrokAuthCredentials::new(None).with_auth_manager(mgr.clone());
+        let creds = EzerAuthCredentials::new(None).with_auth_manager(mgr.clone());
         assert!(mgr.current().is_none());
         assert!(mgr.current_or_expired().is_some());
         assert_eq!(
@@ -156,14 +156,14 @@ mod tests {
     }
     #[test]
     fn resolve_returns_static_token_when_no_auth_manager() {
-        let creds = GrokAuthCredentials::new(Some("static-token".into()));
+        let creds = EzerAuthCredentials::new(Some("static-token".into()));
         assert_eq!(creds.resolve().user_token.as_deref(), Some("static-token"));
     }
     #[test]
     fn resolve_returns_none_when_no_token_at_all() {
         let dir = tempfile::tempdir().unwrap();
-        let mgr = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
-        let creds = GrokAuthCredentials::new(None).with_auth_manager(mgr);
+        let mgr = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
+        let creds = EzerAuthCredentials::new(None).with_auth_manager(mgr);
         assert!(creds.resolve().user_token.is_none());
     }
 }

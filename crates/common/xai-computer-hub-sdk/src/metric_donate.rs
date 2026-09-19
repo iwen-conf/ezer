@@ -522,16 +522,16 @@ other_family_total 9\n";
         let registry = Registry::new();
 
         let counter =
-            IntCounterVec::new(Opts::new("grok_test_total", "help"), &["reason"]).unwrap();
+            IntCounterVec::new(Opts::new("ezer_test_total", "help"), &["reason"]).unwrap();
         registry.register(Box::new(counter.clone())).unwrap();
         counter.with_label_values(&["zdr"]).inc_by(5);
 
-        let gauge = IntGauge::new("grok_test_pending", "help").unwrap();
+        let gauge = IntGauge::new("ezer_test_pending", "help").unwrap();
         registry.register(Box::new(gauge.clone())).unwrap();
         gauge.set(7);
 
         let hist = Histogram::with_opts(
-            HistogramOpts::new("grok_test_seconds", "help").buckets(vec![0.5, 1.0]),
+            HistogramOpts::new("ezer_test_seconds", "help").buckets(vec![0.5, 1.0]),
         )
         .unwrap();
         registry.register(Box::new(hist.clone())).unwrap();
@@ -544,7 +544,7 @@ other_family_total 9\n";
             metrics.iter().map(|m| (m.name.clone(), m)).collect();
 
         // Counter -> Sum (monotonic, cumulative), label preserved.
-        let metric::Data::Sum(sum) = by_name["grok_test_total"].data.as_ref().unwrap() else {
+        let metric::Data::Sum(sum) = by_name["ezer_test_total"].data.as_ref().unwrap() else {
             panic!("counter must convert to Sum");
         };
         assert!(sum.is_monotonic);
@@ -560,7 +560,7 @@ other_family_total 9\n";
         );
 
         // Gauge -> Gauge.
-        let metric::Data::Gauge(g) = by_name["grok_test_pending"].data.as_ref().unwrap() else {
+        let metric::Data::Gauge(g) = by_name["ezer_test_pending"].data.as_ref().unwrap() else {
             panic!("gauge must convert to Gauge");
         };
         assert_eq!(
@@ -570,7 +570,7 @@ other_family_total 9\n";
 
         // Histogram -> Histogram with cumulative buckets differenced and
         // a +Inf bucket appended.
-        let metric::Data::Histogram(h) = by_name["grok_test_seconds"].data.as_ref().unwrap() else {
+        let metric::Data::Histogram(h) = by_name["ezer_test_seconds"].data.as_ref().unwrap() else {
             panic!("histogram must convert to Histogram");
         };
         assert_eq!(

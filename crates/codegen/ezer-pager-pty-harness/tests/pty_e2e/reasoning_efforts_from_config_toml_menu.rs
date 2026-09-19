@@ -8,19 +8,19 @@ use super::common::*;
 #[ignore]
 async fn reasoning_efforts_from_config_toml_menu() {
     let content = ContentController::start_with_models(vec![
-        MockModel::new("grok-4.5").with_supports_reasoning_effort(true),
+        MockModel::new("test-model-4.5").with_supports_reasoning_effort(true),
     ])
     .await
     .expect("start content");
     content.set_response(format!("{MOCK_RESPONSE_SENTINEL} turn."));
 
-    // Seed `~/.grok/config.toml` with a per-model reasoning-effort menu.
-    let grok_home = content.home().join(".ezer");
-    std::fs::create_dir_all(&grok_home).expect("create .ezer");
-    // Quote the dotted model id: bare `[model.grok-4.5]` is TOML key-path syntax (model.grok-4.5), not the id "grok-4.5".
+    // Seed `~/.ezer/config.toml` with a per-model reasoning-effort menu.
+    let ezer_home = content.home().join(".ezer");
+    std::fs::create_dir_all(&ezer_home).expect("create .ezer");
+    // Quote the dotted model id: bare `[model.test-model-4.5]` is TOML key-path syntax (model.test-model-4.5), not the id "test-model-4.5".
     std::fs::write(
-        grok_home.join("config.toml"),
-        "[model.\"grok-4.5\"]\nreasoning_efforts = [{ value = \"high\", label = \"ConfigHigh\" }]\n",
+        ezer_home.join("config.toml"),
+        "[model.\"test-model-4.5\"]\nreasoning_efforts = [{ value = \"high\", label = \"ConfigHigh\" }]\n",
     )
     .expect("write config.toml");
 

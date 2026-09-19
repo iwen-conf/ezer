@@ -31,15 +31,15 @@ impl TrustStore {
     /// If `~/.ezer/trusted-plugins` does not exist, returns an empty store.
     /// If the file cannot be read, logs a warning and returns an empty store.
     pub fn load() -> Self {
-        // Gate on user_grok_home() so a project's `.grok/trusted-plugins` is never read as the user trust store
-        // That happens when neither GROK_HOME nor a home dir resolves
-        let Some(grok) = ezer_config::user_grok_home() else {
+        // Gate on user_ezer_home() so a project's `.ezer/trusted-plugins` is never read as the user trust store
+        // That happens when neither EZER_HOME nor a home dir resolves
+        let Some(ezer) = ezer_config::user_ezer_home() else {
             return Self {
                 trusted: HashSet::new(),
                 file_path: PathBuf::new(),
             };
         };
-        let file_path = grok.join(TRUST_FILE_NAME);
+        let file_path = ezer.join(TRUST_FILE_NAME);
         let trusted = Self::read_trust_file(&file_path);
         Self { trusted, file_path }
     }

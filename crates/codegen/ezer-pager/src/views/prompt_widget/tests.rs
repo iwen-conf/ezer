@@ -265,7 +265,7 @@
             TerminalName::Rio,
             TerminalName::Foot,
             TerminalName::JetBrains,
-            TerminalName::GrokDesktop,
+            TerminalName::EzerDesktop,
             TerminalName::Vte,
             TerminalName::Terminator,
             TerminalName::WindowsTerminal,
@@ -288,7 +288,7 @@
                 | TerminalName::Rio
                 | TerminalName::Foot
                 | TerminalName::JetBrains
-                | TerminalName::GrokDesktop
+                | TerminalName::EzerDesktop
                 | TerminalName::Vte
                 | TerminalName::Terminator
                 | TerminalName::WindowsTerminal
@@ -1610,7 +1610,7 @@
         let models = crate::acp::model_state::ModelState::default();
 
         // Cursor inside the command token with args already present.
-        pw.textarea.insert_str("/mod grok-4");
+        pw.textarea.insert_str("/mod test-model-4");
         pw.textarea.set_cursor(3);
         pw.refresh_slash(&models);
 
@@ -1628,7 +1628,7 @@
         assert!(pw.accept_slash_completion(&models));
         assert_eq!(
             pw.textarea.text(),
-            "/model grok-4",
+            "/model test-model-4",
             "the row's trailing space must not stack on the existing separator"
         );
         // Absorb, not trim the insert: the cursor lands after the separator, so the post-accept refresh is in the args phase where Enter chains
@@ -1711,7 +1711,7 @@
 
         let mut pw = PromptWidget::new();
         let mut models = crate::acp::model_state::ModelState::default();
-        let model_id = agent_client_protocol::ModelId::new(Arc::from("grok-4.5"));
+        let model_id = agent_client_protocol::ModelId::new(Arc::from("test-model-4.5"));
         models.available.insert(
             model_id.clone(),
             agent_client_protocol::ModelInfo::new(model_id, "ezer 4.5".to_string()),
@@ -3748,10 +3748,10 @@
             "terminal theme keeps the solid plan accent"
         );
 
-        // GrokNight: dimmed toward bg at truecolor; where quantization makes
+        // EzerNight: dimmed toward bg at truecolor; where quantization makes
         // the palette named (blend inexpressible), the solid accent — never
         // the old gray fallback.
-        crate::theme::cache::set(crate::theme::ThemeKind::GrokNight);
+        crate::theme::cache::set(crate::theme::ThemeKind::EzerNight);
         let style = render();
         let theme = Theme::current();
         assert_ne!(style.fg, Some(theme.gray), "never drops to gray");
@@ -3858,7 +3858,7 @@
             );
         }
 
-        crate::theme::cache::set(crate::theme::ThemeKind::GrokNight);
+        crate::theme::cache::set(crate::theme::ThemeKind::EzerNight);
         let style = render("yolo");
         assert_eq!(style.fg, Some(Theme::current().gray), "RGB keeps gray fg");
         assert!(!style.add_modifier.contains(Modifier::DIM));
@@ -4054,14 +4054,14 @@
             "terminal-theme placeholder must be dimmed, got {terminal:?}"
         );
 
-        crate::theme::cache::set(crate::theme::ThemeKind::GrokNight);
-        let groknight = render(&mut PromptWidget::new());
+        crate::theme::cache::set(crate::theme::ThemeKind::EzerNight);
+        let ezernight = render(&mut PromptWidget::new());
         assert_eq!(
-            groknight.fg,
+            ezernight.fg,
             Some(Theme::current().gray),
             "RGB-theme placeholder keeps the gray fg"
         );
-        assert!(!groknight.add_modifier.contains(Modifier::DIM));
+        assert!(!ezernight.add_modifier.contains(Modifier::DIM));
     }
 
     #[test]
@@ -4427,7 +4427,7 @@
     }
 
 
-    /// Widget with an active gate and a loaded suggestion: the state right after a turn ends with `x.ai/suggestPrompt` resolved.
+    /// Widget with an active gate and a loaded suggestion: the state right after a turn ends with `ezer/suggestPrompt` resolved.
     fn widget_with_prompt_suggestion(text: &str) -> PromptWidget {
         let mut pw = PromptWidget::new();
         pw.prompt_suggestion_active = true;

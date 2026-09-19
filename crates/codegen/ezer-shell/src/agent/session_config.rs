@@ -28,7 +28,7 @@ pub(crate) struct SessionConfigOption {
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct GrokSessionDetail {
+pub(crate) struct EzerSessionDetail {
     pub session_id: String,
     pub kind: String,
     pub cwd: String,
@@ -37,7 +37,7 @@ pub(crate) struct GrokSessionDetail {
     pub title: Option<String>,
 }
 
-impl GrokSessionDetail {
+impl EzerSessionDetail {
     pub(crate) fn build(
         session_id: String,
         cwd: String,
@@ -204,7 +204,7 @@ mod tests {
     fn options_have_one_selected_model_and_a_mode_per_effort() {
         let models = [
             model("ezer-build", "ezer"),
-            model("grok-4.5", "ezer 4.5"),
+            model("test-model-4.5", "ezer 4.5"),
         ];
         let current = acp::ModelId::from("ezer-build");
         let opts = build_session_config_options(
@@ -288,8 +288,8 @@ mod tests {
     }
 
     #[test]
-    fn grok_session_detail_serializes_camel_case() {
-        let detail = GrokSessionDetail::build(
+    fn ezer_session_detail_serializes_camel_case() {
+        let detail = EzerSessionDetail::build(
             "sess-1".to_string(),
             "/Users/me/xai".to_string(),
             "ezer-build".to_string(),
@@ -310,7 +310,7 @@ mod tests {
     fn acp_config_options_map_model_and_effort_selectors() {
         let models = [
             model("ezer-build", "ezer"),
-            model("grok-4.5", "ezer 4.5"),
+            model("test-model-4.5", "ezer 4.5"),
         ];
         let efforts = [ReasoningEffortOption {
             id: "high".to_string(),
@@ -322,7 +322,7 @@ mod tests {
 
         let options = build_acp_config_options(
             &models,
-            &acp::ModelId::from("grok-4.5"),
+            &acp::ModelId::from("test-model-4.5"),
             &efforts,
             Some(ReasoningEffort::High),
         );
@@ -331,10 +331,10 @@ mod tests {
             acp::SessionConfigOption::select(
                 CONFIG_ID_MODEL,
                 "Model",
-                "grok-4.5",
+                "test-model-4.5",
                 vec![
                     acp::SessionConfigSelectOption::new("ezer-build", "ezer"),
-                    acp::SessionConfigSelectOption::new("grok-4.5", "ezer 4.5"),
+                    acp::SessionConfigSelectOption::new("test-model-4.5", "ezer 4.5"),
                 ],
             )
             .category(acp::SessionConfigOptionCategory::Model),
@@ -351,7 +351,7 @@ mod tests {
 
     #[test]
     fn acp_config_options_effort_current_preserves_unlisted_value() {
-        let models = [model("grok-4.5", "ezer 4.5")];
+        let models = [model("test-model-4.5", "ezer 4.5")];
         let efforts = [ReasoningEffortOption {
             id: "high".to_string(),
             value: ReasoningEffort::High,
@@ -361,7 +361,7 @@ mod tests {
         }];
         let options = build_acp_config_options(
             &models,
-            &acp::ModelId::from("grok-4.5"),
+            &acp::ModelId::from("test-model-4.5"),
             &efforts,
             Some(ReasoningEffort::Low),
         );
@@ -381,7 +381,7 @@ mod tests {
     fn acp_config_options_model_current_preserves_unlisted_value() {
         let models = [
             model("ezer-build", "ezer"),
-            model("grok-4.5", "ezer 4.5"),
+            model("test-model-4.5", "ezer 4.5"),
         ];
         let options =
             build_acp_config_options(&models, &acp::ModelId::from("stale-model"), &[], None);

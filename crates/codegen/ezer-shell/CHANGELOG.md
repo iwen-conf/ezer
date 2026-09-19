@@ -50,7 +50,7 @@
 
 ## Bug Fixes
 
-- **Plugin and skill listings** from x.ai/plugins/list and x.ai/skills/* now reflect the latest config.toml even before the first session.
+- **Plugin and skill listings** from ezer/plugins/list and ezer/skills/* now reflect the latest config.toml even before the first session.
 - **Fixed crashes** on the first TLS handshake for Windows on ARM64 builds.
 - **Slash commands** like `/feedback` typed during plan approval now execute correctly.
 
@@ -91,7 +91,7 @@
 
 - **Tab navigation** in the pager now cycles cleanly among prompt, scrollback, and the entire dock instead of stopping at every dock section.
 - **Ctrl+G** now hides or shows the dock in the pager; focus returns to scrollback when hiding.
-- **Multiple concurrent `ezer agent stdio`** processes against the same GROK_HOME no longer crash at startup.
+- **Multiple concurrent `ezer agent stdio`** processes against the same EZER_HOME no longer crash at startup.
 - **MCP server connections** no longer fail against modern 2026-07-28 servers.
 - **Fixed startup crash** on Windows when the Client-ProjFS optional feature is disabled.
 
@@ -933,7 +933,7 @@
 
 - **MCP servers** can now be enabled or disabled directly from the CLI with `ezer mcp enable <name>` and `ezer mcp disable <name>`.
 - **Full plan markdown** can now be copied to the clipboard with `y` during plan approval or preview.
-- **Added support for the new SuperGrok Plus subscription tier** in authentication and feature gating.
+- **Added support for the new MaxTier Plus subscription tier** in authentication and feature gating.
 - **Enabled automatic recovery** from repetitive loops in model output by default.
 
 ## Bug Fixes
@@ -1006,7 +1006,7 @@
 - **Plugin subagents** now see the same MCP tools as the parent session.
 - **Copy confirmations** now show shorter messages when the clipboard succeeds.
 - **Repeated identical tool calls** now end the turn silently instead of showing a stop banner.
-- **Web search** now defaults to grok-4.5.
+- **Web search** now defaults to test-model-4.5.
 - **Voice dictation** text is no longer dropped when pressing Enter to send.
 - **Bash mode** (`!`) now shows yellow prefix and action label in minimal mode.
 - **Parked turns** no longer spam duplicate "Worked for" markers in the transcript.
@@ -1348,7 +1348,7 @@
 ## Features
 
 - **System notifications** now carry structured kind/title/body for better rendering.
-- **x.ai/pr/status** now reports whether an open PR is in the merge queue.
+- **ezer/pr/status** now reports whether an open PR is in the merge queue.
 - **Compact mode** now activates automatically on very small terminals.
 - **Up arrow** on an empty prompt now browses prompt history; `/history` searches it.
 - **Stop hook runs** now appear inline on the turn-completed line instead of a separate block.
@@ -1366,7 +1366,7 @@
 - **Terminal commands** with no args now run through a shell, matching the CLI.
 - **Agent teardown** no longer crashes on slim Linux images that lack the ps command.
 - **Esc** now dismisses an open /btw panel before backing out of a dashboard overlay.
-- **Resumed grok.com chats** now use the conversation's last model instead of the gateway default.
+- **Resumed ezer.com chats** now use the conversation's last model instead of the gateway default.
 - **JetBrains terminals on Windows** now default to minimal mode to avoid raw mouse-report leaks in the prompt.
 - **Skill token highlights** now survive line wraps and the slash menu opens when typing / before existing text.
 - **Truncated or tiny images** are now dropped before sending and previously poisoned sessions self-heal on restart.
@@ -1405,7 +1405,7 @@
 - **Single tool calls** that belong to a verb group now collapse into an aggregated header row.
 - **Fixed sessions** that became permanently stuck after tool-use history corruption.
 - **/always-approve** and **/auto** now toggle their mode on and off when run repeatedly.
-- **Terminal command cards** on grok.com now correctly settle after foreground bash tasks.
+- **Terminal command cards** on ezer.com now correctly settle after foreground bash tasks.
 - **Copy failure** toast now recommends trying /minimal for native terminal rendering.
 
 ## Performance
@@ -1446,7 +1446,7 @@
 ## Features
 
 - MCP permission prompts now show the planned arguments so you can judge what the tool will actually do.
-- The "Managed by grok.com" link in the Extensions modal is now clickable and underlined.
+- The "Managed remotely" link in the Extensions modal is now clickable and underlined.
 - Dragging inside rendered markdown tables now selects whole cells or rectangular ranges and copies as TSV.
 - Shift+Tab now goes straight to Plan mode when the plan-mode tip is showing.
 
@@ -1726,7 +1726,7 @@
 
 - **Contextual hints** now show shortcuts like plan mode or clipboard paste when relevant.
 - **Graceful shutdowns** now allow interrupted turns to resume with a configurable pause budget.
-- **Grok.com chat sessions** now integrate fully with the gateway bridge for model catalog and resume.
+- **Ezer.com chat sessions** now integrate fully with the gateway bridge for model catalog and resume.
 
 ## Bug Fixes
 
@@ -1741,7 +1741,7 @@
 
 ## Features
 
-- **Chat sessions show the grok.com model catalog** in the picker.
+- **Chat sessions show the ezer.com model catalog** in the picker.
 
 ## Bug Fixes
 
@@ -2747,7 +2747,7 @@
 
 ## Features
 
-- Memory system: /remember command, note modal with raw/enhanced preview, x.ai/memory/rewrite ACP extension, Ctrl+F fullscreen toggle for /memory modal.
+- Memory system: /remember command, note modal with raw/enhanced preview, ezer/memory/rewrite ACP extension, Ctrl+F fullscreen toggle for /memory modal.
 - Agent configuration: /config-agents modal with agents, personas, and defaults.
 - Goal classifier: end-to-end goal tracking with subagent-powered classification.
 

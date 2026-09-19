@@ -138,13 +138,13 @@ async fn test_e2e_idle_resume_refreshes_model_metadata() {
                     let dir = tempfile::tempdir().unwrap();
                     let mgr = std::sync::Arc::new(ezer_login::AuthManager::new(
                         dir.path(),
-                        ezer_login::GrokComConfig::default(),
+                        ezer_login::EzerComConfig::default(),
                     ));
-                    mgr.hot_swap(ezer_login::GrokAuth {
+                    mgr.hot_swap(ezer_login::EzerAuth {
                         auth_mode: ezer_login::AuthMode::Oidc,
                         refresh_token: Some("rt".into()),
                         expires_at: Some(chrono::Utc::now() + chrono::Duration::hours(1)),
-                        ..ezer_login::GrokAuth::test_default()
+                        ..ezer_login::EzerAuth::test_default()
                     });
                     std::mem::forget(dir);
                     Some(mgr)

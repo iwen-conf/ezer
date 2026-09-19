@@ -7,7 +7,7 @@ use anyhow::Result;
 
 use crate::CleanupReport;
 use crate::api::gc::{GcOptions, GcReport, age_path_enabled, gc_worktrees};
-use crate::db::{ListFilter, WorktreeDb, WorktreeKind, now_epoch_secs, resolve_grok_home};
+use crate::db::{ListFilter, WorktreeDb, WorktreeKind, now_epoch_secs, resolve_ezer_home};
 use crate::discovery::{RebuildReport, rebuild_worktree_db};
 
 pub(crate) const META_LAST_AUTO_GC_AT: &str = "last_auto_gc_at";
@@ -576,7 +576,7 @@ fn maybe_run_rebuild(
         RebuildMetaClass::Throttled | RebuildMetaClass::SkipFailed => return (None, false),
     }
 
-    let home = match resolve_grok_home() {
+    let home = match resolve_ezer_home() {
         Ok(h) => h,
         Err(e) => {
             tracing::warn!(error = %e, "auto worktree rebuild skipped: ezer home unresolved");
@@ -622,14 +622,14 @@ fn collect_source_repos_for_prune(db: &WorktreeDb) -> BTreeSet<PathBuf> {
 /// ownership. A blanket `git worktree prune` is unsafe; see
 /// [`crate::git::remove_stale_worktree_registrations_under`].
 fn prune_stale_git_worktree_registrations(repos: &BTreeSet<PathBuf>) -> u64 {
-    let Ok(grok_home) = resolve_grok_home() else {
+    let Ok(ezer_home) = resolve_ezer_home() else {
         tracing::warn!("auto worktree registration scrub skipped: ezer home unresolved");
         return 0;
     };
     let cleaned: u64 = repos
         .iter()
         .filter(|repo| repo.is_dir())
-        .map(|repo| crate::git::remove_stale_worktree_registrations_under(repo, &grok_home))
+        .map(|repo| crate::git::remove_stale_worktree_registrations_under(repo, &ezer_home))
         .fold(0u64, u64::saturating_add);
     if cleaned > 0 {
         tracing::info!(
@@ -1383,10 +1383,10 @@ mod tests {
     }
 
     #[test]
-    fn include_rebuild_true_registers_untracked_under_grok_home() {
+    fn include_rebuild_true_registers_untracked_under_ezer_home() {
         let _g = env_guard();
         clear_auto_gc_env();
-        let fx = crate::db::GrokHomeFixture::new();
+        let fx = crate::db::EzerHomeFixture::new();
         let db = WorktreeDb::open(&fx.home).unwrap();
 
         let wt = fx.home.join("worktrees/repo/untracked-sess");
@@ -1407,7 +1407,7 @@ mod tests {
         );
         assert!(
             db.get(&wt.to_string_lossy()).unwrap().is_some(),
-            "untracked dir under grok_home/worktrees must be registered"
+            "untracked dir under ezer_home/worktrees must be registered"
         );
     }
 
@@ -1419,7 +1419,7 @@ mod tests {
             let case = format!("include_rebuild={include_rebuild} dry_run={dry_run}");
             let _g = env_guard();
             clear_auto_gc_env();
-            let fx = crate::db::GrokHomeFixture::new();
+            let fx = crate::db::EzerHomeFixture::new();
             let db = WorktreeDb::open(&fx.home).unwrap();
 
             // An untracked tree a rebuild *would* register.
@@ -1472,7 +1472,7 @@ mod tests {
     fn rebuild_throttled_independently_of_gc() {
         let _g = env_guard();
         clear_auto_gc_env();
-        let fx = crate::db::GrokHomeFixture::new();
+        let fx = crate::db::EzerHomeFixture::new();
         let db = WorktreeDb::open(&fx.home).unwrap();
 
         let opts = ResolvedWorktreeAutoGc {
@@ -1513,7 +1513,7 @@ mod tests {
         // dead-path GC still work so reclaim continues after rebuild Err.
         let _g = env_guard();
         clear_auto_gc_env();
-        let fx = crate::db::GrokHomeFixture::new();
+        let fx = crate::db::EzerHomeFixture::new();
         let db = WorktreeDb::open(&fx.home).unwrap();
 
         db.register(&make_rec(
@@ -1565,7 +1565,7 @@ mod tests {
             let case = format!("dead_source={dead_source}");
             let _g = env_guard();
             clear_auto_gc_env();
-            let fx = crate::db::GrokHomeFixture::new();
+            let fx = crate::db::EzerHomeFixture::new();
             let db = WorktreeDb::open(&fx.home).unwrap();
 
             let repo = fx.home.join("src-repo");
@@ -1610,7 +1610,7 @@ mod tests {
         // Rebuild meta must stay unset so the next pass can re-discover.
         let _g = env_guard();
         clear_auto_gc_env();
-        let fx = crate::db::GrokHomeFixture::new();
+        let fx = crate::db::EzerHomeFixture::new();
         let db = WorktreeDb::open(&fx.home).unwrap();
         db.register(&make_rec(
             "alive-missing-path",
@@ -1674,7 +1674,7 @@ mod tests {
     fn rebuild_set_meta_failure_still_continues_gc() {
         let _g = env_guard();
         clear_auto_gc_env();
-        let fx = crate::db::GrokHomeFixture::new();
+        let fx = crate::db::EzerHomeFixture::new();
         let db = WorktreeDb::open(&fx.home).unwrap();
         db.register(&make_rec(
             "dead-stamp",
@@ -1710,7 +1710,7 @@ mod tests {
         let _g = env_guard();
         clear_auto_gc_env();
         unsafe { std::env::set_var(ENV_AUTO_GC_REBUILD, "1") };
-        let fx = crate::db::GrokHomeFixture::new();
+        let fx = crate::db::EzerHomeFixture::new();
         let db = WorktreeDb::open(&fx.home).unwrap();
         let wt = fx.home.join("worktrees/repo/env-rebuild-sess");
         std::fs::create_dir_all(wt.join(".git")).unwrap();
@@ -1736,7 +1736,7 @@ mod tests {
     fn gc_throttled_short_circuits_rebuild() {
         let _g = env_guard();
         clear_auto_gc_env();
-        let fx = crate::db::GrokHomeFixture::new();
+        let fx = crate::db::EzerHomeFixture::new();
         let db = WorktreeDb::open(&fx.home).unwrap();
         // GC recently stamped; rebuild never stamped and would be due.
         db.set_meta(META_LAST_AUTO_GC_AT, &now_epoch_secs().to_string())
@@ -1766,7 +1766,7 @@ mod tests {
         let _g = env_guard();
         let _cwd_lock = crate::api::cwd_test_guard();
         clear_auto_gc_env();
-        let fx = crate::db::GrokHomeFixture::new();
+        let fx = crate::db::EzerHomeFixture::new();
         let db = WorktreeDb::open(&fx.home).unwrap();
         let wt = fx.home.join("worktrees/repo/fresh-rebuild");
         std::fs::create_dir_all(wt.join(".git")).unwrap();

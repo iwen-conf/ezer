@@ -3452,7 +3452,7 @@ mod tests {
             buf
         };
 
-        let theme = Theme::groknight();
+        let theme = Theme::ezernight();
         let buf = render(&theme);
         let cell = buf.cell((0, 0)).unwrap();
         assert_eq!(cell.bg, theme.bg_hover, "hover wins on RGB themes");

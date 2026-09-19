@@ -2,8 +2,8 @@
 //!
 //! No `AuthManager` mutation here.
 //! The login orchestration is in [`super::login`]; refresh primitives are in [`super::refresh`].
-use super::super::config::{ForceLoginTeam, GrokComConfig, OAuth2ProviderConfig, OidcAuthConfig};
-use super::super::{AuthMode, GrokAuth};
+use super::super::config::{ForceLoginTeam, EzerComConfig, OAuth2ProviderConfig, OidcAuthConfig};
+use super::super::{AuthMode, EzerAuth};
 use base64::Engine;
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 use chrono::{Duration, Utc};
@@ -89,7 +89,7 @@ pub fn with_alpha_test_key(builder: reqwest::RequestBuilder, url: &str) -> reqwe
     let _ = url;
     builder
 }
-pub fn is_configured(config: &GrokComConfig) -> bool {
+pub fn is_configured(config: &EzerComConfig) -> bool {
     config.oidc.is_some()
 }
 /// Peek at the unverified access token JWT to extract the `principal_type` and `principal_id` chosen during the consent screen.
@@ -138,7 +138,7 @@ pub fn resolve_login_principal_policy(
 ) -> Option<ForceLoginTeam> {
     force_login_team_uuid.cloned()
 }
-pub fn login_principal_policy(cfg: &GrokComConfig) -> Option<ForceLoginTeam> {
+pub fn login_principal_policy(cfg: &EzerComConfig) -> Option<ForceLoginTeam> {
     resolve_login_principal_policy(cfg.force_login_team_uuid.as_ref())
 }
 /// Reject a token whose principal isn't allowed, BEFORE persisting (no partial state).
@@ -196,14 +196,14 @@ pub(super) struct OidcUserInfo {
     pub(super) team_blocked_reasons: Vec<String>,
     pub(super) coding_data_retention_opt_out: bool,
 }
-pub(super) fn build_grok_auth(
+pub(super) fn build_ezer_auth(
     tokens: TokenResponse,
     user_info: OidcUserInfo,
     issuer: &str,
     client_id: &str,
-) -> GrokAuth {
+) -> EzerAuth {
     let now = Utc::now();
-    GrokAuth {
+    EzerAuth {
         key: tokens.access_token,
         auth_mode: AuthMode::Oidc,
         create_time: now,
@@ -223,7 +223,7 @@ pub(super) fn build_grok_auth(
         user_blocked_reason: user_info.user_blocked_reason,
         team_blocked_reasons: user_info.team_blocked_reasons,
         coding_data_retention_opt_out: user_info.coding_data_retention_opt_out,
-        has_grok_code_access: None,
+        has_remote_code_access: None,
         refresh_token: tokens.refresh_token,
         expires_at: tokens.expires_in.map(|s| now + Duration::seconds(s as i64)),
         oidc_issuer: Some(issuer.to_owned()),

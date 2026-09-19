@@ -43,7 +43,7 @@ fn run_update(base: &str, config_toml: &str, extra_args: &[&str]) -> std::proces
         .args(extra_args)
         .env_clear()
         .env("HOME", home.path())
-        .env("GROK_HOME", home.path())
+        .env("EZER_HOME", home.path())
         .env("PATH", std::env::var("PATH").unwrap_or_default())
         .env("EZER_CLI_BASE_URL", base)
         .output()

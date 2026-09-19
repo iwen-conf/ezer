@@ -81,9 +81,9 @@ struct AuthEntry {
 }
 
 pub fn default_auth_path() -> anyhow::Result<PathBuf> {
-    let grok = ezer_config::user_grok_home()
+    let ezer = ezer_config::user_ezer_home()
         .ok_or_else(|| anyhow::anyhow!("no user ezer home (set $EZER_HOME or $HOME)"))?;
-    Ok(grok.join("auth.json"))
+    Ok(ezer.join("auth.json"))
 }
 
 /// The `ezer login` session [`provider`] would build from an auth file: which scope entry, and whose.
@@ -600,7 +600,7 @@ mod tests {
             "Path::exists folds the stat error into false"
         );
         assert!(login_session(&unstattable).is_err());
-        assert!(login_session_at(&unstattable, "grok-shell").is_err());
+        assert!(login_session_at(&unstattable, "ezer-shell").is_err());
         assert!(
             read_auth_entry(&unstattable)
                 .unwrap_err()
@@ -619,19 +619,19 @@ mod tests {
                 "ezer-desktop": { "key": "eyJ.bearer-only", "user_id": "u-app" }
             }"#,
         );
-        let session = login_session_at(&path, "grok-shell")
+        let session = login_session_at(&path, "ezer-shell")
             .unwrap()
             .expect("a session");
         assert_eq!(session.identity.user_id, "u-a");
         assert!(session.refreshable);
         assert_eq!(
-            login_session_at(&path, "grok-desktop").unwrap(),
+            login_session_at(&path, "ezer-desktop").unwrap(),
             None,
             "not an OIDC session"
         );
         assert_eq!(login_session_at(&path, "missing").unwrap(), None);
         assert_eq!(
-            login_session_at(&dir.path().join("none.json"), "grok-shell").unwrap(),
+            login_session_at(&dir.path().join("none.json"), "ezer-shell").unwrap(),
             None
         );
     }

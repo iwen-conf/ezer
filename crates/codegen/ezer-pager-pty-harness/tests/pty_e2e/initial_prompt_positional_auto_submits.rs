@@ -14,7 +14,7 @@ async fn initial_prompt_positional_auto_submits() {
     ));
 
     let binary = pager_binary().expect("resolve pager binary");
-    // Pass the prompt as a positional argument, exactly like `grok "go"`.
+    // Pass the prompt as a positional argument, exactly like `ezer "go"`.
     let mut harness =
         PtyHarness::spawn_with_content(&binary, DEFAULT_ROWS, DEFAULT_COLS, &content, &[PROMPT])
             .expect("spawn pager with initial prompt");

@@ -325,7 +325,7 @@ fn sentinel_session_harness() -> events::SessionHarness {
     events::SessionHarness {
         session_id: "sess-1".into(),
         client_identifier: Some("ezer".into()),
-        model_id: "grok-4".into(),
+        model_id: "test-model-4".into(),
         agent_name: "ezer-build-plan".into(),
         permission_mode: crate::enums::PermissionMode::Ask,
         mcp_server_names: vec!["secret-server".into(), "other".into()],
@@ -605,7 +605,7 @@ fn api_request_snapshot_and_token_usage() {
     emit_event_into(
         &stream,
         &events::ModelResponseReceived {
-            model_id: "grok-4".into(),
+            model_id: "test-model-4".into(),
             duration_ms: 1200,
             stop_reason: Some("stop".into()),
             prompt_tokens: Some(100),
@@ -638,7 +638,7 @@ fn api_request_cost_and_cache_creation_export_attrs_and_metrics() {
     emit_event_into(
         &stream,
         &events::ModelResponseReceived {
-            model_id: "grok-4".into(),
+            model_id: "test-model-4".into(),
             duration_ms: 1200,
             stop_reason: Some("stop".into()),
             prompt_tokens: Some(100),
@@ -677,7 +677,7 @@ fn one_failed_turn_increments_error_count_exactly_once() {
     emit_event_into(
         &stream,
         &events::RateLimitHit {
-            model_id: "grok-4".into(),
+            model_id: "test-model-4".into(),
             attempts: 3,
         },
     );
@@ -685,7 +685,7 @@ fn one_failed_turn_increments_error_count_exactly_once() {
         &stream,
         &events::ApiError {
             error_category: "rate_limit".into(),
-            model_id: "grok-4".into(),
+            model_id: "test-model-4".into(),
             status_code: Some(429),
             duration_ms: Some(10),
         },
@@ -696,7 +696,7 @@ fn one_failed_turn_increments_error_count_exactly_once() {
             outcome: events::Outcome::Error,
             duration_ms: 10,
             tool_call_count: 0,
-            model_id: "grok-4".into(),
+            model_id: "test-model-4".into(),
             session_id: None,
             cancellation_category: None,
             error_category: Some("rate_limit".into()),
@@ -743,7 +743,7 @@ fn turn_error_increments_error_count() {
             outcome: events::Outcome::Error,
             duration_ms: 10,
             tool_call_count: 0,
-            model_id: "grok-4".into(),
+            model_id: "test-model-4".into(),
             session_id: None,
             cancellation_category: None,
             error_category: Some("server_error".into()),
@@ -768,7 +768,7 @@ fn turn_completed_carries_event_session_id_without_ctx() {
             outcome: events::Outcome::Cancelled,
             duration_ms: 7,
             tool_call_count: 2,
-            model_id: "grok-4".into(),
+            model_id: "test-model-4".into(),
             session_id: Some("sess-abort".into()),
             cancellation_category: Some("task_aborted".into()),
             error_category: None,
@@ -952,7 +952,7 @@ fn user_prompt_gates_off_drops_text() {
         &stream,
         &events::PromptSubmitted {
             prompt_length: 26,
-            model_id: "grok-4".into(),
+            model_id: "test-model-4".into(),
             client_identifier: None,
             screen_mode: Some("minimal".into()),
             prompt_text: Some("CANARY_PROMPT secret user text".into()),
@@ -984,7 +984,7 @@ fn user_prompt_screen_mode_sanitized_and_optional() {
         &stream,
         &events::PromptSubmitted {
             prompt_length: 5,
-            model_id: "grok-4".into(),
+            model_id: "test-model-4".into(),
             client_identifier: None,
             screen_mode: Some("Evil Free Text".into()),
             prompt_text: None,
@@ -995,7 +995,7 @@ fn user_prompt_screen_mode_sanitized_and_optional() {
         &stream,
         &events::PromptSubmitted {
             prompt_length: 5,
-            model_id: "grok-4".into(),
+            model_id: "test-model-4".into(),
             client_identifier: None,
             screen_mode: None,
             prompt_text: None,
@@ -1029,7 +1029,7 @@ fn user_prompt_gate_on_exports_scrubbed_text() {
         &stream,
         &events::PromptSubmitted {
             prompt_length: 10,
-            model_id: "grok-4".into(),
+            model_id: "test-model-4".into(),
             client_identifier: None,
             screen_mode: None,
             prompt_text: Some("fix the bug; token sk-CANARYabcdefghij1234567890".into()),
@@ -1519,7 +1519,7 @@ fn lock_content_gates_drops_prompt_and_response_not_email() {
         &stream,
         &events::PromptSubmitted {
             prompt_length: 12,
-            model_id: "grok-4".into(),
+            model_id: "test-model-4".into(),
             client_identifier: None,
             screen_mode: None,
             prompt_text: Some("CANARY_PROMPT".into()),
@@ -1714,7 +1714,7 @@ fn command_name_is_always_on_metadata() {
         &stream,
         &events::PromptSubmitted {
             prompt_length: 6,
-            model_id: "grok-4".into(),
+            model_id: "test-model-4".into(),
             client_identifier: None,
             screen_mode: None,
             prompt_text: Some("CANARY_PROMPT".into()),
@@ -1723,7 +1723,7 @@ fn command_name_is_always_on_metadata() {
     );
     let mixpanel = serde_json::to_string(&events::PromptSubmitted {
         prompt_length: 6,
-        model_id: "grok-4".into(),
+        model_id: "test-model-4".into(),
         client_identifier: None,
         screen_mode: None,
         prompt_text: Some("CANARY_PROMPT".into()),

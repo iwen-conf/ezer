@@ -8,7 +8,7 @@ use super::*;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 use std::time::Duration;
-use ezer_login::{AuthManager, AuthMode, GrokAuth, GrokComConfig};
+use ezer_login::{AuthManager, AuthMode, EzerAuth, EzerComConfig};
 use ezer_test_support::{MockInferenceServer, MockModelEntry, ScriptedResponse};
 
 /// The token the mock server accepts and the refresher mints on success.
@@ -35,12 +35,12 @@ impl ezer_login::refresh::TokenRefresher for WakeGapRefresher {
                 message: "simulated post-wake network gap".to_string(),
             };
         }
-        ezer_login::refresh::RefreshOutcome::success(GrokAuth {
+        ezer_login::refresh::RefreshOutcome::success(EzerAuth {
             key: FRESH_TOKEN.to_string(),
             auth_mode: AuthMode::Oidc,
             refresh_token: Some("rt-new".into()),
             expires_at: Some(chrono::Utc::now() + self.mint_ttl),
-            ..GrokAuth::test_default()
+            ..EzerAuth::test_default()
         })
     }
 }
@@ -51,19 +51,19 @@ fn expired_auth_manager(
     refresher: Arc<dyn ezer_login::refresh::TokenRefresher>,
 ) -> (tempfile::TempDir, Arc<AuthManager>) {
     let dir = tempfile::tempdir().expect("tempdir");
-    let am = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
-    am.hot_swap(GrokAuth {
+    let am = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
+    am.hot_swap(EzerAuth {
         key: "initial-test-key".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("rt".into()),
         expires_at: Some(chrono::Utc::now() - chrono::Duration::hours(1)),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     });
     am.set_refresher(refresher);
     (dir, am)
 }
 
-/// `x.ai/session_notification` payloads the client was sent.
+/// `ezer/session_notification` payloads the client was sent.
 type XaiUpdates = Arc<parking_lot::Mutex<Vec<serde_json::Value>>>;
 
 fn drain_gateway(
@@ -591,12 +591,12 @@ async fn deferred_recovery_credential_less_401_parks_and_survives() {
             let waker = actor.auth_manager.clone().expect("actor has auth manager");
             tokio::task::spawn_local(async move {
                 tokio::time::sleep(std::time::Duration::from_secs(30)).await;
-                waker.hot_swap(GrokAuth {
+                waker.hot_swap(EzerAuth {
                     key: FRESH_TOKEN.to_string(),
                     auth_mode: AuthMode::Oidc,
                     refresh_token: Some("rt-new".into()),
                     expires_at: Some(chrono::Utc::now() + chrono::Duration::hours(1)),
-                    ..GrokAuth::test_default()
+                    ..EzerAuth::test_default()
                 });
                 waker.refresh_notifier().notify_waiters();
             });
@@ -752,12 +752,12 @@ async fn api_5xx_during_park_does_not_unpark_or_redispatch() {
             let waker = actor.auth_manager.clone().expect("actor has auth manager");
             tokio::task::spawn_local(async move {
                 tokio::time::sleep(std::time::Duration::from_secs(30)).await;
-                waker.hot_swap(GrokAuth {
+                waker.hot_swap(EzerAuth {
                     key: FRESH_TOKEN.to_string(),
                     auth_mode: AuthMode::Oidc,
                     refresh_token: Some("rt-new".into()),
                     expires_at: Some(chrono::Utc::now() + chrono::Duration::hours(1)),
-                    ..GrokAuth::test_default()
+                    ..EzerAuth::test_default()
                 });
                 waker.refresh_notifier().notify_waiters();
             });
@@ -904,12 +904,12 @@ async fn parked_turn_does_not_respawn_two_pass_prefire() {
             let waker = actor.auth_manager.clone().expect("actor has auth manager");
             tokio::task::spawn_local(async move {
                 tokio::time::sleep(std::time::Duration::from_secs(30)).await;
-                waker.hot_swap(GrokAuth {
+                waker.hot_swap(EzerAuth {
                     key: FRESH_TOKEN.to_string(),
                     auth_mode: AuthMode::Oidc,
                     refresh_token: Some("rt-new".into()),
                     expires_at: Some(chrono::Utc::now() + chrono::Duration::hours(1)),
-                    ..GrokAuth::test_default()
+                    ..EzerAuth::test_default()
                 });
                 waker.refresh_notifier().notify_waiters();
             });
@@ -982,12 +982,12 @@ async fn parked_turn_past_compact_threshold_does_not_auto_compact() {
             let waker = actor.auth_manager.clone().expect("actor has auth manager");
             tokio::task::spawn_local(async move {
                 tokio::time::sleep(std::time::Duration::from_secs(30)).await;
-                waker.hot_swap(GrokAuth {
+                waker.hot_swap(EzerAuth {
                     key: FRESH_TOKEN.to_string(),
                     auth_mode: AuthMode::Oidc,
                     refresh_token: Some("rt-new".into()),
                     expires_at: Some(chrono::Utc::now() + chrono::Duration::hours(1)),
-                    ..GrokAuth::test_default()
+                    ..EzerAuth::test_default()
                 });
                 waker.refresh_notifier().notify_waiters();
             });
@@ -1040,12 +1040,12 @@ impl ezer_login::refresh::TokenRefresher for DeferredThenRecovers {
                 message: "refresh deferred: system sleep imminent".to_string(),
             };
         }
-        ezer_login::refresh::RefreshOutcome::success(GrokAuth {
+        ezer_login::refresh::RefreshOutcome::success(EzerAuth {
             key: FRESH_TOKEN.to_string(),
             auth_mode: AuthMode::Oidc,
             refresh_token: Some("rt-new".into()),
             expires_at: Some(chrono::Utc::now() + chrono::Duration::hours(1)),
-            ..GrokAuth::test_default()
+            ..EzerAuth::test_default()
         })
     }
 }
@@ -1076,12 +1076,12 @@ async fn parked_turn_authenticated_rejection_dispatches_and_exhausts_charged() {
             tokio::task::spawn_local(async move {
                 tokio::time::sleep(std::time::Duration::from_secs(30)).await;
                 recovers.store(true, Ordering::SeqCst);
-                waker.hot_swap(GrokAuth {
+                waker.hot_swap(EzerAuth {
                     key: FRESH_TOKEN.to_string(),
                     auth_mode: AuthMode::Oidc,
                     refresh_token: Some("rt-new".into()),
                     expires_at: Some(chrono::Utc::now() + chrono::Duration::hours(1)),
-                    ..GrokAuth::test_default()
+                    ..EzerAuth::test_default()
                 });
                 waker.refresh_notifier().notify_waiters();
             });

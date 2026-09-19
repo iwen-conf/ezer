@@ -111,8 +111,8 @@ impl Reminder for SkillDiscoveryReminder {
         };
 
         // Direct SKILL.md detection: when a tool writes (or reads) a SKILL.md file, register it immediately. The normal
-        // upward-walk discovery cannot find these because it looks for `.grok/skills/` sub-directories in *ancestor* dirs, and
-        // user-scope skills (~/.grok/) are outside the git root so the walk breaks early.
+        // upward-walk discovery cannot find these because it looks for `.ezer/skills/` sub-directories in *ancestor* dirs, and
+        // user-scope skills (~/.ezer/) are outside the git root so the walk breaks early.
         if target_path.file_name().is_some_and(|n| n == "SKILL.md")
             && Self::is_in_supported_skills_dir(target_path)
         {

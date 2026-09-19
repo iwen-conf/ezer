@@ -848,34 +848,34 @@ pub fn resolve_label_collision(base_dir: &Path, label: &str) -> String {
 
 /// ezer home for worktree paths: the same resolver as `worktrees.db`, with a `temp_dir()/.ezer` last resort.
 /// This is not ezer-config's cwd-relative `.ezer`: worktree paths need an absolute, always-writable anchor that does not move with the process cwd.
-fn grok_home() -> std::path::PathBuf {
-    xai_fast_worktree::resolve_grok_home().unwrap_or_else(|_| std::env::temp_dir().join(".ezer"))
+fn ezer_home() -> std::path::PathBuf {
+    xai_fast_worktree::resolve_ezer_home().unwrap_or_else(|_| std::env::temp_dir().join(".ezer"))
 }
 
 /// Returns `~/.ezer/worktrees/<repo_slug>` for the given git root.
 pub fn worktree_base_dir(git_root: &Path) -> std::path::PathBuf {
-    worktree_base_dir_in(&grok_home(), git_root)
+    worktree_base_dir_in(&ezer_home(), git_root)
 }
 
 /// [`worktree_base_dir`] under an explicit ezer home.
-pub fn worktree_base_dir_in(grok_home: &Path, git_root: &Path) -> std::path::PathBuf {
+pub fn worktree_base_dir_in(ezer_home: &Path, git_root: &Path) -> std::path::PathBuf {
     let slug = repo_slug(git_root);
-    grok_home.join("worktrees").join(slug)
+    ezer_home.join("worktrees").join(slug)
 }
 
 /// Resolves the worktree base directory (`~/.ezer/worktrees/<repo_name>`) for a given source path, correctly handling ezer-managed worktrees.
 /// When `source_path` is already under `~/.ezer/worktrees/<repo>/...`, the repo name is derived from the directory structure directly.
 /// This avoids `find_main_repo_root_from_path`, which misidentifies standalone worktrees as the main repo root.
 pub fn worktree_base_dir_for_source(source_path: &Path) -> Result<std::path::PathBuf> {
-    worktree_base_dir_for_source_in(&grok_home(), source_path)
+    worktree_base_dir_for_source_in(&ezer_home(), source_path)
 }
 
 /// [`worktree_base_dir_for_source`] under an explicit ezer home.
 pub fn worktree_base_dir_for_source_in(
-    grok_home: &Path,
+    ezer_home: &Path,
     source_path: &Path,
 ) -> Result<std::path::PathBuf> {
-    let worktrees_dir = grok_home.join("worktrees");
+    let worktrees_dir = ezer_home.join("worktrees");
 
     if let Ok(suffix) = source_path.strip_prefix(&worktrees_dir) {
         if let Some(component) = suffix.components().next() {
@@ -885,16 +885,16 @@ pub fn worktree_base_dir_for_source_in(
         }
     } else {
         let git_root = find_main_repo_root_from_path(source_path)?;
-        Ok(worktree_base_dir_in(grok_home, &git_root))
+        Ok(worktree_base_dir_in(ezer_home, &git_root))
     }
 }
 
-fn resolve_worktree_path(grok_home: &Path, req: &CreateWorktreeRequest, git_root: &Path) -> String {
+fn resolve_worktree_path(ezer_home: &Path, req: &CreateWorktreeRequest, git_root: &Path) -> String {
     if let Some(ref path) = req.worktree_path {
         return path.clone();
     }
 
-    let base = worktree_base_dir_in(grok_home, git_root);
+    let base = worktree_base_dir_in(ezer_home, git_root);
     let label = derive_worktree_label(req.label.as_deref());
     let dir_name = resolve_label_collision(&base, &label);
     base.join(dir_name).to_string_lossy().to_string()
@@ -919,17 +919,17 @@ pub fn label_from_path(worktree_path: &str) -> String {
 /// Walk up from `cwd` (staying within `~/.ezer/worktrees/`) to its registered worktree record. Shared resolver for [`lookup_worktree_label`] and [`touch_worktree_for_cwd`].
 /// Returns the open DB alongside the record so callers can issue follow-up queries.
 fn worktree_record_for_cwd(cwd: &str) -> Option<(WorktreeDb, WorktreeRecord)> {
-    worktree_record_for_cwd_in(&grok_home(), cwd)
+    worktree_record_for_cwd_in(&ezer_home(), cwd)
 }
 
 /// [`worktree_record_for_cwd`] against the `worktrees.db` and worktree root under an explicit ezer home.
-fn worktree_record_for_cwd_in(grok_home: &Path, cwd: &str) -> Option<(WorktreeDb, WorktreeRecord)> {
-    let worktrees_dir = grok_home.join("worktrees");
+fn worktree_record_for_cwd_in(ezer_home: &Path, cwd: &str) -> Option<(WorktreeDb, WorktreeRecord)> {
+    let worktrees_dir = ezer_home.join("worktrees");
     let mut path = Path::new(cwd);
     if !path.starts_with(&worktrees_dir) {
         return None;
     }
-    let db = match WorktreeDb::open(grok_home) {
+    let db = match WorktreeDb::open(ezer_home) {
         Ok(db) => db,
         Err(e) => {
             // Loud like register_worktree: a broken DB silently disables both label lookup and gc liveness touches
@@ -960,12 +960,12 @@ pub fn lookup_worktree_label(cwd: &str) -> Option<String> {
 
 /// Record activity on the worktree containing `cwd` (best-effort, infallible). Updates `last_accessed_at` in the worktree DB so `gc` expires worktrees by last use rather than creation time.
 pub fn touch_worktree_for_cwd(cwd: &str) {
-    touch_worktree_for_cwd_in(&grok_home(), cwd);
+    touch_worktree_for_cwd_in(&ezer_home(), cwd);
 }
 
 /// [`touch_worktree_for_cwd`] under an explicit ezer home.
-pub fn touch_worktree_for_cwd_in(grok_home: &Path, cwd: &str) {
-    if let Some((db, record)) = worktree_record_for_cwd_in(grok_home, cwd)
+pub fn touch_worktree_for_cwd_in(ezer_home: &Path, cwd: &str) {
+    if let Some((db, record)) = worktree_record_for_cwd_in(ezer_home, cwd)
         && let Err(e) = db.touch(&record.id)
     {
         // A failing touch silently degrades expiry back to created_at; leave log evidence without bothering callers
@@ -991,7 +991,7 @@ pub async fn prepare_worktree_creation(req: &CreateWorktreeRequest) -> PrepareWo
         }
     };
 
-    let worktree_path = resolve_worktree_path(&grok_home(), req, &git_root);
+    let worktree_path = resolve_worktree_path(&ezer_home(), req, &git_root);
     let source_git_root = find_git_root_from_path(source_path)
         .ok()
         .map(|p| p.to_string_lossy().to_string());
@@ -1099,13 +1099,13 @@ pub async fn create_worktree_streaming<N: WorktreeNotificationSender>(
     req: &CreateWorktreeRequest,
     notifier: &N,
 ) -> WorktreeStatus {
-    create_worktree_streaming_in(&grok_home(), req, notifier).await
+    create_worktree_streaming_in(&ezer_home(), req, notifier).await
 }
 
 /// [`create_worktree_streaming`] with the default worktree base and the
 /// `worktrees.db` registration under an explicit ezer home.
 pub async fn create_worktree_streaming_in<N: WorktreeNotificationSender>(
-    grok_home: &Path,
+    ezer_home: &Path,
     req: &CreateWorktreeRequest,
     notifier: &N,
 ) -> WorktreeStatus {
@@ -1143,7 +1143,7 @@ pub async fn create_worktree_streaming_in<N: WorktreeNotificationSender>(
         }
     };
 
-    let worktree_path_str = resolve_worktree_path(grok_home, req, &git_root);
+    let worktree_path_str = resolve_worktree_path(ezer_home, req, &git_root);
     let grove_enabled = req.grove_worktree.unwrap_or(false);
 
     tracing::info!(
@@ -1242,7 +1242,7 @@ pub async fn create_worktree_streaming_in<N: WorktreeNotificationSender>(
             .is_some_and(|n| !n.trim().is_empty() && !sanitize_label(n).is_empty());
     let label_for_meta = label_from_path(&worktree_path_str);
     let label_metadata = build_label_metadata(&label_for_meta, user_provided_label);
-    let registry_home = grok_home.to_path_buf();
+    let registry_home = ezer_home.to_path_buf();
     let report = match blocking_copy_on_write(move || {
         let mut builder = WorktreeBuilder::new(&source_path, &dest_path)
             .working_tree_mode(working_tree_mode)
@@ -2729,7 +2729,7 @@ pub struct ResumeSessionInWorktreeRequest {
     pub git_ref: Option<String>,
 }
 
-/// Response from `x.ai/git/worktree/resume_session`.
+/// Response from `ezer/git/worktree/resume_session`.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ResumeSessionInWorktreeResponse {
@@ -2773,7 +2773,7 @@ pub struct RehydrateSessionRequest {
     pub worktree_path: Option<String>,
 }
 
-/// Response from `x.ai/session/rehydrate`.
+/// Response from `ezer/session/rehydrate`.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RehydrateSessionResponse {
@@ -2791,7 +2791,7 @@ pub struct RehydrateSessionResponse {
 
 use xai_fast_worktree::{
     DbStats, GcOptions, GcReport, ListFilter, WorktreeAutoGcLayer, WorktreeDb, WorktreeKind,
-    WorktreeRecord, gc_worktrees as fw_gc_worktrees, rebuild_worktree_db, resolve_grok_home,
+    WorktreeRecord, gc_worktrees as fw_gc_worktrees, rebuild_worktree_db, resolve_ezer_home,
     resolve_worktree_auto_gc_from_layers,
 };
 
@@ -2992,9 +2992,9 @@ fn worktree_auto_gc_settings_from_config(
 /// knobs are not consulted, and a successful pass stamps the shared throttle, so the shell's remote-aware pass over the
 /// same DB is skipped until `min_interval_secs` elapses. Users who opt in locally are choosing their local knobs over remote ones.
 fn resolve_worktree_auto_gc_local_in(
-    grok_home: &Path,
+    ezer_home: &Path,
 ) -> Option<xai_fast_worktree::ResolvedWorktreeAutoGc> {
-    let local = load_local_worktree_auto_gc_settings(grok_home);
+    let local = load_local_worktree_auto_gc_settings(ezer_home);
     local_auto_gc_policy(local.as_ref())
 }
 
@@ -3013,20 +3013,20 @@ fn local_auto_gc_policy(
 
 /// Sync auto-GC for handle startup (caller must `spawn_blocking`).
 pub fn run_auto_gc_best_effort() {
-    match resolve_grok_home() {
+    match resolve_ezer_home() {
         Ok(home) => run_auto_gc_best_effort_in(&home),
         Err(error) => tracing::debug!(%error, "auto worktree gc skipped at workspace startup"),
     }
 }
 
-/// [`run_auto_gc_best_effort`] reading `<grok_home>/config.toml` and `<grok_home>/worktrees.db`.
-pub fn run_auto_gc_best_effort_in(grok_home: &Path) {
-    let Some(policy) = resolve_worktree_auto_gc_local_in(grok_home) else {
+/// [`run_auto_gc_best_effort`] reading `<ezer_home>/config.toml` and `<ezer_home>/worktrees.db`.
+pub fn run_auto_gc_best_effort_in(ezer_home: &Path) {
+    let Some(policy) = resolve_worktree_auto_gc_local_in(ezer_home) else {
         tracing::debug!("auto worktree gc skipped at workspace startup: no local opt-in");
         return;
     };
     if let Err(error) =
-        WorktreeDb::open(grok_home).and_then(|db| xai_fast_worktree::maybe_auto_gc(&db, &policy))
+        WorktreeDb::open(ezer_home).and_then(|db| xai_fast_worktree::maybe_auto_gc(&db, &policy))
     {
         tracing::warn!(%error, context = "workspace startup", "auto worktree gc failed");
     }
@@ -3038,13 +3038,13 @@ pub fn worktree_db_stats() -> Result<DbStats> {
 }
 
 pub fn worktree_db_rebuild() -> Result<xai_fast_worktree::RebuildReport> {
-    let home = resolve_grok_home()?;
+    let home = resolve_ezer_home()?;
     let db = WorktreeDb::open(&home)?;
     rebuild_worktree_db(&db, &home)
 }
 
 pub fn worktree_db_path() -> Result<std::path::PathBuf> {
-    let home = resolve_grok_home()?;
+    let home = resolve_ezer_home()?;
     Ok(WorktreeDb::resolve_db_path(&home))
 }
 
@@ -3415,7 +3415,7 @@ mod tests {
     // Struct field order (see lib.rs) restores the env before the lock releases, regardless of how the caller binds the fixture's return
     use crate::LockedTestEnv;
 
-    /// Point `GROK_HOME` at an isolated tempdir (`resolve_grok_home` re-reads the env per call by design). Register one worktree record at `<home>/worktrees/repo/wt` with no `last_accessed_at`.
+    /// Point `EZER_HOME` at an isolated tempdir (`resolve_ezer_home` re-reads the env per call by design). Register one worktree record at `<home>/worktrees/repo/wt` with no `last_accessed_at`.
     /// Returns `(env, home, worktree dir)`.
     fn worktree_db_fixture(
         temp: &tempfile::TempDir,
@@ -3426,7 +3426,7 @@ mod tests {
         let wt = home.join("worktrees").join("repo").join("wt");
         std::fs::create_dir_all(&wt).unwrap();
         // Acquire the lock, then set the env under it (LockedTestEnv restores the env before releasing the lock on drop)
-        let env = LockedTestEnv::lock().set("GROK_HOME", &home);
+        let env = LockedTestEnv::lock().set("EZER_HOME", &home);
 
         let db = WorktreeDb::open(&home).unwrap();
         let record = WorktreeRecord {
@@ -3618,7 +3618,7 @@ mod tests {
         git_commit_all(&repo, "initial");
 
         // A unique basename gives a unique DB id, so a concurrent open_default writer can't clobber this row
-        // (GrokHomeFixture is not visible across crates.)
+        // (EzerHomeFixture is not visible across crates.)
         let wt = temp.path().join("fork-cancel-wt");
         WorktreeBuilder::new(&repo, &wt).create().unwrap();
 

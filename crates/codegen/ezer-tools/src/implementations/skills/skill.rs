@@ -989,7 +989,7 @@ Step 2: Check for bugs.
     }
 
     #[test]
-    fn test_grok_plugin_aliases_substitution() {
+    fn test_ezer_plugin_aliases_substitution() {
         let mut content = "Root ${EZER_PLUGIN_ROOT}, data ${EZER_PLUGIN_DATA}".to_string();
         apply_substitutions(
             &mut content,

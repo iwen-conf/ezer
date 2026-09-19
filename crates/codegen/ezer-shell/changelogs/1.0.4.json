@@ -41,12 +41,12 @@
   },
   {
     "category": "fixes",
-    "description": "**Keystrokes typed while Grok is starting** are now preserved in the composer instead of being lost.",
+    "description": "**Keystrokes typed while Ezer is starting** are now preserved in the composer instead of being lost.",
     "breaking_change": false
   },
   {
     "category": "features",
-    "description": "**Session search index** can now be disabled via GROK_SESSION_SEARCH or [features] session_search for hosts sharing $EZER_HOME.",
+    "description": "**Session search index** can now be disabled via EZER_SESSION_SEARCH or [features] session_search for hosts sharing $EZER_HOME.",
     "breaking_change": false
   },
   {
@@ -101,7 +101,7 @@
   },
   {
     "category": "features",
-    "description": "Tool commands and MCP servers now receive a GROK_SESSION_ID environment variable matching the current session.",
+    "description": "Tool commands and MCP servers now receive a EZER_SESSION_ID environment variable matching the current session.",
     "breaking_change": false
   },
   {

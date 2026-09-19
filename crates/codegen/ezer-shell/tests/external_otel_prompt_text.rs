@@ -28,7 +28,7 @@ fn prompt_submitted_prompt_text_is_some_when_stream_active() {
     let user_message = "PARITY_PROMPT live construction";
     let ev = ezer_telemetry::events::PromptSubmitted {
         prompt_length: user_message.len(),
-        model_id: "grok-4".into(),
+        model_id: "test-model-4".into(),
         client_identifier: None,
         screen_mode: None,
         prompt_text: Some(user_message.to_owned()),

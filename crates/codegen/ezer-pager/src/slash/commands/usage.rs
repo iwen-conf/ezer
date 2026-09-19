@@ -1,6 +1,6 @@
 //! `/usage` shows session token and cost totals; consumer accounts can also manage billing.
 //!
-//! External-auth deployments (`auth_provider_command`) never reach grok.com billing.
+//! External-auth deployments (`auth_provider_command`) never reach ezer.com billing.
 //! [`AppCtx::usage_command_visible`] hides and refuses the command there.
 
 use crate::app::actions::Action;
@@ -40,7 +40,7 @@ fn auth_provider_config_set() -> bool {
     let Ok(cfg) = ezer_shell::agent::config::Config::new_from_toml_cfg(&raw) else {
         return false;
     };
-    cfg.grok_com_config
+    cfg.ezer_com_config
         .auth_provider_command
         .as_deref()
         .is_some_and(|s| !s.trim().is_empty())

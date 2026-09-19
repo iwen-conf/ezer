@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 use anyhow::{Context, Result};
 use ezer_shell::agent::config::Config as AgentConfig;
 use ezer_shell::session::repo_changes::UploadMethod;
-use ezer_shell::util::grok_home::grok_home;
+use ezer_shell::util::ezer_home::ezer_home;
 
 #[derive(Debug, clap::Args, Clone)]
 pub struct TraceArgs {
@@ -51,7 +51,7 @@ pub async fn run(args: TraceArgs, agent_config: &AgentConfig) -> Result<()> {
         if !args.json {
             eprintln!(
                 "Trace uploads disabled. Set [telemetry] trace_upload = true in {}",
-                crate::util::display_user_grok_path(ezer_config::USER_CONFIG_FILENAME)
+                crate::util::display_user_ezer_path(ezer_config::USER_CONFIG_FILENAME)
             );
             eprintln!("Falling back to local export.");
         }
@@ -119,7 +119,7 @@ pub fn build_session_tar(
 
         let metadata = ExportMetadata {
             session_id: session_id.to_owned(),
-            grok_version: ezer_version::full_version().to_owned(),
+            ezer_version: ezer_version::full_version().to_owned(),
             os: std::env::consts::OS.to_owned(),
             arch: std::env::consts::ARCH.to_owned(),
             exported_at: chrono::Utc::now().to_rfc3339(),
@@ -152,7 +152,7 @@ pub fn build_session_tar(
 #[derive(serde::Serialize)]
 struct ExportMetadata {
     session_id: String,
-    grok_version: String,
+    ezer_version: String,
     os: String,
     arch: String,
     exported_at: String,
@@ -341,13 +341,13 @@ pub(crate) fn find_session_dir(session_id: &str) -> Result<PathBuf> {
     ezer_shell::session::persistence::find_session_dir_by_id(session_id).with_context(|| {
         format!(
             "Session '{session_id}' not found under {}",
-            crate::util::display_user_grok_path("sessions")
+            crate::util::display_user_ezer_path("sessions")
         )
     })
 }
 
 pub fn trace_exports_dir() -> PathBuf {
-    grok_home().join("trace-exports")
+    ezer_home().join("trace-exports")
 }
 
 /// Creates parent directory if needed.
@@ -435,7 +435,7 @@ async fn run_upload(
             anyhow::bail!(
                 "No upload credentials. Run `ezer login` or set a deployment key. \
                  See {} for upload overrides.",
-                crate::util::display_user_grok_path("docs/user-guide")
+                crate::util::display_user_ezer_path("docs/user-guide")
             );
         }
     };
@@ -640,7 +640,7 @@ async fn upload_with_retries(
 pub async fn resolve_upload_method(agent_config: &AgentConfig) -> Option<UploadMethod> {
     // On login failure, fall back to ambient creds rather than erroring.
     let auth_token = ezer_login::ensure_authenticated_or_noninteractive(
-        &agent_config.grok_com_config,
+        &agent_config.ezer_com_config,
         agent_config.login_device_flow,
         agent_config.endpoints.proxy_url(),
         agent_config.endpoints.has_noninteractive_upload_auth(),

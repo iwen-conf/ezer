@@ -2839,7 +2839,7 @@ fn official_vscode_remote_tool_headers_delegate_only_self_resolving_paint() {
 }
 
 #[test]
-fn basename_headers_stay_grok_owned_for_duplicate_and_outside_targets() {
+fn basename_headers_stay_ezer_owned_for_duplicate_and_outside_targets() {
     let cwd = std::path::PathBuf::from("/worktree");
     let terminal = official_vscode_remote_context();
     let cases = [
@@ -3739,7 +3739,7 @@ fn dim_from_entry_stays_visible_on_terminal_theme() {
          the bright-black user-message band)"
     );
 
-    crate::theme::cache::set(crate::theme::ThemeKind::GrokNight);
+    crate::theme::cache::set(crate::theme::ThemeKind::EzerNight);
     let cell = render_dimmed();
     assert_eq!(
         cell.fg,

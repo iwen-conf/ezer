@@ -419,7 +419,7 @@ fn decide_legacy_windows_console(host: HostOs, brand: TerminalName) -> bool {
             | TerminalName::Alacritty
             | TerminalName::Ghostty
             | TerminalName::Rio
-            | TerminalName::GrokDesktop
+            | TerminalName::EzerDesktop
     )
 }
 
@@ -662,7 +662,7 @@ mod tests {
             TerminalName::Alacritty,
             TerminalName::Ghostty,
             TerminalName::Rio,
-            TerminalName::GrokDesktop,
+            TerminalName::EzerDesktop,
         ] {
             assert!(!decide_legacy_windows_console(HostOs::Windows, brand));
         }

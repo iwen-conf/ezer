@@ -66,7 +66,7 @@ fn external_stream_grpc_over_tls_end_to_end() {
     ezer_telemetry::log_event(ezer_telemetry::events::SessionHarness {
         session_id: "sess-grpc-tls-1".into(),
         client_identifier: Some("ezer".into()),
-        model_id: "grok-4".into(),
+        model_id: "test-model-4".into(),
         agent_name: "ezer-build-plan".into(),
         permission_mode: ezer_telemetry::enums::PermissionMode::Ask,
         mcp_server_names: vec![],

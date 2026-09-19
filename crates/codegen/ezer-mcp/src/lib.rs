@@ -26,13 +26,13 @@
 pub use rmcp;
 
 #[doc(hidden)]
-pub fn isolate_grok_home_for_tests() {
+pub fn isolate_ezer_home_for_tests() {
     static HOME: std::sync::OnceLock<()> = std::sync::OnceLock::new();
     HOME.get_or_init(|| {
         let dir = tempfile::TempDir::new().expect("test ezer home").keep();
         // SAFETY: OnceLock-guarded single set; the concurrent env-read race is accepted in tests.
-        unsafe { std::env::set_var("GROK_HOME", &dir) };
-        let memo = ezer_config::grok_home();
+        unsafe { std::env::set_var("EZER_HOME", &dir) };
+        let memo = ezer_config::ezer_home();
         assert!(
             memo.starts_with(&dir),
             "ezer-home memo was warmed before test isolation: {}",

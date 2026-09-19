@@ -8,11 +8,11 @@ fn write_meta_json(dir: &std::path::Path, subagent_id: &str, json: &str) {
 }
 
 fn setup_enrichment_dir(
-    grok_home: &std::path::Path,
+    ezer_home: &std::path::Path,
     cwd: &std::path::Path,
     session_id: &str,
 ) -> std::path::PathBuf {
-    let sessions_dir = grok_home
+    let sessions_dir = ezer_home
         .join("sessions")
         .join(urlencoding::encode(&cwd.to_string_lossy()).as_ref())
         .join(session_id);
@@ -27,20 +27,20 @@ fn subagent_meta_line_joins_present_fields() {
         (
             Some("researcher"),
             Some("analyst"),
-            Some("grok-3"),
-            " (researcher \u{00b7} analyst \u{00b7} grok-3)",
+            Some("test-model-3"),
+            " (researcher \u{00b7} analyst \u{00b7} test-model-3)",
         ),
         (
             Some("researcher"),
             None,
-            Some("grok-3"),
-            " (researcher \u{00b7} grok-3)",
+            Some("test-model-3"),
+            " (researcher \u{00b7} test-model-3)",
         ),
         (
             Some("reviewer"),
             Some("reviewer"),
-            Some("grok-3"),
-            " (reviewer \u{00b7} grok-3)",
+            Some("test-model-3"),
+            " (reviewer \u{00b7} test-model-3)",
         ),
         (
             Some("researcher"),
@@ -50,7 +50,7 @@ fn subagent_meta_line_joins_present_fields() {
         ),
         (None, Some("reviewer"), None, " (reviewer)"),
         (Some("reviewer"), None, None, " (reviewer)"),
-        (Some(""), Some(" "), Some("grok-3"), " (grok-3)"),
+        (Some(""), Some(" "), Some("test-model-3"), " (test-model-3)"),
     ];
     for (persona, role, model, expected) in cases {
         assert_eq!(

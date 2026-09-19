@@ -175,12 +175,12 @@ mod tests {
     /// Build a ModelState with two models for testing.
     fn sample_models() -> ModelState {
         let mut models = ModelState::default();
-        let id_fast = acp::ModelId::new(Arc::from("grok-4.5"));
+        let id_fast = acp::ModelId::new(Arc::from("test-model-4.5"));
         models.available.insert(
             id_fast.clone(),
             acp::ModelInfo::new(id_fast.clone(), "ezer 4.5".to_string()),
         );
-        let id_pro = acp::ModelId::new(Arc::from("grok-4.3"));
+        let id_pro = acp::ModelId::new(Arc::from("test-model-4.3"));
         models.available.insert(
             id_pro.clone(),
             acp::ModelInfo::new(id_pro.clone(), "ezer 4.3".to_string()),
@@ -370,7 +370,7 @@ mod tests {
         let result = cmd.run(&mut ctx, "ezer 4.5");
         match result {
             CommandResult::Action(Action::SetDefaultModel(id)) => {
-                assert_eq!(id.0.as_ref(), "grok-4.5");
+                assert_eq!(id.0.as_ref(), "test-model-4.5");
             }
             other => panic!("expected Action(SetDefaultModel), got {other:?}"),
         }
@@ -380,10 +380,10 @@ mod tests {
         let models = sample_models();
         let mut ctx = make_ctx(&models);
         let cmd = model::ModelCommand;
-        let result = cmd.run(&mut ctx, "grok-4.3");
+        let result = cmd.run(&mut ctx, "test-model-4.3");
         match result {
             CommandResult::Action(Action::SetDefaultModel(id)) => {
-                assert_eq!(id.0.as_ref(), "grok-4.3");
+                assert_eq!(id.0.as_ref(), "test-model-4.3");
             }
             other => panic!("expected Action(SetDefaultModel), got {other:?}"),
         }
@@ -396,7 +396,7 @@ mod tests {
         let result = cmd.run(&mut ctx, "ezer 4.5");
         match result {
             CommandResult::Action(Action::SetDefaultModel(id)) => {
-                assert_eq!(id.0.as_ref(), "grok-4.5");
+                assert_eq!(id.0.as_ref(), "test-model-4.5");
             }
             other => panic!("expected Action(SetDefaultModel), got {other:?}"),
         }

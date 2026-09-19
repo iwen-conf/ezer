@@ -85,7 +85,7 @@ pub(crate) async fn test_ezer_build_agent_with_todo() -> ezer_agent::Agent {
     test_agent_with_tools(vec![ToolConfig::for_tool::<TodoWriteTool>()]).await
 }
 #[cfg(test)]
-pub(crate) async fn test_grok_build_agent_with_todo() -> ezer_agent::Agent {
+pub(crate) async fn test_ezer_build_agent_with_todo() -> ezer_agent::Agent {
     test_ezer_build_agent_with_todo().await
 }
 #[cfg(test)]
@@ -954,14 +954,14 @@ pub(crate) fn spawn_gateway_loop_counting_prompt_hooks(
                     let params: serde_json::Value =
                         serde_json::from_str(args.request.params.get()).unwrap_or_default();
                     match args.request.method.as_ref() {
-                        "x.ai/hooks/event" => {
+                        "ezer/hooks/event" => {
                             if params.get("notificationType")
                                 == Some(&serde_json::json!("permission_prompt"))
                             {
                                 permission_prompt_hooks.fetch_add(1, Ordering::SeqCst);
                             }
                         }
-                        "x.ai/session_notification" => {
+                        "ezer/session_notification" => {
                             captured.lock().unwrap().push(
                                 params
                                     .get("update")
@@ -1129,7 +1129,7 @@ pub(crate) fn spawn_capturing_gateway_loop(
                     let _ = args.response_tx.send(Ok(()));
                 }
                 xai_acp_lib::AcpClientMessage::ExtNotification(args) => {
-                    if args.request.method.as_ref() == "x.ai/session_notification" {
+                    if args.request.method.as_ref() == "ezer/session_notification" {
                         let params: serde_json::Value =
                             serde_json::from_str(args.request.params.get()).unwrap_or_default();
                         xai_captured.lock().unwrap().push(

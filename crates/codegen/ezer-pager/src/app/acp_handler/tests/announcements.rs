@@ -35,7 +35,7 @@
 
     /// The watermark lasts one connection: the event loop resets it to 0 on leader reconnect.
     /// A re-elected shell's fresh (possibly lower) gen sequence then applies, but xAI remote
-    /// payloads are ignored so leftover grok.com credentials cannot reintroduce banners.
+    /// payloads are ignored so leftover ezer.com credentials cannot reintroduce banners.
     #[test]
     fn announcements_update_applies_after_reconnect_watermark_reset() {
         let mut app = make_app_with_agent("sess-ann");

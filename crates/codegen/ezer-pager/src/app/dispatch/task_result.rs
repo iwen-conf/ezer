@@ -701,7 +701,7 @@ pub(super) fn dispatch_task_result(result: TaskResult, app: &mut AppView) -> Vec
                 vec![Effect::DetectForeignResumeHint {
                     canonical_cwd,
                     compat: app.foreign_session_compat,
-                    grok_home: ezer_tools::util::grok_home::grok_home(),
+                    ezer_home: ezer_tools::util::ezer_home::ezer_home(),
                     launch_token,
                 }]
             } else {

@@ -16,7 +16,7 @@ fn minimal_summary(head_commit: &str, head_branch: &str) -> String {
         "created_at": "2026-01-01T00:00:00Z",
         "updated_at": "2026-01-01T00:00:00Z",
         "num_messages": 0,
-        "current_model_id": "grok-3",
+        "current_model_id": "test-model-3",
         "head_commit": head_commit,
         "head_branch": head_branch
     })
@@ -86,7 +86,7 @@ fn kind_index_classifies_requested_ids_without_requiring_a_full_scan() {
             "created_at": "2026-01-01T00:00:00Z",
             "updated_at": "2026-01-01T00:00:00Z",
             "num_messages": 0,
-            "current_model_id": "grok-3",
+            "current_model_id": "test-model-3",
             "session_kind": "headless"
         })
         .to_string(),

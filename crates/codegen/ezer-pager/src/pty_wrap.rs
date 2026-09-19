@@ -62,7 +62,7 @@ pub(crate) fn run_wrapped_command(program: &str, args: &[String]) -> Result<i32>
     drop(pair.slave);
 
     // Obtain reader from the master PTY. Confining `write_all` to a single owner thread avoids that Handles are
-    // intentionally detached: `grok wrap` is short-lived and exits with the child.
+    // intentionally detached: `ezer wrap` is short-lived and exits with the child.
     let mut pty_reader = pair.master.try_clone_reader()?;
 
     // We deliberately do NOT block SIGWINCH here

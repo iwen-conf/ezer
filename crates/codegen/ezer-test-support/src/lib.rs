@@ -8,7 +8,7 @@
 //! Shared test utilities for ezer-build crates.
 //!
 //! Provides:
-//! - [`GrokStdioClient`]: ACP client that drives `ezer agent stdio` as a subprocess, with a scripted [`ClientPolicy`] (set through [`SpawnOptions`]) and a typed transcript ([`TranscriptEntry`])
+//! - [`EzerStdioClient`]: ACP client that drives `ezer agent stdio` as a subprocess, with a scripted [`ClientPolicy`] (set through [`SpawnOptions`]) and a typed transcript ([`TranscriptEntry`])
 //! - [`AcpTestClient`]: writes verbatim JSON-RPC lines and reads until the response with the same id, for wire shapes the typed client can't produce (Foundation `\/` methods, string UUID ids)
 //! - [`MockInferenceServer`]: Mock `/v1/chat/completions`, `/v1/responses`, and `/v1/messages` with a request log and per conversation scripts
 //! - [`Conversation`]: Per conversation tool calls and replies, with [`Tool`] picking the name the request offers, turns pinned to a request, and failures answering in place of the content
@@ -18,7 +18,7 @@
 //! - [`TestProcess`]: Own detached child lifecycle, process-tree teardown, bounded output tails
 //! - [`run_headless`]: Run `ezer -p` against the mock server and capture output
 //! - [`git_workdir`]: Create a git-initialized [`TestSandbox`]
-//! - [`grok_binary`]: Resolve the ezer binary path (EZER_BINARY env or cargo_bin)
+//! - [`ezer_binary`]: Resolve the ezer binary path (EZER_BINARY env or cargo_bin)
 //! - [`spawn_counting_server`]: Connection-counting HTTP/1.1 server for wire/pooling tests
 //! - [`uds_proxy::UdsProxy`]: Frame-aware fault-injection proxy for leader IPC sockets (unix)
 //! - [`ResourceSnapshot`]: RSS/threads/fds sampling for soak tests
@@ -95,7 +95,7 @@ mod tools;
 #[cfg(unix)]
 pub mod uds_proxy;
 mod watched;
-pub use acp_client::{GrokStdioClient, SpawnOptions};
+pub use acp_client::{EzerStdioClient, SpawnOptions};
 pub use acp_policy::{
     ClientPolicy, ElicitationDecision, Interactivity, PermissionDecision, QuestionDecision,
     RequestPolicy, TrustDecision,
@@ -105,7 +105,7 @@ pub use acp_transcript::TranscriptEntry;
 pub use conversation::ReadConversation;
 pub use conversation_script::{Conversation, MockToolCall, ScriptViolation, mock_call_id};
 pub use counting_server::spawn_counting_server;
-pub use env::{EnvGuard, git_workdir, grok_binary, isolate_grok_env};
+pub use env::{EnvGuard, git_workdir, ezer_binary, isolate_ezer_env};
 pub use failure::{
     CUT_REPLY, DOOM_LOOP_CHECK_HEADER, DOOM_LOOP_TRIGGER, ErrorPosition, LOOPING_REPLY,
     ObservedFailure, StatusFailure, StreamError,

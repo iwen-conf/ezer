@@ -7,7 +7,7 @@ use xai_acp_lib::{AcpAgentTx, acp_send};
 #[derive(Debug, PartialEq, Eq)]
 pub enum AuthStatus {
     ApiKey,
-    /// Auth host from `grok_ws_origin` (scheme stripped).
+    /// Auth host from `ezer_ws_origin` (scheme stripped).
     LoggedIn(String),
     /// Catalog key of the first model with own `api_key`/`env_key`.
     ModelCredentials(String),
@@ -26,12 +26,12 @@ impl AuthStatus {
             let backend = ezer_login::backend::ActiveAuthBackend::default();
             return Self::LoggedIn(ezer_login::backend::AuthBackend::login_host(
                 &backend,
-                &agent_config.grok_com_config,
+                &agent_config.ezer_com_config,
             ));
         }
         let models = crate::agent::config::resolve_model_list(agent_config, None);
         if crate::agent::auth_method::should_advertise_xai_api_key(
-            agent_config.grok_com_config.api_key_auth_disabled(),
+            agent_config.ezer_com_config.api_key_auth_disabled(),
             models.values(),
         ) && let Some(name) = models
             .iter()
@@ -71,17 +71,17 @@ pub async fn list_models(
     .await?;
     fetch_model_state(acp_tx).await
 }
-/// Fetch model state via `x.ai/models/list` over an initialized channel.
+/// Fetch model state via `ezer/models/list` over an initialized channel.
 pub async fn fetch_model_state(acp_tx: &AcpAgentTx) -> Result<acp::SessionModelState> {
     let params = serde_json::value::to_raw_value(&serde_json::json!({}))?;
     let resp: acp::ExtResponse = acp_send(
-        acp::ExtRequest::new("x.ai/models/list", params.into()),
+        acp::ExtRequest::new("ezer/models/list", params.into()),
         acp_tx,
     )
     .await?;
     parse_models_list_response(resp.0.get())
 }
-/// Parse an `x.ai/models/list` payload; a handler error wins over a missing result.
+/// Parse an `ezer/models/list` payload; a handler error wins over a missing result.
 fn parse_models_list_response(raw: &str) -> Result<acp::SessionModelState> {
     let parsed: crate::session::ExtMethodResult<acp::SessionModelState> =
         serde_json::from_str(raw)?;
@@ -98,19 +98,19 @@ mod tests {
     use crate::agent::auth_method::{LEGACY_XAI_API_KEY_ENV_VAR, XAI_API_KEY_ENV_VAR};
     use crate::agent::config::Config;
     use serial_test::serial;
-    use ezer_login::{AuthMode, GrokAuth};
+    use ezer_login::{AuthMode, EzerAuth};
     use ezer_test_support::EnvGuard;
-    const EXPECTED_LOGIN_HOST: &str = "grok.com";
+    const EXPECTED_LOGIN_HOST: &str = "example.test";
     /// A session the compiled-in backend recognises as its own, which `AuthBackend::owns` requires.
-    fn session_credential() -> GrokAuth {
-        GrokAuth {
+    fn session_credential() -> EzerAuth {
+        EzerAuth {
             key: "session-token".into(),
             auth_mode: AuthMode::WebLogin,
-            ..GrokAuth::test_default()
+            ..EzerAuth::test_default()
         }
     }
     /// Isolate process-global auth sources that `AuthStatus::resolve` consults.
-    /// Uses `EZER_AUTH_PATH` (not `GROK_HOME`) so a OnceLock-cached real home with `auth.json` cannot leak into these tests.
+    /// Uses `EZER_AUTH_PATH` (not `EZER_HOME`) so a OnceLock-cached real home with `auth.json` cannot leak into these tests.
     fn isolate_auth_sources() -> (tempfile::TempDir, [EnvGuard; 7]) {
         let dir = tempfile::tempdir().unwrap();
         let auth_path = dir.path().join("no-auth.json");
@@ -219,14 +219,14 @@ mod tests {
     #[test]
     fn models_list_response_round_trips() {
         let state = acp::SessionModelState::new(
-            acp::ModelId::new("grok-4"),
-            vec![acp::ModelInfo::new(acp::ModelId::new("grok-4"), "Grok 4")],
+            acp::ModelId::new("test-model-4"),
+            vec![acp::ModelInfo::new(acp::ModelId::new("test-model-4"), "Test Model 4")],
         );
         let ok = crate::session::ExtMethodResult::success(state)
             .to_ext_response()
             .unwrap();
         let parsed = parse_models_list_response(ok.0.get()).unwrap();
-        assert_eq!(parsed.current_model_id.0.as_ref(), "grok-4");
+        assert_eq!(parsed.current_model_id.0.as_ref(), "test-model-4");
         assert_eq!(parsed.available_models.len(), 1);
         let err = crate::session::ExtMethodResult::<acp::SessionModelState>::failure("boom")
             .to_ext_response()
@@ -259,7 +259,7 @@ mod tests {
     fn resolve_priority_session_over_byok_and_deployment() {
         let (_dir, _g) = isolate_auth_sources();
         let json = serde_json::to_string(&session_credential()).unwrap();
-        let _auth = EnvGuard::set("GROK_AUTH", &json);
+        let _auth = EnvGuard::set("EZER_AUTH", &json);
         let dm = crate::models::default_model();
         let cfg = config_from_toml(&byok_and_deployment_toml(dm));
         assert_eq!(
@@ -285,7 +285,7 @@ mod tests {
         let dm = crate::models::default_model();
         let cfg = config_from_toml(&format!(
             r#"
-            [grok_com_config]
+            [ezer_com_config]
             disable_api_key_auth = true
 
             [model."{dm}"]
@@ -302,7 +302,7 @@ mod tests {
         let dm = crate::models::default_model();
         let cfg = config_from_toml(&format!(
             r#"
-            [grok_com_config]
+            [ezer_com_config]
             disable_api_key_auth = true
 
             [endpoints]

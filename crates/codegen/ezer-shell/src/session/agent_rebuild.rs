@@ -584,7 +584,7 @@ mod legacy_tests {
             spec_mut.web_search_config = WebSearchConfig::Enabled {
                 api_key: "test-key".to_string(),
                 base_url: "https://api.x.ai/v1".to_string(),
-                model: "grok-4".to_string(),
+                model: "test-model-4".to_string(),
                 extra_headers: Default::default(),
                 alpha_test_key: None,
                 allowed_domains: None,

@@ -508,7 +508,7 @@ impl AgentBuilder {
         self.paths_config = config;
         self
     }
-    /// Without this, only auto-discovered skill dirs load and custom paths added via `x.ai/skills/add` would be ignored.
+    /// Without this, only auto-discovered skill dirs load and custom paths added via `ezer/skills/add` would be ignored.
     pub fn with_skills_config(mut self, config: crate::prompt::skills::SkillsConfig) -> Self {
         self.skills_config = config;
         self
@@ -693,10 +693,10 @@ impl AgentBuilder {
         let is_parent_ezer_build = matches!(
             definition.builtin_name,
             Some(
-                BuiltinAgentName::GrokBuild
-                    | BuiltinAgentName::GrokBuildPlan
-                    | BuiltinAgentName::GrokBuildPlanNoSubagents
-                    | BuiltinAgentName::GrokBuildAskUser
+                BuiltinAgentName::EzerBuild
+                    | BuiltinAgentName::EzerBuildPlan
+                    | BuiltinAgentName::EzerBuildPlanNoSubagents
+                    | BuiltinAgentName::EzerBuildAskUser
             )
         );
         if self.prompt_audience == PromptAudience::Primary
@@ -792,7 +792,7 @@ impl AgentBuilder {
                 .retain(|tool| !is_active_agent_message(tool));
         }
         if self.memory_backend.is_none() {
-            let ezer_build_ns = ezer_tools::types::tool::ToolNamespace::GrokBuild.to_string();
+            let ezer_build_ns = ezer_tools::types::tool::ToolNamespace::EzerBuild.to_string();
             let mem_search_id = format!(
                 "{ezer_build_ns}:{}",
                 ezer_tools::implementations::memory::MEMORY_SEARCH_TOOL_NAME
@@ -826,14 +826,14 @@ impl AgentBuilder {
         } else if !self.ask_user_question_enabled {
             let ask_user_id = format!(
                 "{}:ask_user_question",
-                ezer_tools::types::tool::ToolNamespace::GrokBuild,
+                ezer_tools::types::tool::ToolNamespace::EzerBuild,
             );
             tool_config.tools.retain(|tool| tool.id != ask_user_id);
         }
         apply_workflow_tool_gates(&mut tool_config, self.background_workflows_enabled);
         let task_tool_id = format!(
             "{}:{}",
-            ezer_tools::types::tool::ToolNamespace::GrokBuild,
+            ezer_tools::types::tool::ToolNamespace::EzerBuild,
             "task"
         );
         let mut task_stripped = false;
@@ -893,8 +893,8 @@ impl AgentBuilder {
                                 .unwrap_or(true))
                 })
             };
-            if !has_satisfier(ToolNamespace::GrokBuild, "run_terminal_cmd", true)
-                && !has_satisfier(ToolNamespace::GrokBuildConcise, "run_terminal_cmd", true)
+            if !has_satisfier(ToolNamespace::EzerBuild, "run_terminal_cmd", true)
+                && !has_satisfier(ToolNamespace::EzerBuildConcise, "run_terminal_cmd", true)
                 && !has_satisfier(ToolNamespace::OpenCode, "bash", false)
             {
                 let lifecycle = [
@@ -2810,7 +2810,7 @@ mod tests {
         );
     }
     #[tokio::test]
-    async fn claude_tool_names_map_to_grok_equivalents() {
+    async fn claude_tool_names_map_to_ezer_equivalents() {
         let tools = vec!["Read".into(), "Bash".into(), "Grep".into()];
         let agent = build_with_tools(tools, vec![]).await;
         let names: Vec<String> = agent

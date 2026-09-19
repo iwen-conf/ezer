@@ -43,7 +43,7 @@ struct WorkspacesListResponse {
 
 #[derive(Debug, Serialize)]
 struct WorkspacesMeta {
-    #[serde(rename = "x.ai/partial")]
+    #[serde(rename = "ezer/partial")]
     partial: PartialInfo,
 }
 
@@ -141,7 +141,7 @@ mod tests {
     }
 
     #[test]
-    fn success_response_projects_grok_workspace_fields() {
+    fn success_response_projects_ezer_workspace_fields() {
         let page = ListWorkspacesPage {
             workspaces: vec![Workspace {
                 workspace_id: "ws_1".into(),
@@ -187,7 +187,7 @@ mod tests {
             Some(0)
         );
         assert!(value.get("nextPageToken").is_none());
-        let partial = value.get("_meta").and_then(|m| m.get("x.ai/partial"));
+        let partial = value.get("_meta").and_then(|m| m.get("ezer/partial"));
         assert_eq!(
             partial
                 .and_then(|p| p.get("workspaces"))

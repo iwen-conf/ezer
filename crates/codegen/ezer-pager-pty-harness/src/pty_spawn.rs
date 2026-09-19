@@ -149,7 +149,7 @@ pub(crate) fn apply_child_env<S: EnvSink>(cmd: &mut S, env: &[EnvOp<'_>]) {
     for ssh_var in ["SSH_CONNECTION", "SSH_CLIENT", "SSH_TTY", "SSH_AUTH_SOCK"] {
         cmd.remove_var(OsStr::new(ssh_var));
     }
-    // A harness launched under `grok wrap` must not silently confirm clipboard
+    // A harness launched under `ezer wrap` must not silently confirm clipboard
     // delivery for no-sink scenarios. Explicit sink tests re-inject a marker
     // through `env` after this hygiene pass.
     for sink_var in CLIPBOARD_SINK_ENV_VARS {
@@ -334,8 +334,8 @@ mod tests {
             "hermetic baseline must remove unrelated inherited vars"
         );
         assert_eq!(
-            cmd.get_env("GROK_HOME").and_then(|v| v.to_str()),
-            sandbox.grok_home().to_str()
+            cmd.get_env("EZER_HOME").and_then(|v| v.to_str()),
+            sandbox.ezer_home().to_str()
         );
     }
 
@@ -353,8 +353,8 @@ mod tests {
             sandbox.home().to_str()
         );
         assert_eq!(
-            cmd.get_env("GROK_HOME").and_then(|v| v.to_str()),
-            sandbox.grok_home().to_str()
+            cmd.get_env("EZER_HOME").and_then(|v| v.to_str()),
+            sandbox.ezer_home().to_str()
         );
         assert_eq!(cmd.get_env("EZER_LEADER_SOCKET"), None);
     }

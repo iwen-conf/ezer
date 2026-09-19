@@ -3,7 +3,7 @@
 //! The module is wired in via `#[path = "oidc_refresher_tests.rs"] mod tests;`.
 
 use super::*;
-use crate::{GrokAuth, GrokComConfig};
+use crate::{EzerAuth, EzerComConfig};
 use chrono::{Duration, Utc};
 
 // ── OIDC refresh E2E with mock IdP ─────────────────────────────────
@@ -64,7 +64,7 @@ async fn start_mock_oidc_and_proxy() -> (String, tokio::task::JoinHandle<()>) {
     (base, handle)
 }
 
-fn write_auth_to_disk(dir: &std::path::Path, scope: &str, auth: &GrokAuth) {
+fn write_auth_to_disk(dir: &std::path::Path, scope: &str, auth: &EzerAuth) {
     let path = dir.join("auth.json");
     let mut map = crate::read_auth_json(&path).unwrap_or_default();
     map.insert(scope.to_owned(), auth.clone());
@@ -77,11 +77,11 @@ async fn oidc_refresher_e2e_full_refresh_cycle() {
     let (base_url, server) = start_mock_oidc_and_proxy().await;
     let dir = tempfile::tempdir().unwrap();
     let mgr = Arc::new(
-        AuthManager::new(dir.path(), GrokComConfig::default()).with_proxy_base_url(&base_url),
+        AuthManager::new(dir.path(), EzerComConfig::default()).with_proxy_base_url(&base_url),
     );
 
     // Seed an expired OIDC token with all required fields.
-    let expired = GrokAuth {
+    let expired = EzerAuth {
         key: "old-expired-token".into(),
         create_time: Utc::now() - Duration::hours(2),
         user_id: "user-42".into(),
@@ -90,7 +90,7 @@ async fn oidc_refresher_e2e_full_refresh_cycle() {
         expires_at: Some(Utc::now() - Duration::hours(1)),
         oidc_issuer: Some(base_url.clone()),
         oidc_client_id: Some("test-client".into()),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     mgr.hot_swap(expired);
 
@@ -116,11 +116,11 @@ async fn oidc_refresher_e2e_proactive_returns_cached_when_valid() {
     let (base_url, server) = start_mock_oidc_and_proxy().await;
     let dir = tempfile::tempdir().unwrap();
     let mgr = Arc::new(
-        AuthManager::new(dir.path(), GrokComConfig::default()).with_proxy_base_url(&base_url),
+        AuthManager::new(dir.path(), EzerComConfig::default()).with_proxy_base_url(&base_url),
     );
 
     // Seed a valid (not expired) OIDC token.
-    let valid = GrokAuth {
+    let valid = EzerAuth {
         key: "still-valid-token".into(),
         user_id: "user-42".into(),
         email: Some("test@corp.com".into()),
@@ -128,7 +128,7 @@ async fn oidc_refresher_e2e_proactive_returns_cached_when_valid() {
         expires_at: Some(Utc::now() + Duration::hours(1)),
         oidc_issuer: Some(base_url.clone()),
         oidc_client_id: Some("test-client".into()),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     mgr.hot_swap(valid);
 
@@ -149,13 +149,13 @@ async fn oidc_refresher_e2e_force_refreshes_locally_valid_token() {
     let (base_url, server) = start_mock_oidc_and_proxy().await;
     let dir = tempfile::tempdir().unwrap();
     let mgr = Arc::new(
-        AuthManager::new(dir.path(), GrokComConfig::default()).with_proxy_base_url(&base_url),
+        AuthManager::new(dir.path(), EzerComConfig::default()).with_proxy_base_url(&base_url),
     );
 
     // Seed a valid (not yet expired) OIDC token
     // force=true simulates the reactive 401 path: the server rejected a token that looks locally valid (e.g. clock skew, server-side revocation).
     // The refresher should still attempt an OIDC refresh.
-    let valid = GrokAuth {
+    let valid = EzerAuth {
         key: "still-valid-token".into(),
         user_id: "user-42".into(),
         email: Some("test@corp.com".into()),
@@ -163,7 +163,7 @@ async fn oidc_refresher_e2e_force_refreshes_locally_valid_token() {
         expires_at: Some(Utc::now() + Duration::hours(1)),
         oidc_issuer: Some(base_url.clone()),
         oidc_client_id: Some("test-client".into()),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     mgr.hot_swap(valid);
 
@@ -191,12 +191,12 @@ async fn oidc_refresher_e2e_near_expiry_within_buffer_refreshes() {
     let (base_url, server) = start_mock_oidc_and_proxy().await;
     let dir = tempfile::tempdir().unwrap();
     let mgr = Arc::new(
-        AuthManager::new(dir.path(), GrokComConfig::default()).with_proxy_base_url(&base_url),
+        AuthManager::new(dir.path(), EzerComConfig::default()).with_proxy_base_url(&base_url),
     );
 
     // Token expires in 3 minutes, inside the 5-minute buffer
     // current() will return None, but expired_auth() will return it.
-    let near_expiry = GrokAuth {
+    let near_expiry = EzerAuth {
         key: "about-to-expire-token".into(),
         user_id: "user-42".into(),
         email: Some("test@corp.com".into()),
@@ -204,7 +204,7 @@ async fn oidc_refresher_e2e_near_expiry_within_buffer_refreshes() {
         expires_at: Some(Utc::now() + Duration::minutes(3)),
         oidc_issuer: Some(base_url.clone()),
         oidc_client_id: Some("test-client".into()),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     mgr.hot_swap(near_expiry);
 
@@ -280,16 +280,16 @@ async fn oidc_refresher_attributes_the_refresh_token_it_spent_on_invalid_grant()
 
     let dir = tempfile::tempdir().unwrap();
     let mgr = Arc::new(
-        AuthManager::new(dir.path(), GrokComConfig::default()).with_proxy_base_url(&base_url),
+        AuthManager::new(dir.path(), EzerComConfig::default()).with_proxy_base_url(&base_url),
     );
-    mgr.hot_swap(GrokAuth {
+    mgr.hot_swap(EzerAuth {
         key: "spent-access-token".into(),
         user_id: "user-42".into(),
         refresh_token: Some("rt-spent".into()),
         expires_at: Some(Utc::now() - Duration::minutes(1)),
         oidc_issuer: Some(base_url.clone()),
         oidc_client_id: Some("test-client".into()),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     });
 
     let outcome = OidcRefresher::new(mgr.clone())
@@ -351,17 +351,17 @@ async fn oidc_refresher_e2e_near_expiry_idp_rejects_refresh() {
 
     let dir = tempfile::tempdir().unwrap();
     let mgr = Arc::new(
-        AuthManager::new(dir.path(), GrokComConfig::default()).with_proxy_base_url(&base_url),
+        AuthManager::new(dir.path(), EzerComConfig::default()).with_proxy_base_url(&base_url),
     );
 
-    let near_expiry = GrokAuth {
+    let near_expiry = EzerAuth {
         key: "about-to-expire-token".into(),
         user_id: "user-42".into(),
         refresh_token: Some("rt-revoked".into()),
         expires_at: Some(Utc::now() + Duration::minutes(3)),
         oidc_issuer: Some(base_url.clone()),
         oidc_client_id: Some("test-client".into()),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     mgr.hot_swap(near_expiry);
 
@@ -422,10 +422,10 @@ async fn oidc_refresher_e2e_invalid_client_retains_credentials() {
 
     let dir = tempfile::tempdir().unwrap();
     let mgr = Arc::new(
-        AuthManager::new(dir.path(), GrokComConfig::default()).with_proxy_base_url(&base_url),
+        AuthManager::new(dir.path(), EzerComConfig::default()).with_proxy_base_url(&base_url),
     );
 
-    let expired = GrokAuth {
+    let expired = EzerAuth {
         key: "old-token".into(),
         create_time: Utc::now() - Duration::hours(2),
         user_id: "user-42".into(),
@@ -433,7 +433,7 @@ async fn oidc_refresher_e2e_invalid_client_retains_credentials() {
         expires_at: Some(Utc::now() - Duration::hours(1)),
         oidc_issuer: Some(base_url.clone()),
         oidc_client_id: Some("deleted-client-id".into()),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     mgr.hot_swap(expired);
 
@@ -498,19 +498,19 @@ async fn oidc_refresher_e2e_invalid_client_adopts_valid_sibling_disk_token() {
     let server = tokio::spawn(async move { axum::serve(listener, app).await.unwrap() });
 
     let dir = tempfile::tempdir().unwrap();
-    let cfg = GrokComConfig::default();
+    let cfg = EzerComConfig::default();
     let scope = cfg.auth_scope();
     let mgr = Arc::new(AuthManager::new(dir.path(), cfg).with_proxy_base_url(&base_url));
 
     // Pre-populate disk with auth that has a *different* client_id, simulating another process having re-authenticated
-    let disk_auth = GrokAuth {
+    let disk_auth = EzerAuth {
         key: "disk-fresh-token".into(),
         user_id: "user-42".into(),
         refresh_token: Some("rt-disk".into()),
         expires_at: Some(Utc::now() + Duration::hours(1)),
         oidc_issuer: Some(base_url.clone()),
         oidc_client_id: Some("rotated-new-client-id".into()),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     let mut store = std::collections::BTreeMap::new();
     store.insert(scope, disk_auth);
@@ -518,7 +518,7 @@ async fn oidc_refresher_e2e_invalid_client_adopts_valid_sibling_disk_token() {
     std::fs::write(dir.path().join("auth.json"), json).unwrap();
 
     // In-memory auth has the OLD client_id that the server rejects.
-    let expired = GrokAuth {
+    let expired = EzerAuth {
         key: "old-token".into(),
         create_time: Utc::now() - Duration::hours(2),
         user_id: "user-42".into(),
@@ -526,7 +526,7 @@ async fn oidc_refresher_e2e_invalid_client_adopts_valid_sibling_disk_token() {
         expires_at: Some(Utc::now() - Duration::hours(1)),
         oidc_issuer: Some(base_url.clone()),
         oidc_client_id: Some("deleted-client-id".into()),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     mgr.hot_swap(expired);
 
@@ -555,12 +555,12 @@ async fn oidc_refresher_e2e_invalid_client_adopts_valid_sibling_disk_token() {
 #[tokio::test]
 async fn oidc_refresh_picks_up_valid_disk_token() {
     let dir = tempfile::tempdir().unwrap();
-    let cfg = GrokComConfig::default();
+    let cfg = EzerComConfig::default();
     let scope = cfg.auth_scope();
     let mgr = Arc::new(AuthManager::new(dir.path(), cfg).with_proxy_base_url("http://127.0.0.1:1"));
 
     // Seed in-memory with an expired token (stale refresh_token).
-    let expired = GrokAuth {
+    let expired = EzerAuth {
         key: "old-expired-token".into(),
         create_time: Utc::now() - Duration::hours(2),
         user_id: "user-42".into(),
@@ -568,12 +568,12 @@ async fn oidc_refresh_picks_up_valid_disk_token() {
         expires_at: Some(Utc::now() - Duration::hours(1)),
         oidc_issuer: Some("https://idp.example.com".into()),
         oidc_client_id: Some("client-1".into()),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     mgr.hot_swap(expired);
 
     // Simulate another process writing a valid token to disk.
-    let fresh_on_disk = GrokAuth {
+    let fresh_on_disk = EzerAuth {
         key: "fresh-from-other-process".into(),
         user_id: "user-42".into(),
         email: Some("user@test.com".into()),
@@ -581,7 +581,7 @@ async fn oidc_refresh_picks_up_valid_disk_token() {
         expires_at: Some(Utc::now() + Duration::hours(1)),
         oidc_issuer: Some("https://idp.example.com".into()),
         oidc_client_id: Some("client-1".into()),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     write_auth_to_disk(dir.path(), &scope, &fresh_on_disk);
 
@@ -650,11 +650,11 @@ async fn oidc_refresh_uses_disk_refresh_token() {
     let server = tokio::spawn(async move { axum::serve(listener, app).await.unwrap() });
 
     let dir = tempfile::tempdir().unwrap();
-    let cfg = GrokComConfig::default();
+    let cfg = EzerComConfig::default();
     let scope = cfg.auth_scope();
     let mgr = Arc::new(AuthManager::new(dir.path(), cfg).with_proxy_base_url(&base_url));
 
-    mgr.hot_swap(GrokAuth {
+    mgr.hot_swap(EzerAuth {
         key: "old-mem-token".into(),
         create_time: Utc::now() - Duration::hours(2),
         user_id: "user-42".into(),
@@ -663,13 +663,13 @@ async fn oidc_refresh_uses_disk_refresh_token() {
         expires_at: Some(Utc::now() - Duration::hours(1)),
         oidc_issuer: Some(base_url.clone()),
         oidc_client_id: Some("test-client".into()),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     });
 
     write_auth_to_disk(
         dir.path(),
         &scope,
-        &GrokAuth {
+        &EzerAuth {
             key: "old-disk-token".into(),
             create_time: Utc::now() - Duration::hours(2),
             user_id: "user-42".into(),
@@ -678,7 +678,7 @@ async fn oidc_refresh_uses_disk_refresh_token() {
             expires_at: Some(Utc::now() - Duration::hours(1)),
             oidc_issuer: Some(base_url.clone()),
             oidc_client_id: Some("test-client".into()),
-            ..GrokAuth::test_default()
+            ..EzerAuth::test_default()
         },
     );
 
@@ -701,11 +701,11 @@ async fn oidc_refresh_uses_disk_refresh_token() {
 async fn lock_timeout_falls_through_to_refresh() {
     let (base_url, server) = start_mock_oidc_and_proxy().await;
     let dir = tempfile::tempdir().unwrap();
-    let cfg = GrokComConfig::default();
+    let cfg = EzerComConfig::default();
     let mgr = Arc::new(AuthManager::new(dir.path(), cfg).with_proxy_base_url(&base_url));
 
     // Seed with expired token that has a valid refresh_token.
-    let expired = GrokAuth {
+    let expired = EzerAuth {
         key: "old-token".into(),
         create_time: Utc::now() - Duration::hours(2),
         user_id: "user-42".into(),
@@ -714,7 +714,7 @@ async fn lock_timeout_falls_through_to_refresh() {
         expires_at: Some(Utc::now() - Duration::hours(1)),
         oidc_issuer: Some(base_url.clone()),
         oidc_client_id: Some("test-client".into()),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     mgr.hot_swap(expired);
 
@@ -857,7 +857,7 @@ async fn refresher_retries_with_disk_token_after_invalid_grant() {
     use std::sync::atomic::{AtomicU32, Ordering};
 
     let dir = tempfile::tempdir().unwrap();
-    let cfg = GrokComConfig::default();
+    let cfg = EzerComConfig::default();
     let scope = cfg.auth_scope();
     let auth_path = dir.path().join("auth.json");
 
@@ -878,7 +878,7 @@ async fn refresher_retries_with_disk_token_after_invalid_grant() {
     let mgr = Arc::new(AuthManager::new(dir.path(), cfg).with_proxy_base_url(&base_url));
 
     // Disk and memory both have rt-stale; the mock rotates disk on the first invalid_grant so the retry sees the fresh RT
-    let stale = GrokAuth {
+    let stale = EzerAuth {
         key: "stale-access-token".into(),
         create_time: Utc::now() - Duration::hours(2),
         user_id: "user-42".into(),
@@ -886,7 +886,7 @@ async fn refresher_retries_with_disk_token_after_invalid_grant() {
         expires_at: Some(Utc::now() - Duration::hours(1)),
         oidc_issuer: Some(base_url.clone()),
         oidc_client_id: Some("test-client".into()),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     write_auth_to_disk(dir.path(), &scope, &stale);
     mgr.hot_swap(stale);
@@ -924,7 +924,7 @@ async fn refresher_disk_retry_invalid_client_with_different_client_id_preserves_
     use std::sync::atomic::{AtomicU32, Ordering};
 
     let dir = tempfile::tempdir().unwrap();
-    let cfg = GrokComConfig::default();
+    let cfg = EzerComConfig::default();
     let scope = cfg.auth_scope();
     let auth_path = dir.path().join("auth.json");
 
@@ -1002,7 +1002,7 @@ async fn refresher_disk_retry_invalid_client_with_different_client_id_preserves_
 
     let mgr = Arc::new(AuthManager::new(dir.path(), cfg).with_proxy_base_url(&base_url));
 
-    let stale = GrokAuth {
+    let stale = EzerAuth {
         key: "stale-access".into(),
         create_time: Utc::now() - Duration::hours(2),
         user_id: "user-42".into(),
@@ -1010,7 +1010,7 @@ async fn refresher_disk_retry_invalid_client_with_different_client_id_preserves_
         expires_at: Some(Utc::now() - Duration::hours(1)),
         oidc_issuer: Some(base_url.clone()),
         oidc_client_id: Some("client-stale".into()),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     write_auth_to_disk(dir.path(), &scope, &stale);
     mgr.hot_swap(stale);
@@ -1047,7 +1047,7 @@ async fn refresher_disk_retry_is_one_shot() {
     use std::sync::atomic::{AtomicU32, Ordering};
 
     let dir = tempfile::tempdir().unwrap();
-    let cfg = GrokComConfig::default();
+    let cfg = EzerComConfig::default();
     let scope = cfg.auth_scope();
     let auth_path = dir.path().join("auth.json");
 
@@ -1066,7 +1066,7 @@ async fn refresher_disk_retry_is_one_shot() {
 
     let mgr = Arc::new(AuthManager::new(dir.path(), cfg).with_proxy_base_url(&base_url));
 
-    let stale = GrokAuth {
+    let stale = EzerAuth {
         key: "stale-access-token".into(),
         create_time: Utc::now() - Duration::hours(2),
         user_id: "user-42".into(),
@@ -1074,7 +1074,7 @@ async fn refresher_disk_retry_is_one_shot() {
         expires_at: Some(Utc::now() - Duration::hours(1)),
         oidc_issuer: Some(base_url.clone()),
         oidc_client_id: Some("test-client".into()),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     write_auth_to_disk(dir.path(), &scope, &stale);
     mgr.hot_swap(stale);
@@ -1152,8 +1152,8 @@ async fn start_counting_mock_oidc(
     (base, handle)
 }
 
-fn expired_oidc_for(base_url: &str) -> GrokAuth {
-    GrokAuth {
+fn expired_oidc_for(base_url: &str) -> EzerAuth {
+    EzerAuth {
         key: "old-expired-token".into(),
         create_time: Utc::now() - Duration::hours(2),
         user_id: "user-42".into(),
@@ -1162,7 +1162,7 @@ fn expired_oidc_for(base_url: &str) -> GrokAuth {
         expires_at: Some(Utc::now() - Duration::hours(1)),
         oidc_issuer: Some(base_url.to_owned()),
         oidc_client_id: Some("test-client".into()),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     }
 }
 
@@ -1176,7 +1176,7 @@ async fn sleep_gate_e2e_defers_then_recovers_on_wake() {
     let (base_url, server) = start_counting_mock_oidc(token_hits.clone()).await;
     let dir = tempfile::tempdir().unwrap();
     let mgr = Arc::new(
-        AuthManager::new(dir.path(), GrokComConfig::default()).with_proxy_base_url(&base_url),
+        AuthManager::new(dir.path(), EzerComConfig::default()).with_proxy_base_url(&base_url),
     );
     mgr.hot_swap(expired_oidc_for(&base_url));
     mgr.set_refresher(Arc::new(OidcRefresher::new(mgr.clone())));
@@ -1261,7 +1261,7 @@ async fn sleep_gate_e2e_in_flight_refresh_completes_across_imminent_sleep() {
 
     let dir = tempfile::tempdir().unwrap();
     let mgr = Arc::new(
-        AuthManager::new(dir.path(), GrokComConfig::default()).with_proxy_base_url(&base_url),
+        AuthManager::new(dir.path(), EzerComConfig::default()).with_proxy_base_url(&base_url),
     );
     mgr.hot_swap(expired_oidc_for(&base_url));
     mgr.set_refresher(Arc::new(OidcRefresher::new(mgr.clone())));
@@ -1298,13 +1298,13 @@ async fn sleep_gate_e2e_in_flight_refresh_completes_across_imminent_sleep() {
 /// Minimal `AuthSnapshot` for exercising `record_transient_failure` in isolation (it never reads credential state).
 struct EmptySnapshot;
 impl AuthSnapshot for EmptySnapshot {
-    fn current(&self) -> Option<GrokAuth> {
+    fn current(&self) -> Option<EzerAuth> {
         None
     }
-    fn expired_auth(&self) -> Option<GrokAuth> {
+    fn expired_auth(&self) -> Option<EzerAuth> {
         None
     }
-    fn read_disk_auth(&self) -> Option<GrokAuth> {
+    fn read_disk_auth(&self) -> Option<EzerAuth> {
         None
     }
     fn is_expired(&self) -> bool {

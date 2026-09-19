@@ -28,7 +28,7 @@ hJAE3EOL2ZddrMPF64QeU9UhvCm0Ch+Ceqa1ZWE0MygccggX5s2yQwtXO2ovJdjH\n\
     // Safety: sole test in this binary; set before any OnceLock resolve.
     unsafe {
         std::env::set_var(
-            ezer_extra_ca::ENV_GROK_EXTRA_CA_BUNDLE,
+            ezer_extra_ca::ENV_EZER_EXTRA_CA_BUNDLE,
             path.as_os_str(),
         );
     }

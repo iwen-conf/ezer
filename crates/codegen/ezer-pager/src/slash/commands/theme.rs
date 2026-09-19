@@ -152,7 +152,7 @@ mod tests {
         theme_cache::seed_auto_theme_defaults_for_test();
         system_appearance::clear_mock();
         // Set LOADED=true so current_kind() doesn't try to read from disk.
-        theme_cache::set(ThemeKind::GrokNight);
+        theme_cache::set(ThemeKind::EzerNight);
         f();
         system_appearance::clear_mock();
         theme_cache::reset_for_test();
@@ -252,7 +252,7 @@ mod tests {
     fn suggest_args_explicit_active_when_not_auto() {
         with_test_env(|| {
             theme_cache::set_auto_mode(false);
-            theme_cache::set(ThemeKind::GrokNight);
+            theme_cache::set(ThemeKind::EzerNight);
             let cmd = ThemeCommand;
             let models = crate::acp::model_state::ModelState::default();
             let ctx = AppCtx {
@@ -268,14 +268,14 @@ mod tests {
                 current_title: None,
             };
             let items = cmd.suggest_args(&ctx, "").expect("should return items");
-            let groknight = items
+            let ezernight = items
                 .iter()
                 .find(|i| i.insert_text == "ezernight")
                 .expect("ezernight should be in list");
             assert!(
-                groknight.description.contains("(active)"),
+                ezernight.description.contains("(active)"),
                 "explicit theme should show (active), got: {}",
-                groknight.description
+                ezernight.description
             );
         });
     }
@@ -284,7 +284,7 @@ mod tests {
     fn suggest_args_no_explicit_active_when_auto() {
         with_test_env(|| {
             theme_cache::set_auto_mode(true);
-            theme_cache::set(ThemeKind::GrokNight);
+            theme_cache::set(ThemeKind::EzerNight);
             let cmd = ThemeCommand;
             let models = crate::acp::model_state::ModelState::default();
             let ctx = AppCtx {
@@ -442,7 +442,7 @@ mod tests {
     #[test]
     fn run_toggle_dispatches_set_theme_action() {
         with_test_env(|| {
-            theme_cache::set(ThemeKind::GrokNight);
+            theme_cache::set(ThemeKind::EzerNight);
             // Hard-fail with a clear message if the precondition breaks
             // `(0 + 1) % 0` in `run` would otherwise panic with `attempt to calculate the remainder with a divisor of zero`, a worse message
             assert!(
@@ -469,7 +469,7 @@ mod tests {
             let result = cmd.run(&mut ctx, "");
             match result {
                 CommandResult::Action(Action::SetTheme(name)) => {
-                    // available[0] is GrokNight; next is available[1]
+                    // available[0] is EzerNight; next is available[1]
                     let Some(expected) = ThemeKind::available().get(1).map(|k| k.display_name())
                     else {
                         panic!("expected at least two themes");
@@ -530,7 +530,7 @@ mod tests {
                     ..crate::settings::PagerLocalSnapshot::default()
                 },
             };
-            // "dark" is an alias for GrokNight.
+            // "dark" is an alias for EzerNight.
             let result = cmd.run(&mut ctx, "dark");
             match result {
                 CommandResult::Action(Action::SetTheme(name)) => {
@@ -549,30 +549,30 @@ mod tests {
             system_appearance::set_mock(Some(system_appearance::SystemAppearance::Light));
             let cmd = ThemeCommand;
             cmd.preview_arg("auto");
-            // The default auto config maps Light to GrokDay
-            assert_eq!(Theme::current_kind(), ThemeKind::GrokDay);
+            // The default auto config maps Light to EzerDay
+            assert_eq!(Theme::current_kind(), ThemeKind::EzerDay);
         });
     }
 
     #[test]
     fn preview_explicit_theme_applies_directly() {
         with_test_env(|| {
-            theme_cache::set(ThemeKind::GrokNight);
+            theme_cache::set(ThemeKind::EzerNight);
             let cmd = ThemeCommand;
             cmd.preview_arg("ezerday");
-            assert_eq!(Theme::current_kind(), ThemeKind::GrokDay);
+            assert_eq!(Theme::current_kind(), ThemeKind::EzerDay);
         });
     }
 
     #[test]
     fn preview_unknown_theme_is_no_op() {
         with_test_env(|| {
-            theme_cache::set(ThemeKind::GrokNight);
+            theme_cache::set(ThemeKind::EzerNight);
             let cmd = ThemeCommand;
             cmd.preview_arg("nonexistent-theme");
             assert_eq!(
                 Theme::current_kind(),
-                ThemeKind::GrokNight,
+                ThemeKind::EzerNight,
                 "unknown theme name must NOT change Theme::current_kind",
             );
         });
@@ -583,17 +583,17 @@ mod tests {
     #[test]
     fn cancel_preview_restores_previous_kind() {
         with_test_env(|| {
-            theme_cache::set(ThemeKind::GrokNight);
+            theme_cache::set(ThemeKind::EzerNight);
             let cmd = ThemeCommand;
             // Simulate user navigating into a different theme during preview.
             cmd.preview_arg("ezerday");
-            assert_eq!(Theme::current_kind(), ThemeKind::GrokDay);
+            assert_eq!(Theme::current_kind(), ThemeKind::EzerDay);
 
             // Then Escape (or arg picker dismissal): restore.
             cmd.cancel_preview("ezernight");
             assert_eq!(
                 Theme::current_kind(),
-                ThemeKind::GrokNight,
+                ThemeKind::EzerNight,
                 "cancel_preview must restore the previous canonical",
             );
         });
@@ -602,12 +602,12 @@ mod tests {
     #[test]
     fn cancel_preview_unknown_theme_is_no_op() {
         with_test_env(|| {
-            theme_cache::set(ThemeKind::GrokDay);
+            theme_cache::set(ThemeKind::EzerDay);
             let cmd = ThemeCommand;
             cmd.cancel_preview("nonexistent-theme");
             assert_eq!(
                 Theme::current_kind(),
-                ThemeKind::GrokDay,
+                ThemeKind::EzerDay,
                 "unknown previous must NOT change Theme::current_kind",
             );
         });

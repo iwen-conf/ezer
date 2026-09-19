@@ -210,7 +210,7 @@ mod tests {
             ],
             sampling_config: SamplingConfig {
                 base_url: "https://api.example.com".to_string(),
-                model: "grok-3".to_string(),
+                model: "test-model-3".to_string(),
                 max_completion_tokens: Some(4096),
                 temperature: Some(0.7),
                 context_window: NonZeroU64::new(128_000).unwrap(),

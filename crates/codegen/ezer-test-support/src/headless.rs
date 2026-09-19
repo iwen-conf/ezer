@@ -6,7 +6,7 @@ use std::time::Duration;
 
 use tokio::io::AsyncReadExt as _;
 
-use crate::env::grok_binary;
+use crate::env::ezer_binary;
 use crate::mock_server::MockInferenceServer;
 use crate::process::{TestOutput, TestProcess, TestProcessConfig};
 use crate::sandbox::TestSandbox;
@@ -50,7 +50,7 @@ pub async fn run_headless_with_env(
     if let Some(ca_pem) = server.ca_pem_path() {
         sandbox.set_env("EZER_EXTRA_CA_BUNDLE", ca_pem);
     }
-    let mut cmd = tokio::process::Command::new(grok_binary());
+    let mut cmd = tokio::process::Command::new(ezer_binary());
     cmd.args(args).current_dir(cwd);
     run_headless_with_cmd_and_sandbox(cmd, &sandbox, env).await
 }

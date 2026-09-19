@@ -1146,7 +1146,7 @@ mod tests {
 
     #[tokio::test]
     async fn url_unresolved_var_fails_validation() {
-        let key = "GROK_HOOKS_HTTP_TEST_UNRESOLVED";
+        let key = "EZER_HOOKS_HTTP_TEST_UNRESOLVED";
         let expanded = with_env_var(key, None, || {
             let extra = std::collections::HashMap::new();
             crate::env_expand::expand_env_vars_with_extra(

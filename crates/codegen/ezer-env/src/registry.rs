@@ -33,7 +33,7 @@ pub fn env_string(name: &str) -> Option<String> {
     }
 }
 
-/// Opt-in xAI / grok.com browser login and xAI-sourced UI (announcements, remote banners, login nudges).
+/// Opt-in xAI / ezer.com browser login and xAI-sourced UI (announcements, remote banners, login nudges).
 /// Off by default so BYOK ezer users never see notices fetched from xAI or X.
 pub fn xai_login_enabled() -> bool {
     env_bool("EZER_ENABLE_XAI_LOGIN") == Some(true)

@@ -1,4 +1,4 @@
-// Scans Claude settings and generates TOML patches for .grok/config.toml.
+// Scans Claude settings and generates TOML patches for .ezer/config.toml.
 //
 // This module reuses the existing discovery and parsing functions from claude_compat.rs and util/config.rs
 // It does NOT modify the runtime Claude compat layer; that continues to work as before
@@ -464,7 +464,7 @@ pub fn find_project_root(cwd: &Path) -> PathBuf {
         .unwrap_or_else(|| cwd.to_path_buf())
 }
 
-// Import Marker (Read Side) The marker `[claude_compat] imported = true` in `~/.grok/config.toml` is the signal that runtime fallback paths should stop reading `.claude/`.
+// Import Marker (Read Side) The marker `[claude_compat] imported = true` in `~/.ezer/config.toml` is the signal that runtime fallback paths should stop reading `.claude/`.
 // The reader lives here so the hook, path, and permission gates all consult the same cached marker The writer is `mark_claude_imported` below
 
 /// Cached result of [`is_claude_import_marked`]; see its doc for the caching rationale and trade-offs.
@@ -479,7 +479,7 @@ pub(crate) fn is_claude_import_marked() -> bool {
     if let Some(v) = *MARKER_CACHE.read().expect("MARKER_CACHE poisoned") {
         return v;
     }
-    let config_path = crate::util::grok_home::grok_home().join("config.toml");
+    let config_path = crate::util::ezer_home::ezer_home().join("config.toml");
     let v = is_claude_import_marked_at(&config_path);
     *MARKER_CACHE.write().expect("MARKER_CACHE poisoned") = Some(v);
     v
@@ -584,7 +584,7 @@ fn write_import_marker(config_path: &Path) -> anyhow::Result<()> {
 /// Called from `/import-claude` even when nothing was imported: the marker is the user's opt-in choice, not a side effect of having imported items.
 /// Re-entering a workspace with `.claude/` content must not re-engage the runtime fallbacks.
 pub fn mark_claude_imported() -> anyhow::Result<()> {
-    let path = crate::util::grok_home::grok_home().join("config.toml");
+    let path = crate::util::ezer_home::ezer_home().join("config.toml");
     write_import_marker(&path)?;
     refresh_marker_cache(true);
     Ok(())
@@ -598,7 +598,7 @@ pub fn apply_import(plan: &ImportPlan, cwd: &Path) -> anyhow::Result<ImportResul
     let mut result = ImportResult::default();
 
     if !plan.global_items.is_empty() {
-        let global_path = crate::util::grok_home::grok_home().join("config.toml");
+        let global_path = crate::util::ezer_home::ezer_home().join("config.toml");
         let count = apply_items_to_config(&global_path, &plan.global_items)?;
         result.global_count = count;
         if count > 0 {
@@ -607,8 +607,8 @@ pub fn apply_import(plan: &ImportPlan, cwd: &Path) -> anyhow::Result<ImportResul
                 .push(global_path.to_string_lossy().to_string());
         }
 
-        // Hooks are written separately to ~/.grok/hooks/imported-from-claude.json.
-        let hooks_dir = crate::util::grok_home::grok_home().join("hooks");
+        // Hooks are written separately to ~/.ezer/hooks/imported-from-claude.json.
+        let hooks_dir = crate::util::ezer_home::ezer_home().join("hooks");
         let hook_count = apply_hooks_to_dir(&hooks_dir, &plan.global_items)?;
         result.global_count += hook_count;
         if hook_count > 0 {
@@ -703,7 +703,7 @@ fn apply_items_to_config(config_path: &Path, items: &[ImportableItem]) -> anyhow
             ImportableItem::Permission(rule) => permissions.push(rule),
             ImportableItem::EnvVar { key, value } => env_vars.push((key, value)),
             ImportableItem::McpServer { name, config } => mcp_servers.push((name, config)),
-            // Hooks are written to .grok/hooks/ JSON files in apply_hooks_to_dir, not into config.toml
+            // Hooks are written to .ezer/hooks/ JSON files in apply_hooks_to_dir, not into config.toml
             ImportableItem::Hook { .. } => {}
             ImportableItem::PathEntry { kind, path } => match kind {
                 PathKind::Skill => skill_dirs.push(path.as_str()),
@@ -1355,7 +1355,7 @@ mod tests {
         fn drop(&mut self) {
             reset_marker_cache_for_test();
             // Also clear the workspace-side env-var override so it doesn't leak into subsequent tests
-            unsafe { std::env::remove_var("_GROK_CLAUDE_MARKER_OVERRIDE") };
+            unsafe { std::env::remove_var("_EZER_CLAUDE_MARKER_OVERRIDE") };
         }
     }
 
@@ -2008,7 +2008,7 @@ extra_rule_dirs = ["/c/rules"]
 
         // Build a plan by directly invoking the scan with a synthetic plan and a cwd whose `find_project_root` returns the same `home` We can't easily mock `xai_dirs::home_dir()`, so this test focuses on the dedup *logic*
         // It manually populates `global_items` first, then asserts that the project-side branch with the same path would skip
-        // Direct end-to-end coverage of the home-collision case requires `GROK_HOME` plumbing which is intentionally out of scope
+        // Direct end-to-end coverage of the home-collision case requires `EZER_HOME` plumbing which is intentionally out of scope
         let global = dunce::canonicalize(home.join(".claude").join("skills")).unwrap();
         let project = dunce::canonicalize(home.join(".claude").join("skills")).unwrap();
         assert_eq!(global, project, "sanity: paths canonicalize to the same");
@@ -2047,7 +2047,7 @@ extra_rule_dirs = ["/c/rules"]
         let _g = MarkerGuard;
         refresh_marker_cache(true);
         // Also set the env-var override so the workspace-resident marker reader (which can't see the shell-side cache) honours the gate
-        unsafe { std::env::set_var("_GROK_CLAUDE_MARKER_OVERRIDE", "1") };
+        unsafe { std::env::set_var("_EZER_CLAUDE_MARKER_OVERRIDE", "1") };
         let dir = tempfile::tempdir().unwrap();
         // Drop a Claude permissions file in the tempdir; with the marker set the gate should skip reading it
         let claude_dir = dir.path().join(".claude");
@@ -2059,7 +2059,7 @@ extra_rule_dirs = ["/c/rules"]
         .unwrap();
 
         // Note: `resolve_permissions_with_provenance` ALSO reads requirements, managed settings, and the developer's real `~/.ezer/config.toml`.
-        // We can't isolate `grok_home()` because it's `OnceLock`-cached.
+        // We can't isolate `ezer_home()` because it's `OnceLock`-cached.
         // Instead, assert on rule *provenance*: no rule should originate from our tempdir's `.claude/settings.json`. The dev's real ~/.ezer config rules (if any) are out of scope for this test.
         let resolved =
             ezer_workspace::permission::resolution::resolve_permissions_with_provenance(
@@ -2105,7 +2105,7 @@ extra_rule_dirs = ["/c/rules"]
     #[serial]
     fn gate_marker_cache_unset_means_uses_disk() {
         // Sanity test: with the cache reset, `is_claude_import_marked()` must (a) not panic and (b) populate the cache for subsequent reads
-        // We intentionally **do not** assert a specific cached value: the dev's real `~/.ezer/config.toml` may legitimately have the marker set during local testing, and we can't override `grok_home()`
+        // We intentionally **do not** assert a specific cached value: the dev's real `~/.ezer/config.toml` may legitimately have the marker set during local testing, and we can't override `ezer_home()`
         // It's `OnceLock`-cached, so any prior test that calls it locks the value in for the entire process The `MarkerGuard` resets the cache after this test, so subsequent gate tests start clean
         let _g = MarkerGuard;
         reset_marker_cache_for_test();

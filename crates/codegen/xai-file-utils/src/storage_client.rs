@@ -1,6 +1,6 @@
 //! REST client for uploading files to GCS via cli-chat-proxy.
 //!
-//! Routes requests through cli-chat-proxy using user's grok.com auth token.
+//! Routes requests through cli-chat-proxy using user's ezer.com auth token.
 //! The proxy handles GCS authentication server-side.
 //!
 //! For large files that exceed Cloudflare's body size limit, use the multipart
@@ -344,12 +344,12 @@ mod retry_status_tests {
 /// Static credentials for proxy-mode uploads when no `AuthManager` is available.
 /// Only bins/tests/no-AuthManager paths; production uses the obfuscated shell provider.
 /// Do not make the static provider the production default.
-pub struct StaticGrokAuth {
+pub struct StaticEzerAuth {
     pub user_token: Option<String>,
     pub deployment_key: Option<String>,
 }
 
-impl StaticGrokAuth {
+impl StaticEzerAuth {
     pub fn new(user_token: Option<String>) -> Self {
         Self {
             user_token,
@@ -367,7 +367,7 @@ impl StaticGrokAuth {
     }
 }
 
-impl ezer_auth::HttpAuth for StaticGrokAuth {
+impl ezer_auth::HttpAuth for StaticEzerAuth {
     fn apply(&self, builder: reqwest::RequestBuilder, _base_url: &str) -> reqwest::RequestBuilder {
         if let Some(ref key) = self.deployment_key {
             builder.header("Authorization", format!("Bearer {}", key))
@@ -382,18 +382,18 @@ impl ezer_auth::HttpAuth for StaticGrokAuth {
 }
 
 #[cfg(test)]
-mod static_grok_auth_tests {
-    use super::StaticGrokAuth;
+mod static_ezer_auth_tests {
+    use super::StaticEzerAuth;
 
     /// Deployment key must win over the user token (incl. the empty one the
     /// deployment-key path supplies); falls back to the user token otherwise.
     #[test]
     fn wire_bearer_prefers_deployment_key_then_falls_back_to_user_token() {
-        let mut deployment = StaticGrokAuth::new(Some(String::new()));
+        let mut deployment = StaticEzerAuth::new(Some(String::new()));
         deployment.deployment_key = Some("deploy-key".to_string());
         assert_eq!(deployment.wire_bearer().as_deref(), Some("deploy-key"));
 
-        let oauth = StaticGrokAuth::new(Some("oauth-token".to_string()));
+        let oauth = StaticEzerAuth::new(Some("oauth-token".to_string()));
         assert_eq!(oauth.wire_bearer().as_deref(), Some("oauth-token"));
     }
 }
@@ -415,7 +415,7 @@ pub struct StorageClient {
     /// auth middleware (direct GCS uploads via signed URLs, signed-URL
     /// downloads, etc.).
     raw_http_client: Client,
-    /// Base URL for the proxy (e.g., "https://cli-chat-proxy.grok.com/v1")
+    /// Base URL for the proxy (e.g., "https://proxy.example.test/v1")
     base_url: String,
     /// Retry configuration for handling transient failures (especially 429 errors)
     retry_config: RetryConfig,
@@ -442,7 +442,7 @@ impl StorageClient {
     /// Convenience for bins/tests with a raw bearer and no AuthManager.
     /// Production refresh-aware auth should use [`Self::with_provider`].
     pub fn new(proxy_base_url: &str, user_token: &str) -> Self {
-        let creds = StaticGrokAuth::new(Some(user_token.to_owned()));
+        let creds = StaticEzerAuth::new(Some(user_token.to_owned()));
         let bearer = creds.wire_bearer();
         let provider = Arc::new(ezer_auth::StaticAuthCredentialProvider::new(
             Box::new(creds),

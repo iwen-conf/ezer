@@ -4,7 +4,7 @@ use std::sync::Arc;
 
 use anyhow::{Context, Result, bail};
 use serde::de::DeserializeOwned;
-use ezer_login::{AuthManager, GrokComConfig};
+use ezer_login::{AuthManager, EzerComConfig};
 
 // Re-export sandbox API types from cli-chat-proxy-types for convenience.
 // Sorted alphabetically; see sandbox_types.rs for logical grouping.
@@ -56,7 +56,7 @@ impl SandboxClient {
             .context("failed to resolve sandbox auth")?;
         let mut builder = builder
             .header("Authorization", format!("Bearer {}", &auth.key))
-            .header("X-XAI-Token-Auth", GrokComConfig::default().token_header)
+            .header("X-XAI-Token-Auth", EzerComConfig::default().token_header)
             .header("x-userid", &auth.user_id)
             .header("x-ezer-client-version", ezer_version::VERSION);
 

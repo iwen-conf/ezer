@@ -9,8 +9,8 @@ const PRINT_APPEARANCE: &str =
 fn parse_printed_appearance(raw: &str) -> Option<(String, String)> {
     let line = raw.lines().find(|l| l.starts_with("ezer="))?;
     let rest = line.strip_prefix("ezer=")?;
-    let (grok, lc) = rest.split_once(" lc=")?;
-    Some((grok.to_owned(), lc.to_owned()))
+    let (ezer, lc) = rest.split_once(" lc=")?;
+    Some((ezer.to_owned(), lc.to_owned()))
 }
 
 /// End-to-end check that the appearance stamp survives the interactive shell hop. Do not call
@@ -28,13 +28,13 @@ fn wrap_appearance_env_advertised_through_shell() {
             ("LC_EZER_APPEARANCE", ""),
         ],
     );
-    let (grok, lc) = parse_printed_appearance(&raw)
+    let (ezer, lc) = parse_printed_appearance(&raw)
         .unwrap_or_else(|| panic!("missing ezer=/lc= line\nraw:\n{raw}"));
-    match (grok.as_str(), lc.as_str()) {
+    match (ezer.as_str(), lc.as_str()) {
         ("", "") => {}
         ("dark", "dark") | ("light", "light") => {}
         _ => panic!(
-            "GROK and LC must agree and not invent from COLORFGBG; ezer={ezer:?} lc={lc:?}\nraw:\n{raw}"
+            "EZER and LC must agree and not invent from COLORFGBG; ezer={ezer:?} lc={lc:?}\nraw:\n{raw}"
         ),
     }
     assert_eq!(
@@ -45,12 +45,12 @@ fn wrap_appearance_env_advertised_through_shell() {
 }
 
 /// The parent sets `EZER_APPEARANCE=light` and pins LC empty.
-/// A desktop probe that answers overrides both names to the same polarity; one that answers `None` inherits GROK and must not invent LC.
+/// A desktop probe that answers overrides both names to the same polarity; one that answers `None` inherits EZER and must not invent LC.
 /// The test itself never probes the desktop; a second live probe could disagree.
 #[test]
 #[ignore = "PTY e2e; run the owning pty_e2e_* Cargo test with --ignored (see Cargo.toml)"]
 #[cfg(unix)]
-fn wrap_appearance_env_desktop_none_does_not_restamp_parent_grok() {
+fn wrap_appearance_env_desktop_none_does_not_restamp_parent_ezer() {
     let (code, raw) = run_wrap(
         &[PRINT_APPEARANCE],
         &[
@@ -59,9 +59,9 @@ fn wrap_appearance_env_desktop_none_does_not_restamp_parent_grok() {
             ("LC_EZER_APPEARANCE", ""),
         ],
     );
-    let (grok, lc) = parse_printed_appearance(&raw)
+    let (ezer, lc) = parse_printed_appearance(&raw)
         .unwrap_or_else(|| panic!("missing ezer=/lc= line\nraw:\n{raw}"));
-    match (grok.as_str(), lc.as_str()) {
+    match (ezer.as_str(), lc.as_str()) {
         ("light", "") => {}
         ("dark", "dark") | ("light", "light") => {}
         _ => panic!(

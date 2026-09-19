@@ -2,12 +2,12 @@
 use crate::agent::config::EndpointsConfig;
 use crate::agent::remote_config::ModelFetchAuth;
 use crate::remote::client::{BackendError, FetchModelsResult};
-use ezer_login::GrokAuth;
+use ezer_login::EzerAuth;
 mod oai;
 pub(crate) trait ModelSource {
     /// Identifies this source in the models disk cache, so entries fetched from one URL never load for another.
     fn cache_origin(&self) -> String;
-    fn fetch(&self, auth: Option<&GrokAuth>) -> Result<FetchModelsResult, BackendError>;
+    fn fetch(&self, auth: Option<&EzerAuth>) -> Result<FetchModelsResult, BackendError>;
 }
 pub(crate) fn active_model_source(
     endpoints: &EndpointsConfig,

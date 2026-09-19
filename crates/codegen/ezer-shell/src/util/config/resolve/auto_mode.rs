@@ -233,7 +233,7 @@ mod auto_permission_mode_gate_tests {
     use super::*;
     use crate::agent::config::ConfigSource;
 
-    // `GROK_AUTO_PERMISSION_MODE` is process-global; serialize every test that reads it (all of them, via `BoolFlag::env`)
+    // `EZER_AUTO_PERMISSION_MODE` is process-global; serialize every test that reads it (all of them, via `BoolFlag::env`)
     // Force it unset at the top of each so a developer's shell value can't make these flaky
     fn guard() -> std::sync::MutexGuard<'static, ()> {
         let g = super::AUTO_PERMISSION_MODE_ENV_LOCK

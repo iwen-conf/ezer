@@ -294,7 +294,7 @@ pub fn isolated_home() -> tempfile::TempDir {
     ezer_shell::managed_config::clear_startup_profile_for_tests();
     let home = tempfile::TempDir::new().expect("ezer home tempdir");
     // SAFETY: single-test binary; no other thread reads or writes the environment.
-    unsafe { ezer_test_support::isolate_grok_env(home.path()) };
+    unsafe { ezer_test_support::isolate_ezer_env(home.path()) };
     home
 }
 
@@ -315,7 +315,7 @@ pub async fn start_seeded_mock(
         .await
         .expect("start mock server");
     std::fs::write(home.join("agent_id"), "test-agent-id").expect("seed agent_id");
-    let scope = ezer_login::GrokComConfig::default().auth_scope();
+    let scope = ezer_login::EzerComConfig::default().auth_scope();
     let auth = serde_json::json!({
         scope: {
             "key": "test-session-token",

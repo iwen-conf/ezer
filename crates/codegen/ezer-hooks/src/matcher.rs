@@ -1,5 +1,5 @@
 use regex::Regex;
-use ezer_tools::types::{claude_names_for, grok_names_for};
+use ezer_tools::types::{claude_names_for, ezer_names_for};
 
 /// A compiled hook matcher for tool names.
 /// The pattern semantics are chosen so that `matcher` entries in hooks migrated from other agent CLIs keep firing unchanged:
@@ -82,8 +82,8 @@ fn exact_names(pattern: &str) -> Vec<String> {
     };
     for term in pattern.split('|') {
         push(term);
-        for grok_name in grok_names_for(term) {
-            push(grok_name);
+        for ezer_name in ezer_names_for(term) {
+            push(ezer_name);
         }
     }
     names
@@ -166,7 +166,7 @@ mod tests {
     }
 
     #[test]
-    fn claude_bash_matches_grok_tool() {
+    fn claude_bash_matches_ezer_tool() {
         let m = HookMatcher::new("Bash").unwrap();
         assert!(m.is_match("Bash"));
         assert!(m.is_match("run_terminal_command"));
@@ -175,7 +175,7 @@ mod tests {
     }
 
     #[test]
-    fn claude_edit_write_matches_grok_tool_exactly() {
+    fn claude_edit_write_matches_ezer_tool_exactly() {
         let m = HookMatcher::new("Edit|Write").unwrap();
         assert!(m.is_match("Edit"));
         assert!(m.is_match("Write"));
@@ -187,7 +187,7 @@ mod tests {
     }
 
     #[test]
-    fn regex_against_claude_alias_matches_grok_tool() {
+    fn regex_against_claude_alias_matches_ezer_tool() {
         let m = HookMatcher::new("^Bash$").unwrap();
         assert!(m.is_match("run_terminal_command"));
         assert!(m.is_match("Bash"));

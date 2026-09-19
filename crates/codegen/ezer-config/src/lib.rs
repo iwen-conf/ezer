@@ -39,7 +39,7 @@ pub use campaigns::{
 };
 pub use global_hook_sources::{
     GlobalHookSource, GlobalHookSourceError, GlobalHookSourceKind, ResolvedGlobalHookSources,
-    TRUST_BOUNDARY_FILENAMES, ensure_grok_hook_slots, existing_ancestor_chain,
+    TRUST_BOUNDARY_FILENAMES, ensure_ezer_hook_slots, existing_ancestor_chain,
     is_direct_hook_json_name, list_direct_hook_json_files, missing_configured_sources,
     path_has_symlink_component, resolve_global_hook_sources, resolve_trust_boundary_sources,
     unique_ancestors_rootward,
@@ -82,9 +82,9 @@ pub use managed_cache::{
 };
 pub use paths::{
     claude_managed_settings_path, claude_managed_settings_probe_path, create_dir_all_owner_only,
-    decode_cwd_from_dirname, default_grok_home, encode_cwd_dirname, ensure_sessions_cwd_dir,
-    ensure_sessions_cwd_dir_in, grok_application, grok_application_in, grok_home, sessions_cwd_dir,
-    sessions_cwd_dir_in, set_dir_owner_only, system_config_dir, user_grok_home,
+    decode_cwd_from_dirname, default_ezer_home, encode_cwd_dirname, ensure_sessions_cwd_dir,
+    ensure_sessions_cwd_dir_in, ezer_application, ezer_application_in, ezer_home, sessions_cwd_dir,
+    sessions_cwd_dir_in, set_dir_owner_only, system_config_dir, user_ezer_home,
 };
 pub use validation::{
     RequirementsError, RequirementsLayer, RequirementsSource, load_merged_requirements,

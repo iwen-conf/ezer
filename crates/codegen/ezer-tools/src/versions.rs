@@ -543,7 +543,7 @@ mod tests {
 
     #[test]
     fn concise_namespace_not_managed() {
-        // GrokBuildConcise tools should NOT be version-managed.
+        // EzerBuildConcise tools should NOT be version-managed.
         assert!(!is_version_managed("EzerConcise:run_terminal_cmd"));
         let v = resolve_version("current", "EzerConcise:run_terminal_cmd", None).unwrap();
         assert_eq!(v, None);

@@ -1,6 +1,6 @@
 //! Merged session listing: combines local and remote session data.
 //!
-//! Used by both the ACP `x.ai/session/list` handler and the `ezer sessions` CLI command.
+//! Used by both the ACP `ezer/session/list` handler and the `ezer sessions` CLI command.
 //! Deduplicates by session ID (remote wins) and filters local results by query.
 //! Sorts by the same key the picker UI displays (`last_active_at` falling back to `updated_at`) descending.
 
@@ -230,7 +230,7 @@ pub(crate) async fn fetch_lanes(
         }
         local.retain(|s| Path::new(&s.info.cwd).is_absolute());
     }
-    // `grok --resume <uuid>` resolves across every cwd
+    // `ezer --resume <uuid>` resolves across every cwd
     // Promote an exact UUID hit from any local directory into the lane before merge filters
     if let Some(id) = query
         .map(str::trim)
@@ -493,7 +493,7 @@ mod tests {
             head_commit: None,
             head_branch: None,
             request_id: None,
-            grok_home: None,
+            ezer_home: None,
             last_active_at: None,
             generated_title: None,
             title_is_manual: false,

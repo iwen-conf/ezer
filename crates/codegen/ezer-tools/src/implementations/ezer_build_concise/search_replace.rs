@@ -24,7 +24,7 @@ impl crate::types::tool_metadata::ToolMetadata for SearchReplaceConciseTool {
     }
 
     fn tool_namespace(&self) -> ToolNamespace {
-        ToolNamespace::GrokBuildConcise
+        ToolNamespace::EzerBuildConcise
     }
 
     fn description_template(&self) -> &str {

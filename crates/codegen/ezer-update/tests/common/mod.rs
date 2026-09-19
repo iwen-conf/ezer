@@ -1,9 +1,9 @@
 //! Shared helpers for integration tests.
 //!
-//! Each `tests/*.rs` integration test is its own binary, so each binary has its own `OnceLock<GROK_HOME>`.
+//! Each `tests/*.rs` integration test is its own binary, so each binary has its own `OnceLock<EZER_HOME>`.
 //! The helpers below ensure the per-binary initialization is identical: same env-var set, same isolation guarantees, same reset between tests.
 //!
-//! Mirrors the GROK_HOME isolation pattern used in other integration tests.
+//! Mirrors the EZER_HOME isolation pattern used in other integration tests.
 //!
 //! ## Usage
 //!
@@ -14,7 +14,7 @@
 //! #[tokio::test]
 //! #[serial_test::serial]
 //! async fn my_test() {
-//!     let _ = test_home();   // initializes GROK_HOME once per binary
+//!     let _ = test_home();   // initializes EZER_HOME once per binary
 //!     reset_home();          // wipes state between tests
 //!     // ...
 //! }
@@ -30,11 +30,11 @@ use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
 
 // ─────────────────────────────────────────────────────────────────────────────
-// GROK_HOME isolation
+// EZER_HOME isolation
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// Returns a process-wide test `GROK_HOME`, initialized exactly once per test binary. Once initialized,
-/// `ezer_config::grok_home()` will resolve to this directory for the lifetime of the process. Also clears env vars
+/// Returns a process-wide test `EZER_HOME`, initialized exactly once per test binary. Once initialized,
+/// `ezer_config::ezer_home()` will resolve to this directory for the lifetime of the process. Also clears env vars
 /// that the auto-update code consults so a parent shell's values can't pollute the baseline.
 pub fn test_home() -> &'static PathBuf {
     static HOME: OnceLock<PathBuf> = OnceLock::new();
@@ -44,7 +44,7 @@ pub fn test_home() -> &'static PathBuf {
         // SAFETY: called once at OnceLock init, before any other thread touches
         // these env vars. Tests using this helper must be `#[serial]`.
         unsafe {
-            std::env::set_var("GROK_HOME", &path);
+            std::env::set_var("EZER_HOME", &path);
             std::env::remove_var("EZER_TEST_VERSION");
             std::env::remove_var("NPM_TOKEN");
             std::env::remove_var("EZER_INSTALLER");
@@ -55,7 +55,7 @@ pub fn test_home() -> &'static PathBuf {
     })
 }
 
-/// Wipe state in `GROK_HOME` between tests so each test sees a clean home.
+/// Wipe state in `EZER_HOME` between tests so each test sees a clean home.
 /// Removes the well-known files and subdirectories the update path writes, and clears env vars that individual tests may set.
 pub fn reset_home() {
     let home = test_home();
@@ -73,7 +73,7 @@ pub fn reset_home() {
     }
 }
 
-/// Override the version reported by `get_installed_grok_version()` for the
+/// Override the version reported by `get_installed_ezer_version()` for the
 /// duration of the test (until [`reset_home`] or process exit).
 pub fn set_test_version(v: &str) {
     // SAFETY: tests using this helper must be `#[serial]`.
@@ -138,7 +138,7 @@ pub fn small_good_artifact() -> Vec<u8> {
     b"#!/bin/sh\nexit 0\n".to_vec()
 }
 
-/// Backdate every file in `GROK_HOME/downloads` by ~2 hours. `cleanup_old_downloads` deliberately never deletes a
+/// Backdate every file in `EZER_HOME/downloads` by ~2 hours. `cleanup_old_downloads` deliberately never deletes a
 /// freshly-written binary or temp file (it may belong to a concurrent in-flight install). Tests asserting the retention
 /// policy must therefore age their fixtures to look like real leftovers from previous releases.
 pub fn backdate_downloads() {

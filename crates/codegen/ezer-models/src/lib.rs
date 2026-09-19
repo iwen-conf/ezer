@@ -6,7 +6,7 @@
 //! Catalog keys vs wire slugs: `default` / `web_search` / `image_description` /
 //! `session_summary` name **catalog entries** (`id`, falling back to `model`).
 //! `model` is the API slug (e.g. `id = "workbuddy"`, `model = "deepseek-v4.1-flash"`).
-//! Startup used to validate only `model` and panic after the strip-grok merge
+//! Startup used to validate only `model` and panic after the strip-ezer merge
 //! when `default` was `workbuddy`.
 
 #![deny(clippy::indexing_slicing)]

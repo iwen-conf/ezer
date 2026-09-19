@@ -3,7 +3,7 @@ mod oidc_refresher;
 use crate::backend::AuthBackend;
 use crate::manager::AuthManager;
 pub use crate::manager::RefreshReason;
-use crate::model::GrokAuth;
+use crate::model::EzerAuth;
 pub use external_refresher::ExternalBinaryRefresher;
 pub use oidc_refresher::OidcRefresher;
 use std::future::Future;
@@ -17,25 +17,25 @@ pub type DiagnosticUploader =
 /// Refreshers hold `Arc<dyn AuthSnapshot>`, so the type system stops them calling `update()`, `clear()`, `hot_swap()`, or `refresh_chain()`.
 pub trait AuthSnapshot: Send + Sync {
     /// Read the current in-memory bearer outside the early-invalidation buffer.
-    fn current(&self) -> Option<GrokAuth>;
+    fn current(&self) -> Option<EzerAuth>;
     /// Read the expired in-memory bearer (for its `refresh_token`).
-    fn expired_auth(&self) -> Option<GrokAuth>;
+    fn expired_auth(&self) -> Option<EzerAuth>;
     /// Re-read auth.json from disk for the configured scope.
     /// Credentials are untouched, but the call records what it saw on disk and may emit telemetry about the change.
-    fn read_disk_auth(&self) -> Option<GrokAuth>;
+    fn read_disk_auth(&self) -> Option<EzerAuth>;
     /// Whether the in-memory bearer is expired.
     fn is_expired(&self) -> bool;
     /// Whether the in-memory bearer would still be on the wire after the pre-flight→send gap (`AuthManager::has_sendable_token`).
     fn has_sendable_token(&self) -> bool;
 }
 impl AuthSnapshot for AuthManager {
-    fn current(&self) -> Option<GrokAuth> {
+    fn current(&self) -> Option<EzerAuth> {
         self.current()
     }
-    fn expired_auth(&self) -> Option<GrokAuth> {
+    fn expired_auth(&self) -> Option<EzerAuth> {
         self.expired_auth()
     }
-    fn read_disk_auth(&self) -> Option<GrokAuth> {
+    fn read_disk_auth(&self) -> Option<EzerAuth> {
         self.read_disk_auth()
     }
     fn is_expired(&self) -> bool {
@@ -54,14 +54,14 @@ pub trait ExternalCommandRunner: Send + Sync {
     async fn run_external_command(
         &self,
         command: &str,
-    ) -> Result<GrokAuth, crate::ExternalRefreshError>;
+    ) -> Result<EzerAuth, crate::ExternalRefreshError>;
 }
 #[async_trait::async_trait]
 impl ExternalCommandRunner for AuthManager {
     async fn run_external_command(
         &self,
         command: &str,
-    ) -> Result<GrokAuth, crate::ExternalRefreshError> {
+    ) -> Result<EzerAuth, crate::ExternalRefreshError> {
         self.run_external_refresh_command(command).await
     }
 }
@@ -70,9 +70,9 @@ impl ExternalCommandRunner for AuthManager {
 /// The caller supplies the disk read: the verdict path passes a side-effect-free read, the refresher the observing one.
 pub fn resolve_refresh_credential(
     snap: &dyn AuthSnapshot,
-    disk_auth: Option<GrokAuth>,
+    disk_auth: Option<EzerAuth>,
     reason: RefreshReason,
-) -> Option<GrokAuth> {
+) -> Option<EzerAuth> {
     disk_auth
         .filter(|a| a.refresh_token.is_some())
         .or_else(|| snap.expired_auth())
@@ -87,7 +87,7 @@ pub fn resolve_refresh_credential(
 #[must_use = "RefreshOutcome encodes a state transition; route it through refresh_chain"]
 pub enum RefreshOutcome {
     /// The authority returned a fresh token; the caller persists it via `update()`.
-    Success(Box<GrokAuth>),
+    Success(Box<EzerAuth>),
     /// Terminal failure (e.g. invalid_grant), or a transient failure escalated to `Other` after repeated occurrences. The caller records a verdict scoped to the rejected credential.
     /// `refresh_chain` discards the access and refresh tokens only for `RefreshTokenRejected`, which holds until the next login. `ClientRejected` and `Other` retain the credentials and age out past the TTL.
     PermanentFailure {
@@ -106,12 +106,12 @@ pub enum RefreshOutcome {
 }
 impl RefreshOutcome {
     /// A fresh credential from the authority (hides the `Box`).
-    pub fn success(auth: GrokAuth) -> Self {
+    pub fn success(auth: EzerAuth) -> Self {
         Self::Success(Box::new(auth))
     }
     /// Terminal failure for an already-classified reason against the credential `tried_key` (the one actually sent to the IdP).
     /// Leaves the tried refresh token unattributed, which disables the sibling-rotation check in `refresh_chain`. Only correct for authorities that genuinely cannot report which RT they spent (the external-binary flow).
-    /// Any refresher holding the [`GrokAuth`] it sent must use [`Self::permanent_for`] instead.
+    /// Any refresher holding the [`EzerAuth`] it sent must use [`Self::permanent_for`] instead.
     pub fn permanent(
         reason: crate::error::RefreshTokenFailedReason,
         tried_key: Option<String>,
@@ -123,9 +123,9 @@ impl RefreshOutcome {
         }
     }
     /// Terminal failure attributed to the exact credential sent to the IdP.
-    /// Prefer this wherever the attempted [`GrokAuth`] is in hand: it captures both the AT key (verdict scope) and the RT (sibling-rotation check).
+    /// Prefer this wherever the attempted [`EzerAuth`] is in hand: it captures both the AT key (verdict scope) and the RT (sibling-rotation check).
     /// A lost rotation race then cannot be mistaken for a revoked session.
-    pub fn permanent_for(reason: crate::error::RefreshTokenFailedReason, tried: &GrokAuth) -> Self {
+    pub fn permanent_for(reason: crate::error::RefreshTokenFailedReason, tried: &EzerAuth) -> Self {
         Self::PermanentFailure {
             error: reason.into(),
             tried_key: Some(tried.key.clone()),
@@ -161,23 +161,23 @@ pub fn build_refresher(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{AuthMode, GrokAuth, GrokComConfig};
+    use crate::{AuthMode, EzerAuth, EzerComConfig};
     use chrono::{Duration, Utc};
     /// auth_token_ttl makes is_token_expired use create_time + ttl for External tokens without expires_at, instead of the 30-day fallback.
     #[test]
     fn token_ttl_expires_external_token_by_create_time() {
         let dir = tempfile::tempdir().unwrap();
-        let cfg = GrokComConfig {
+        let cfg = EzerComConfig {
             auth_token_ttl: Some(3600),
-            ..GrokComConfig::default()
+            ..EzerComConfig::default()
         };
         let mgr = AuthManager::new(dir.path(), cfg);
-        let old_token = GrokAuth {
+        let old_token = EzerAuth {
             key: "old-external-token".into(),
             auth_mode: AuthMode::External,
             create_time: Utc::now() - Duration::hours(2),
             expires_at: None,
-            ..GrokAuth::test_default()
+            ..EzerAuth::test_default()
         };
         mgr.hot_swap(old_token);
         assert!(
@@ -185,12 +185,12 @@ mod tests {
             "expired external token via auth_token_ttl"
         );
         assert!(mgr.is_expired());
-        let new_token = GrokAuth {
+        let new_token = EzerAuth {
             key: "new-external-token".into(),
             auth_mode: AuthMode::External,
             create_time: Utc::now(),
             expires_at: None,
-            ..GrokAuth::test_default()
+            ..EzerAuth::test_default()
         };
         mgr.hot_swap(new_token);
         assert!(

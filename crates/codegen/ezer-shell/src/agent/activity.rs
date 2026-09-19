@@ -2,7 +2,7 @@
 //! Those are `tokio::spawn` tasks and cannot read the `!Send` `MvpAgent` state on the `LocalSet`.
 //!
 //! The leader's `agent_busy` flag only counts IPC (Unix-socket) requests.
-//! Relay (grok.com WebSocket) traffic is bridged straight into the agent's ACP stdin and never sets it.
+//! Relay (ezer.com WebSocket) traffic is bridged straight into the agent's ACP stdin and never sets it.
 //! A relay-driven leader (devbox / remote) therefore always looked idle and got restarted mid-turn on every update.
 //! That failure showed up as "Subagent result channel dropped".
 //!

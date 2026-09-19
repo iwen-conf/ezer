@@ -342,7 +342,7 @@ pub(crate) fn all_toml_mcp_server_names(
 }
 
 pub(crate) fn mcp_preferences_path() -> PathBuf {
-    ezer_config::grok_home().join("mcp_preferences.json")
+    ezer_config::ezer_home().join("mcp_preferences.json")
 }
 
 /// Corrupt files are readable as empty for resolution but must not be overwritten (would clobber other servers).
@@ -457,7 +457,7 @@ pub struct McpSetupServerEntry {
     pub source: McpPreferenceSource,
 }
 
-/// Collect MCP configs that declare a `setup` schema from config and plugins. Used to show setup-required rows and drive `x.ai/mcp/setup`.
+/// Collect MCP configs that declare a `setup` schema from config and plugins. Used to show setup-required rows and drive `ezer/mcp/setup`.
 /// User/project **TOML** includes `enabled = false` so Space-disabled setup servers stay visible. (`handle_list` derives `session.enabled` from `disabled_mcp_servers`.)
 /// Other sources still skip native `enabled = false` because Space cannot unstick those flags.
 pub(crate) fn collect_mcp_setup_configs(
@@ -690,7 +690,7 @@ fn nearest_project_mcp_definition(cwd: &std::path::Path, server_name: &str) -> O
         .find(|path| mcp_server_defined_at(path, server_name))
 }
 
-/// User `$EZER_HOME/config.toml`. [`config_path`] is live (`grok_home()` is OnceLock).
+/// User `$EZER_HOME/config.toml`. [`config_path`] is live (`ezer_home()` is OnceLock).
 fn is_user_config_path(path: &std::path::Path) -> bool {
     path == config_path().as_path()
 }
@@ -1712,7 +1712,7 @@ pub fn disabled_mcp_server_names(cwd: &std::path::Path) -> std::collections::Has
 
 /// Names `ezer mcp enable`/`disable` may target. Covers user/project TOML (including setup-required/invalid entries that session merge drops) and the user `disabled_mcp_servers` list.
 /// Also covers compat JSON (`.mcp.json`, Claude, Cursor) and **plugin** MCP servers (same discovery as doctor/`/mcps`).
-/// Does **not** include gateway connectors (`managed_gateway:…`); those use `disabled_mcp_tools.__managed_gateway_connectors` via the `/mcps` Space. `grok_com_*` is known only when a TOML / disabled / compat / plugin definition exists, not by prefix.
+/// Does **not** include gateway connectors (`managed_gateway:…`); those use `disabled_mcp_tools.__managed_gateway_connectors` via the `/mcps` Space. `ezer_com_*` is known only when a TOML / disabled / compat / plugin definition exists, not by prefix.
 pub fn cli_known_mcp_server_names(cwd: &std::path::Path) -> std::collections::HashSet<String> {
     let mut names = disabled_mcp_server_names(cwd);
     // Full TOML key set (list parity); the merge drops setup-required/invalid entries
@@ -1757,9 +1757,9 @@ pub fn load_cli_plugin_registry(cwd: &std::path::Path) -> ezer_agent::plugins::P
 }
 
 fn config_path() -> PathBuf {
-    // Live `$EZER_HOME` first: `grok_home()` is OnceLock and misses EnvGuard/tests.
-    xai_dirs::resolve_grok_home()
-        .unwrap_or_else(crate::util::grok_home::grok_home)
+    // Live `$EZER_HOME` first: `ezer_home()` is OnceLock and misses EnvGuard/tests.
+    xai_dirs::resolve_ezer_home()
+        .unwrap_or_else(crate::util::ezer_home::ezer_home)
         .join("config.toml")
 }
 
@@ -1921,7 +1921,7 @@ mod tests {
     #[serial_test::serial]
     fn load_cli_plugin_registry_includes_project_config_path_plugins() {
         let home = tempfile::tempdir().unwrap();
-        let _env = ezer_test_support::EnvGuard::set("GROK_HOME", home.path());
+        let _env = ezer_test_support::EnvGuard::set("EZER_HOME", home.path());
 
         let repo = tempfile::tempdir().unwrap();
         git2::Repository::init(repo.path()).unwrap();
@@ -2363,9 +2363,9 @@ ignore = ["~/.ezer/skills/noisy/SKILL.md"]
             .unwrap_or_default();
         assert_eq!(
             cfg.paths,
-            vec!["~/.grok/skills", "~/.grok/skills/special/SKILL.md"]
+            vec!["~/.ezer/skills", "~/.ezer/skills/special/SKILL.md"]
         );
-        assert_eq!(cfg.ignore, vec!["~/.grok/skills/noisy/SKILL.md"]);
+        assert_eq!(cfg.ignore, vec!["~/.ezer/skills/noisy/SKILL.md"]);
     }
 
     #[test]
@@ -2588,10 +2588,10 @@ expose_image_base64 = true
     #[test]
     fn mcp_json_all_toml_names_includes_disabled() {
         let tmp = tempfile::tempdir().unwrap();
-        let grok_dir = tmp.path().join(".grok");
-        std::fs::create_dir_all(&grok_dir).unwrap();
+        let ezer_dir = tmp.path().join(".ezer");
+        std::fs::create_dir_all(&ezer_dir).unwrap();
         std::fs::write(
-            grok_dir.join("config.toml"),
+            ezer_dir.join("config.toml"),
             r#"
 [mcp_servers.enabled_one]
 url = "https://example.com"
@@ -2721,7 +2721,7 @@ enabled = true
         let mut root: TomlValue = toml::from_str("disabled_mcp_servers = []\n").unwrap();
         let table = root.as_table_mut().unwrap();
 
-        apply_mcp_server_enabled(table, "grok_com_slack", false);
+        apply_mcp_server_enabled(table, "remote_slack", false);
         let disabled = table
             .get("disabled_mcp_servers")
             .and_then(|v| v.as_array())
@@ -2729,11 +2729,11 @@ enabled = true
         assert_eq!(disabled.len(), 1);
         assert_eq!(
             disabled.first().and_then(|v| v.as_str()),
-            Some("grok_com_slack")
+            Some("remote_slack")
         );
         assert!(table.get("mcp_servers").is_none());
 
-        apply_mcp_server_enabled(table, "grok_com_slack", true);
+        apply_mcp_server_enabled(table, "remote_slack", true);
         assert!(table.get("disabled_mcp_servers").is_none());
         assert!(table.get("mcp_servers").is_none());
     }
@@ -2772,8 +2772,8 @@ enabled = false
         let tmp = tempfile::tempdir().unwrap();
         git2::Repository::init(tmp.path()).unwrap();
         let nested = tmp.path().join("pkg");
-        std::fs::create_dir_all(nested.join(".grok")).unwrap();
-        std::fs::create_dir_all(tmp.path().join(".grok")).unwrap();
+        std::fs::create_dir_all(nested.join(".ezer")).unwrap();
+        std::fs::create_dir_all(tmp.path().join(".ezer")).unwrap();
 
         let sticky = r#"
 # keep me
@@ -2781,8 +2781,8 @@ enabled = false
 command = "npx"
 enabled = false
 "#;
-        let ancestor = tmp.path().join(".grok").join("config.toml");
-        let nearer = nested.join(".grok").join("config.toml");
+        let ancestor = tmp.path().join(".ezer").join("config.toml");
+        let nearer = nested.join(".ezer").join("config.toml");
         std::fs::write(&ancestor, sticky).unwrap();
         std::fs::write(&nearer, sticky).unwrap();
 
@@ -2828,7 +2828,7 @@ enabled = false
     #[tokio::test]
     async fn restore_mcp_server_enabled_after_enable_scopes_tiers() {
         // Hermetic: only touch a temp project path
-        // Do not call save_mcp_server_enabled_in (that reads ambient config_path / grok_home)
+        // Do not call save_mcp_server_enabled_in (that reads ambient config_path / ezer_home)
         let project = tempfile::tempdir().unwrap();
         let project_cfg = project.path().join("config.toml");
         std::fs::write(
@@ -2866,7 +2866,7 @@ enabled = false
     async fn project_enable_replaces_config_symlink_not_referent() {
         let tmp = tempfile::tempdir().unwrap();
         git2::Repository::init(tmp.path()).unwrap();
-        let ezer = tmp.path().join(".grok");
+        let ezer = tmp.path().join(".ezer");
         std::fs::create_dir_all(&ezer).unwrap();
         let outside = tmp.path().join("outside.toml");
         std::fs::write(
@@ -2909,7 +2909,7 @@ enabled = false
     #[serial_test::serial]
     async fn persist_mcp_toml_follows_user_config_symlink() {
         let home = tempfile::tempdir().unwrap();
-        let _env = ezer_test_support::EnvGuard::set("GROK_HOME", home.path());
+        let _env = ezer_test_support::EnvGuard::set("EZER_HOME", home.path());
         let outside = home.path().join("dotfiles").join("config.toml");
         std::fs::create_dir_all(outside.parent().unwrap()).unwrap();
         std::fs::write(&outside, "[mcp_servers.keep]\ncommand = \"true\"\n").unwrap();
@@ -2947,7 +2947,7 @@ enabled = false
     #[serial_test::serial]
     async fn save_mcp_server_config_at_refuses_unparseable() {
         let home = tempfile::tempdir().unwrap();
-        let _env = ezer_test_support::EnvGuard::set("GROK_HOME", home.path());
+        let _env = ezer_test_support::EnvGuard::set("EZER_HOME", home.path());
         let slot = home.path().join("config.toml");
         std::fs::write(&slot, "not = [valid\n").unwrap();
         let err = save_mcp_server_config_at(&config_path(), "svc", &test_stdio_server())
@@ -2970,7 +2970,7 @@ enabled = false
     #[serial_test::serial]
     async fn save_mcp_server_config_at_follows_user_symlink() {
         let home = tempfile::tempdir().unwrap();
-        let _env = ezer_test_support::EnvGuard::set("GROK_HOME", home.path());
+        let _env = ezer_test_support::EnvGuard::set("EZER_HOME", home.path());
         let outside = home.path().join("dotfiles").join("config.toml");
         std::fs::create_dir_all(outside.parent().unwrap()).unwrap();
         std::fs::write(&outside, "[mcp_servers.keep]\ncommand = \"true\"\n").unwrap();
@@ -2997,7 +2997,7 @@ enabled = false
     #[serial_test::serial]
     async fn save_mcp_disabled_tools_follows_user_symlink() {
         let home = tempfile::tempdir().unwrap();
-        let _env = ezer_test_support::EnvGuard::set("GROK_HOME", home.path());
+        let _env = ezer_test_support::EnvGuard::set("EZER_HOME", home.path());
         let outside = home.path().join("dotfiles").join("config.toml");
         std::fs::create_dir_all(outside.parent().unwrap()).unwrap();
         std::fs::write(&outside, "[mcp_servers.keep]\ncommand = \"true\"\n").unwrap();
@@ -3025,7 +3025,7 @@ enabled = false
     #[serial_test::serial]
     async fn save_mcp_disabled_tools_refuses_unparseable() {
         let home = tempfile::tempdir().unwrap();
-        let _env = ezer_test_support::EnvGuard::set("GROK_HOME", home.path());
+        let _env = ezer_test_support::EnvGuard::set("EZER_HOME", home.path());
         let slot = home.path().join("config.toml");
         std::fs::write(&slot, "not = [valid\n").unwrap();
         let err = save_mcp_disabled_tools("svc", &["tool_a".to_string()])
@@ -3043,7 +3043,7 @@ enabled = false
     #[serial_test::serial]
     async fn delete_mcp_server_config_at_follows_user_symlink() {
         let home = tempfile::tempdir().unwrap();
-        let _env = ezer_test_support::EnvGuard::set("GROK_HOME", home.path());
+        let _env = ezer_test_support::EnvGuard::set("EZER_HOME", home.path());
         let outside = home.path().join("dotfiles").join("config.toml");
         std::fs::create_dir_all(outside.parent().unwrap()).unwrap();
         std::fs::write(
@@ -3076,7 +3076,7 @@ enabled = false
     #[serial_test::serial]
     async fn delete_mcp_server_config_at_refuses_unparseable() {
         let home = tempfile::tempdir().unwrap();
-        let _env = ezer_test_support::EnvGuard::set("GROK_HOME", home.path());
+        let _env = ezer_test_support::EnvGuard::set("EZER_HOME", home.path());
         let slot = home.path().join("config.toml");
         std::fs::write(&slot, "not = [valid\n").unwrap();
         let err = delete_mcp_server_config_at(&config_path(), "svc")

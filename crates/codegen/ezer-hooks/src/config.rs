@@ -416,7 +416,7 @@ pub fn parse_hooks_from_value_with_dir(
 pub fn parse_hooks_from_config_layers(
     layers: &[ezer_config::HookConfigLayer],
 ) -> (Vec<HookSpec>, Vec<HookError>) {
-    let home = ezer_config::user_grok_home();
+    let home = ezer_config::user_ezer_home();
     let mut all_specs = Vec::new();
     let mut all_errors = Vec::new();
 
@@ -1304,13 +1304,13 @@ mod tests {
     fn source_dir_from_file_path() {
         let json =
             r#"{"hooks":{"SessionStart":[{"hooks":[{"type":"command","command":"x.sh"}]}]}}"#;
-        let (specs, _) = parse_hook_file(json, Path::new("/home/user/.grok/hooks/safety.json"));
+        let (specs, _) = parse_hook_file(json, Path::new("/home/user/.ezer/hooks/safety.json"));
         assert_eq!(
             specs
                 .first()
                 .unwrap_or_else(|| panic!("expected specs item 0: {specs:?}"))
                 .source_dir,
-            PathBuf::from("/home/user/.grok/hooks")
+            PathBuf::from("/home/user/.ezer/hooks")
         );
     }
 
@@ -1417,7 +1417,7 @@ mod tests {
 
     #[test]
     fn parse_hook_file_expands_env_var_in_command_from_process_env() {
-        let key = "GROK_HOOKS_PARSE_TEST_CMD_PROC_ENV";
+        let key = "EZER_HOOKS_PARSE_TEST_CMD_PROC_ENV";
         with_env_var(key, Some("/usr/local"), || {
             let json = format!(
                 r#"{{
@@ -1451,7 +1451,7 @@ mod tests {
 
     #[test]
     fn parse_hook_file_expands_env_var_in_url_from_process_env() {
-        let key = "GROK_HOOKS_PARSE_TEST_URL_PROC_ENV";
+        let key = "EZER_HOOKS_PARSE_TEST_URL_PROC_ENV";
         with_env_var(key, Some("hooks.example.com"), || {
             let json = format!(
                 r#"{{
@@ -1580,7 +1580,7 @@ mod tests {
 
     #[test]
     fn parse_hook_file_preserves_unresolved_env_refs_in_command() {
-        let key = "GROK_HOOKS_PARSE_TEST_NEVER_SET_AT_LOAD_TIME";
+        let key = "EZER_HOOKS_PARSE_TEST_NEVER_SET_AT_LOAD_TIME";
         with_env_var(key, None, || {
             let json = format!(
                 r#"{{
@@ -1608,7 +1608,7 @@ mod tests {
 
     #[test]
     fn parse_hook_file_preserves_unresolved_env_refs_in_url() {
-        let key = "GROK_HOOKS_PARSE_TEST_URL_NEVER_SET_AT_LOAD_TIME";
+        let key = "EZER_HOOKS_PARSE_TEST_URL_NEVER_SET_AT_LOAD_TIME";
         with_env_var(key, None, || {
             let json = format!(
                 r#"{{
@@ -1691,7 +1691,7 @@ mod tests {
 
     #[test]
     fn parse_hook_file_matcher_is_not_env_expanded() {
-        let key = "GROK_HOOKS_PARSE_TEST_MATCHER_VAR";
+        let key = "EZER_HOOKS_PARSE_TEST_MATCHER_VAR";
         with_env_var(key, Some("expanded_value_should_not_appear"), || {
             let pattern = format!("foo{key}");
             let json = serde_json::json!({
@@ -1792,10 +1792,10 @@ mod tests {
         assert!(errors.is_empty(), "unexpected errors: {errors:?}");
         assert_eq!(specs.len(), 1);
         for reserved in [
-            "GROK_HOOK_EVENT",
-            "GROK_HOOK_NAME",
-            "GROK_SESSION_ID",
-            "GROK_WORKSPACE_ROOT",
+            "EZER_HOOK_EVENT",
+            "EZER_HOOK_NAME",
+            "EZER_SESSION_ID",
+            "EZER_WORKSPACE_ROOT",
             "CLAUDE_PROJECT_DIR",
         ] {
             assert!(

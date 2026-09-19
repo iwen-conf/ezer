@@ -38,7 +38,7 @@ impl CompactionTarget {
 
 /// Minimal interface the compaction orchestrator needs from the agent's
 /// stream processor. Implemented by ezer chat's
-/// `StreamProcessor` (`Item = Arc<GrokTurn>`).
+/// `StreamProcessor` (`Item = Arc<EzerTurn>`).
 ///
 /// Two read-views are exposed:
 ///
@@ -89,7 +89,7 @@ pub trait CompactionStreamProc: Send + Sync {
     ///
     /// The `Self::Item: Send` bound lets the default hold the history vec across
     /// the second `await` while keeping the boxed future `Send`; every concrete
-    /// item type (`Arc<GrokTurn>`) already satisfies it.
+    /// item type (`Arc<EzerTurn>`) already satisfies it.
     async fn get_all_turns_for_compaction(&self) -> Vec<Self::Item>
     where
         Self::Item: Send,

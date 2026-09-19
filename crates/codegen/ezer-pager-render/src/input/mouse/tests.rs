@@ -1304,7 +1304,7 @@ fn debug_snapshot_tracks_stream_lifecycle_without_mutating() {
 
 #[test]
 fn scroll_log_records_flood_flushes_and_capped_finalize_drop() {
-    // GROK_SCROLL_LOG: a trackpad flood on the synthetic clock must produce parseable JSONL ordered stream_start, then flushes, then finalize
+    // EZER_SCROLL_LOG: a trackpad flood on the synthetic clock must produce parseable JSONL ordered stream_start, then flushes, then finalize
     // ts_ms must sit on the state machine's own timeline, and the finalize's flushed/dropped/backlog_after must be mutually consistent
     // Recording must not change delivered lines (pure-observation invariant)
     let config = make_config(3, ScrollInputMode::Trackpad);

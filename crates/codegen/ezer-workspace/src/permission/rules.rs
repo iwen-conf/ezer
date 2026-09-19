@@ -202,7 +202,7 @@ pub fn parse_permission_rule(
             });
         }
 
-        // `.claude` `mcp__<server>[__<tool>]` spelling: strip `mcp__` and rewrite onto Grok's unprefixed `<server>__<tool>` names
+        // `.claude` `mcp__<server>[__<tool>]` spelling: strip `mcp__` and rewrite onto Ezer's unprefixed `<server>__<tool>` names
         // Otherwise the literal falls through to `ToolFilter::Any` and matches nothing; a bare `mcp__` still falls through
         if let Some(rest) = rule.strip_prefix("mcp__")
             && !rest.is_empty()
@@ -211,7 +211,7 @@ pub fn parse_permission_rule(
                 // `*` covers every MCP tool, so the rule is tool-wide (no pattern)
                 None
             } else if rest.contains("__") {
-                // The rest is already `<server>__<tool>` (or `<server>__*`), the Grok qualified name, so use it verbatim
+                // The rest is already `<server>__<tool>` (or `<server>__*`), the Ezer qualified name, so use it verbatim
                 // Server names may contain single underscores, but `__` only ever separates server from tool
                 Some(rest.to_string())
             } else {

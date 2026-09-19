@@ -10,7 +10,7 @@ pub struct ExternalAuthOutput {
     pub refresh_token: Option<String>,
     #[serde(default)]
     pub expires_in: Option<u64>,
-    /// An xAI issuer marks the credential as first-party (see [`crate::GrokAuth::is_xai_auth`]).
+    /// An xAI issuer marks the credential as first-party (see [`crate::EzerAuth::is_xai_auth`]).
     #[serde(default)]
     pub issuer: Option<String>,
 }

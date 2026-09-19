@@ -16,7 +16,7 @@ pub(crate) use version_mismatch::{is_version_mismatch_banner, version_mismatch_b
 /// TUI dispatch, headless dispatch, and the session-load ACP barrier all share this list.
 /// A new method thus cannot be handled in one path and classified `Unrelated` in another.
 pub(crate) fn is_session_update_ext_method(method: &str) -> bool {
-    matches!(method, "x.ai/session_notification" | "x.ai/session/update")
+    matches!(method, "ezer/session_notification" | "ezer/session/update")
 }
 use crate::client_identity::{HEADLESS_CLIENT_TYPE, PAGER_CLIENT_TYPE, PAGER_CLIENT_VERSION};
 use agent_client_protocol as acp;
@@ -89,7 +89,7 @@ pub struct AcpConnection {
     /// Available models and current selection.
     pub models: ModelState,
     /// Whether the agent is a ezer-shell instance.
-    pub is_grok_shell: bool,
+    pub is_ezer_shell_dir: bool,
     /// Auth methods advertised by the agent.
     pub auth_methods: Vec<acp::AuthMethod>,
     /// Cancellation token to stop the agent.
@@ -101,7 +101,7 @@ pub struct AcpConnection {
     /// Seeded into every new `AgentSession` so autocomplete has shell builtins and skills immediately, before any `AvailableCommandsUpdate` arrives.
     pub available_commands: Vec<acp::AvailableCommand>,
     pub needs_login: bool,
-    /// Login button label from `AuthMethod.name` (e.g., "grok.com", "Acme Corp").
+    /// Login button label from `AuthMethod.name` (e.g., "example.test", "Acme Corp").
     pub login_label: Option<String>,
     /// The auth method ID to use for login (copied from the first advertised method).
     pub login_method_id: Option<acp::AuthMethodId>,
@@ -115,7 +115,7 @@ pub struct AcpConnection {
     /// Whether cancel-rewind is enabled (resolved by shell from config layers).
     pub cancel_rewind_enabled: bool,
     /// Whether the session-recap feature is rolled out for this connection. The client gates its automatic away-recap
-    /// poll and the manual `/recap` on this so a disabled feature produces zero `x.ai/recap` traffic.
+    /// poll and the manual `/recap` on this so a disabled feature produces zero `ezer/recap` traffic.
     pub session_recap_available: bool,
     /// Shell-side feedback trace-offer eligibility (see `feedbackTraceOffer`).
     pub feedback_trace_offer: bool,
@@ -140,7 +140,7 @@ pub struct ConnectFlags {
     pub laziness_debug_log: Option<std::path::PathBuf>,
     /// Storage mode override.
     pub storage_mode: Option<String>,
-    /// Whether this client will draw a status row, advertised as `x.ai/statusLine` so the agent can skip an unpainted payload.
+    /// Whether this client will draw a status row, advertised as `ezer/statusLine` so the agent can skip an unpainted payload.
     pub status_line: bool,
     /// Client identifier for ACP Initialize metadata.
     pub client_identifier: Option<String>,
@@ -217,7 +217,7 @@ pub async fn connect(cancel: &CancellationToken, flags: ConnectFlags) -> Result<
         interactivity: Interactivity::Interactive,
     });
     let memory_config = agent_config.memory_config.clone();
-    let spawned = spawn::spawn_grok_shell(agent_config, cancel, memory_config).await?;
+    let spawned = spawn::spawn_ezer_shell(agent_config, cancel, memory_config).await?;
     let auth_manager = spawned.auth_manager.clone();
     initialize_connection(AgentEndpoint::from(spawned), &flags, auth_manager).await
 }
@@ -258,7 +258,7 @@ pub(in crate::acp) async fn initialize_connection(
         tx,
         rx,
         models: agent.models,
-        is_grok_shell: agent.is_grok_shell,
+        is_ezer_shell_dir: agent.is_ezer_shell_dir,
         auth_methods: agent.auth_methods,
         cancel,
         agent_thread,
@@ -300,7 +300,7 @@ pub async fn connect_via_leader(
         .client_identifier
         .as_deref()
         .unwrap_or(HEADLESS_CLIENT_TYPE);
-    let env_urls = ezer_shell::leader::LeaderEnvUrls::from(&agent_config.grok_com_config);
+    let env_urls = ezer_shell::leader::LeaderEnvUrls::from(&agent_config.ezer_com_config);
     let capabilities = ClientCapabilities {
         yolo_mode: flags.default_yolo_mode,
         auto_mode: flags.default_auto_mode && !flags.default_yolo_mode,
@@ -339,8 +339,8 @@ pub async fn connect_via_leader(
         ReconnectPolicy::unbounded(),
     )?;
     let auth_manager = std::sync::Arc::new(ezer_login::AuthManager::new_with_proxy_base_url(
-        &ezer_shell::util::grok_home::grok_home(),
-        agent_config.grok_com_config.clone(),
+        &ezer_shell::util::ezer_home::ezer_home(),
+        agent_config.ezer_com_config.clone(),
         agent_config.endpoints.proxy_url(),
     ));
     set_identity(ProcessIdentity {
@@ -391,7 +391,7 @@ fn unsupported_leader_flags(flags: &ConnectFlags) -> Vec<&'static str> {
 /// Write config.toml fields based on CLI flags.
 pub(super) fn apply_config_writes(flags: &ConnectFlags) {
     let config_path =
-        ezer_shell::util::grok_home::grok_home().join(ezer_config::USER_CONFIG_FILENAME);
+        ezer_shell::util::ezer_home::ezer_home().join(ezer_config::USER_CONFIG_FILENAME);
     let content = std::fs::read_to_string(&config_path).unwrap_or_default();
     let mut doc = content
         .parse::<toml_edit::DocumentMut>()
@@ -444,10 +444,10 @@ fn client_capabilities_meta(flags: &ConnectFlags) -> serde_json::Value {
     let hunk_mode =
         crate::settings::canonical_hunk_tracker_mode(flags.hunk_tracker_mode.as_deref());
     let mut meta = serde_json::json!({
-        "x.ai/incrementalBashOutput": true,
-        "x.ai/hunkTracker": { "mode": hunk_mode },
-        "x.ai/bashOutputNoColor": true,
-        "x.ai/gitHeadChanged": true,
+        "ezer/incrementalBashOutput": true,
+        "ezer/hunkTracker": { "mode": hunk_mode },
+        "ezer/bashOutputNoColor": true,
+        "ezer/gitHeadChanged": true,
     });
     if let Some(obj) = meta.as_object_mut() {
         obj.insert(
@@ -472,7 +472,7 @@ pub fn parse_default_auth_method_id(meta: Option<&acp::Meta>) -> Option<acp::Aut
 /// The parsed `InitializeResponse`, shared by `connect` and `connect_via_leader`.
 pub(crate) struct InitializedAgent {
     pub(crate) models: ModelState,
-    pub(crate) is_grok_shell: bool,
+    pub(crate) is_ezer_shell_dir: bool,
     pub(crate) auth_methods: Vec<acp::AuthMethod>,
     pub(crate) default_auth_method_id: Option<acp::AuthMethodId>,
     pub(crate) available_commands: Vec<acp::AvailableCommand>,
@@ -498,10 +498,10 @@ async fn initialize(tx: &AcpAgentTx, flags: &ConnectFlags) -> Result<Initialized
         let _timer = ezer_telemetry::instrumentation::timer("acp_init.initialize_roundtrip");
         acp_send(req, tx).await?
     };
-    let is_grok_shell = resp
+    let is_ezer_shell_dir = resp
         .meta
         .as_ref()
-        .and_then(|m| m.get("grokShell"))
+        .and_then(|m| m.get("ezerShell"))
         .and_then(|v| v.as_bool())
         .unwrap_or(false);
     let models: ModelState = resp
@@ -522,7 +522,7 @@ async fn initialize(tx: &AcpAgentTx, flags: &ConnectFlags) -> Result<Initialized
     let default_auth_method_id = parse_default_auth_method_id(resp.meta.as_ref());
     Ok(InitializedAgent {
         models,
-        is_grok_shell,
+        is_ezer_shell_dir,
         auth_methods: resp.auth_methods,
         default_auth_method_id,
         available_commands,
@@ -587,7 +587,7 @@ pub fn startup_auth_metadata(
 }
 /// Find an interactive login method from the auth methods list.
 /// Used when eager auth (cached_token or API key) fails and we need to fall back to the welcome screen with a working login button.
-/// Scans the list for a `grok.com` or `oidc` method; these are the ones that can trigger a browser-based re-auth flow.
+/// Scans the list for a `ezer.com` or `oidc` method; these are the ones that can trigger a browser-based re-auth flow.
 pub fn find_interactive_login_method(
     auth_methods: &[acp::AuthMethod],
 ) -> (Option<String>, Option<acp::AuthMethodId>, AuthStartMode) {
@@ -756,9 +756,9 @@ mod tests {
     use super::*;
     #[test]
     fn is_session_update_ext_method_covers_both_carriers() {
-        assert!(is_session_update_ext_method("x.ai/session_notification"));
-        assert!(is_session_update_ext_method("x.ai/session/update"));
-        assert!(!is_session_update_ext_method("x.ai/task_completed"));
+        assert!(is_session_update_ext_method("ezer/session_notification"));
+        assert!(is_session_update_ext_method("ezer/session/update"));
+        assert!(!is_session_update_ext_method("ezer/task_completed"));
         assert!(!is_session_update_ext_method("session/update"));
     }
     #[test]
@@ -788,7 +788,7 @@ mod tests {
     }
     #[test]
     fn parse_available_commands_missing_key_returns_empty() {
-        let meta = serde_json::json!({ "grokShell": true });
+        let meta = serde_json::json!({ "ezerShell": true });
         let cmds = parse_available_commands(meta.as_object());
         assert!(cmds.is_empty());
     }
@@ -817,7 +817,7 @@ mod tests {
     }
     #[test]
     fn parse_session_recap_available_defaults_off_when_missing() {
-        let meta = serde_json::json!({ "grokShell": true, "cancelRewind": true });
+        let meta = serde_json::json!({ "ezerShell": true, "cancelRewind": true });
         assert!(!parse_session_recap_available(meta.as_object()));
         assert!(!parse_session_recap_available(None));
     }
@@ -842,26 +842,26 @@ mod tests {
         assert_eq!(mode, AuthStartMode::Pending);
     }
     #[test]
-    fn startup_auth_grok_com_no_provider_needs_login_pending() {
-        let methods = vec![make_auth_method("grok.com", "grok.com", None)];
+    fn startup_auth_ezer_com_no_provider_needs_login_pending() {
+        let methods = vec![make_auth_method("example.test", "example.test", None)];
         let (needs, label, method_id, mode) = startup_auth_metadata(&methods);
         assert!(needs);
-        assert_eq!(label.as_deref(), Some("grok.com"));
-        assert_eq!(method_id.as_ref().unwrap().0.as_ref(), "grok.com");
+        assert_eq!(label.as_deref(), Some("example.test"));
+        assert_eq!(method_id.as_ref().unwrap().0.as_ref(), "example.test");
         assert_eq!(mode, AuthStartMode::Pending);
     }
     #[test]
-    fn startup_auth_grok_com_with_external_provider_command() {
+    fn startup_auth_ezer_com_with_external_provider_command() {
         let meta = serde_json::json!({ "external_provider": true });
-        let methods = vec![make_auth_method("grok.com", "Acme Corp", Some(meta))];
+        let methods = vec![make_auth_method("example.test", "Acme Corp", Some(meta))];
         let (needs, label, method_id, mode) = startup_auth_metadata(&methods);
         assert!(needs);
         assert_eq!(label.as_deref(), Some("Acme Corp"));
-        assert_eq!(method_id.as_ref().unwrap().0.as_ref(), "grok.com");
+        assert_eq!(method_id.as_ref().unwrap().0.as_ref(), "example.test");
         assert_eq!(mode, AuthStartMode::Command);
     }
     #[test]
-    fn startup_auth_non_grok_com_no_login() {
+    fn startup_auth_non_ezer_com_no_login() {
         let methods = vec![make_auth_method("api-key", "API Key", None)];
         let (needs, label, method_id, mode) = startup_auth_metadata(&methods);
         assert!(!needs);
@@ -909,13 +909,13 @@ mod tests {
         let (needs, _, _, _) = startup_auth_metadata(&methods);
         assert!(
             needs,
-            "with grok.com first, the pager must require login -- pinning \
+            "with ezer.com first, the pager must require login -- pinning \
              the BAD-ordering failure mode (xai.api_key not first)",
         );
     }
     #[test]
     fn startup_auth_method_id_is_copied_not_synthesized() {
-        let methods = vec![make_auth_method("grok.com", "My Login", None)];
+        let methods = vec![make_auth_method("example.test", "My Login", None)];
         let (_, _, method_id, _) = startup_auth_metadata(&methods);
         let Some(first) = methods.first() else {
             panic!("expected an auth method");
@@ -925,7 +925,7 @@ mod tests {
     #[test]
     fn startup_auth_external_provider_false_is_pending() {
         let meta = serde_json::json!({ "external_provider": false });
-        let methods = vec![make_auth_method("grok.com", "grok.com", Some(meta))];
+        let methods = vec![make_auth_method("example.test", "example.test", Some(meta))];
         let (_, _, _, mode) = startup_auth_metadata(&methods);
         assert_eq!(mode, AuthStartMode::Pending);
     }
@@ -1017,7 +1017,7 @@ mod tests {
         let absent = client_capabilities_meta(&ConnectFlags::default());
         assert_eq!(
             absent
-                .get("x.ai/hunkTracker")
+                .get("ezer/hunkTracker")
                 .and_then(|v| v.get("mode"))
                 .and_then(|v| v.as_str()),
             Some("off")
@@ -1028,7 +1028,7 @@ mod tests {
         });
         assert_eq!(
             blank
-                .get("x.ai/hunkTracker")
+                .get("ezer/hunkTracker")
                 .and_then(|v| v.get("mode"))
                 .and_then(|v| v.as_str()),
             Some("off")
@@ -1067,7 +1067,7 @@ mod tests {
                 ..Default::default()
             });
             assert_eq!(
-                meta.get("x.ai/hunkTracker")
+                meta.get("ezer/hunkTracker")
                     .and_then(|v| v.get("mode"))
                     .and_then(|v| v.as_str()),
                 Some("off"),

@@ -10,7 +10,7 @@ terminal:
   cols: 120
 environment:
   env:
-    - key: GROK_AGENT_DASHBOARD
+    - key: EZER_AGENT_DASHBOARD
       value: "1"
 mock:
   response: "GBT6092_OVERLAY_PEEK conversation body from the mock inference server."

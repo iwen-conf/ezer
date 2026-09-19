@@ -1736,9 +1736,9 @@ mod tests {
     fn remove_with_delegate_deregisters_plain_worktree_without_calling_delegate() {
         xai_test_utils::require_git!();
         use xai_test_utils::git::{git_commit_all, init_git_repo};
-        // Isolate GROK_HOME so the post-removal unregister writes to a private DB.
+        // Isolate EZER_HOME so the post-removal unregister writes to a private DB.
         #[cfg(feature = "metadata")]
-        let _fx = crate::db::GrokHomeFixture::new();
+        let _fx = crate::db::EzerHomeFixture::new();
 
         let tmp = tempfile::TempDir::new().unwrap();
         let repo = tmp.path().join("repo");
@@ -1784,7 +1784,7 @@ mod tests {
         xai_test_utils::require_git!();
         use xai_test_utils::git::{git_commit_all, init_git_repo};
         #[cfg(feature = "metadata")]
-        let _fx = crate::db::GrokHomeFixture::new();
+        let _fx = crate::db::EzerHomeFixture::new();
 
         let tmp = tempfile::TempDir::new().unwrap();
         let repo = tmp.path().join("repo");
@@ -1835,7 +1835,7 @@ mod tests {
     #[test]
     fn non_registration_directory_not_removed() {
         #[cfg(feature = "metadata")]
-        let _fx = crate::db::GrokHomeFixture::new();
+        let _fx = crate::db::EzerHomeFixture::new();
 
         let tmp = tempfile::TempDir::new().unwrap();
         let wt = tmp.path().join("wt");

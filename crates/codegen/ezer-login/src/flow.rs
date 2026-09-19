@@ -1,23 +1,23 @@
 use crate::backend::{ActiveAuthBackend, AuthBackend, LoginRequest};
 use crate::config::LEGACY_AUTH_SCOPE;
-use crate::{AuthManager, GrokAuth, GrokComConfig, parse_output};
+use crate::{AuthManager, EzerAuth, EzerComConfig, parse_output};
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::Arc;
 use tokio::io::AsyncBufReadExt as _;
 use tokio::sync::{mpsc, oneshot};
 use ezer_http::TransportFailureKind;
-use ezer_shell_base::util::grok_home;
+use ezer_shell_base::util::ezer_home;
 use ezer_telemetry::events::{LoginFailed, LoginFailureKind};
 pub type StderrCallback = Box<dyn Fn(&str)>;
 /// Reject a cached credential that lacks `oidc_issuer`, has a mismatched issuer, or whose team principal violates the `force_login_team_uuid` pin.
 /// Interactive login then starts fresh instead of reusing a stale or wrong-team session.
-fn is_cached_credential_compatible(auth: &GrokAuth, grok_com_config: &GrokComConfig) -> bool {
-    let expected_issuer = grok_com_config
+fn is_cached_credential_compatible(auth: &EzerAuth, ezer_com_config: &EzerComConfig) -> bool {
+    let expected_issuer = ezer_com_config
         .oidc
         .as_ref()
         .map(|c| c.issuer.as_str())
-        .or_else(|| grok_com_config.oauth2.as_ref().map(|c| c.issuer.as_str()));
+        .or_else(|| ezer_com_config.oauth2.as_ref().map(|c| c.issuer.as_str()));
     let issuer_compatible = match (auth.oidc_issuer.as_deref(), expected_issuer) {
         (Some(actual), Some(expected)) => actual == expected,
         (None, Some(_)) => false,
@@ -26,7 +26,7 @@ fn is_cached_credential_compatible(auth: &GrokAuth, grok_com_config: &GrokComCon
     if !issuer_compatible {
         return false;
     }
-    if let Some(policy) = crate::oidc::login_principal_policy(grok_com_config) {
+    if let Some(policy) = crate::oidc::login_principal_policy(ezer_com_config) {
         let actual = crate::oidc::peek_access_token_principal_id(&auth.key);
         if crate::oidc::enforce_login_principal(Some(&policy), actual.as_deref()).is_err() {
             return false;
@@ -89,7 +89,7 @@ fn resolve_device_flow(
 /// Whether `run_cli_login` should use the device flow for `config`: only the xAI OAuth2 provider supports it.
 /// Enterprise OIDC (`oidc=Some`) always uses the loopback flow, mirroring `run_auth_flow_inner`'s precedence.
 async fn cli_should_use_device(
-    config: &GrokComConfig,
+    config: &EzerComConfig,
     config_device_flow: Option<bool>,
     login_override: LoginTransportOverride,
     proxy_base_url: &str,
@@ -132,7 +132,7 @@ async fn should_use_device_flow(
     );
     resolved.value
 }
-/// How login presents itself; sent to the TUI via `x.ai/auth/get_url`.
+/// How login presents itself; sent to the TUI via `ezer/auth/get_url`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AuthUrlMode {
     /// Loopback-callback flow: the TUI shows a copyable URL and a paste box.
@@ -143,7 +143,7 @@ pub enum AuthUrlMode {
     Device,
 }
 impl AuthUrlMode {
-    /// Wire string for the `x.ai/auth/get_url` ACP response.
+    /// Wire string for the `ezer/auth/get_url` ACP response.
     pub fn as_wire_str(self) -> &'static str {
         match self {
             Self::Loopback => "loopback",
@@ -172,7 +172,7 @@ pub async fn run_external_auth_provider(
     auth_manager: &Arc<AuthManager>,
     over_stale_credential: bool,
     on_stderr: Option<StderrCallback>,
-) -> anyhow::Result<(GrokAuth, bool)> {
+) -> anyhow::Result<(EzerAuth, bool)> {
     let inherit_stderr = on_stderr.is_none();
     tracing::info!(
         cmd = %command,
@@ -231,7 +231,7 @@ pub async fn run_external_auth_provider(
     }
     let mut auth = parse_output(&output)
         .map_err(|e| anyhow::anyhow!("external auth provider `{command}`: {e}"))?;
-    let principal_policy = crate::oidc::login_principal_policy(auth_manager.grok_com_config());
+    let principal_policy = crate::oidc::login_principal_policy(auth_manager.ezer_com_config());
     crate::oidc::enforce_login_principal(
         principal_policy.as_ref(),
         crate::oidc::peek_access_token_principal_id(&auth.key).as_deref(),
@@ -254,13 +254,13 @@ pub async fn run_external_auth_provider(
 /// GUI auth: bridges external provider stderr to `url_tx`, pipes code submission via `code_rx`.
 pub async fn run_auth_flow_with_stderr_bridge(
     auth_manager: &Arc<AuthManager>,
-    grok_com_config: &GrokComConfig,
+    ezer_com_config: &EzerComConfig,
     config_device_flow: Option<bool>,
     channels: AuthChannels,
     reauth: bool,
     force_interactive: bool,
     login_override: LoginTransportOverride,
-) -> anyhow::Result<(GrokAuth, bool)> {
+) -> anyhow::Result<(EzerAuth, bool)> {
     let url_tx = Rc::new(RefCell::new(channels.url_tx));
     let stderr_lines: Rc<RefCell<Vec<String>>> = Rc::new(RefCell::new(Vec::new()));
     let writer = stderr_lines.clone();
@@ -299,7 +299,7 @@ pub async fn run_auth_flow_with_stderr_bridge(
     if force_interactive {
         let auth = run_auth_flow_interactive(
             auth_manager,
-            grok_com_config,
+            ezer_com_config,
             config_device_flow,
             Some(on_stderr),
             Some(url_tx),
@@ -316,7 +316,7 @@ pub async fn run_auth_flow_with_stderr_bridge(
     } else {
         let auth = run_auth_flow(
             auth_manager,
-            grok_com_config,
+            ezer_com_config,
             config_device_flow,
             reauth,
             Some(on_stderr),
@@ -337,17 +337,17 @@ pub async fn run_auth_flow_with_stderr_bridge(
 /// When `url_tx` and `code_rx` are `None`, falls back to stderr/stdin (CLI mode).
 pub async fn run_auth_flow(
     auth_manager: &Arc<AuthManager>,
-    grok_com_config: &GrokComConfig,
+    ezer_com_config: &EzerComConfig,
     config_device_flow: Option<bool>,
     reauth: bool,
     on_stderr: Option<StderrCallback>,
     url_tx: Option<Rc<RefCell<Option<oneshot::Sender<AuthUrlInfo>>>>>,
     code_rx: Option<mpsc::Receiver<String>>,
     login_override: LoginTransportOverride,
-) -> anyhow::Result<(GrokAuth, bool)> {
+) -> anyhow::Result<(EzerAuth, bool)> {
     run_auth_flow_inner(
         auth_manager,
-        grok_com_config,
+        ezer_com_config,
         config_device_flow,
         reauth,
         false,
@@ -362,16 +362,16 @@ pub async fn run_auth_flow(
 /// Used by `/login` for mid-session re-auth where abandoning the flow must not disrupt the session.
 pub async fn run_auth_flow_interactive(
     auth_manager: &Arc<AuthManager>,
-    grok_com_config: &GrokComConfig,
+    ezer_com_config: &EzerComConfig,
     config_device_flow: Option<bool>,
     on_stderr: Option<StderrCallback>,
     url_tx: Option<Rc<RefCell<Option<oneshot::Sender<AuthUrlInfo>>>>>,
     code_rx: Option<mpsc::Receiver<String>>,
     login_override: LoginTransportOverride,
-) -> anyhow::Result<(GrokAuth, bool)> {
+) -> anyhow::Result<(EzerAuth, bool)> {
     run_auth_flow_inner(
         auth_manager,
-        grok_com_config,
+        ezer_com_config,
         config_device_flow,
         false,
         true,
@@ -387,7 +387,7 @@ pub async fn run_auth_flow_interactive(
 /// The reporting never changes the result.
 async fn run_auth_flow_inner(
     auth_manager: &Arc<AuthManager>,
-    grok_com_config: &GrokComConfig,
+    ezer_com_config: &EzerComConfig,
     config_device_flow: Option<bool>,
     reauth: bool,
     force_interactive: bool,
@@ -395,11 +395,11 @@ async fn run_auth_flow_inner(
     url_tx: Option<Rc<RefCell<Option<oneshot::Sender<AuthUrlInfo>>>>>,
     code_rx: Option<mpsc::Receiver<String>>,
     login_override: LoginTransportOverride,
-) -> anyhow::Result<(GrokAuth, bool)> {
+) -> anyhow::Result<(EzerAuth, bool)> {
     let result = ActiveAuthBackend::default()
         .login(LoginRequest {
             auth_manager,
-            grok_com_config,
+            ezer_com_config,
             config_device_flow,
             reauth,
             force_interactive,
@@ -445,7 +445,7 @@ fn failure_kind(transport: TransportFailureKind, is_decode: bool) -> LoginFailur
 }
 pub(super) async fn run_auth_flow_steps(
     auth_manager: &Arc<AuthManager>,
-    grok_com_config: &GrokComConfig,
+    ezer_com_config: &EzerComConfig,
     config_device_flow: Option<bool>,
     reauth: bool,
     force_interactive: bool,
@@ -453,11 +453,11 @@ pub(super) async fn run_auth_flow_steps(
     url_tx: Option<Rc<RefCell<Option<oneshot::Sender<AuthUrlInfo>>>>>,
     code_rx: Option<mpsc::Receiver<String>>,
     login_override: LoginTransportOverride,
-) -> anyhow::Result<(GrokAuth, bool)> {
+) -> anyhow::Result<(EzerAuth, bool)> {
     tracing::info!(
-        has_oidc = grok_com_config.oidc.is_some(),
-        has_oauth2 = grok_com_config.oauth2.is_some(),
-        has_external_auth = grok_com_config.auth_provider_command.is_some(),
+        has_oidc = ezer_com_config.oidc.is_some(),
+        has_oauth2 = ezer_com_config.oauth2.is_some(),
+        has_external_auth = ezer_com_config.auth_provider_command.is_some(),
         reauth,
         "auth: starting auth flow"
     );
@@ -466,7 +466,7 @@ pub(super) async fn run_auth_flow_steps(
         let _ = auth_manager.remove_scope(LEGACY_AUTH_SCOPE);
     }
     if !force_interactive && let Some(auth) = auth_manager.current() {
-        if is_cached_credential_compatible(&auth, grok_com_config) {
+        if is_cached_credential_compatible(&auth, ezer_com_config) {
             tracing::info!(auth_mode = ?auth.auth_mode, "auth: using cached credentials");
             ezer_telemetry::unified_log::info(
                 "auth: using cached credentials",
@@ -505,7 +505,7 @@ pub(super) async fn run_auth_flow_steps(
             })),
         );
         if disk_auth.as_ref().is_some_and(|d| {
-            !crate::is_expired(d) && is_cached_credential_compatible(d, grok_com_config)
+            !crate::is_expired(d) && is_cached_credential_compatible(d, ezer_com_config)
         }) {
             ezer_telemetry::unified_log::info(
                 "auth run_auth_flow using valid disk token",
@@ -550,7 +550,7 @@ pub(super) async fn run_auth_flow_steps(
             }
         }
     }
-    if let Some(ref cmd) = grok_com_config.auth_provider_command {
+    if let Some(ref cmd) = ezer_com_config.auth_provider_command {
         let over_stale_credential = reauth || auth_manager.is_expired();
         match run_external_auth_provider(cmd, auth_manager, over_stale_credential, on_stderr).await
         {
@@ -566,10 +566,10 @@ pub(super) async fn run_auth_flow_steps(
     }
     let url_tx = url_tx.and_then(|rc| rc.borrow_mut().take());
     let mut channels = code_rx.map(|code_rx| AuthChannels { url_tx, code_rx });
-    if crate::oidc::is_configured(grok_com_config) {
-        return crate::oidc::run_login_flow(grok_com_config, auth_manager, channels).await;
+    if crate::oidc::is_configured(ezer_com_config) {
+        return crate::oidc::run_login_flow(ezer_com_config, auth_manager, channels).await;
     }
-    if let Some(ref oauth2_cfg) = grok_com_config.oauth2 {
+    if let Some(ref oauth2_cfg) = ezer_com_config.oauth2 {
         if should_use_device_flow(
             login_override,
             config_device_flow,
@@ -617,26 +617,26 @@ pub(super) async fn run_auth_flow_steps(
 /// Tries cached non-expired credentials, then OIDC silent refresh (needs a refresh_token), then the external auth provider command (if configured).
 /// Returns `None` when no valid credentials can be obtained non-interactively.
 pub async fn try_ensure_fresh_auth(
-    grok_com_config: &GrokComConfig,
+    ezer_com_config: &EzerComConfig,
     proxy_base_url: String,
-) -> Option<GrokAuth> {
-    try_ensure_fresh_auth_with(&build_startup_auth_manager(grok_com_config, proxy_base_url)).await
+) -> Option<EzerAuth> {
+    try_ensure_fresh_auth_with(&build_startup_auth_manager(ezer_com_config, proxy_base_url)).await
 }
 /// Builds and configures the startup `AuthManager`; the policy helpers below take it injected so tests can substitute their own.
 fn build_startup_auth_manager(
-    grok_com_config: &GrokComConfig,
+    ezer_com_config: &EzerComConfig,
     proxy_base_url: String,
 ) -> Arc<AuthManager> {
     let auth_manager = Arc::new(AuthManager::new_with_proxy_base_url(
-        &grok_home::grok_home(),
-        grok_com_config.clone(),
+        &ezer_home::ezer_home(),
+        ezer_com_config.clone(),
         proxy_base_url,
     ));
-    auth_manager.configure_refresher(grok_com_config.auth_provider_command.clone(), None);
+    auth_manager.configure_refresher(ezer_com_config.auth_provider_command.clone(), None);
     auth_manager
 }
 /// Uses cached valid credentials, else a silent refresh; never interactive login.
-async fn try_ensure_fresh_auth_with(auth_manager: &Arc<AuthManager>) -> Option<GrokAuth> {
+async fn try_ensure_fresh_auth_with(auth_manager: &Arc<AuthManager>) -> Option<EzerAuth> {
     match auth_manager.auth().await {
         Ok(auth) => Some(auth),
         Err(e) => {
@@ -647,18 +647,18 @@ async fn try_ensure_fresh_auth_with(auth_manager: &Arc<AuthManager>) -> Option<G
 }
 /// Readiness-path auth: a bounded refresh plus the expired-but-refreshable cached session, but no cold mint (which can run a provider command up to `STARTUP_AUTH_TIMEOUT`). Minting is deferred to the post-readiness background task, so readiness waits at most `STARTUP_AUTH_REFRESH_TIMEOUT`.
 pub async fn try_noninteractive_auth_no_mint(
-    grok_com_config: &GrokComConfig,
+    ezer_com_config: &EzerComConfig,
     proxy_base_url: String,
-) -> Option<GrokAuth> {
+) -> Option<EzerAuth> {
     try_noninteractive_auth_no_mint_with(&build_startup_auth_manager(
-        grok_com_config,
+        ezer_com_config,
         proxy_base_url,
     ))
     .await
 }
 /// Policy behind [`try_noninteractive_auth_no_mint`], with the `AuthManager`
 /// injected for tests.
-async fn try_noninteractive_auth_no_mint_with(auth_manager: &Arc<AuthManager>) -> Option<GrokAuth> {
+async fn try_noninteractive_auth_no_mint_with(auth_manager: &Arc<AuthManager>) -> Option<EzerAuth> {
     match tokio::time::timeout(
         ezer_http::STARTUP_AUTH_REFRESH_TIMEOUT,
         try_ensure_fresh_auth_with(auth_manager),
@@ -678,25 +678,25 @@ async fn try_noninteractive_auth_no_mint_with(auth_manager: &Arc<AuthManager>) -
 }
 /// A cached, refreshable session (not BYOK/ApiKey).
 /// Reached only after fresh auth failed, so in practice the token is expired but recoverable on 401.
-fn expired_refreshable_session(auth_manager: &AuthManager) -> Option<GrokAuth> {
+fn expired_refreshable_session(auth_manager: &AuthManager) -> Option<EzerAuth> {
     auth_manager
         .current_or_expired()
         .filter(|a| a.is_xai_auth() && a.refresh_token.is_some())
 }
 /// Cold-start mint via non-interactive providers (external command, devbox); `None` when none is available. Persists the result into `auth_manager` (disk and in-memory) so per-request `auth()` self-heals.
 /// Carries no timeout of its own: the readiness-path caller imposes `STARTUP_AUTH_TIMEOUT`. The leader's background re-mint runs uncapped (only the provider's ~300s ceiling).
-pub async fn mint_session_noninteractive(auth_manager: &Arc<AuthManager>) -> Option<GrokAuth> {
-    let grok_com_config = auth_manager.grok_com_config();
+pub async fn mint_session_noninteractive(auth_manager: &Arc<AuthManager>) -> Option<EzerAuth> {
+    let ezer_com_config = auth_manager.ezer_com_config();
     if !ActiveAuthBackend::default().is_xai_authority() {
         return None;
     }
-    if grok_com_config.blocks_automatic_oidc() {
+    if ezer_com_config.blocks_automatic_oidc() {
         tracing::debug!(
             "mint_session_noninteractive: skipped (preferred_method=api_key blocks automatic OIDC)"
         );
         return None;
     }
-    if let Some(cmd) = grok_com_config.auth_provider_command.as_deref() {
+    if let Some(cmd) = ezer_com_config.auth_provider_command.as_deref() {
         match run_external_auth_provider(cmd, auth_manager, false, None).await {
             Ok((auth, _)) => return Some(auth),
             Err(e) => {
@@ -708,7 +708,7 @@ pub async fn mint_session_noninteractive(auth_manager: &Arc<AuthManager>) -> Opt
 }
 /// Persist a minted token; on persist failure, return it unpersisted rather than dropping a valid credential.
 #[cfg(test)]
-async fn persist_or_use_minted(auth_manager: &AuthManager, new_auth: GrokAuth) -> GrokAuth {
+async fn persist_or_use_minted(auth_manager: &AuthManager, new_auth: EzerAuth) -> EzerAuth {
     match auth_manager.save_without_enrichment(new_auth.clone()).await {
         Ok(auth) => {
             let _ = auth_manager.remove_scope(LEGACY_AUTH_SCOPE);
@@ -721,7 +721,7 @@ async fn persist_or_use_minted(auth_manager: &AuthManager, new_auth: GrokAuth) -
     }
 }
 /// Print the CLI "signed in" confirmation, clearing the spinner line first.
-pub fn report_signed_in(auth: &GrokAuth) {
+pub fn report_signed_in(auth: &EzerAuth) {
     eprint!("\r\x1b[K");
     match auth.email {
         Some(ref email) => eprintln!("✓ Signed in as {email}"),
@@ -730,14 +730,14 @@ pub fn report_signed_in(auth: &GrokAuth) {
 }
 /// CLI auth entrypoint. For GUI, use `run_auth_flow_with_stderr_bridge`.
 pub async fn ensure_authenticated(
-    grok_com_config: &GrokComConfig,
+    ezer_com_config: &EzerComConfig,
     config_device_flow: Option<bool>,
     proxy_base_url: String,
     reauth: bool,
     message_prefix: Option<&str>,
-) -> anyhow::Result<GrokAuth> {
+) -> anyhow::Result<EzerAuth> {
     ensure_authenticated_with_override(
-        grok_com_config,
+        ezer_com_config,
         config_device_flow,
         proxy_base_url,
         reauth,
@@ -749,17 +749,17 @@ pub async fn ensure_authenticated(
 /// Like [`ensure_authenticated`] but with an explicit login-transport override (from `--oauth` / `--device-auth`).
 /// Used by `run_cli_login`.
 pub async fn ensure_authenticated_with_override(
-    grok_com_config: &GrokComConfig,
+    ezer_com_config: &EzerComConfig,
     config_device_flow: Option<bool>,
     proxy_base_url: String,
     reauth: bool,
     message_prefix: Option<&str>,
     login_override: LoginTransportOverride,
-) -> anyhow::Result<GrokAuth> {
-    let grok_home = grok_home::grok_home();
+) -> anyhow::Result<EzerAuth> {
+    let ezer_home = ezer_home::ezer_home();
     let auth_manager = Arc::new(AuthManager::new_with_proxy_base_url(
-        &grok_home,
-        grok_com_config.clone(),
+        &ezer_home,
+        ezer_com_config.clone(),
         proxy_base_url,
     ));
     if !reauth && let Some(auth) = auth_manager.current() {
@@ -775,7 +775,7 @@ pub async fn ensure_authenticated_with_override(
     }
     let (auth, did_auth) = run_auth_flow(
         &auth_manager,
-        grok_com_config,
+        ezer_com_config,
         config_device_flow,
         reauth,
         None,
@@ -792,17 +792,17 @@ pub async fn ensure_authenticated_with_override(
 /// Decides *whether to prompt* for an interactive login (the wire credential is chosen separately by `ShellAuthCredentialProvider`).
 /// With `has_noninteractive_auth`, only refresh a cached token best-effort (no browser, no cold mint); otherwise require an interactive login.
 pub async fn ensure_authenticated_or_noninteractive(
-    grok_com_config: &GrokComConfig,
+    ezer_com_config: &EzerComConfig,
     config_device_flow: Option<bool>,
     proxy_base_url: String,
     has_noninteractive_auth: bool,
     message_prefix: Option<&str>,
-) -> anyhow::Result<Option<GrokAuth>> {
+) -> anyhow::Result<Option<EzerAuth>> {
     if has_noninteractive_auth {
-        Ok(try_ensure_fresh_auth(grok_com_config, proxy_base_url).await)
+        Ok(try_ensure_fresh_auth(ezer_com_config, proxy_base_url).await)
     } else {
         ensure_authenticated(
-            grok_com_config,
+            ezer_com_config,
             config_device_flow,
             proxy_base_url,
             false,
@@ -816,23 +816,23 @@ pub async fn ensure_authenticated_or_noninteractive(
 /// Otherwise `EZER_LOGIN_DEVICE_FLOW` env, then `[auth] login_device_flow` config, then the loopback default.
 /// Both transports run through `run_auth_flow_inner` so the external auth provider and devbox auto-migration are tried first.
 pub async fn run_cli_login(
-    grok_com_config: GrokComConfig,
+    ezer_com_config: EzerComConfig,
     config_device_flow: Option<bool>,
     proxy_base_url: String,
     oauth: bool,
     device_auth: bool,
     devbox: bool,
     configure_telemetry: impl FnOnce(&AuthManager),
-) -> anyhow::Result<GrokAuth> {
+) -> anyhow::Result<EzerAuth> {
     let _ = devbox;
     let auth_manager = Arc::new(AuthManager::new_with_proxy_base_url(
-        &grok_home::grok_home(),
-        grok_com_config.clone(),
+        &ezer_home::ezer_home(),
+        ezer_com_config.clone(),
         proxy_base_url,
     ));
     configure_telemetry(&auth_manager);
     let result = run_cli_login_steps(
-        &grok_com_config,
+        &ezer_com_config,
         config_device_flow,
         &auth_manager,
         oauth,
@@ -844,27 +844,27 @@ pub async fn run_cli_login(
     result
 }
 async fn run_cli_login_steps(
-    grok_com_config: &GrokComConfig,
+    ezer_com_config: &EzerComConfig,
     config_device_flow: Option<bool>,
     auth_manager: &Arc<AuthManager>,
     oauth: bool,
     device_auth: bool,
-) -> anyhow::Result<GrokAuth> {
+) -> anyhow::Result<EzerAuth> {
     let login_override = LoginTransportOverride::from_flags(oauth, device_auth);
     let authenticated = if cli_should_use_device(
-        grok_com_config,
+        ezer_com_config,
         config_device_flow,
         login_override,
         auth_manager.proxy_base_url(),
     )
     .await
     {
-        if grok_com_config.oauth2.is_none() {
+        if ezer_com_config.oauth2.is_none() {
             anyhow::bail!("Sign-in is not available for this deployment. Set XAI_API_KEY instead.");
         }
         let (auth, did_auth) = run_auth_flow_interactive(
             auth_manager,
-            grok_com_config,
+            ezer_com_config,
             config_device_flow,
             None,
             None,
@@ -877,14 +877,14 @@ async fn run_cli_login_steps(
         }
         auth
     } else {
-        if device_auth && crate::oidc::is_configured(grok_com_config) {
+        if device_auth && crate::oidc::is_configured(ezer_com_config) {
             eprintln!(
                 "Device-code login isn't available for your SSO provider; using browser sign-in."
             );
         }
         let (auth, did_auth) = run_auth_flow(
             auth_manager,
-            grok_com_config,
+            ezer_com_config,
             config_device_flow,
             true,
             None,
@@ -1057,20 +1057,20 @@ mod tests {
         };
         f()
     }
-    fn oidc_session(key: &str, refresh: Option<&str>) -> GrokAuth {
-        GrokAuth {
+    fn oidc_session(key: &str, refresh: Option<&str>) -> EzerAuth {
+        EzerAuth {
             key: key.into(),
             auth_mode: AuthMode::Oidc,
             oidc_issuer: Some(XAI_OAUTH2_ISSUER.to_string()),
             refresh_token: refresh.map(str::to_string),
-            ..GrokAuth::test_default()
+            ..EzerAuth::test_default()
         }
     }
     #[test]
     fn expired_refreshable_session_gate() {
         let dir = tempfile::tempdir().unwrap();
-        let mgr = AuthManager::new(dir.path(), GrokComConfig::default());
-        mgr.hot_swap(GrokAuth {
+        let mgr = AuthManager::new(dir.path(), EzerComConfig::default());
+        mgr.hot_swap(EzerAuth {
             expires_at: Some(Utc::now() - chrono::Duration::hours(1)),
             ..oidc_session("expired-but-refreshable", Some("rt"))
         });
@@ -1084,7 +1084,7 @@ mod tests {
         );
         mgr.hot_swap(oidc_session("no-rt", None));
         assert!(expired_refreshable_session(&mgr).is_none());
-        mgr.hot_swap(GrokAuth {
+        mgr.hot_swap(EzerAuth {
             auth_mode: AuthMode::External,
             expires_at: Some(Utc::now() - chrono::Duration::hours(1)),
             ..oidc_session("expired-external", Some("rt"))
@@ -1093,7 +1093,7 @@ mod tests {
             expired_refreshable_session(&mgr).map(|a| a.key),
             Some("expired-external".to_string())
         );
-        mgr.hot_swap(GrokAuth {
+        mgr.hot_swap(EzerAuth {
             oidc_issuer: None,
             auth_mode: AuthMode::External,
             expires_at: Some(Utc::now() - chrono::Duration::hours(1)),
@@ -1107,7 +1107,7 @@ mod tests {
         use std::os::unix::fs::PermissionsExt;
         let dir = tempfile::tempdir().unwrap();
         std::fs::set_permissions(dir.path(), std::fs::Permissions::from_mode(0o500)).unwrap();
-        let mgr = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
+        let mgr = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
         let minted = oidc_session("minted-token", Some("rt"));
         let save = mgr.save_without_enrichment(minted.clone()).await;
         if unsafe { libc::geteuid() } == 0 {
@@ -1134,9 +1134,9 @@ mod tests {
     #[tokio::test]
     async fn mint_session_noninteractive_uses_external_provider() {
         let dir = tempfile::tempdir().unwrap();
-        let cfg = GrokComConfig {
+        let cfg = EzerComConfig {
             auth_provider_command: Some("printf '%s' xai-ext-token".to_string()),
-            ..GrokComConfig::default()
+            ..EzerComConfig::default()
         };
         let mgr = Arc::new(
             AuthManager::new(dir.path(), cfg.clone()).with_proxy_base_url(&dead_proxy_url()),
@@ -1149,10 +1149,10 @@ mod tests {
         let echo_env = "printf '%s' \"e=${EZER_AUTH_EXPIRED:-unset}\"";
         let dir = tempfile::tempdir().unwrap();
         let mgr = Arc::new(
-            AuthManager::new(dir.path(), GrokComConfig::default())
+            AuthManager::new(dir.path(), EzerComConfig::default())
                 .with_proxy_base_url(&dead_proxy_url()),
         );
-        mgr.hot_swap(GrokAuth {
+        mgr.hot_swap(EzerAuth {
             expires_at: Some(Utc::now() - chrono::Duration::hours(1)),
             ..oidc_session("stale-token", None)
         });
@@ -1171,10 +1171,10 @@ mod tests {
             r#"if [ "$EZER_AUTH_EXPIRED" = "1" ]; then exit 1; else printf '%s' sso-token; fi"#;
         let dir = tempfile::tempdir().unwrap();
         let mgr = Arc::new(
-            AuthManager::new(dir.path(), GrokComConfig::default())
+            AuthManager::new(dir.path(), EzerComConfig::default())
                 .with_proxy_base_url(&dead_proxy_url()),
         );
-        mgr.hot_swap(GrokAuth {
+        mgr.hot_swap(EzerAuth {
             expires_at: Some(Utc::now() - chrono::Duration::hours(1)),
             ..oidc_session("stale-token", None)
         });
@@ -1239,7 +1239,7 @@ mod tests {
         tokio::spawn(async move { axum::serve(listener, app).await.unwrap() });
         let dir = tempfile::tempdir().unwrap();
         let mgr = Arc::new(
-            AuthManager::new(dir.path(), GrokComConfig::default())
+            AuthManager::new(dir.path(), EzerComConfig::default())
                 .with_proxy_base_url(&format!("http://127.0.0.1:{port}")),
         );
         assert!(mgr.current_or_expired().is_none(), "precondition: no auth");
@@ -1254,10 +1254,10 @@ mod tests {
     async fn external_refresh_carries_profile_without_network() {
         let dir = tempfile::tempdir().unwrap();
         let mgr = Arc::new(
-            AuthManager::new(dir.path(), GrokComConfig::default())
+            AuthManager::new(dir.path(), EzerComConfig::default())
                 .with_proxy_base_url(&dead_proxy_url()),
         );
-        mgr.hot_swap(GrokAuth {
+        mgr.hot_swap(EzerAuth {
             team_blocked_reasons: vec!["BLOCKED_REASON_NO_LOGS".into()],
             organization_id: Some("org-1".into()),
             ..oidc_session("old-token", None)
@@ -1273,9 +1273,9 @@ mod tests {
     #[tokio::test]
     async fn device_flow_still_runs_external_provider() {
         let dir = tempfile::tempdir().unwrap();
-        let cfg = GrokComConfig {
+        let cfg = EzerComConfig {
             auth_provider_command: Some("printf '%s' xai-ext-token".to_string()),
-            ..GrokComConfig::default()
+            ..EzerComConfig::default()
         };
         assert!(
             cli_should_use_device(
@@ -1377,7 +1377,7 @@ mod tests {
     }
     #[tokio::test]
     async fn enterprise_oidc_never_uses_device_flow() {
-        let cfg = GrokComConfig {
+        let cfg = EzerComConfig {
             oidc: Some(crate::OidcAuthConfig {
                 issuer: "https://idp.example".into(),
                 client_id: "client".into(),
@@ -1385,13 +1385,13 @@ mod tests {
                 audience: None,
             }),
             oauth2: None,
-            ..GrokComConfig::default()
+            ..EzerComConfig::default()
         };
         assert!(
             !cli_should_use_device(&cfg, None, LoginTransportOverride::ForceDevice, "").await,
             "enterprise OIDC must stay on loopback"
         );
-        let xai = GrokComConfig::default();
+        let xai = EzerComConfig::default();
         assert!(xai.oauth2.is_some() && xai.oidc.is_none());
         assert!(cli_should_use_device(&xai, None, LoginTransportOverride::ForceDevice, "").await);
     }
@@ -1517,8 +1517,8 @@ mod tests {
             );
         });
     }
-    fn legacy_auth() -> GrokAuth {
-        GrokAuth {
+    fn legacy_auth() -> EzerAuth {
+        EzerAuth {
             key: "k".into(),
             auth_mode: AuthMode::WebLogin,
             create_time: Utc::now(),
@@ -1538,15 +1538,15 @@ mod tests {
             user_blocked_reason: None,
             team_blocked_reasons: vec![],
             coding_data_retention_opt_out: false,
-            has_grok_code_access: None,
+            has_remote_code_access: None,
             refresh_token: None,
             expires_at: None,
             oidc_issuer: None,
             oidc_client_id: None,
         }
     }
-    fn oidc_auth(issuer: &str) -> GrokAuth {
-        GrokAuth {
+    fn oidc_auth(issuer: &str) -> EzerAuth {
+        EzerAuth {
             oidc_issuer: Some(issuer.into()),
             auth_mode: AuthMode::Oidc,
             ..legacy_auth()
@@ -1554,12 +1554,12 @@ mod tests {
     }
     #[test]
     fn weblogin_cred_is_never_compatible() {
-        let cfg = GrokComConfig::default();
+        let cfg = EzerComConfig::default();
         assert!(!is_cached_credential_compatible(&legacy_auth(), &cfg));
     }
     #[test]
     fn oidc_cred_with_matching_issuer_is_compatible() {
-        let cfg = GrokComConfig::default();
+        let cfg = EzerComConfig::default();
         assert!(is_cached_credential_compatible(
             &oidc_auth(XAI_OAUTH2_ISSUER),
             &cfg,
@@ -1567,16 +1567,16 @@ mod tests {
     }
     #[test]
     fn external_cred_compatibility_follows_issuer() {
-        let cfg = GrokComConfig::default();
+        let cfg = EzerComConfig::default();
         assert!(is_cached_credential_compatible(
-            &GrokAuth {
+            &EzerAuth {
                 auth_mode: AuthMode::External,
                 ..oidc_auth(XAI_OAUTH2_ISSUER)
             },
             &cfg,
         ));
         assert!(!is_cached_credential_compatible(
-            &GrokAuth {
+            &EzerAuth {
                 auth_mode: AuthMode::External,
                 oidc_issuer: None,
                 ..legacy_auth()
@@ -1601,16 +1601,16 @@ mod tests {
         )
         .unwrap()
     }
-    fn pinned_cfg(team: &str) -> GrokComConfig {
-        GrokComConfig {
+    fn pinned_cfg(team: &str) -> EzerComConfig {
+        EzerComConfig {
             force_login_team_uuid: Some(crate::config::ForceLoginTeam::Single(team.into())),
-            ..GrokComConfig::default()
+            ..EzerComConfig::default()
         }
     }
     /// Under a team pin, a cached session for a different team is not reused by interactive login; it falls through to a fresh, compliant login.
     #[test]
     fn cached_cred_with_wrong_team_is_incompatible() {
-        let auth = GrokAuth {
+        let auth = EzerAuth {
             key: team_jwt("team-wrong"),
             ..oidc_auth(XAI_OAUTH2_ISSUER)
         };
@@ -1622,7 +1622,7 @@ mod tests {
     /// A cached session for the pinned team is reused normally.
     #[test]
     fn cached_cred_with_matching_team_is_compatible() {
-        let auth = GrokAuth {
+        let auth = EzerAuth {
             key: team_jwt("team-good"),
             ..oidc_auth(XAI_OAUTH2_ISSUER)
         };
@@ -1635,29 +1635,29 @@ mod tests {
     #[tokio::test]
     async fn run_auth_flow_uses_valid_disk_token_when_expired() {
         let dir = tempfile::tempdir().unwrap();
-        let cfg = GrokComConfig::default();
+        let cfg = EzerComConfig::default();
         let writer = Arc::new(
             AuthManager::new(dir.path(), cfg.clone()).with_proxy_base_url("http://127.0.0.1:1"),
         );
-        let valid_disk = GrokAuth {
+        let valid_disk = EzerAuth {
             key: "fresh-token-from-disk".into(),
             auth_mode: AuthMode::Oidc,
             expires_at: Some(Utc::now() + chrono::Duration::hours(1)),
             refresh_token: Some("new-rt".into()),
             oidc_issuer: Some(XAI_OAUTH2_ISSUER.into()),
             oidc_client_id: Some("client-1".into()),
-            ..GrokAuth::test_default()
+            ..EzerAuth::test_default()
         };
         writer.update(valid_disk).await.unwrap();
         let mgr = Arc::new(AuthManager::new(dir.path(), cfg.clone()));
-        let expired = GrokAuth {
+        let expired = EzerAuth {
             key: "expired-access-token".into(),
             auth_mode: AuthMode::Oidc,
             expires_at: Some(Utc::now() - chrono::Duration::hours(1)),
             refresh_token: Some("old-rt".into()),
             oidc_issuer: Some(XAI_OAUTH2_ISSUER.into()),
             oidc_client_id: Some("client-1".into()),
-            ..GrokAuth::test_default()
+            ..EzerAuth::test_default()
         };
         mgr.hot_swap(expired);
         assert!(mgr.is_expired());
@@ -1681,15 +1681,15 @@ mod tests {
     #[tokio::test]
     async fn run_auth_flow_returns_cached_when_valid() {
         let dir = tempfile::tempdir().unwrap();
-        let cfg = GrokComConfig::default();
+        let cfg = EzerComConfig::default();
         let mgr = Arc::new(AuthManager::new(dir.path(), cfg.clone()));
-        let valid = GrokAuth {
+        let valid = EzerAuth {
             key: "still-valid".into(),
             auth_mode: AuthMode::Oidc,
             expires_at: Some(Utc::now() + chrono::Duration::hours(1)),
             oidc_issuer: Some(XAI_OAUTH2_ISSUER.into()),
             oidc_client_id: Some("client-1".into()),
-            ..GrokAuth::test_default()
+            ..EzerAuth::test_default()
         };
         mgr.hot_swap(valid);
         let (auth, is_new_login) = run_auth_flow(
@@ -1710,18 +1710,18 @@ mod tests {
     #[tokio::test]
     async fn run_auth_flow_defers_to_consumer_refresh_on_transient_failure() {
         let dir = tempfile::tempdir().unwrap();
-        let cfg = GrokComConfig::default();
+        let cfg = EzerComConfig::default();
         let writer = Arc::new(
             AuthManager::new(dir.path(), cfg.clone()).with_proxy_base_url("http://127.0.0.1:1"),
         );
-        let expired_with_rt = GrokAuth {
+        let expired_with_rt = EzerAuth {
             key: "expired-access-token".into(),
             auth_mode: AuthMode::Oidc,
             expires_at: Some(Utc::now() - chrono::Duration::hours(1)),
             refresh_token: Some("valid-refresh-token".into()),
             oidc_issuer: Some(XAI_OAUTH2_ISSUER.into()),
             oidc_client_id: Some("client-1".into()),
-            ..GrokAuth::test_default()
+            ..EzerAuth::test_default()
         };
         writer.update(expired_with_rt.clone()).await.unwrap();
         let mgr = Arc::new(AuthManager::new(dir.path(), cfg.clone()));
@@ -1747,17 +1747,17 @@ mod tests {
     #[tokio::test]
     async fn run_auth_flow_falls_through_when_no_refresh_token() {
         let dir = tempfile::tempdir().unwrap();
-        let mut cfg = GrokComConfig::default();
+        let mut cfg = EzerComConfig::default();
         cfg.oauth2.as_mut().unwrap().issuer = "http://127.0.0.1:1".into();
         let writer = Arc::new(
             AuthManager::new(dir.path(), cfg.clone()).with_proxy_base_url("http://127.0.0.1:1"),
         );
-        let expired_no_rt = GrokAuth {
+        let expired_no_rt = EzerAuth {
             key: "expired-legacy".into(),
             auth_mode: AuthMode::WebLogin,
             expires_at: Some(Utc::now() - chrono::Duration::hours(1)),
             refresh_token: None,
-            ..GrokAuth::test_default()
+            ..EzerAuth::test_default()
         };
         writer.update(expired_no_rt.clone()).await.unwrap();
         let mgr = Arc::new(AuthManager::new(dir.path(), cfg.clone()));
@@ -1812,7 +1812,7 @@ mod tests {
     async fn external_provider_cli_path_does_not_deadlock_on_large_stderr() {
         let dir = tempfile::tempdir().unwrap();
         let mgr = Arc::new(
-            AuthManager::new(dir.path(), GrokComConfig::default())
+            AuthManager::new(dir.path(), EzerComConfig::default())
                 .with_proxy_base_url(&dead_proxy_url()),
         );
         let cmd = r#"sh -c 'i=0; while [ $i -lt 2000 ]; do printf "%s" "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" >&2; i=$((i+1)); done; printf token'"#;
@@ -1839,21 +1839,21 @@ mod tests {
     async fn noninteractive_auth_rejects_wrong_team_cached_token() {
         const REPRO_JWT: &str = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwcmluY2lwYWxfaWQiOiJ0ZWFtLXdyb25nIiwic3ViIjoidXNlci0xIn0.Signature";
         let dir = tempfile::tempdir().unwrap();
-        let cfg = GrokComConfig {
+        let cfg = EzerComConfig {
             force_login_team_uuid: Some(crate::config::ForceLoginTeam::AnyOf(vec![
                 "team-good".into(),
             ])),
-            ..GrokComConfig::default()
+            ..EzerComConfig::default()
         };
         let mut store = crate::model::AuthStore::new();
         store.insert(
             cfg.auth_scope(),
-            GrokAuth {
+            EzerAuth {
                 key: REPRO_JWT.into(),
                 auth_mode: AuthMode::Oidc,
                 team_id: Some("team-wrong".into()),
                 expires_at: chrono::DateTime::from_timestamp(9_999_999_999, 0),
-                ..GrokAuth::test_default()
+                ..EzerAuth::test_default()
             },
         );
         let auth_path = dir.path().join("auth.json");
@@ -1902,17 +1902,17 @@ mod tests {
         (base, handle)
     }
     fn expired_oidc_manager(dir: &Path, issuer: &str) -> Arc<AuthManager> {
-        let cfg = GrokComConfig::default();
+        let cfg = EzerComConfig::default();
         let am = Arc::new(AuthManager::new(dir, cfg.clone()));
         am.configure_refresher(cfg.auth_provider_command.clone(), None);
-        am.hot_swap(GrokAuth {
+        am.hot_swap(EzerAuth {
             key: "expired".into(),
             auth_mode: AuthMode::Oidc,
             oidc_issuer: Some(issuer.into()),
             oidc_client_id: Some("test-client".into()),
             refresh_token: Some("rt".into()),
             expires_at: Some(Utc::now() - chrono::Duration::hours(1)),
-            ..GrokAuth::test_default()
+            ..EzerAuth::test_default()
         });
         am
     }
@@ -2053,14 +2053,14 @@ mod tests {
                                 authorization: header_str(&headers, "authorization"),
                                 user_id: header_str(&headers, "x-userid"),
                                 email: header_str(&headers, "x-email"),
-                                agent_id: header_str(&headers, "x-grok-agent-id"),
+                                agent_id: header_str(&headers, "x-ezer-agent-id"),
                                 client_identifier: header_str(
                                     &headers,
-                                    "x-grok-client-identifier",
+                                    "x-ezer-client-identifier",
                                 ),
                                 client_version: header_str(
                                     &headers,
-                                    "x-grok-client-version",
+                                    "x-ezer-client-version",
                                 ),
                             });
                         (state.status_code, state.body)
@@ -2117,15 +2117,15 @@ mod tests {
                 .expect("server should have received one request");
             assert!(
                 h.agent_id.as_deref().is_some_and(|v| !v.is_empty()),
-                "must send x-grok-agent-id (the bucketing key)"
+                "must send x-ezer-agent-id (the bucketing key)"
             );
             assert!(
                 h.client_identifier.is_some(),
-                "must send x-grok-client-identifier"
+                "must send x-ezer-client-identifier"
             );
             assert!(
                 h.client_version.is_some(),
-                "must send x-grok-client-version"
+                "must send x-ezer-client-version"
             );
             assert_eq!(h.authorization, None, "must not send Authorization");
             assert_eq!(h.user_id, None, "must not send x-userid");

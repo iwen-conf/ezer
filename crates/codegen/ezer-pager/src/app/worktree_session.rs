@@ -15,8 +15,8 @@ use super::effects::{
 use super::session_startup::worktree_session_cwd;
 use super::session_title_resolve::worktree_resume_failure_message;
 
-pub(crate) const CREATE_METHOD: &str = "x.ai/git/worktree/create_from_worktree_sync";
-pub(crate) const RESUME_METHOD: &str = "x.ai/git/worktree/resume_session";
+pub(crate) const CREATE_METHOD: &str = "ezer/git/worktree/create_from_worktree_sync";
+pub(crate) const RESUME_METHOD: &str = "ezer/git/worktree/resume_session";
 
 /// How the new worktree's working tree is seeded from the source checkout.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
@@ -144,7 +144,7 @@ pub(crate) fn resume_worktree_params(
     params
 }
 
-/// Unwrap an `x.ai/*` extension envelope: an `error` member is a failure, `result` (or the
+/// Unwrap an `ezer/*` extension envelope: an `error` member is a failure, `result` (or the
 /// bare object) is the payload.
 fn ext_result(raw: &str) -> Result<serde_json::Value, String> {
     let value: serde_json::Value = serde_json::from_str(raw).map_err(|e| e.to_string())?;
@@ -413,6 +413,6 @@ mod tests {
         let msg = note_orphaned_worktree("Couldn't create session: boom", Path::new("/wt/q"));
         assert!(msg.starts_with("Couldn't create session: boom"));
         assert!(msg.contains("/wt/q"));
-        assert!(msg.contains("grok worktree rm"));
+        assert!(msg.contains("ezer worktree rm"));
     }
 }

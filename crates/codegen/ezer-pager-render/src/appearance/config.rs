@@ -1583,7 +1583,7 @@ fn parse_hex_color(hex: &str) -> Result<Color, String> {
 }
 
 fn lookup_named_color(name: &str) -> Result<Color, String> {
-    // Named colors use the GrokNight RGB palette
+    // Named colors use the EzerNight RGB palette
     // They are quantized (via `parse_color_string`, then `quantize()`) to match the terminal's capabilities
     let color = match name.to_uppercase().as_str() {
         // Background colors
@@ -1653,7 +1653,7 @@ impl RawAppearanceConfig {
         let toml_str = toml_edit::ser::to_string_pretty(&config).expect("serialize default");
         let mut doc: DocumentMut = toml_str.parse().expect("parse toml");
 
-        let pager_path = crate::util::display_user_grok_path("pager.toml");
+        let pager_path = crate::util::display_user_ezer_path("pager.toml");
         let header = format!(
             "\
 # ezer Pager Appearance Configuration ({pager_path})
@@ -1792,7 +1792,7 @@ static PAGER_TOML_SAVE_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
 pub fn persist_respect_manual_folds(enabled: bool) -> std::io::Result<()> {
     use std::io::{Error, ErrorKind};
 
-    if ezer_config::user_grok_home().is_none() {
+    if ezer_config::user_ezer_home().is_none() {
         return Err(Error::new(
             ErrorKind::NotFound,
             "no user ezer home resolved; refusing to write a cwd-relative pager.toml \

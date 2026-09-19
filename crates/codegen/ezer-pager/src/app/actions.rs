@@ -61,9 +61,9 @@ pub enum Action {
     DeleteCurrentSessionAnswered {
         confirmed: bool,
     },
-    /// Open grok.com in the browser for SuperGrok subscription upsell.
-    OpenSupergrokUrl,
-    /// Re-check subscription status via the shell's `x.ai/auth/check_subscription`.
+    /// Open ezer.com in the browser for MaxTier subscription upsell.
+    OpenUpgradeUrl,
+    /// Re-check subscription status via the shell's `ezer/auth/check_subscription`.
     CheckSubscription,
     /// Open an arbitrary URL in the system browser (with scheme validation).
     OpenUrl(String),
@@ -71,7 +71,7 @@ pub enum Action {
     RetryCreditLimitPrompt,
     /// Open a semantic scrollback link.
     OpenLink(crate::render::osc8::LinkTarget),
-    /// Open grok.com managed connectors, appending session teamId when set.
+    /// Open ezer.com managed connectors, appending session teamId when set.
     OpenManagedConnectors,
     /// Cycle to the next visible link (or highlight the first if none selected).
     OpenNextLink,
@@ -196,20 +196,20 @@ pub enum Action {
     /// Try to drain the next queued prompt (after editing completes, etc.).
     DrainQueue,
     /// Remove a server-authoritative (shared) queued prompt by its stable `prompt_id`.
-    /// Routed to the agent as `x.ai/queue/remove`; the resulting `x.ai/queue/changed` rebroadcast is the source of truth.
+    /// Routed to the agent as `ezer/queue/remove`; the resulting `ezer/queue/changed` rebroadcast is the source of truth.
     QueueRemoveShared {
         id: String,
         expected_version: u64,
     },
-    /// Reorder the server-authoritative (shared) queued prompts to match `ordered_ids`. Routed as `x.ai/queue/reorder`.
+    /// Reorder the server-authoritative (shared) queued prompts to match `ordered_ids`. Routed as `ezer/queue/reorder`.
     QueueReorderShared {
         ordered_ids: Vec<String>,
     },
     /// Clear the caller's server-authoritative (shared) queued prompts.
-    /// Routed as `x.ai/queue/clear`.
+    /// Routed as `ezer/queue/clear`.
     QueueClearShared,
     /// Replace the text of a server-authoritative (shared) queued prompt.
-    /// Routed to the agent as `x.ai/queue/edit`; the rebroadcast of `x.ai/queue/changed` is the source of truth.
+    /// Routed to the agent as `ezer/queue/edit`; the rebroadcast of `ezer/queue/changed` is the source of truth.
     /// Last write wins via the session actor's serialized mailbox; no client-side conflict resolution.
     QueueEditShared {
         id: String,
@@ -242,7 +242,7 @@ pub enum Action {
         local_id: u64,
         /// `Some` for a server-authoritative row.
         /// `None` covers both a local row and a server row that vanished from the mirror before Enter.
-        /// With nothing to remove, no versioned `x.ai/queue/remove` request is sent.
+        /// With nothing to remove, no versioned `ezer/queue/remove` request is sent.
         server: Option<SharedQueueTarget>,
         submission: crate::views::prompt_widget::StashedPrompt,
     },
@@ -367,12 +367,12 @@ pub enum Action {
     ExecutePluginsAction(xai_hooks_plugins_types::PluginsAction),
     /// Execute a marketplace management action from the modal.
     ExecuteMarketplaceAction(xai_hooks_plugins_types::MarketplaceAction),
-    /// Add or update an MCP server via x.ai/mcp/upsert.
+    /// Add or update an MCP server via ezer/mcp/upsert.
     UpsertMcpServer {
         name: String,
         config: Box<ezer_shell::util::config::McpServerConfig>,
     },
-    /// Delete an MCP server via x.ai/mcp/delete.
+    /// Delete an MCP server via ezer/mcp/delete.
     DeleteMcpServer {
         server_name: String,
     },
@@ -381,7 +381,7 @@ pub enum Action {
         server_name: String,
         enabled: bool,
     },
-    /// Toggle a skill enable/disable via x.ai/skills/toggle.
+    /// Toggle a skill enable/disable via ezer/skills/toggle.
     ToggleSkill {
         skill_name: String,
         enabled: bool,
@@ -410,7 +410,7 @@ pub enum Action {
     CancelScheduledTask(String),
     /// Demote the currently running execute tool to a background task.
     DemoteToBackground,
-    /// Request current bundle cache status via `x.ai/bundle/status`.
+    /// Request current bundle cache status via `ezer/bundle/status`.
     RequestBundleStatus,
     /// View a catalog entry's raw content in the block viewer.
     ViewCatalogEntry {
@@ -955,7 +955,7 @@ pub struct SharedQueueTarget {
 }
 /// Persist-and-notify behavior for [`Effect::PersistPermissionMode`].
 /// Both variants write to `~/.ezer/config.toml` and route ACP
-/// `x.ai/yolo_mode_changed` notifications.
+/// `ezer/yolo_mode_changed` notifications.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PermissionModePersist {
     /// Typed-setter path: on disk-write failure, revert in-memory state to the prior canonical (`&'static str`).
@@ -1449,7 +1449,7 @@ pub enum Effect {
     ScanForeignSessions {
         cwd: std::path::PathBuf,
         compat: ezer_foreign_sessions::EnabledForeignSessionSources,
-        grok_home: std::path::PathBuf,
+        ezer_home: std::path::PathBuf,
         coordinator: crate::app::ForeignScanCoordinator,
         seq: u64,
     },
@@ -1462,7 +1462,7 @@ pub enum Effect {
     DetectForeignResumeHint {
         canonical_cwd: std::path::PathBuf,
         compat: ezer_foreign_sessions::EnabledForeignSessionSources,
-        grok_home: std::path::PathBuf,
+        ezer_home: std::path::PathBuf,
         launch_token: u64,
     },
     /// Fetch a picker session list.
@@ -1472,14 +1472,14 @@ pub enum Effect {
         cwd_override: Option<std::path::PathBuf>,
         /// Live generation of the requesting picker at dispatch time.
         generation: u64,
-        /// Text search pushed down to `x.ai/session/list` as `query` (chat mode: forwarded to the backend conversations search).
+        /// Text search pushed down to `ezer/session/list` as `query` (chat mode: forwarded to the backend conversations search).
         /// `None` fetches the unfiltered list.
         query: Option<String>,
         /// Snapshot of [`crate::app::app_view::AppView::session_picker_list_seq`].
         /// The response is dropped when no longer current, so out-of-order completions can't clobber newer results.
         seq: u64,
         /// Optional unified-list `kind` facet filter (`"chat"` / `"build"`).
-        /// When set, stamped as `_meta["x.ai/facetFilters"].kind`.
+        /// When set, stamped as `_meta["ezer/facetFilters"].kind`.
         /// The shell then honors multi-source history under `--chat` instead of forcing chat-only.
         kind_filter: Option<Vec<String>>,
         /// Server-side `session_kind=headless` policy: `Only` while the picker is on the Headless page, `Exclude` everywhere else.
@@ -1495,10 +1495,10 @@ pub enum Effect {
         query: String,
         seq: u64,
     },
-    /// Fetch the leader session roster (FleetView dashboard) via `x.ai/sessions/list`.
+    /// Fetch the leader session roster (FleetView dashboard) via `ezer/sessions/list`.
     /// Only issued in leader mode while the dashboard is open.
     FetchRoster,
-    /// Fetch the local on-disk session list (dormant/idle sessions) for the dashboard via `x.ai/session/list`.
+    /// Fetch the local on-disk session list (dormant/idle sessions) for the dashboard via `ezer/session/list`.
     /// This is the non-leader fallback for the FleetView roster.
     /// Issued while the dashboard is open and NOT in leader mode so the dashboard shows idle sessions instead of being empty.
     FetchDashboardSessions,
@@ -1586,7 +1586,7 @@ pub enum Effect {
         task_id: String,
         source: ezer_shell::extensions::task::TaskKillSource,
     },
-    /// Cancel a subagent via `x.ai/subagent/cancel`.
+    /// Cancel a subagent via `ezer/subagent/cancel`.
     KillSubagent {
         session_id: acp::SessionId,
         subagent_id: String,
@@ -1691,34 +1691,34 @@ pub enum Effect {
     },
     /// Toggle plan mode: fire-and-forget signal to the shell.
     TogglePlanMode { session_id: acp::SessionId },
-    /// Remove a server-owned queued prompt: fire-and-forget `x.ai/queue/remove`.
+    /// Remove a server-owned queued prompt: fire-and-forget `ezer/queue/remove`.
     /// The agent re-broadcasts the authoritative queue.
     QueueRemove {
         session_id: acp::SessionId,
         id: String,
         expected_version: u64,
     },
-    /// Reorder server-owned queued prompts: fire-and-forget `x.ai/queue/reorder`.
+    /// Reorder server-owned queued prompts: fire-and-forget `ezer/queue/reorder`.
     QueueReorder {
         session_id: acp::SessionId,
         ordered_ids: Vec<String>,
     },
-    /// Clear the caller's server-owned queued prompts: fire-and-forget `x.ai/queue/clear`.
+    /// Clear the caller's server-owned queued prompts: fire-and-forget `ezer/queue/clear`.
     QueueClear { session_id: acp::SessionId },
-    /// Replace the text of a server-owned queued prompt in place: fire-and-forget `x.ai/queue/edit`.
+    /// Replace the text of a server-owned queued prompt in place: fire-and-forget `ezer/queue/edit`.
     /// The session actor's serialized mailbox makes this last-writer-wins for concurrent edits.
-    /// The rebroadcast of `x.ai/queue/changed` is the truth signal.
+    /// The rebroadcast of `ezer/queue/changed` is the truth signal.
     QueueEdit {
         session_id: acp::SessionId,
         id: String,
         new_text: String,
     },
-    /// Hold a server-owned row out of combine-on-promote while the composer edits it: fire-and-forget `x.ai/queue/hold_edit`.
+    /// Hold a server-owned row out of combine-on-promote while the composer edits it: fire-and-forget `ezer/queue/hold_edit`.
     QueueHoldEdit {
         session_id: acp::SessionId,
         id: String,
     },
-    /// Release a previous [`Self::QueueHoldEdit`]: `x.ai/queue/release_edit`.
+    /// Release a previous [`Self::QueueHoldEdit`]: `ezer/queue/release_edit`.
     QueueReleaseEdit {
         session_id: acp::SessionId,
         id: String,
@@ -1756,7 +1756,7 @@ pub enum Effect {
         cwd: std::path::PathBuf,
         session_id: String,
     },
-    /// Resolve the running agent name for a session (`x.ai/session/info`).
+    /// Resolve the running agent name for a session (`ezer/session/info`).
     FetchSessionAgentName {
         agent_id: AgentId,
         session_id: acp::SessionId,
@@ -1772,13 +1772,13 @@ pub enum Effect {
     PollAuthUrl { request_seq: u64 },
     /// Submit a manually-pasted auth code (ext request).
     SubmitAuthCode { request_seq: u64, code: String },
-    /// Fetch MCP server list from the shell (x.ai/mcp/list).
+    /// Fetch MCP server list from the shell (ezer/mcp/list).
     FetchMcpsList {
         agent_id: AgentId,
         session_id: acp::SessionId,
         cache: bool,
     },
-    /// Trigger MCP OAuth for a server (x.ai/mcp/auth_trigger).
+    /// Trigger MCP OAuth for a server (ezer/mcp/auth_trigger).
     McpAuthTrigger {
         agent_id: AgentId,
         session_id: acp::SessionId,
@@ -1790,40 +1790,40 @@ pub enum Effect {
         server_name: String,
         values: std::collections::HashMap<String, String>,
     },
-    /// Fetch hooks list from the shell (x.ai/hooks/list).
+    /// Fetch hooks list from the shell (ezer/hooks/list).
     FetchHooksList {
         agent_id: AgentId,
         session_id: acp::SessionId,
     },
-    /// Fetch plugins list from the shell (x.ai/plugins/list).
+    /// Fetch plugins list from the shell (ezer/plugins/list).
     FetchPluginsList {
         agent_id: AgentId,
         session_id: acp::SessionId,
     },
-    /// Fetch the `/memory` modal contents (x.ai/memory/list).
+    /// Fetch the `/memory` modal contents (ezer/memory/list).
     FetchMemoryList {
         agent_id: AgentId,
         session_id: acp::SessionId,
     },
-    /// Turn memory on or off (x.ai/memory/toggle).
+    /// Turn memory on or off (ezer/memory/toggle).
     MemoryToggle {
         agent_id: AgentId,
         session_id: acp::SessionId,
         enabled: bool,
     },
-    /// Delete one memory note from the `/memory` modal (x.ai/memory/forget).
+    /// Delete one memory note from the `/memory` modal (ezer/memory/forget).
     MemoryForget {
         agent_id: AgentId,
         session_id: acp::SessionId,
         path: String,
         expected_content_hash: String,
     },
-    /// Run `/flush` (x.ai/memory/flush) as a tracked agent command.
+    /// Run `/flush` (ezer/memory/flush) as a tracked agent command.
     MemoryFlush {
         agent_id: AgentId,
         session_id: acp::SessionId,
     },
-    /// Run `/dream` (x.ai/memory/dream) as a tracked agent command.
+    /// Run `/dream` (ezer/memory/dream) as a tracked agent command.
     MemoryDream {
         agent_id: AgentId,
         session_id: acp::SessionId,
@@ -1855,7 +1855,7 @@ pub enum Effect {
         agent_id: AgentId,
         session_id: acp::SessionId,
     },
-    /// Fetch skills list from the shell (x.ai/skills/list).
+    /// Fetch skills list from the shell (ezer/skills/list).
     FetchSkillsList {
         agent_id: AgentId,
         session_id: acp::SessionId,
@@ -1864,7 +1864,7 @@ pub enum Effect {
         agent_id: AgentId,
         session_id: acp::SessionId,
     },
-    /// Toggle a skill via x.ai/skills/toggle (enable/disable without restart).
+    /// Toggle a skill via ezer/skills/toggle (enable/disable without restart).
     ToggleSkill {
         agent_id: AgentId,
         session_id: acp::SessionId,
@@ -1877,21 +1877,21 @@ pub enum Effect {
         session_id: acp::SessionId,
         action: xai_hooks_plugins_types::MarketplaceAction,
     },
-    /// Install a plugin from the inline CTA via `x.ai/marketplace/action`, reported back via `TaskResult::CtaPluginInstallDone`.
+    /// Install a plugin from the inline CTA via `ezer/marketplace/action`, reported back via `TaskResult::CtaPluginInstallDone`.
     InstallPluginFromCta {
         agent_id: AgentId,
         session_id: acp::SessionId,
         source_url_or_path: String,
         plugin_relative_path: String,
     },
-    /// Reload plugins after a CTA install via `x.ai/plugins/action` (`PluginsAction::Reload`), reported back via `TaskResult::CtaPluginReloadDone`.
+    /// Reload plugins after a CTA install via `ezer/plugins/action` (`PluginsAction::Reload`), reported back via `TaskResult::CtaPluginReloadDone`.
     /// Modal-independent.
     ReloadPluginsForCta {
         agent_id: AgentId,
         session_id: acp::SessionId,
         plugin_name: String,
     },
-    /// Read the MCP server list after a CTA install via `x.ai/mcp/list`, reported back via `TaskResult::PluginCtaMcpsLoaded`.
+    /// Read the MCP server list after a CTA install via `ezer/mcp/list`, reported back via `TaskResult::PluginCtaMcpsLoaded`.
     /// Modal-independent.
     FetchPluginCtaMcps {
         agent_id: AgentId,
@@ -1899,7 +1899,7 @@ pub enum Effect {
         plugin_name: String,
     },
     /// Re-probe the MCP server list after a short delay while waiting for a just-installed plugin's servers to finish initializing.
-    /// Sleeps, then runs the same `x.ai/mcp/list` fetch as `FetchPluginCtaMcps`, reported back via `TaskResult::PluginCtaMcpsLoaded`.
+    /// Sleeps, then runs the same `ezer/mcp/list` fetch as `FetchPluginCtaMcps`, reported back via `TaskResult::PluginCtaMcpsLoaded`.
     RetryPluginCtaMcps {
         agent_id: AgentId,
         session_id: acp::SessionId,
@@ -1910,27 +1910,27 @@ pub enum Effect {
         agent_id: AgentId,
         plugin_name: String,
     },
-    /// Upsert an MCP server via x.ai/mcp/upsert.
+    /// Upsert an MCP server via ezer/mcp/upsert.
     UpsertMcpServer {
         agent_id: AgentId,
         session_id: acp::SessionId,
         name: String,
         config: Box<ezer_shell::util::config::McpServerConfig>,
     },
-    /// Delete an MCP server via x.ai/mcp/delete.
+    /// Delete an MCP server via ezer/mcp/delete.
     DeleteMcpServer {
         agent_id: AgentId,
         session_id: acp::SessionId,
         server_name: String,
     },
-    /// Live-toggle an MCP server via x.ai/mcp/toggle (no restart needed).
+    /// Live-toggle an MCP server via ezer/mcp/toggle (no restart needed).
     ToggleMcpServer {
         agent_id: AgentId,
         session_id: acp::SessionId,
         server_name: String,
         enabled: bool,
     },
-    /// Toggle a single MCP tool via x.ai/mcp/toggle_tool.
+    /// Toggle a single MCP tool via ezer/mcp/toggle_tool.
     ToggleMcpTool {
         agent_id: AgentId,
         session_id: acp::SessionId,
@@ -1943,7 +1943,7 @@ pub enum Effect {
         agent_id: AgentId,
         session_id: acp::SessionId,
     },
-    /// Fetch and display session info via x.ai/session/info.
+    /// Fetch and display session info via ezer/session/info.
     /// Auth lines are derived in the effect from SessionFlags and env (not Effect fields).
     ShowSessionInfo {
         agent_id: AgentId,
@@ -1952,16 +1952,16 @@ pub enum Effect {
         /// Usage-modal fetch generation; echoed back on the task result.
         nonce: u64,
     },
-    /// Fetch and display detailed context usage via x.ai/session/info.
+    /// Fetch and display detailed context usage via ezer/session/info.
     ShowContextInfo {
         agent_id: AgentId,
         session_id: acp::SessionId,
         /// Usage-modal fetch generation; echoed back on the task result.
         nonce: u64,
     },
-    /// Fetch current bundle cache status via `x.ai/bundle/status`.
+    /// Fetch current bundle cache status via `ezer/bundle/status`.
     FetchBundleStatus,
-    /// Fetch a bundled entry's raw content via `x.ai/bundle/entry/get`.
+    /// Fetch a bundled entry's raw content via `ezer/bundle/entry/get`.
     FetchCatalogEntry { kind: String, name: String },
     /// Send feedback about the current session (fire-and-forget POST).
     /// `origin` rides through to the completion so a modal send's parked consent can be matched or dropped.
@@ -2002,7 +2002,7 @@ pub enum Effect {
         /// `Some` for an active session; `None` only for the pre-session fallback.
         pinned_mode: Option<ezer_shell::config::MemoryMode>,
     },
-    /// Send raw note to x.ai/memory/rewrite for LLM-powered reformatting.
+    /// Send raw note to ezer/memory/rewrite for LLM-powered reformatting.
     /// On success, the rewritten text populates the prompt for inline review.
     /// On failure, falls back to showing the raw text for review.
     RewriteMemoryNote {
@@ -2020,7 +2020,7 @@ pub enum Effect {
         agent_id: AgentId,
         session_id: acp::SessionId,
     },
-    /// Fire a /btw side question via x.ai/btw ext method.
+    /// Fire a /btw side question via ezer/btw ext method.
     SendBtw {
         agent_id: AgentId,
         session_id: acp::SessionId,
@@ -2031,30 +2031,30 @@ pub enum Effect {
         /// Correlates minimal responses; fullscreen leaves this unset.
         minimal_request_id: Option<uuid::Uuid>,
     },
-    /// Request a session recap via the x.ai/recap ext method.
+    /// Request a session recap via the ezer/recap ext method.
     /// Fire-and-forget: the recap arrives later as a `SessionRecap` notification.
     SendRecap {
         session_id: acp::SessionId,
         auto: bool,
     },
-    /// Send a mid-turn interjection via x.ai/interject ext method.
+    /// Send a mid-turn interjection via ezer/interject ext method.
     SendInterject {
         agent_id: AgentId,
         session_id: acp::SessionId,
         text: String,
-        /// Client-minted id echoed back on the `x.ai/session/interjection` broadcast so the originator can dedup its optimistic local block.
+        /// Client-minted id echoed back on the `ezer/session/interjection` broadcast so the originator can dedup its optimistic local block.
         interjection_id: String,
         /// Structured text and image content blocks.
         /// `None` for text-only interjections; the wire shape stays byte-identical to legacy.
         blocks: Option<Vec<acp::ContentBlock>>,
     },
-    /// Log out via `x.ai/auth/logout` (shell clears auth.json and in-memory state).
+    /// Log out via `ezer/auth/logout` (shell clears auth.json and in-memory state).
     Logout,
-    /// Cancel an in-flight interactive auth on the shell (`x.ai/auth/cancel`).
+    /// Cancel an in-flight interactive auth on the shell (`ezer/auth/cancel`).
     /// Used when the user abandons mid-session `/login` so the device-code poll stops instead of running until the code expires.
     /// `request_seq` scopes the cancel so a delayed RPC cannot tear down a successor login.
     CancelAuth { request_seq: u64 },
-    /// Re-check subscription status via `x.ai/auth/check_subscription`.
+    /// Re-check subscription status via `ezer/auth/check_subscription`.
     /// `verify` scopes the result to a deferred-gate verification (see [`crate::app::subscription`]); `None` for generic checks.
     CheckSubscription { verify: Option<u64> },
     /// One-shot subscription re-check triggered by a credit-limit 403.
@@ -2109,7 +2109,7 @@ pub enum Effect {
         previous_display_name: Option<String>,
         previous_generated_title: Option<String>,
     },
-    /// Delete a session's stored data (local and remote) via `x.ai/session/delete`.
+    /// Delete a session's stored data (local and remote) via `ezer/session/delete`.
     DeleteSession {
         source: String,
         session_id: String,
@@ -2128,7 +2128,7 @@ pub enum Effect {
         /// Unresolved index rows are omitted from both classified views.
         headless_policy: ezer_shell::session::unified_list::HeadlessPolicy,
     },
-    /// Call `x.ai/session/fork` to create a peer session that resumes from `parent_session_id` in the same cwd (no worktree).
+    /// Call `ezer/session/fork` to create a peer session that resumes from `parent_session_id` in the same cwd (no worktree).
     /// Mirror of the worktree branch of [`Effect::CreateWorktreeSession`].
     /// The worktree-fork path reuses `CreateWorktreeSession { load_session_id }` directly so we get worktree creation and code restore for free.
     ForkSession {
@@ -2160,7 +2160,7 @@ pub enum Effect {
         session_id: acp::SessionId,
         target_prompt_index: usize,
     },
-    /// Fetch billing/credit usage from the agent's `x.ai/billing` extension.
+    /// Fetch billing/credit usage from the agent's `ezer/billing` extension.
     /// When `silent` is true the result updates `credit_balance` without pushing a system message into scrollback.
     /// The silent form is used for automatic refreshes on session init and after each turn.
     FetchBilling {
@@ -2175,7 +2175,7 @@ pub enum Effect {
         /// Usage-modal fetch generation (`0` means a background refresh that settles no modal).
         nonce: u64,
     },
-    /// Fetch per-session token/cost via `x.ai/session/usage` (auth-agnostic).
+    /// Fetch per-session token/cost via `ezer/session/usage` (auth-agnostic).
     FetchSessionUsage {
         agent_id: AgentId,
         session_id: acp::SessionId,
@@ -2189,7 +2189,7 @@ pub enum Effect {
     DebounceSuggestions { agent_id: AgentId, generation: u64 },
     /// Spawn a debounce sleep task for plugin-CTA keyword matching.
     DebouncePluginCta { agent_id: AgentId, generation: u64 },
-    /// Send an ACP `x.ai/suggest` request to the shell.
+    /// Send an ACP `ezer/suggest` request to the shell.
     /// `agent_id` is echoed on the result so the response routes to the agent that fetched, not whatever view is active when it lands.
     FetchShellSuggestions {
         agent_id: AgentId,
@@ -2204,12 +2204,12 @@ pub enum Effect {
         /// Deterministic Tab fetches run only the shell's token providers (path/file); the as-you-type pipeline keeps all of them.
         token_only: bool,
     },
-    /// Send an ACP `x.ai/suggestPrompt` request to the shell.
+    /// Send an ACP `ezer/suggestPrompt` request to the shell.
     /// It predicts the user's likely next prompt after a completed turn (tab autocomplete ghost text).
     FetchPromptSuggestion {
         agent_id: AgentId,
         generation: u64,
-        /// Suggestion model resolved by the pager (`grok-4.6` when the catalog offers it).
+        /// Suggestion model resolved by the pager (`test-model-4.6` when the catalog offers it).
         /// `None` makes the shell fall back to the session model.
         model: Option<String>,
         session_id: Option<String>,
@@ -2244,7 +2244,7 @@ pub enum Effect {
         plan: Box<crate::diagnostics::FixPlan>,
     },
 }
-/// Wire params for `x.ai/session/rename`.
+/// Wire params for `ezer/session/rename`.
 /// Shared with the effect executor so dispatch tests can pin the exact camelCase payload.
 #[derive(Debug, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -2283,7 +2283,7 @@ impl RenameSessionRequest {
         }
     }
 }
-/// Outcome of an `x.ai/subagent/cancel` request, telling dispatch whether the pager must finalize the subagent row itself.
+/// Outcome of an `ezer/subagent/cancel` request, telling dispatch whether the pager must finalize the subagent row itself.
 #[derive(Debug)]
 pub enum SubagentKillOutcome {
     /// Shell stopped a live subagent; a real `SubagentFinished` is coming.
@@ -2426,7 +2426,7 @@ pub enum TaskResult {
         code_restored: bool,
         restore_summary: Option<String>,
         restore_degree: Option<ezer_workspace::session::git::RestoreDegree>,
-        /// The session's in-flight running prompt id (from the load response `_meta["x.ai/runningPromptId"]`).
+        /// The session's in-flight running prompt id (from the load response `_meta["ezer/runningPromptId"]`).
         /// Present only when the session was loaded MID-turn (another client is driving).
         /// The loader adopts it to pass the live `session/update` gate without re-rendering the user block (replay already rendered it).
         running_prompt_id: Option<String>,
@@ -2455,9 +2455,9 @@ pub enum TaskResult {
         /// Echo of [`Effect::FetchSessionList::generation`]; results for a superseded picker incarnation are dropped.
         generation: u64,
         sessions: Vec<crate::app::app_view::SessionPickerEntry>,
-        /// A degraded conversations lane (`_meta["x.ai/partial"]`), shown as an actionable picker notice instead of a silent empty list.
+        /// A degraded conversations lane (`_meta["ezer/partial"]`), shown as an actionable picker notice instead of a silent empty list.
         partial: Option<crate::app::effects::ConversationsPartial>,
-        /// Directory scope `sessions` were drawn from (`x.ai/listScope`).
+        /// Directory scope `sessions` were drawn from (`ezer/listScope`).
         scope: ezer_shell::session::unified_list::ListScope,
         /// Echo of [`Effect::FetchSessionList::seq`]; stale results are dropped.
         seq: u64,
@@ -2506,7 +2506,7 @@ pub enum TaskResult {
         query: String,
         seq: u64,
     },
-    /// Leader session roster loaded via `x.ai/sessions/list`.
+    /// Leader session roster loaded via `ezer/sessions/list`.
     RosterLoaded {
         sessions: Vec<crate::app::roster::RosterEntry>,
     },
@@ -2617,7 +2617,7 @@ pub enum TaskResult {
     ConsentPersistFailed {
         error: String,
     },
-    /// Response to `x.ai/subagent/cancel`; see [`SubagentKillOutcome`].
+    /// Response to `ezer/subagent/cancel`; see [`SubagentKillOutcome`].
     KillSubagentComplete {
         session_id: acp::SessionId,
         subagent_id: String,
@@ -2690,7 +2690,7 @@ pub enum TaskResult {
         /// Deprecated: superseded by `mode` (authoritative).
         /// Kept only as a back-compat fallback for older agents that don't send `mode`.
         external: bool,
-        /// Presentation mode from `x.ai/auth/get_url`; `None` on older agents.
+        /// Presentation mode from `ezer/auth/get_url`; `None` on older agents.
         mode: Option<String>,
     },
     /// Auth code was submitted (fire-and-forget).
@@ -3019,7 +3019,7 @@ pub enum TaskResult {
         /// Set when attached images were left out of the side question.
         image_notice: Option<String>,
     },
-    /// `x.ai/recap` request acknowledged (fire-and-forget).
+    /// `ezer/recap` request acknowledged (fire-and-forget).
     /// The recap itself arrives separately as a `SessionRecap` notification; this only carries a transport error, if any, for logging.
     RecapRequested {
         /// Session the recap was requested for; lets the handler find the agent whose manual loading spinner must be cleared on failure.
@@ -3052,9 +3052,9 @@ pub enum TaskResult {
     },
     /// Shell acknowledged logout (auth cleared).
     LogoutComplete,
-    /// Best-effort `x.ai/auth/cancel` finished (no UI update; state already left Authenticating).
+    /// Best-effort `ezer/auth/cancel` finished (no UI update; state already left Authenticating).
     AuthCancelComplete,
-    /// Shell responded to `x.ai/auth/check_subscription`.
+    /// Shell responded to `ezer/auth/check_subscription`.
     /// `verify` echoes the generation from `Effect::CheckSubscription` for deferred-gate verifications.
     CheckSubscriptionComplete {
         verify: Option<u64>,
@@ -3084,7 +3084,7 @@ pub enum TaskResult {
         results: Vec<ezer_shell::extensions::session_search::SearchSessionHit>,
         seq: u64,
     },
-    /// `x.ai/session/fork` completed (no-worktree path).
+    /// `ezer/session/fork` completed (no-worktree path).
     /// The pager adopts the new session id and emits [`Effect::LoadSession`] to start the replay.
     /// Mirrors [`TaskResult::WorktreeForked`] in shape.
     ForkSessionReady {
@@ -3094,7 +3094,7 @@ pub enum TaskResult {
         /// Parent session id the fork was taken from (to retarget the one-shot restore-code suppression).
         parent_session_id: acp::SessionId,
     },
-    /// `x.ai/session/fork` failed.
+    /// `ezer/session/fork` failed.
     /// The placeholder agent stays in `app.agents` with no `session_id` so the user can switch away.
     ForkSessionFailed {
         agent_id: AgentId,
@@ -3165,7 +3165,7 @@ pub enum TaskResult {
         agent_id: AgentId,
         generation: u64,
     },
-    /// Shell suggestions loaded from ACP `x.ai/suggest`.
+    /// Shell suggestions loaded from ACP `ezer/suggest`.
     /// `request_text` / `request_cursor` echo what the request was built from, paired atomically with the items.
     /// They are the anchor the items' `replaceRange` offsets index into and the position Tab targets.
     ShellSuggestionsLoaded {
@@ -3174,7 +3174,7 @@ pub enum TaskResult {
         request_text: String,
         request_cursor: usize,
     },
-    /// Predicted next prompt loaded from ACP `x.ai/suggestPrompt`.
+    /// Predicted next prompt loaded from ACP `ezer/suggestPrompt`.
     /// `suggestion` is `None` when the shell had nothing to suggest.
     PromptSuggestionLoaded {
         agent_id: AgentId,

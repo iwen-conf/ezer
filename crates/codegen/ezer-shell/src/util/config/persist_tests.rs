@@ -306,7 +306,7 @@ fn merge_section_updates_modeled_fields_preserving_unmodeled() {
     ui.insert("show_timestamps".into(), TomlValue::Boolean(true));
     ui.insert(
         "auto_light_theme".into(),
-        TomlValue::String("grokday".into()),
+        TomlValue::String("ezerday".into()),
     );
     table.insert("ui".into(), TomlValue::Table(ui));
     let cfg = crate::agent::config::UiConfig {
@@ -327,7 +327,7 @@ fn merge_section_updates_modeled_fields_preserving_unmodeled() {
     );
     assert_eq!(
         ui.get("auto_light_theme").and_then(|v| v.as_str()),
-        Some("grokday"),
+        Some("ezerday"),
         "pre-existing field not in serialized output should be preserved"
     );
 }
@@ -452,7 +452,7 @@ auto_light_theme = "ezerday"
     assert!(cfg.ui.yolo);
     assert_eq!(cfg.ui.show_timestamps, Some(false));
     assert_eq!(cfg.ui.auto_dark_theme.as_deref(), Some("tokyonight"));
-    assert_eq!(cfg.ui.auto_light_theme.as_deref(), Some("grokday"));
+    assert_eq!(cfg.ui.auto_light_theme.as_deref(), Some("ezerday"));
     let mut table = root.as_table().unwrap().clone();
     merge_section(&mut table, "ui", &cfg.ui);
     let ui = table.get("ui").unwrap().as_table().unwrap();
@@ -466,7 +466,7 @@ auto_light_theme = "ezerday"
     );
     assert_eq!(
         ui.get("auto_light_theme").and_then(|v| v.as_str()),
-        Some("grokday")
+        Some("ezerday")
     );
     assert_eq!(ui.get("yolo").and_then(|v| v.as_bool()), Some(true));
 }
@@ -534,14 +534,14 @@ auto_dark_theme = "tokyonight"
 auto_light_theme = "ezerday"
 
 [models]
-default = "grok-3"
+default = "test-model-3"
 
 [cli]
 auto_update = true
 "#;
     let root: TomlValue = toml::from_str(original).unwrap();
     let mut cfg = load_config_from_toml(&root);
-    cfg.models.default = Some("grok-4".to_string());
+    cfg.models.default = Some("test-model-4".to_string());
     let mut table = root.as_table().unwrap().clone();
     merge_section(&mut table, "cli", &cfg.cli);
     merge_section(&mut table, "models", &cfg.models);
@@ -563,7 +563,7 @@ auto_update = true
     let models = table.get("models").unwrap().as_table().unwrap();
     assert_eq!(
         models.get("default").and_then(|v| v.as_str()),
-        Some("grok-4")
+        Some("test-model-4")
     );
 }
 #[test]
@@ -606,7 +606,7 @@ fn merge_section_replaces_non_table_section() {
 #[test]
 fn models_config_serializes_only_some_fields() {
     let m = crate::agent::config::ModelsConfig {
-        default: Some("grok-3".to_string()),
+        default: Some("test-model-3".to_string()),
         ..Default::default()
     };
     let v = TomlValue::try_from(&m).expect("serialize ModelsConfig");
@@ -620,7 +620,7 @@ fn models_config_serializes_only_some_fields() {
         assert!(!t.contains_key("disabled_models"));
         assert!(!t.contains_key("allowed_models"));
         assert!(!t.contains_key("agent_type"));
-        assert_eq!(t.get("default").and_then(|x| x.as_str()), Some("grok-3"));
+        assert_eq!(t.get("default").and_then(|x| x.as_str()), Some("test-model-3"));
     } else {
         panic!("expected table from serialization");
     }
@@ -868,8 +868,8 @@ mod resolve_auto_compact {
     };
     use crate::agent::config::{Config, ConfigModelOverride, ModelInfo};
     use std::sync::Mutex;
-    const TEST_MODEL: &str = "grok-4.5";
-    const OTHER_MODEL: &str = "grok-4.3";
+    const TEST_MODEL: &str = "test-model-4.5";
+    const OTHER_MODEL: &str = "test-model-4.3";
     /// Serialize tests that mutate `EZER_AUTO_COMPACT_THRESHOLD_PERCENT`.
     static ENV_LOCK: Mutex<()> = Mutex::new(());
     /// Build a `Config` populated with optional per-source values for the `TEST_MODEL`.
@@ -1285,7 +1285,7 @@ custom_unknown_key = 42
 fn project_slot_symlink(dir: &std::path::Path) -> (std::path::PathBuf, std::path::PathBuf) {
     let outside = dir.join("outside.toml");
     std::fs::write(&outside, "keep\n").unwrap();
-    let link = dir.join(".grok").join("config.toml");
+    let link = dir.join(".ezer").join("config.toml");
     std::fs::create_dir_all(link.parent().unwrap()).unwrap();
     std::os::unix::fs::symlink(&outside, &link).unwrap();
     (link, outside)

@@ -114,7 +114,7 @@ pub fn resolve_mouse_reporting_toggle(
 mod tests {
     use super::*;
 
-    // Assumes GROK_MOUSE_REPORTING_TOGGLE is unset in the test env.
+    // Assumes EZER_MOUSE_REPORTING_TOGGLE is unset in the test env.
     #[test]
     fn resolve_mouse_reporting_toggle_defaults_off() {
         use crate::agent::config::{ConfigSource, UiConfig};

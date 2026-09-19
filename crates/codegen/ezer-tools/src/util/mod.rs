@@ -4,7 +4,7 @@ pub mod command_display;
 pub mod env;
 pub mod fs;
 pub mod git_detect;
-pub mod grok_home;
+pub mod ezer_home;
 pub mod hash;
 pub mod image_compress;
 pub use ezer_image as image_validate;
@@ -27,9 +27,9 @@ pub use command_display::strip_redundant_session_cd;
 #[cfg(unix)]
 pub use env::detach_from_tty;
 pub use env::substitute_plugin_tokens;
-pub use env::{EZER_AGENT_ENV, EZER_AGENT_ENV_VALUE, apply_grok_agent_marker, pager_env};
+pub use env::{EZER_AGENT_ENV, EZER_AGENT_ENV_VALUE, apply_ezer_agent_marker, pager_env};
 pub use fs::{UnicodePathMatch, canonicalize_with_timeout, try_resolve_unicode_filename};
-pub use grok_home::{grok_application, grok_home};
+pub use ezer_home::{ezer_application, ezer_home};
 pub use path_suggestions::format_not_found_error;
 pub use remap::{remap_json_keys, remap_schema_properties, reverse_map};
 pub use shell_env_policy::{

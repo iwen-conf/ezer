@@ -205,7 +205,7 @@ mod tests {
         assert_eq!(p.mode, IntraCompactionMode::FullReplace);
         assert_eq!(p.min_steps_before_compact, 3);
         // Field is present; FullReplace only uses the token threshold
-        // (parity with grok-build auto-compact).
+        // (parity with ezer-build auto-compact).
         let t = should_compact(&p, 90_000, 100_000, 0).expect("should trigger");
         assert_eq!(t.step, 0);
         assert!(should_compact(&p, 90_000, 100_000, 2).is_some());

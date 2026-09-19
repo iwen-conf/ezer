@@ -179,7 +179,7 @@ fn resolve_skill_path(raw: &str, cwd: &str) -> String {
 /// Collect auto-discovered skill source directories and their counts.
 fn discover_auto_sources(cwd: &str, skills: &[SkillInfo]) -> Vec<(String, usize)> {
     let cwd_path = std::path::PathBuf::from(cwd);
-    let grok_home = ezer_tools::util::grok_home::grok_home();
+    let ezer_home = ezer_tools::util::ezer_home::ezer_home();
     let git_root = git2::Repository::discover(&cwd_path)
         .ok()
         .and_then(|repo| repo.workdir().map(|p| p.to_path_buf()));
@@ -224,7 +224,7 @@ fn discover_auto_sources(cwd: &str, skills: &[SkillInfo]) -> Vec<(String, usize)
     }
 
     for subdir in &subdirs {
-        try_add_source(grok_home.join(subdir), None);
+        try_add_source(ezer_home.join(subdir), None);
     }
 
     if let Some(home_path) = xai_dirs::home_dir() {
@@ -282,7 +282,7 @@ pub async fn handle(
     compat: CompatConfig,
 ) -> ExtResult {
     match args.method.as_ref() {
-        "x.ai/skills/add" => {
+        "ezer/skills/add" => {
             let req: SkillsAddRequest = serde_json::from_str(args.params.get())?;
             let cwd = req.cwd.as_deref().unwrap_or(".");
 
@@ -340,7 +340,7 @@ pub async fn handle(
             }))
         }
 
-        "x.ai/skills/remove" => {
+        "ezer/skills/remove" => {
             let req: SkillsRemoveRequest = serde_json::from_str(args.params.get())?;
             let cwd = req.cwd.as_deref().unwrap_or(".");
 
@@ -380,7 +380,7 @@ pub async fn handle(
             }))
         }
 
-        "x.ai/skills/reset" => {
+        "ezer/skills/reset" => {
             let params: CwdParams =
                 serde_json::from_str(args.params.get()).unwrap_or(CwdParams { cwd: None });
             let cwd = params.cwd.as_deref().unwrap_or(".");
@@ -401,7 +401,7 @@ pub async fn handle(
             super::to_ext_response(Ok(SkillsResetResponse { skills, message }))
         }
 
-        "x.ai/skills/list" => {
+        "ezer/skills/list" => {
             let req: SkillsListRequest = serde_json::from_str(args.params.get())?;
             let skills = reload_skills(&req.cwd, plugin_registry, compat).await;
             // Sessions otherwise learn about disk changes only from inotify,
@@ -410,7 +410,7 @@ pub async fn handle(
             super::to_ext_response(Ok(SkillsListResponse { skills }))
         }
 
-        "x.ai/workflows/list" => {
+        "ezer/workflows/list" => {
             let req: WorkflowsListRequest = serde_json::from_str(args.params.get())?;
             let Some(handle) = agent.session_handle_waiting_for_load(&req.session_id).await else {
                 return super::to_ext_response(Err::<serde_json::Value, _>(anyhow::anyhow!(
@@ -429,7 +429,7 @@ pub async fn handle(
             super::to_ext_response(Ok(serde_json::json!({ "workflows": workflows })))
         }
 
-        "x.ai/skills/config" => {
+        "ezer/skills/config" => {
             let params: CwdParams =
                 serde_json::from_str(args.params.get()).unwrap_or(CwdParams { cwd: None });
             let cwd = params.cwd.as_deref().unwrap_or(".");
@@ -492,7 +492,7 @@ pub async fn handle(
             }))
         }
 
-        "x.ai/skills/toggle" => {
+        "ezer/skills/toggle" => {
             let req: SkillsToggleRequest = serde_json::from_str(args.params.get())?;
             let cwd = req.cwd.as_deref().unwrap_or(".");
 
@@ -547,7 +547,7 @@ mod tests {
     fn request_cwd_reads_the_field_from_any_request_shape() {
         let req = |json: &str| {
             acp::ExtRequest::new(
-                "x.ai/skills/list",
+                "ezer/skills/list",
                 serde_json::value::to_raw_value(
                     &serde_json::from_str::<serde_json::Value>(json).unwrap(),
                 )

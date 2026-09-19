@@ -113,7 +113,7 @@ fn spawn_ctx(parent_cwd: PathBuf) -> SubagentSpawnContext {
         workspace_ops: ezer_workspace::WorkspaceOps::for_test(),
         auth_manager: Arc::new(ezer_login::AuthManager::new(
             std::path::Path::new("/tmp/nonexistent-ezer-test"),
-            ezer_login::GrokComConfig::default(),
+            ezer_login::EzerComConfig::default(),
         )),
         attribution_callback: None,
         parent_agent_name: None,

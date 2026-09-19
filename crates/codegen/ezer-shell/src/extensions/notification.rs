@@ -50,7 +50,7 @@ pub struct MemoryCaptureDebugEntry {
 }
 
 /// `_meta` key on rename fan-out (`SessionSummaryGenerated` and ACP `SessionInfoUpdate`). Old clients ignore unknown meta.
-pub const TITLE_IS_MANUAL_META_KEY: &str = "x.ai/titleIsManual";
+pub const TITLE_IS_MANUAL_META_KEY: &str = "ezer/titleIsManual";
 
 /// `_meta` object carried on a manual-rename fan-out.
 pub fn title_is_manual_meta() -> serde_json::Value {
@@ -674,7 +674,7 @@ pub enum SessionUpdate {
         session_summary: String,
     },
     /// A short "where was I" recap of the session so far.
-    /// The `x.ai/recap` ext method emits it: `/recap` sets `auto = false`, and returning to the terminal after being away sets `auto = true`.
+    /// The `ezer/recap` ext method emits it: `/recap` sets `auto = false`, and returning to the terminal after being away sets `auto = true`.
     /// The pager renders it as an informational scrollback line; it is never added to the model conversation.
     SessionRecap {
         /// The one-line recap text (roughly 25 to 40 words; capped at a generous safety limit, so a normal recap is shown in full).
@@ -1098,7 +1098,7 @@ pub enum SessionUpdate {
     /// Session worker: ExecutePlan was accepted and is the running turn.
     PlanExecuting,
     /// The durable, replayable signal that a turn reached its terminal outcome.
-    /// Rides the persisted `_x.ai/session/update` rail, unlike the fire-and-forget `x.ai/session/prompt_complete` notification.
+    /// Rides the persisted `_ezer/session/update` rail, unlike the fire-and-forget `ezer/session/prompt_complete` notification.
     /// A viewer that re-attaches mid-turn can therefore finalize the turn from replay instead of staying stuck on "Waiting…".
     TurnCompleted {
         /// Correlation key the re-attaching viewer finalizes the turn on: the prompt/turn whose terminal outcome this carries.
@@ -1236,7 +1236,7 @@ impl From<&crate::session::image_normalize::ImageCompressionInfo> for ImageCompr
 pub const DISK_FULL_ERROR_TYPE: &str = "disk_full";
 pub const DISK_FULL_USER_MESSAGE: &str = "Out of disk space. Free some space and try again.";
 
-/// `x.ai/session/prompt_complete` payload key of a failed stop's typed error kind.
+/// `ezer/session/prompt_complete` payload key of a failed stop's typed error kind.
 /// camelCase like its payload siblings (`stopReason`, `cancelTrigger`). Value: `SamplingErrorKind::as_str()`.
 /// The durable twin carries the same value in [`SessionUpdate::TurnCompleted`]'s typed `error_kind` field.
 pub const PROMPT_COMPLETE_ERROR_KIND_KEY: &str = "errorKind";
@@ -1444,7 +1444,7 @@ pub struct CompactionRequestFile {
     /// Schema version for forward compatibility.
     pub schema_version: u32,
     /// Unique artifact identifier (filename stem).
-    /// This is a per-artifact ID, not the model API's `x_grok_req_id` (which is generated per-attempt inside the sampling layer).
+    /// This is a per-artifact ID, not the model API's `x_ezer_req_id` (which is generated per-attempt inside the sampling layer).
     pub request_id: String,
     /// ISO 8601 timestamp of when the compaction call started.
     pub created_at: String,
@@ -1488,7 +1488,7 @@ pub struct RecapRequestFile {
     /// Schema version for forward compatibility.
     pub schema_version: u32,
     /// Unique artifact identifier (filename stem).
-    /// Distinct from the model API's `x_grok_req_id` (also recorded below for proxy correlation).
+    /// Distinct from the model API's `x_ezer_req_id` (also recorded below for proxy correlation).
     pub request_id: String,
     /// ISO 8601 timestamp of when the recap model call started.
     pub created_at: String,
@@ -1497,9 +1497,9 @@ pub struct RecapRequestFile {
     /// The model id used for the recap side-call.
     pub model: String,
     /// Sampling request id sent to the proxy (`xai-recap-{uuid}`).
-    pub x_grok_req_id: String,
+    pub x_ezer_req_id: String,
     /// Sampling conversation id (`recap-{uuid}`).
-    pub x_grok_conv_id: String,
+    pub x_ezer_conv_id: String,
     /// Whether the side-call requested reasoning/thinking removal before budgeting.
     /// The over-budget path removes reasoning independently.
     pub strip_reasoning: bool,
@@ -1538,8 +1538,8 @@ mod tests {
             created_at: "2026-06-30T00:00:00Z".into(),
             trigger: "auto".into(),
             model: "v9-zingster".into(),
-            x_grok_req_id: "xai-recap-abc".into(),
-            x_grok_conv_id: "recap-abc".into(),
+            x_ezer_req_id: "xai-recap-abc".into(),
+            x_ezer_conv_id: "recap-abc".into(),
             strip_reasoning: false,
             reminder_tag: "system-reminder".into(),
             chat_history: vec![],
@@ -1551,7 +1551,7 @@ mod tests {
         let parsed: RecapRequestFile = serde_json::from_str(&json).unwrap();
         assert_eq!(parsed.schema_version, 1);
         assert_eq!(parsed.trigger, "auto");
-        assert_eq!(parsed.x_grok_req_id, "xai-recap-abc");
+        assert_eq!(parsed.x_ezer_req_id, "xai-recap-abc");
         assert_eq!(
             parsed.summary.as_deref(),
             Some("We fixed the flaky test in queue_worker.")
@@ -1946,7 +1946,7 @@ mod tests {
     fn memory_flush_completed_with_path_roundtrips() {
         let update = SessionUpdate::MemoryFlushCompleted {
             result: "written".into(),
-            path: Some("/home/user/.grok/memory/ws/sessions/log.md".into()),
+            path: Some("/home/user/.ezer/memory/ws/sessions/log.md".into()),
         };
         let json_str = serde_json::to_string(&update).unwrap();
         let parsed: SessionUpdate = serde_json::from_str(&json_str).unwrap();
@@ -1997,7 +1997,7 @@ mod tests {
             memories: vec![MemoryCaptureDebugEntry {
                 statement: "Run focused tests before committing.".into(),
                 body: Some("This repository has expensive whole-workspace tests.".into()),
-                path: "/home/user/.grok/memory/ws/observations/test.md".into(),
+                path: "/home/user/.ezer/memory/ws/observations/test.md".into(),
             }],
         };
         let json = serde_json::to_string(&update).unwrap();
@@ -2012,7 +2012,7 @@ mod tests {
     fn memory_dream_completed_roundtrips() {
         let update = SessionUpdate::MemoryDreamCompleted {
             result: "written (500 chars)".into(),
-            path: Some("/home/user/.grok/memory/ws/MEMORY.md".into()),
+            path: Some("/home/user/.ezer/memory/ws/MEMORY.md".into()),
         };
         let json_str = serde_json::to_string(&update).unwrap();
         let parsed: SessionUpdate = serde_json::from_str(&json_str).unwrap();
@@ -2022,7 +2022,7 @@ mod tests {
     #[test]
     fn memory_session_saved_roundtrips() {
         let update = SessionUpdate::MemorySessionSaved {
-            path: "/home/user/.grok/memory/ws/sessions/2026-01-15-fix-auth-abc12345.md".into(),
+            path: "/home/user/.ezer/memory/ws/sessions/2026-01-15-fix-auth-abc12345.md".into(),
         };
         let json_str = serde_json::to_string(&update).unwrap();
         let parsed: SessionUpdate = serde_json::from_str(&json_str).unwrap();
@@ -2050,7 +2050,7 @@ mod tests {
         let update = SessionUpdate::MemoryFiles {
             files: vec![
                 MemoryFileInfo {
-                    path: "/home/user/.grok/memory/MEMORY.md".into(),
+                    path: "/home/user/.ezer/memory/MEMORY.md".into(),
                     source: "global".into(),
                     size_bytes: 1024,
                     modified_epoch_secs: Some(1_700_000_000),
@@ -2058,7 +2058,7 @@ mod tests {
                     title: None,
                 },
                 MemoryFileInfo {
-                    path: "/project/.grok/memory/MEMORY.md".into(),
+                    path: "/project/.ezer/memory/MEMORY.md".into(),
                     source: "workspace".into(),
                     size_bytes: 512,
                     modified_epoch_secs: None,
@@ -2272,7 +2272,7 @@ mod tests {
             total_worker_rounds: 4,
             total_verify_rounds: 2,
             live_subagent_tokens: Some(10_000),
-            live_tokens_by_model: vec![("grok-4".into(), 6_000), ("grok-3".into(), 4_000)],
+            live_tokens_by_model: vec![("test-model-4".into(), 6_000), ("test-model-3".into(), 4_000)],
             live_context_pct: Some(35),
             live_turn_count: Some(3),
             live_tool_call_count: Some(8),
@@ -2360,7 +2360,7 @@ mod tests {
         );
         assert_eq!(
             json.pointer("/live_tokens_by_model/0/0"),
-            Some(&serde_json::json!("grok-4"))
+            Some(&serde_json::json!("test-model-4"))
         );
         assert_eq!(
             json.pointer("/live_tokens_by_model/0/1"),
@@ -2578,7 +2578,7 @@ mod tests {
     #[test]
     fn model_changed_serializes_snake_case_with_optional_effort() {
         let with_effort = SessionUpdate::ModelChanged {
-            model_id: "grok-4".into(),
+            model_id: "test-model-4".into(),
             reasoning_effort: Some("high".into()),
         };
         let json = serde_json::to_value(&with_effort).unwrap();
@@ -2586,14 +2586,14 @@ mod tests {
             json.get("sessionUpdate"),
             Some(&serde_json::json!("model_changed"))
         );
-        assert_eq!(json.get("model_id"), Some(&serde_json::json!("grok-4")));
+        assert_eq!(json.get("model_id"), Some(&serde_json::json!("test-model-4")));
         assert_eq!(
             json.get("reasoning_effort"),
             Some(&serde_json::json!("high"))
         );
 
         let without_effort = SessionUpdate::ModelChanged {
-            model_id: "grok-3".into(),
+            model_id: "test-model-3".into(),
             reasoning_effort: None,
         };
         let json = serde_json::to_value(&without_effort).unwrap();
@@ -2601,7 +2601,7 @@ mod tests {
             json.get("sessionUpdate"),
             Some(&serde_json::json!("model_changed"))
         );
-        assert_eq!(json.get("model_id"), Some(&serde_json::json!("grok-3")));
+        assert_eq!(json.get("model_id"), Some(&serde_json::json!("test-model-3")));
         assert!(
             json.get("reasoning_effort").is_none(),
             "reasoning_effort: None must be skipped on the wire so old pagers \
@@ -2615,7 +2615,7 @@ mod tests {
     #[test]
     fn model_changed_roundtrips_through_json() {
         let original = SessionUpdate::ModelChanged {
-            model_id: "grok-4".into(),
+            model_id: "test-model-4".into(),
             reasoning_effort: Some("medium".into()),
         };
         let json_str = serde_json::to_string(&original).unwrap();
@@ -2631,7 +2631,7 @@ mod tests {
         let notif = SessionNotification {
             session_id: acp::SessionId::new("sess-abc"),
             update: SessionUpdate::ModelChanged {
-                model_id: "grok-4".into(),
+                model_id: "test-model-4".into(),
                 reasoning_effort: None,
             },
             meta: None,
@@ -2644,7 +2644,7 @@ mod tests {
         );
         assert_eq!(
             json.pointer("/update/model_id"),
-            Some(&serde_json::json!("grok-4"))
+            Some(&serde_json::json!("test-model-4"))
         );
     }
 

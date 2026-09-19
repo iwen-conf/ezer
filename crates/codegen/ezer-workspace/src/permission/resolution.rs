@@ -211,9 +211,9 @@ fn load_requirements_permissions() -> Vec<Sourced<PermissionRule>> {
 fn load_config_toml_permissions(cwd: &Path, project_trusted: bool) -> Vec<Sourced<PermissionRule>> {
     let mut rules = Vec::new();
 
-    // Global `~/.grok/config.toml` first (lowest priority within this layer).
-    // Gated on user_grok_home() so a project's .grok/config.toml is never read as global permissions when neither GROK_HOME nor a home dir resolves
-    if let Some(global_path) = ezer_config::user_grok_home().map(|g| g.join("config.toml"))
+    // Global `~/.ezer/config.toml` first (lowest priority within this layer).
+    // Gated on user_ezer_home() so a project's .ezer/config.toml is never read as global permissions when neither EZER_HOME nor a home dir resolves
+    if let Some(global_path) = ezer_config::user_ezer_home().map(|g| g.join("config.toml"))
         && global_path.is_file()
     {
         match ezer_config::load_config_file(&global_path) {
@@ -229,7 +229,7 @@ fn load_config_toml_permissions(cwd: &Path, project_trusted: bool) -> Vec<Source
     }
 
     // Project-scoped configs walking from git root down to cwd, gated on trust.
-    // An untrusted clone must not contribute allow/deny/ask rules via `.grok/config.toml` (same gate as project `.claude/settings.json`)
+    // An untrusted clone must not contribute allow/deny/ask rules via `.ezer/config.toml` (same gate as project `.claude/settings.json`)
     if project_trusted {
         for path in crate::project_config::find_project_configs(cwd) {
             match ezer_config::load_config_file(&path) {
@@ -563,7 +563,7 @@ async fn resolve_permissions_with_provenance_inner(
     // CLI `--allow '*'` is filtered at its own merge site (acp_session)
     let all_rules = drop_untrusted_catchall_allows(all_rules, policy_block, &mut skipped);
 
-    // Keep skip-only resolutions alive so the drop reaches `grok inspect`
+    // Keep skip-only resolutions alive so the drop reaches `ezer inspect`
     // A rule-less explicit defaultMode must survive: dropping it to `None` erases `default_mode_configured` and lets the alwaysAllow hint upgrade it
     if all_rules.is_empty()
         && prompt_policy == PromptPolicy::Ask
@@ -640,7 +640,7 @@ fn resolve_claude_settings_inner(
             for w in &warnings {
                 warn!(path = %path.display(), "{}", w);
             }
-            // Rules *or* skip-only parse failures still own provenance for `grok inspect`
+            // Rules *or* skip-only parse failures still own provenance for `ezer inspect`
             // All-invalid allow/deny/ask must not leave primary_source_path unset and panic below
             if (!cfg.rules.is_empty() || !warnings.is_empty()) && primary_source_path.is_none() {
                 primary_source_path = Some(path.clone());
@@ -677,7 +677,7 @@ fn resolve_claude_settings_inner(
     }
 
     // A blocked bypass, a claimed defaultMode (incl. a typo treated as default), or skip records still resolve (possibly zero rules).
-    // Provenance then reaches `grok inspect` via the outer resolver
+    // Provenance then reaches `ezer inspect` via the outer resolver
     if all_rules.is_empty()
         && prompt_policy == PromptPolicy::Ask
         && !bypass_blocked

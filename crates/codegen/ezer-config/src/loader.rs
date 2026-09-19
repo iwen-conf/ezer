@@ -4,9 +4,9 @@
 
 use std::path::Path;
 
-use crate::paths::{system_config_dir, user_grok_home};
+use crate::paths::{system_config_dir, user_ezer_home};
 use crate::version_overrides::{self, apply_version_overrides};
-use xai_dirs::resolve_grok_home;
+use xai_dirs::resolve_ezer_home;
 
 /// Read and parse a TOML file WITHOUT `$VAR` expansion (empty table if absent).
 /// Shared core of [`load_toml_file`] and the hook-layer read.
@@ -83,13 +83,13 @@ pub fn load_config_file(path: &Path) -> std::io::Result<toml::Value> {
 }
 
 pub fn load_from_disk() -> std::io::Result<toml::Value> {
-    // Live `$EZER_HOME` / `$EZER_HOME`: `user_grok_home()` / `grok_home()` are OnceLock
+    // Live `$EZER_HOME` / `$EZER_HOME`: `user_ezer_home()` / `ezer_home()` are OnceLock
     // and miss EnvGuard/tests (same reason user `config.toml` persist resolves live). A
     // stale cache would read a different file than the last settings write.
-    if let Some(home) = resolve_grok_home() {
+    if let Some(home) = resolve_ezer_home() {
         crate::first_run::ensure_first_run_config(&home);
     }
-    load_user_config_layer(resolve_grok_home().as_deref(), USER_CONFIG_FILENAME)
+    load_user_config_layer(resolve_ezer_home().as_deref(), USER_CONFIG_FILENAME)
 }
 
 /// User config filename (`$EZER_HOME/config.toml`), shared by the loaders here.
@@ -115,7 +115,7 @@ pub const TRUSTED_HOOK_PROJECTS_FILENAME: &str = "trusted-hook-projects";
 pub const TRUSTED_PLUGINS_FILENAME: &str = "trusted-plugins";
 
 pub fn load_managed_config() -> std::io::Result<toml::Value> {
-    load_user_config_layer(user_grok_home().as_deref(), MANAGED_CONFIG_FILENAME)
+    load_user_config_layer(user_ezer_home().as_deref(), MANAGED_CONFIG_FILENAME)
 }
 
 /// Load a user-tier config layer from `<home>/<filename>`.
@@ -150,7 +150,7 @@ pub struct ManagedConfigLayer {
 /// Absent layers are skipped; unparsable layers are skipped with a warning.
 /// One bad layer never drops the others.
 pub fn managed_config_layers() -> Vec<ManagedConfigLayer> {
-    managed_config_layers_at(system_config_dir().as_deref(), user_grok_home().as_deref())
+    managed_config_layers_at(system_config_dir().as_deref(), user_ezer_home().as_deref())
 }
 
 /// [`managed_config_layers`] with explicit directories.
@@ -318,7 +318,7 @@ impl HookConfigLayer {
 /// Read WITHOUT env-expansion and never merged (hooks combine additively downstream).
 /// Absent or unparsable layers are skipped with a warning so one bad layer can't drop the others.
 pub fn hook_config_layers() -> Vec<HookConfigLayer> {
-    hook_config_layers_at(system_config_dir().as_deref(), user_grok_home().as_deref())
+    hook_config_layers_at(system_config_dir().as_deref(), user_ezer_home().as_deref())
 }
 
 /// Warn when a policy-tier hooks file is a symlink or not root-owned; the no-disable exemption assumes admin ownership of the system dir.
@@ -836,7 +836,7 @@ mod tests {
 
     #[test]
     fn load_user_config_layer_treats_empty_file_as_empty_table() {
-        let dir = std::env::temp_dir().join(format!("grok-load-empty-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("ezer-load-empty-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         std::fs::write(dir.join("config.toml"), b"").unwrap();
         let v = load_user_config_layer(Some(&dir), "config.toml").unwrap();
@@ -848,7 +848,7 @@ mod tests {
     fn load_user_config_layer_reads_file_when_home_present() {
         use std::io::Write;
 
-        let dir = std::env::temp_dir().join(format!("grok-load-layer-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("ezer-load-layer-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         let mut f = std::fs::File::create(dir.join("config.toml")).unwrap();
         writeln!(f, "[telemetry]\nmode = \"from_file\"\n").unwrap();

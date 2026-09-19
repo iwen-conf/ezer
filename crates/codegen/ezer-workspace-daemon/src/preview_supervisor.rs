@@ -39,11 +39,11 @@ pub const PREVIEW_PROXY_RESTART_BACKOFF_BASE_SECS: u64 = 1;
 /// The restart backoff caps here so a crash-loop pins at this interval rather than growing unbounded.
 pub const PREVIEW_PROXY_RESTART_BACKOFF_CAP_SECS: u64 = 30;
 
-/// `grok_workspace_preview_proxy_restart_total{reason}` counts the (re)start events the in-sandbox supervisor emits, by reason.
+/// `ezer_workspace_preview_proxy_restart_total{reason}` counts the (re)start events the in-sandbox supervisor emits, by reason.
 /// It shows how often the preview-proxy is being restarted.
 static PREVIEW_PROXY_RESTART_TOTAL: LazyLock<IntCounterVec> = LazyLock::new(|| {
     register_int_counter_vec!(
-        "grok_workspace_preview_proxy_restart_total",
+        "ezer_workspace_preview_proxy_restart_total",
         "preview-proxy (re)start events emitted by the in-sandbox supervisor, by reason",
         &["reason"]
     )
@@ -742,7 +742,7 @@ mod tests {
             control_port: Some(6015),
             visibility: Some(PreviewVisibility::Public),
             instance_suffix: Some(".inst.example".to_owned()),
-            auth_redirect: Some("https://grok.com/preview-auth".to_owned()),
+            auth_redirect: Some("https://example.test/preview-auth".to_owned()),
             allow_public: true,
             workspace_server_port: Some(8470),
             discovery_refresh_ms: Some(250),
@@ -765,7 +765,7 @@ mod tests {
                 "--instance-suffix",
                 ".inst.example",
                 "--auth-redirect",
-                "https://grok.com/preview-auth",
+                "https://example.test/preview-auth",
                 "--allow-public",
                 "--workspace-server-port",
                 "8470",
@@ -1668,7 +1668,7 @@ mod tests {
     /// The env var that switches the helper process on, and the success exit code, for the PDEATHSIG test below.
     /// The success code is distinct and non-zero so a filter that matched no test (libtest would exit 0) can't pass by accident.
     #[cfg(target_os = "linux")]
-    const PDEATHSIG_HELPER_ENV: &str = "GROK_PDEATHSIG_HELPER";
+    const PDEATHSIG_HELPER_ENV: &str = "EZER_PDEATHSIG_HELPER";
     #[cfg(target_os = "linux")]
     const PDEATHSIG_HELPER_OK: i32 = 42;
 

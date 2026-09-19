@@ -42,7 +42,7 @@ fn last_smoke_check_keeps_final_edit_per_path() {
 }
 
 #[test]
-fn path_helper_matches_only_grok_workflow_rhai_files() {
+fn path_helper_matches_only_ezer_workflow_rhai_files() {
     for path in [
         ".ezer/workflows/check.rhai",
         "project/.ezer/workflows/check.rhai",

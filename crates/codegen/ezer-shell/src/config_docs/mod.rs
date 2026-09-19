@@ -49,28 +49,28 @@ pub const TELEMETRY_OTEL_KEYS: &[&str] = &[
 /// Keys that the pager and `load_from_disk()` read from the user `config.toml` only.
 const USER_ONLY_KEYS: &[&str] = &["features.remember_mode", "privacy.privacy_banner_acked"];
 
-/// The nested GrokComConfig, OAuth2, and OIDC leaf keys that enterprise deployments write today.
+/// The nested EzerComConfig, OAuth2, and OIDC leaf keys that enterprise deployments write today.
 /// Keep in sync with `src/auth/config.rs`.
-const GROK_COM_CONFIG_LEAVES: &[&str] = &[
-    "grok_com_config.grok_ws_origin",
-    "grok_com_config.grok_ws_url",
-    "grok_com_config.token_header",
-    "grok_com_config.auth_provider_label",
-    "grok_com_config.auth_token_ttl",
-    "grok_com_config.auth_provider_command",
-    "grok_com_config.preferred_method",
-    "grok_com_config.disable_api_key_auth",
-    "grok_com_config.force_login_team_uuid",
-    "grok_com_config.oauth2.issuer",
-    "grok_com_config.oauth2.client_id",
-    "grok_com_config.oauth2.scopes",
-    "grok_com_config.oauth2.principal_type",
-    "grok_com_config.oauth2.principal_id",
-    "grok_com_config.oauth2.referrer",
-    "grok_com_config.oidc.issuer",
-    "grok_com_config.oidc.client_id",
-    "grok_com_config.oidc.scopes",
-    "grok_com_config.oidc.audience",
+const EZER_COM_CONFIG_LEAVES: &[&str] = &[
+    "ezer_com_config.ezer_ws_origin",
+    "ezer_com_config.ezer_ws_url",
+    "ezer_com_config.token_header",
+    "ezer_com_config.auth_provider_label",
+    "ezer_com_config.auth_token_ttl",
+    "ezer_com_config.auth_provider_command",
+    "ezer_com_config.preferred_method",
+    "ezer_com_config.disable_api_key_auth",
+    "ezer_com_config.force_login_team_uuid",
+    "ezer_com_config.oauth2.issuer",
+    "ezer_com_config.oauth2.client_id",
+    "ezer_com_config.oauth2.scopes",
+    "ezer_com_config.oauth2.principal_type",
+    "ezer_com_config.oauth2.principal_id",
+    "ezer_com_config.oauth2.referrer",
+    "ezer_com_config.oidc.issuer",
+    "ezer_com_config.oidc.client_id",
+    "ezer_com_config.oidc.scopes",
+    "ezer_com_config.oidc.audience",
 ];
 
 #[derive(Clone, Debug)]
@@ -376,12 +376,12 @@ mod tests {
     }
 
     #[test]
-    fn grok_com_config_nested_fields_and_auth_aliases() {
+    fn ezer_com_config_nested_fields_and_auth_aliases() {
         let (config, _, _) = page();
         let map = by_key(&config);
-        for leaf in GROK_COM_CONFIG_LEAVES {
+        for leaf in EZER_COM_CONFIG_LEAVES {
             let row = map.get(*leaf).unwrap_or_else(|| panic!("missing {leaf}"));
-            let alias = leaf.replacen("grok_com_config.", "auth.", 1);
+            let alias = leaf.replacen("ezer_com_config.", "auth.", 1);
             let alias_row = map
                 .get(alias.as_str())
                 .unwrap_or_else(|| panic!("missing alias {alias}"));
@@ -395,12 +395,12 @@ mod tests {
                 "{alias} should name `{leaf}`"
             );
         }
-        let Some(disable_auth) = map.get("grok_com_config.disable_api_key_auth") else {
-            panic!("missing grok_com_config.disable_api_key_auth: {map:?}");
+        let Some(disable_auth) = map.get("ezer_com_config.disable_api_key_auth") else {
+            panic!("missing ezer_com_config.disable_api_key_auth: {map:?}");
         };
         assert_eq!(disable_auth.requirements, "pin");
-        let Some(force_team) = map.get("grok_com_config.force_login_team_uuid") else {
-            panic!("missing grok_com_config.force_login_team_uuid: {map:?}");
+        let Some(force_team) = map.get("ezer_com_config.force_login_team_uuid") else {
+            panic!("missing ezer_com_config.force_login_team_uuid: {map:?}");
         };
         assert_eq!(force_team.requirements, "pin");
     }
@@ -426,7 +426,7 @@ mod tests {
     }
 
     #[test]
-    fn overlay_free_gates_do_not_claim_grok_config() {
+    fn overlay_free_gates_do_not_claim_ezer_config() {
         let (config, req, _) = page();
         for row in config.iter().chain(req.iter()) {
             if matches!(

@@ -137,7 +137,7 @@ pub struct ClientCapabilities {
     #[serde(default)]
     pub client_version: Option<String>,
 
-    /// Whether this client has advertised `x.ai/codeNavigation.enabled`.
+    /// Whether this client has advertised `ezer/codeNavigation.enabled`.
     /// When true, the leader injects `codeNavEnabled: true` into `session/new` and `session/load` requests.
     /// The agent can then gate code-nav startup per client rather than reading shared last-initialized state.
     #[serde(default)]
@@ -155,12 +155,12 @@ pub struct ClientCapabilities {
     #[serde(default)]
     pub fs_write: bool,
 
-    /// Whether this client will draw a status row (`x.ai/statusLine`). When true, the leader injects `clientStatusLine: true`.
+    /// Whether this client will draw a status row (`ezer/statusLine`). When true, the leader injects `clientStatusLine: true`.
     /// The agent then builds the payload for a client that asked, not for whichever one started the process. The flag it sets is per session, so other subscribers of a shared session receive the payload too.
     #[serde(default)]
     pub status_line: bool,
 
-    /// Whether this client wants live `user_message_chunk` during a prompt (`x.ai/userMessageEcho`).
+    /// Whether this client wants live `user_message_chunk` during a prompt (`ezer/userMessageEcho`).
     /// When true, the leader injects `clientUserMessageEcho: true`. False is omitted so a client
     /// that advertised at initialize is not overridden (`ezer agent` is persist-only).
     /// The flag it sets is per session, so other subscribers of a shared session receive the echo too.
@@ -521,14 +521,14 @@ pub(crate) enum InternalMethod {
 impl InternalMethod {
     pub(crate) const fn name(self) -> &'static str {
         match self {
-            Self::AuthCleared => "x.ai/internal/auth_cleared",
-            Self::EvictSessions => "x.ai/internal/evict_sessions",
-            Self::ReloadAllMcpServers => "x.ai/internal/reload_all_mcp_servers",
-            Self::ReloadModels => "x.ai/internal/reload_models",
-            Self::ReloadModelsCache => "x.ai/internal/reload_models_cache",
-            Self::ReloadProjectMcpServers => "x.ai/internal/reload_project_mcp_servers",
-            Self::ReloadSkills => "x.ai/internal/reload_skills",
-            Self::ReloadWorkflows => "x.ai/internal/reload_workflows",
+            Self::AuthCleared => "ezer/internal/auth_cleared",
+            Self::EvictSessions => "ezer/internal/evict_sessions",
+            Self::ReloadAllMcpServers => "ezer/internal/reload_all_mcp_servers",
+            Self::ReloadModels => "ezer/internal/reload_models",
+            Self::ReloadModelsCache => "ezer/internal/reload_models_cache",
+            Self::ReloadProjectMcpServers => "ezer/internal/reload_project_mcp_servers",
+            Self::ReloadSkills => "ezer/internal/reload_skills",
+            Self::ReloadWorkflows => "ezer/internal/reload_workflows",
         }
     }
 
@@ -834,7 +834,7 @@ mod tests {
             cwd: Some("/home/u/proj".into()),
             uptime_ms: 4200,
             active_tool_calls: 2,
-            sessions: vec!["grok-a".into(), "grok-b".into()],
+            sessions: vec!["ezer-a".into(), "ezer-b".into()],
             pid: 4242,
         };
         let json = serde_json::to_string(&payload).unwrap();
@@ -933,7 +933,7 @@ mod tests {
         let claim = CursorWorkerClaim {
             bc_id: "bc-1".into(),
             state: "claimed".into(),
-            worktree_path: "/home/u/.grok/worktrees/proj/cursor-bc-1".into(),
+            worktree_path: "/home/u/.ezer/worktrees/proj/cursor-bc-1".into(),
             source_dir: "/home/u/proj".into(),
             controller_id: Some("ctrl-1".into()),
             claimed_at_ms: 1_762_000_000_000,

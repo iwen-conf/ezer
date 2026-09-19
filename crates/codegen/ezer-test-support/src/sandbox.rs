@@ -17,7 +17,7 @@ const REDACTED: &str = "<redacted>";
 pub struct TestSandbox {
     root: TempDir,
     home: PathBuf,
-    grok_home: PathBuf,
+    ezer_home: PathBuf,
     workspace: PathBuf,
     temp: PathBuf,
     env: BTreeMap<OsString, OsString>,
@@ -45,8 +45,8 @@ impl TestSandbox {
     }
 
     /// Explicit ezer state root.
-    pub fn grok_home(&self) -> &Path {
-        &self.grok_home
+    pub fn ezer_home(&self) -> &Path {
+        &self.ezer_home
     }
 
     /// Isolated working directory.
@@ -156,10 +156,10 @@ impl TestSandbox {
     /// Secret-bearing values are never included.
     pub fn diagnostic_summary(&self) -> String {
         let mut summary = format!(
-            "root={} home={} grok_home={} workspace={} temp={}",
+            "root={} home={} ezer_home={} workspace={} temp={}",
             self.root().display(),
             self.home.display(),
-            self.grok_home.display(),
+            self.ezer_home.display(),
             self.workspace.display(),
             self.temp.display(),
         );
@@ -209,16 +209,16 @@ impl TestSandboxBuilder {
     pub fn build(self) -> TestSandbox {
         let root = TempDir::new().expect("create test sandbox root");
         let home = root.path().join("home");
-        let grok_home = home.join(".ezer");
+        let ezer_home = home.join(".ezer");
         let workspace = root.path().join("workspace");
         let temp = root.path().join("tmp");
-        for path in [&home, &grok_home, &workspace, &temp] {
+        for path in [&home, &ezer_home, &workspace, &temp] {
             std::fs::create_dir_all(path)
                 .unwrap_or_else(|e| panic!("create sandbox path {}: {e}", path.display()));
         }
 
         let parent_cwd = std::env::current_dir().expect("read parent cwd for test sandbox");
-        let mut env = baseline_env(&home, &grok_home, &temp, &parent_cwd);
+        let mut env = baseline_env(&home, &ezer_home, &temp, &parent_cwd);
         if let Some(url) = self.mock_url {
             apply_mock_url(&mut env, url);
         }
@@ -226,7 +226,7 @@ impl TestSandboxBuilder {
         let sandbox = TestSandbox {
             root,
             home,
-            grok_home,
+            ezer_home,
             workspace,
             temp,
             env,
@@ -290,17 +290,17 @@ fn apply_mock_url(env: &mut BTreeMap<OsString, OsString>, url: String) {
 
 fn baseline_env(
     home: &Path,
-    grok_home: &Path,
+    ezer_home: &Path,
     temp: &Path,
     parent_cwd: &Path,
 ) -> BTreeMap<OsString, OsString> {
     let parent_env = std::env::vars_os().collect();
-    baseline_env_from_parent(home, grok_home, temp, parent_cwd, &parent_env)
+    baseline_env_from_parent(home, ezer_home, temp, parent_cwd, &parent_env)
 }
 
 fn baseline_env_from_parent(
     home: &Path,
-    grok_home: &Path,
+    ezer_home: &Path,
     temp: &Path,
     parent_cwd: &Path,
     parent_env: &BTreeMap<OsString, OsString>,
@@ -320,7 +320,7 @@ fn baseline_env_from_parent(
     for (key, value) in [
         ("HOME", home),
         ("USERPROFILE", home),
-        ("GROK_HOME", grok_home),
+        ("EZER_HOME", ezer_home),
         ("TMPDIR", temp),
         ("TMP", temp),
         ("TEMP", temp),
@@ -343,7 +343,7 @@ fn baseline_env_from_parent(
         ("DISABLE_FEEDBACK_COMMAND", "1"),
         ("EZER_DISABLE_AUTOUPDATER", "1"),
         ("EZER_PROMPT_SUGGESTIONS", "false"),
-        // Every sandbox has an empty `GROK_HOME`, so without this the agent id is
+        // Every sandbox has an empty `EZER_HOME`, so without this the agent id is
         // recomputed per test; on Windows that is a ~30s `powershell Get-WmiObject`
         // run inside `initialize`, which blew the harness deadlines (GB-5593).
         ("EZER_AGENT_ID", "ezer-e2e-sandbox"),
@@ -364,7 +364,7 @@ fn baseline_env_from_parent(
     }
     env.insert(
         "GIT_CONFIG_GLOBAL".into(),
-        grok_home.join("gitconfig").into_os_string(),
+        ezer_home.join("gitconfig").into_os_string(),
     );
     env
 }
@@ -520,7 +520,7 @@ fn diagnostic_value_is_sensitive(key: &OsStr) -> bool {
         || is_endpoint_key(&key)
         || matches!(
             key.to_ascii_uppercase().as_str(),
-            "HOME" | "USERPROFILE" | "GROK_HOME" | "TMPDIR" | "TMP" | "TEMP" | "GIT_CONFIG_GLOBAL"
+            "HOME" | "USERPROFILE" | "EZER_HOME" | "TMPDIR" | "TMP" | "TEMP" | "GIT_CONFIG_GLOBAL"
         )
 }
 
@@ -564,7 +564,7 @@ mod tests {
         let sandbox = TestSandbox::new();
         for path in [
             sandbox.home(),
-            sandbox.grok_home(),
+            sandbox.ezer_home(),
             sandbox.workspace(),
             sandbox.temp_dir(),
         ] {
@@ -573,7 +573,7 @@ mod tests {
         }
         assert_ne!(sandbox.home(), sandbox.workspace());
         assert_ne!(sandbox.home(), sandbox.temp_dir());
-        assert_eq!(sandbox.grok_home(), sandbox.home().join(".ezer"));
+        assert_eq!(sandbox.ezer_home(), sandbox.home().join(".ezer"));
     }
 
     #[test]
@@ -702,7 +702,7 @@ mod tests {
         );
         let sandbox = TestSandbox {
             home: root.path().join("home"),
-            grok_home: root.path().join("home/.ezer"),
+            ezer_home: root.path().join("home/.ezer"),
             workspace: root.path().join("workspace"),
             temp: root.path().join("tmp"),
             root,
@@ -769,8 +769,8 @@ mod tests {
             .build();
         assert_eq!(env_value(&sandbox, "HOME"), Some(sandbox.home().into()));
         assert_eq!(
-            env_value(&sandbox, "GROK_HOME"),
-            Some(sandbox.grok_home().into())
+            env_value(&sandbox, "EZER_HOME"),
+            Some(sandbox.ezer_home().into())
         );
         assert_eq!(
             env_value(&sandbox, "TMPDIR"),
@@ -791,7 +791,7 @@ mod tests {
         assert_eq!(
             env_value(&sandbox, "EZER_AGENT_ID").as_deref(),
             Some(OsStr::new("ezer-e2e-sandbox")),
-            "EZER_AGENT_ID must be pinned so a fresh GROK_HOME never computes a machine id (WMI on Windows)"
+            "EZER_AGENT_ID must be pinned so a fresh EZER_HOME never computes a machine id (WMI on Windows)"
         );
         for (sink, value) in [
             ("EZER_TELEMETRY_MIXPANEL_ENABLED", "false"),

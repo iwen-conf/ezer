@@ -17,7 +17,7 @@ fn write_session(
     sandbox_profile: Option<&str>,
     hidden: bool,
 ) {
-    let encoded = crate::util::grok_home::encode_cwd_dirname(cwd);
+    let encoded = crate::util::ezer_home::encode_cwd_dirname(cwd);
     let dir = root.join(&encoded).join(session_id);
     fs::create_dir_all(&dir).unwrap();
     let mut summary = serde_json::json!({
@@ -26,7 +26,7 @@ fn write_session(
         "created_at": "2026-01-01T00:00:00Z",
         "updated_at": updated_at,
         "num_messages": 1,
-        "current_model_id": "grok-3",
+        "current_model_id": "test-model-3",
     });
     if let Some(obj) = summary.as_object_mut() {
         if let Some(la) = last_active_at {
@@ -95,7 +95,7 @@ fn explicit_remote_id_resolves_local_child_profile() {
     let root = tmp.path().join("sessions");
     let cwd = "/work/remote";
     // A remote session restored into a local child: the child has a fresh id and records the remote id as `parent_session_id`
-    let encoded = crate::util::grok_home::encode_cwd_dirname(cwd);
+    let encoded = crate::util::ezer_home::encode_cwd_dirname(cwd);
     let dir = root.join(&encoded).join("local-child");
     fs::create_dir_all(&dir).unwrap();
     let summary = serde_json::json!({
@@ -104,7 +104,7 @@ fn explicit_remote_id_resolves_local_child_profile() {
         "created_at": "2026-01-01T00:00:00Z",
         "updated_at": "2026-01-01T00:00:00Z",
         "num_messages": 1,
-        "current_model_id": "grok-3",
+        "current_model_id": "test-model-3",
         "parent_session_id": "remote-xyz",
         "sandbox_profile": "workspace",
     });
@@ -190,7 +190,7 @@ fn most_recent_cwd_skips_corrupt_summary() {
         false,
     );
     let corrupt_dir = root
-        .join(crate::util::grok_home::encode_cwd_dirname(cwd))
+        .join(crate::util::ezer_home::encode_cwd_dirname(cwd))
         .join("corrupt");
     fs::create_dir_all(&corrupt_dir).unwrap();
     fs::write(corrupt_dir.join("summary.json"), b"not-json").unwrap();
@@ -380,7 +380,7 @@ fn most_recent_cwd_skips_headless_session() {
         Some("workspace"),
         false,
     );
-    let encoded = crate::util::grok_home::encode_cwd_dirname(cwd);
+    let encoded = crate::util::ezer_home::encode_cwd_dirname(cwd);
     let dir = root.join(&encoded).join("headless-newer");
     fs::create_dir_all(&dir).unwrap();
     let summary = serde_json::json!({
@@ -389,7 +389,7 @@ fn most_recent_cwd_skips_headless_session() {
         "created_at": "2026-06-01T00:00:00Z",
         "updated_at": "2026-06-01T00:00:00Z",
         "num_messages": 2,
-        "current_model_id": "grok-3",
+        "current_model_id": "test-model-3",
         "session_kind": "headless",
     });
     fs::write(dir.join("summary.json"), summary.to_string()).unwrap();

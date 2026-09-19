@@ -22,7 +22,7 @@ pub mod device_code;
 pub mod error;
 pub mod external_auth;
 pub mod flow;
-pub mod grok_auth_credentials;
+pub mod ezer_auth_credentials;
 pub mod jwt;
 pub mod manager;
 pub mod model;
@@ -45,7 +45,7 @@ pub use auth_provider::{
 pub use auth_provider::{test_backdate_provider_mint, test_counting_provider};
 pub use config::LEGACY_AUTH_SCOPE;
 pub use config::{
-    ForceLoginTeam, GrokComConfig, OAuth2ProviderConfig, OidcAuthConfig, PreferredAuthMethod,
+    ForceLoginTeam, EzerComConfig, OAuth2ProviderConfig, OidcAuthConfig, PreferredAuthMethod,
     XAI_OAUTH2_ISSUER, is_xai_oauth2_issuer, xai_oauth2_issuer,
 };
 pub use config::{
@@ -69,7 +69,7 @@ pub use error::{AuthError, RefreshTokenError, RefreshTokenFailedReason};
 pub use manager::{AuthManager, shared_api_key_provider};
 pub use manager::{AuthRemedy, CachedTokenState, SilentRefresh};
 pub use meta::{AuthMeta, GateInfo};
-pub use model::{AuthMode, GrokAuth, lookup_auth};
+pub use model::{AuthMode, EzerAuth, lookup_auth};
 pub use model::{TOKEN_TTL, UserInfo, default_coding_data_retention_opt_out, is_expired};
 pub use refresh::DiagnosticUploader;
 pub use storage::auth_json_path;

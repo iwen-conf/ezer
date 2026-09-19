@@ -12,7 +12,7 @@ use crate::permission::rules::DefaultPermissionMode;
 use crate::permission::types::RuleAction;
 
 const FOREIGN: PolicySubjectOrigin = PolicySubjectOrigin::Foreign;
-const NATIVE: PolicySubjectOrigin = PolicySubjectOrigin::GrokNative;
+const NATIVE: PolicySubjectOrigin = PolicySubjectOrigin::EzerNative;
 const CLAUDE_PATH: &str = "/test/managed-settings.json";
 const SYS_REQ: &str = "/etc/ezer/requirements.toml";
 const USER_REQ: &str = "/home/u/.ezer/requirements.toml";
@@ -746,10 +746,10 @@ fn name_argv_and_lockdown_semantics() {
     assert!(deny_name.is_restricted(), "a name denylist restricts");
     check_denied("deny serverName foo", &deny_name, &[
         (hs("foo", "https://x.example/mcp"), true, "bare runtime name"),
-        (hs("grok_com_foo", "https://x.example/mcp"), true, "managed-prefixed runtime name"),
-        (ss("grok_com_foo", "npx"), true, "name match is transport-agnostic"),
+        (hs("ezer_com_foo", "https://x.example/mcp"), true, "managed-prefixed runtime name"),
+        (ss("ezer_com_foo", "npx"), true, "name match is transport-agnostic"),
         (hs("foobar", "https://x.example/mcp"), false, "exact after strip, never substring"),
-        (hs("grok_com_foobar", "https://x.example/mcp"), false, "prefixed near-miss"),
+        (hs("ezer_com_foobar", "https://x.example/mcp"), false, "prefixed near-miss"),
         (hs("barfoo", "https://x.example/mcp"), false, "suffix near-miss"),
         (hs("bar", "https://x.example/mcp"), false, "unrelated name"),
     ]);
@@ -757,8 +757,8 @@ fn name_argv_and_lockdown_semantics() {
     // the deny side above) stays allowed.
     check_allowed("deny serverName foo", &deny_name, &[
         (hs("foo", "https://x.example/mcp"), false, "denied bare name"),
-        (hs("grok_com_foo", "https://x.example/mcp"), false, "denied managed name"),
-        (ss("grok_com_foo", "npx"), false, "denied on any transport"),
+        (hs("ezer_com_foo", "https://x.example/mcp"), false, "denied managed name"),
+        (ss("ezer_com_foo", "npx"), false, "denied on any transport"),
         (hs("foobar", "https://x.example/mcp"), true, "unrelated names remain allowed"),
     ]);
 
@@ -768,8 +768,8 @@ fn name_argv_and_lockdown_semantics() {
     assert!(allow_name.is_restricted(), "a name allowlist restricts");
     check_allowed("allow serverName foo", &allow_name, &[
         (hs("foo", "https://anything.example/x"), true, "named server allowed on any URL"),
-        (hs("grok_com_foo", "https://evil.example/x"), true, "managed spelling, any URL"),
-        (ss("grok_com_foo", "/usr/bin/whatever"), true, "allowed on any transport"),
+        (hs("ezer_com_foo", "https://evil.example/x"), true, "managed spelling, any URL"),
+        (ss("ezer_com_foo", "/usr/bin/whatever"), true, "allowed on any transport"),
         (hs("bar", "https://anything.example/x"), false, "unlisted name blocked"),
         (ss("bar", "npx"), false, "unlisted stdio blocked too"),
     ]);
@@ -789,23 +789,23 @@ fn name_argv_and_lockdown_semantics() {
     }));
     check_denied("serverName deny beats allow", &name_both, &[
         (hs("foo", "https://foo.example/x"), true, "bare spelling"),
-        (hs("grok_com_foo", "https://foo.example/x"), true, "managed spelling"),
+        (hs("ezer_com_foo", "https://foo.example/x"), true, "managed spelling"),
     ]);
     check_allowed("serverName deny beats allow", &name_both, &[
         (hs("foo", "https://foo.example/x"), false, "deny wins for the same name"),
-        (hs("grok_com_foo", "https://foo.example/x"), false, "deny wins, managed spelling"),
+        (hs("ezer_com_foo", "https://foo.example/x"), false, "deny wins, managed spelling"),
     ]);
 
     check_denied(
         "prefixed policy entry vs bare runtime (vice versa)",
         &allowlist_from(serde_json::json!({
-            "deniedMcpServers": [ { "serverName": "grok_com_foo" } ]
+            "deniedMcpServers": [ { "serverName": "ezer_com_foo" } ]
         })),
         &[
             (hs("foo", "https://x.example/mcp"), true, "bare runtime matches after strip"),
-            (hs("grok_com_foo", "https://x.example/mcp"), true, "prefixed runtime matches"),
+            (hs("ezer_com_foo", "https://x.example/mcp"), true, "prefixed runtime matches"),
             (hs("foobar", "https://x.example/mcp"), false, "near-miss unrelated"),
-            (hs("grok_com_foobar", "https://x.example/mcp"), false, "prefixed near-miss"),
+            (hs("ezer_com_foobar", "https://x.example/mcp"), false, "prefixed near-miss"),
     ]);
 
     check_allowed(
@@ -900,7 +900,7 @@ fn deny_only_fails_closed_on_unrecognized_transport() {
     assert!(!unrestricted.is_server_denied_known(&unlisted, false));
 }
 
-/// Pins `serverName` identity: strip `grok_com_`, normalize, exact equality (empty never matches).
+/// Pins `serverName` identity: strip `ezer_com_`, normalize, exact equality (empty never matches).
 /// Legacy truncation applies only to a managed name at exactly the cap, so a long entry is not a prefix grant.
 #[test]
 #[rustfmt::skip]
@@ -934,22 +934,22 @@ fn mcp_name_matching_semantics() {
     let corp = "corporate-approved-server-alpha-prod";
     let rows: Vec<(&str, &str, bool, &str)> = vec![
         ("foo", "foo", true, "exact bare match"),
-        ("foo", "grok_com_foo", true, "bare entry vs managed runtime"),
-        ("grok_com_foo", "foo", true, "managed entry vs bare runtime"),
-        ("grok_com_foo", "grok_com_foo", true, "both managed"),
+        ("foo", "ezer_com_foo", true, "bare entry vs managed runtime"),
+        ("ezer_com_foo", "foo", true, "managed entry vs bare runtime"),
+        ("ezer_com_foo", "ezer_com_foo", true, "both managed"),
         ("foo", "foobar", false, "never substring"),
-        ("foo", "grok_com_foobar", false, "never substring, managed"),
+        ("foo", "ezer_com_foobar", false, "never substring, managed"),
         ("foo", "barfoo", false, "never suffix"),
         ("foo", "bar", false, "different name"),
         ("", "foo", false, "empty entry never matches"),
-        ("Slack", "grok_com_slack", true, "display case folds"),
-        ("My Server", "grok_com_my_server", true, "spaces normalize to underscores"),
-        ("grok_com_my_server", "My Server", true, "managed entry vs display runtime"),
+        ("Slack", "ezer_com_slack", true, "display case folds"),
+        ("My Server", "ezer_com_my_server", true, "spaces normalize to underscores"),
+        ("ezer_com_my_server", "My Server", true, "managed entry vs display runtime"),
         ("My Server", "my_server", true, "display entry vs local runtime"),
         ("SLACK", "slack", true, "all-caps entry"),
         ("My Server", "my_server_2", false, "normalized near-miss"),
         ("", "", false, "both empty never match"),
-        ("grok_com_", "grok_com_anything", false, "bare prefix key is empty"),
+        ("ezer_com_", "ezer_com_anything", false, "bare prefix key is empty"),
         (&long, &long_runtime, true, "too-long entry matches its truncated runtime name"),
         (corp, "corporate-approved-server-alpha-anything", false, "long plain names don't collide"),
         (corp, corp, true, "exact long plain names still match"),
@@ -1873,7 +1873,7 @@ server_url = inf
     );
 
     assert_expects(
-        "grok's own signed TOML layers bind native subjects too",
+        "ezer's own signed TOML layers bind native subjects too",
         &layered(
             None,
             &[(
@@ -2555,7 +2555,7 @@ fn marketplace_block_reason_names_the_actual_blocker() {
         "reason must name the blocking source, got: {reason}"
     );
     assert!(
-        !reason.contains("/etc/grok/"),
+        !reason.contains("/etc/ezer/"),
         "user-facing refusal must not leak the policy directory, got: {reason}"
     );
     // The full-path form for logs still names the complete source.
@@ -2574,11 +2574,11 @@ fn marketplace_block_reason_names_the_actual_blocker() {
 #[test]
 fn mcp_block_reason_user_facing_form_names_the_file_only() {
     let reason = McpBlockReason::Deny {
-        source: PathBuf::from("/etc/grok/managed_config.toml"),
+        source: PathBuf::from("/etc/ezer/managed_config.toml"),
     };
     assert_eq!(
         reason.to_string(),
-        "matches deniedMcpServers (/etc/grok/managed_config.toml)"
+        "matches deniedMcpServers (/etc/ezer/managed_config.toml)"
     );
     assert_eq!(
         reason.user_facing_reason(),

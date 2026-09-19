@@ -892,10 +892,10 @@ impl SessionActor {
                         // Resolved `[auto_mode]` effort: explicit config/remote, else the built-in `Low` default when the model supports it
                         // None means the provider default
                         reasoning_effort: classifier_reasoning_effort,
-                        x_grok_conv_id: Some(format!("perm-classifier-{}", uuid::Uuid::new_v4())),
-                        x_grok_req_id: Some(format!("xai-perm-auto-{}", uuid::Uuid::new_v4())),
-                        x_grok_session_id: Some(session_id),
-                        x_grok_agent_id: Some(ezer_telemetry::id::agent_id()),
+                        x_ezer_conv_id: Some(format!("perm-classifier-{}", uuid::Uuid::new_v4())),
+                        x_ezer_req_id: Some(format!("xai-perm-auto-{}", uuid::Uuid::new_v4())),
+                        x_ezer_session_id: Some(session_id),
+                        x_ezer_agent_id: Some(ezer_telemetry::id::agent_id()),
                         ..ConversationRequest::default()
                     };
                     let fut = sampling_client.conversation_collect(request);
@@ -947,7 +947,7 @@ impl SessionActor {
         let disable_api_key_auth = self
             .auth_manager
             .as_ref()
-            .map(|am| am.grok_com_config().api_key_auth_disabled())
+            .map(|am| am.ezer_com_config().api_key_auth_disabled())
             .unwrap_or(false);
         crate::agent::config::resolve_aux_model_sampling_config(
             slug,

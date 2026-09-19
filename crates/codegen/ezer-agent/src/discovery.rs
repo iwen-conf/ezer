@@ -58,12 +58,12 @@ pub enum SubagentSource {
 /// Build the complete list of enabled subagents: built-ins, then discovered user agents, minus toggles.
 /// Project-level agents shadow built-ins. User-level and bundled agents with built-in names are skipped, keeping `visible == callable`.
 pub fn all_subagents(cwd: &Path, toggle: &HashMap<String, bool>) -> Vec<SubagentEntry> {
-    let grok = ezer_config::user_grok_home();
+    let ezer = ezer_config::user_ezer_home();
     all_subagents_with_home(
         cwd,
         toggle,
         xai_dirs::home_dir().as_deref(),
-        grok.as_deref(),
+        ezer.as_deref(),
     )
 }
 
@@ -71,9 +71,9 @@ fn all_subagents_with_home(
     cwd: &Path,
     toggle: &HashMap<String, bool>,
     home: Option<&Path>,
-    grok_home: Option<&Path>,
+    ezer_home: Option<&Path>,
 ) -> Vec<SubagentEntry> {
-    let discovered = discover_with_home(cwd, home, grok_home);
+    let discovered = discover_with_home(cwd, home, ezer_home);
     merge_subagents(discovered, toggle)
 }
 
@@ -167,53 +167,53 @@ fn merge_subagents(
 
 /// Discover agent definitions from the filesystem. Deduplicates by name; higher priority wins.
 /// Order: project `.ezer/agents/` (cwd up to repo root), user `~/.ezer`, compat `~/.claude`, then bundled.
-/// `.ezer` dirs resolve from `grok_home` plus legacy `~/.ezer` when `GROK_HOME` points elsewhere.
+/// `.ezer` dirs resolve from `ezer_home` plus legacy `~/.ezer` when `EZER_HOME` points elsewhere.
 pub(crate) fn user_agent_dirs(
     home: Option<&Path>,
-    grok_home: Option<&Path>,
+    ezer_home: Option<&Path>,
 ) -> Vec<(std::path::PathBuf, AgentScope)> {
-    // Legacy literal ~/.grok, included only when it differs from grok_home
-    // (i.e. GROK_HOME points elsewhere) so agents left in the old location are
+    // Legacy literal ~/.ezer, included only when it differs from ezer_home
+    // (i.e. EZER_HOME points elsewhere) so agents left in the old location are
     // still discovered and stay consistent with scope_from_path classification.
-    let legacy_grok = home
+    let legacy_dot_ezer = home
         .map(|h| h.join(".ezer"))
-        .filter(|legacy| grok_home != Some(legacy.as_path()));
+        .filter(|legacy| ezer_home != Some(legacy.as_path()));
 
     let mut dirs = Vec::new();
-    if let Some(g) = grok_home {
+    if let Some(g) = ezer_home {
         dirs.push((g.join("agents"), AgentScope::User));
     }
-    if let Some(l) = &legacy_grok {
+    if let Some(l) = &legacy_dot_ezer {
         dirs.push((l.join("agents"), AgentScope::User));
     }
     if let Some(h) = home {
         dirs.push((h.join(".claude").join("agents"), AgentScope::User));
     }
-    if let Some(g) = grok_home {
+    if let Some(g) = ezer_home {
         dirs.push((g.join("bundled").join("agents"), AgentScope::Bundled));
     }
-    if let Some(l) = &legacy_grok {
+    if let Some(l) = &legacy_dot_ezer {
         dirs.push((l.join("bundled").join("agents"), AgentScope::Bundled));
     }
     dirs
 }
 
 pub fn discover(cwd: &Path) -> Vec<AgentDefinition> {
-    let grok = ezer_config::user_grok_home();
-    discover_with_home(cwd, xai_dirs::home_dir().as_deref(), grok.as_deref())
+    let ezer = ezer_config::user_ezer_home();
+    discover_with_home(cwd, xai_dirs::home_dir().as_deref(), ezer.as_deref())
 }
 
 fn discover_with_home(
     cwd: &Path,
     home: Option<&Path>,
-    grok_home: Option<&Path>,
+    ezer_home: Option<&Path>,
 ) -> Vec<AgentDefinition> {
     let mut definitions = Vec::new();
     let mut seen_names = std::collections::HashSet::new();
 
     load_project_definitions(cwd, &mut definitions, &mut seen_names);
 
-    for (dir, scope) in user_agent_dirs(home, grok_home) {
+    for (dir, scope) in user_agent_dirs(home, ezer_home) {
         if dir.is_dir() {
             load_definitions_from_dir(&dir, scope, &mut definitions, &mut seen_names);
         }
@@ -224,21 +224,21 @@ fn discover_with_home(
 
 /// Checks built-ins first, then user-level dirs, then bundled.
 pub fn by_name(name: &str) -> Option<AgentDefinition> {
-    let grok = ezer_config::user_grok_home();
-    by_name_with_home(name, xai_dirs::home_dir().as_deref(), grok.as_deref())
+    let ezer = ezer_config::user_ezer_home();
+    by_name_with_home(name, xai_dirs::home_dir().as_deref(), ezer.as_deref())
 }
 
 fn by_name_with_home(
     name: &str,
     home: Option<&Path>,
-    grok_home: Option<&Path>,
+    ezer_home: Option<&Path>,
 ) -> Option<AgentDefinition> {
     if let Ok(builtin) = BuiltinAgentName::from_str(name) {
         return Some(builtin.definition());
     }
 
     {
-        let home_dirs = user_agent_dirs(home, grok_home);
+        let home_dirs = user_agent_dirs(home, ezer_home);
         for (agents_dir, scope) in home_dirs {
             if let Some(def) = load_definition_by_name(
                 &agents_dir,
@@ -256,21 +256,21 @@ fn by_name_with_home(
 
 /// Project-level `.ezer/agents/` has highest priority, then falls back to built-ins, user-level, and finally bundled definitions.
 pub fn by_name_in_cwd(name: &str, cwd: &Path) -> Option<AgentDefinition> {
-    let grok = ezer_config::user_grok_home();
-    by_name_in_cwd_with_home(name, cwd, xai_dirs::home_dir().as_deref(), grok.as_deref())
+    let ezer = ezer_config::user_ezer_home();
+    by_name_in_cwd_with_home(name, cwd, xai_dirs::home_dir().as_deref(), ezer.as_deref())
 }
 
 fn by_name_in_cwd_with_home(
     name: &str,
     cwd: &Path,
     home: Option<&Path>,
-    grok_home: Option<&Path>,
+    ezer_home: Option<&Path>,
 ) -> Option<AgentDefinition> {
     if let Some(def) = load_project_definition_by_name(name, cwd) {
         return Some(def);
     }
 
-    by_name_with_home(name, home, grok_home)
+    by_name_with_home(name, home, ezer_home)
 }
 
 /// These are the pre-defined agent profiles (`general-purpose`, `explore`, `plan`) that the Task tool can launch.
@@ -365,13 +365,13 @@ pub fn all_subagents_with_plugins(
     toggle: &HashMap<String, bool>,
     plugins: Option<&crate::plugins::PluginRegistry>,
 ) -> Vec<SubagentEntry> {
-    let grok = ezer_config::user_grok_home();
+    let ezer = ezer_config::user_ezer_home();
     all_subagents_with_plugins_and_home(
         cwd,
         toggle,
         plugins,
         xai_dirs::home_dir().as_deref(),
-        grok.as_deref(),
+        ezer.as_deref(),
     )
 }
 
@@ -380,9 +380,9 @@ fn all_subagents_with_plugins_and_home(
     toggle: &HashMap<String, bool>,
     plugins: Option<&crate::plugins::PluginRegistry>,
     home: Option<&Path>,
-    grok_home: Option<&Path>,
+    ezer_home: Option<&Path>,
 ) -> Vec<SubagentEntry> {
-    let discovered = discover_with_home(cwd, home, grok_home);
+    let discovered = discover_with_home(cwd, home, ezer_home);
     let mut entries = merge_subagents(discovered, toggle);
 
     // Append plugin agents under qualified names
@@ -422,13 +422,13 @@ pub fn by_name_in_cwd_with_plugins(
     cwd: &Path,
     plugins: Option<&crate::plugins::PluginRegistry>,
 ) -> Option<AgentDefinition> {
-    let grok = ezer_config::user_grok_home();
+    let ezer = ezer_config::user_ezer_home();
     by_name_in_cwd_with_plugins_and_home(
         name,
         cwd,
         plugins,
         xai_dirs::home_dir().as_deref(),
-        grok.as_deref(),
+        ezer.as_deref(),
     )
 }
 
@@ -437,10 +437,10 @@ fn by_name_in_cwd_with_plugins_and_home(
     cwd: &Path,
     plugins: Option<&crate::plugins::PluginRegistry>,
     home: Option<&Path>,
-    grok_home: Option<&Path>,
+    ezer_home: Option<&Path>,
 ) -> Option<AgentDefinition> {
     // First try native resolution (project > built-in > user > bundled)
-    if let Some(def) = by_name_in_cwd_with_home(name, cwd, home, grok_home) {
+    if let Some(def) = by_name_in_cwd_with_home(name, cwd, home, ezer_home) {
         return Some(def);
     }
 
@@ -658,8 +658,8 @@ mod tests {
         use crate::plugins::PluginOrigin;
         match scope {
             PluginScope::CliOverride => PluginOrigin::CliOverride,
-            PluginScope::Project => PluginOrigin::ProjectGrok,
-            PluginScope::User => PluginOrigin::UserGrok,
+            PluginScope::Project => PluginOrigin::ProjectEzer,
+            PluginScope::User => PluginOrigin::UserEzer,
             PluginScope::ConfigPath => PluginOrigin::ConfigPath,
         }
     }
@@ -735,31 +735,31 @@ mod tests {
     }
 
     #[test]
-    fn user_agent_dirs_includes_legacy_grok_when_grok_home_differs() {
+    fn user_agent_dirs_includes_legacy_dot_ezer_when_ezer_home_differs() {
         let home = Path::new("/home/u");
-        let grok = Path::new("/custom/grokhome");
-        let paths: Vec<_> = user_agent_dirs(Some(home), Some(grok))
+        let ezer = Path::new("/custom/ezerhome");
+        let paths: Vec<_> = user_agent_dirs(Some(home), Some(ezer))
             .into_iter()
             .map(|(p, _)| p)
             .collect();
-        assert!(paths.contains(&grok.join("agents")));
+        assert!(paths.contains(&ezer.join("agents")));
         assert!(paths.contains(&home.join(".ezer").join("agents")));
         assert!(paths.contains(&home.join(".claude").join("agents")));
-        assert!(paths.contains(&grok.join("bundled").join("agents")));
+        assert!(paths.contains(&ezer.join("bundled").join("agents")));
         assert!(paths.contains(&home.join(".ezer").join("bundled").join("agents")));
     }
 
     #[test]
-    fn user_agent_dirs_dedups_legacy_when_grok_home_is_dot_grok() {
+    fn user_agent_dirs_dedups_legacy_when_ezer_home_is_dot_ezer() {
         let home = Path::new("/home/u");
-        let grok = home.join(".ezer");
-        let count = user_agent_dirs(Some(home), Some(&grok))
+        let ezer = home.join(".ezer");
+        let count = user_agent_dirs(Some(home), Some(&ezer))
             .into_iter()
-            .filter(|(p, _)| *p == grok.join("agents"))
+            .filter(|(p, _)| *p == ezer.join("agents"))
             .count();
         assert_eq!(
             count, 1,
-            "no duplicate ~/.ezer/agents when grok_home == ~/.ezer"
+            "no duplicate ~/.ezer/agents when ezer_home == ~/.ezer"
         );
     }
 
@@ -994,7 +994,7 @@ mod tests {
     #[test]
     fn test_by_name_in_cwd_falls_back_to_builtin() {
         let tmp = tempfile::tempdir().unwrap();
-        // No .grok/agents/ directory, so lookup falls back to the built-in
+        // No .ezer/agents/ directory, so lookup falls back to the built-in
 
         let def = by_name_in_cwd("ezer-build", tmp.path());
         assert!(def.is_some());
@@ -1020,7 +1020,7 @@ mod tests {
         use std::str::FromStr;
         let variant = BuiltinAgentName::from_str("ezer-build-orchestrator")
             .expect("from_str must resolve ezer-build-orchestrator");
-        assert_eq!(variant, BuiltinAgentName::GrokBuildOrchestrator);
+        assert_eq!(variant, BuiltinAgentName::EzerBuildOrchestrator);
         let def = variant.definition();
         assert_eq!(def.name, "ezer-build-orchestrator");
         assert!(
@@ -1137,7 +1137,7 @@ mod tests {
 
     #[test]
     fn test_merge_user_level_builtin_name_is_skipped() {
-        // A user-level (~/.grok/agents/) agent named "explore" should NOT shadow
+        // A user-level (~/.ezer/agents/) agent named "explore" should NOT shadow
         // the built-in — only project-level can do that.
         let discovered = vec![synthetic_agent(
             "explore",

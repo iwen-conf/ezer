@@ -13,7 +13,7 @@ use agent_client_protocol as acp;
 use crate::acp_agent_connection::{AgentConnection, timed, timed_ok};
 use crate::acp_policy::ClientPolicy;
 use crate::acp_transcript::TranscriptEntry;
-use crate::env::grok_binary;
+use crate::env::ezer_binary;
 use crate::mock_server::MockInferenceServer;
 use crate::process::{TestOutput, TestProcess, TestProcessConfig, TestProcessTree, TestStdin};
 use crate::sandbox::TestSandbox;
@@ -22,14 +22,14 @@ use crate::scaled;
 /// `initialize` waits for the leader election and the relay handshake as well as the agent's own startup.
 const INITIALIZE_TIMEOUT: Duration = Duration::from_secs(60);
 const REQUEST_TIMEOUT: Duration = Duration::from_secs(30);
-const LEADER_RECONNECTED_METHOD: &str = "x.ai/leader_reconnected";
+const LEADER_RECONNECTED_METHOD: &str = "ezer/leader_reconnected";
 
 /// Env var naming the binary that elects/hosts the leader in a two-binary (version-skew) test.
-/// Falls back to [`grok_binary`]'s resolution.
+/// Falls back to [`ezer_binary`]'s resolution.
 pub const LEADER_BINARY_ENV: &str = "EZER_BINARY_LEADER";
 
 /// Env var naming the binary for the second (usually newer) client in a two-binary test.
-/// Falls back to [`grok_binary`]'s resolution.
+/// Falls back to [`ezer_binary`]'s resolution.
 pub const CLIENT_BINARY_ENV: &str = "EZER_BINARY_CLIENT";
 
 fn role_binary(env_key: &str) -> PathBuf {
@@ -42,7 +42,7 @@ fn role_binary(env_key: &str) -> PathBuf {
         );
         return path;
     }
-    grok_binary()
+    ezer_binary()
 }
 
 /// Binary for the leader-electing side of a version-skew test.
@@ -117,7 +117,7 @@ impl LeaderFixture {
         cwd: &Path,
         sandbox: &TestSandbox,
     ) -> io::Result<Self> {
-        Self::start_with_binary(&grok_binary(), server, cwd, sandbox).await
+        Self::start_with_binary(&ezer_binary(), server, cwd, sandbox).await
     }
 
     pub async fn start_with_binary(
@@ -136,7 +136,7 @@ impl LeaderFixture {
         sandbox: &TestSandbox,
     ) -> io::Result<Self> {
         Self::start_with_binary_base_url_timeout(
-            &grok_binary(),
+            &ezer_binary(),
             base_url,
             cwd,
             sandbox,
@@ -169,8 +169,8 @@ impl LeaderFixture {
         sandbox: &TestSandbox,
         readiness_timeout: Duration,
     ) -> io::Result<Self> {
-        let socket = sandbox.grok_home().join("leader.sock");
-        let lock = sandbox.grok_home().join("leader.lock");
+        let socket = sandbox.ezer_home().join("leader.sock");
+        let lock = sandbox.ezer_home().join("leader.lock");
         let mut cmd = std::process::Command::new(binary);
         cmd.args([
             "agent",
@@ -192,7 +192,7 @@ impl LeaderFixture {
             .env("XAI_API_KEY", "test-key-for-ci")
             .env("EZER_LEADER_SOCKET", &socket)
             .env("RUST_LOG", "ezer_shell=debug,ezer_login=debug");
-        let log_path = sandbox.grok_home().join("leader.log");
+        let log_path = sandbox.ezer_home().join("leader.log");
         match std::fs::File::create(&log_path) {
             Ok(log) => {
                 cmd.stderr(log);
@@ -720,20 +720,20 @@ impl LeaderStdioClient {
             .session_update_count()
     }
 
-    /// Count of `x.ai/models/update` notifications received (catalog self-heal).
+    /// Count of `ezer/models/update` notifications received (catalog self-heal).
     pub fn models_update_count(&self) -> usize {
         self.connection
             .handler()
             .transcript()
-            .ext_notification_count("x.ai/models/update")
+            .ext_notification_count("ezer/models/update")
     }
 
-    /// Count of `x.ai/settings/update` notifications received (settings self-heal).
+    /// Count of `ezer/settings/update` notifications received (settings self-heal).
     pub fn settings_update_count(&self) -> usize {
         self.connection
             .handler()
             .transcript()
-            .ext_notification_count("x.ai/settings/update")
+            .ext_notification_count("ezer/settings/update")
     }
 }
 
@@ -769,7 +769,7 @@ pub async fn wait_for_live_leader(home: &Path, timeout: Duration) -> Option<u32>
     None
 }
 
-/// Wait for evidence that the bridge finished its reconnect replay: a `x.ai/leader_reconnected` notification
+/// Wait for evidence that the bridge finished its reconnect replay: a `ezer/leader_reconnected` notification
 /// or a `session/update` beyond `baseline`, within the scaled `timeout`.
 pub async fn wait_for_replay_notifications(
     client: &LeaderStdioClient,

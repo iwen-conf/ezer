@@ -540,7 +540,7 @@ pub fn current_value_for(
         "collapsed_edit_blocks" => Some(SettingValue::Bool(
             crate::appearance::cache::load_collapsed_edit_blocks(),
         )),
-        // Live cache; `GROK_PROMPT_SUGGESTIONS` env overrides at the gate.
+        // Live cache; `EZER_PROMPT_SUGGESTIONS` env overrides at the gate.
         "prompt_suggestions" => Some(SettingValue::Bool(
             crate::appearance::cache::load_prompt_suggestions(),
         )),
@@ -1429,7 +1429,7 @@ mod tests {
     /// The baseline still folds to the empty sentinel, and a slug missing from the catalog passes through raw.
     #[test]
     fn fork_secondary_model_current_value_resolves_display_name() {
-        let slug = "grok-4.5-fast";
+        let slug = "test-model-4.5-fast";
         assert_ne!(
             slug,
             ezer_shell::models::default_model(),

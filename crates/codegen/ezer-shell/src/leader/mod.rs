@@ -40,7 +40,7 @@
 //! // Connect to existing leader or spawn a new one
 //! let caps = ClientCapabilities {
 //!     yolo_mode: true,
-//!     default_model: Some("grok-3-fast".to_string()),
+//!     default_model: Some("test-model-3-fast".to_string()),
 //! };
 //! let conn = connect_or_spawn("my-client", ClientMode::Stdio, &env_urls, caps).await?;
 //!
@@ -62,7 +62,7 @@ mod server;
 #[cfg(test)]
 pub(crate) mod test_support;
 mod transport;
-use crate::env::GrokBuildEnvironment;
+use crate::env::EzerBuildEnvironment;
 pub use client::{ClientError, DisconnectReason, LeaderClient, LeaderRegistration};
 pub use lock::{
     LEADER_SOCKET_ENV, LeaderLock, LockError, compute_ws_url_suffix, lock_path_for_ws_url,
@@ -128,8 +128,8 @@ const RECONNECT_MAX_ATTEMPTS_BOUNDED: u32 = 5;
 /// These are resolved from the environment (--dev flag) before spawning.
 #[derive(Debug, Clone)]
 pub struct LeaderEnvUrls {
-    pub grok_ws_url: String,
-    pub grok_ws_origin: String,
+    pub ezer_ws_url: String,
+    pub ezer_ws_origin: String,
 }
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -191,7 +191,7 @@ pub struct LeaderDescriptor {
     pub socket_path: Option<PathBuf>,
     pub ws_url_suffix: String,
     pub classification: LeaderDiscoveryState,
-    pub environment: Option<GrokBuildEnvironment>,
+    pub environment: Option<EzerBuildEnvironment>,
     pub live_info: Option<LiveLeaderInfo>,
     pub target_error: Option<LeaderTargetErrorCode>,
 }
@@ -215,19 +215,19 @@ impl LeaderTargetSelection {
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum LeaderTarget {
-    Environment(GrokBuildEnvironment),
+    Environment(EzerBuildEnvironment),
     WsUrl(String),
     Pid(u32),
 }
-fn known_environment_for_ws_url(ws_url: &str) -> Option<GrokBuildEnvironment> {
-    let environments: &[GrokBuildEnvironment] = &[GrokBuildEnvironment::Production];
+fn known_environment_for_ws_url(ws_url: &str) -> Option<EzerBuildEnvironment> {
+    let environments: &[EzerBuildEnvironment] = &[EzerBuildEnvironment::Production];
     environments
         .iter()
         .copied()
         .find(|environment| environment.relay_ws_url() == ws_url)
 }
 fn environment_target_matches_descriptor(
-    environment: GrokBuildEnvironment,
+    environment: EzerBuildEnvironment,
     descriptor: &LeaderDescriptor,
 ) -> bool {
     descriptor.environment == Some(environment)
@@ -235,8 +235,8 @@ fn environment_target_matches_descriptor(
 fn ws_url_target_matches_descriptor(ws_url: &str, descriptor: &LeaderDescriptor) -> bool {
     descriptor.ws_url_suffix == compute_ws_url_suffix(ws_url)
 }
-fn known_environment_for_suffix(ws_url_suffix: &str) -> Option<GrokBuildEnvironment> {
-    let environments: &[GrokBuildEnvironment] = &[GrokBuildEnvironment::Production];
+fn known_environment_for_suffix(ws_url_suffix: &str) -> Option<EzerBuildEnvironment> {
+    let environments: &[EzerBuildEnvironment] = &[EzerBuildEnvironment::Production];
     environments
         .iter()
         .copied()
@@ -523,7 +523,7 @@ async fn discover_leaders_in(root: &Path) -> Vec<LeaderDescriptor> {
     entries
 }
 pub async fn discover_leaders() -> Vec<LeaderDescriptor> {
-    discover_leaders_in(&crate::util::grok_home::grok_home()).await
+    discover_leaders_in(&crate::util::ezer_home::ezer_home()).await
 }
 /// (pid, leader_binary_version) of socket-verified (Reachable) leaders; a
 /// stale-lock-only descriptor is skipped (its `pid_from_lock` may be recycled).
@@ -796,11 +796,11 @@ pub async fn resolve_leader_target(
     let leaders = discover_leaders().await;
     resolve_target_from_descriptors(target, leaders)
 }
-impl From<&ezer_login::GrokComConfig> for LeaderEnvUrls {
-    fn from(c: &ezer_login::GrokComConfig) -> Self {
+impl From<&ezer_login::EzerComConfig> for LeaderEnvUrls {
+    fn from(c: &ezer_login::EzerComConfig) -> Self {
         Self {
-            grok_ws_url: c.grok_ws_url.clone(),
-            grok_ws_origin: c.grok_ws_origin.clone(),
+            ezer_ws_url: c.ezer_ws_url.clone(),
+            ezer_ws_origin: c.ezer_ws_origin.clone(),
         }
     }
 }
@@ -1221,10 +1221,10 @@ fn zombie_evict_decision(
 /// The live *ezer* PID that ACTUALLY holds the flock on the lock file, if any.
 /// `None` for a dead / non-ezer PID, OR when the file PID can't be confirmed to be the real flock holder, so the auto-kill zombie net never SIGKILLs a process that does not hold the flock (a stale-but-live PID left in `leader.lock`, or a brief spawner that held the flock without rewriting the file).
 /// Uses the stricter (name-matching) ezer check since this drives the auto-kill path. macOS/BSD have no `/proc/locks`, so the holder is unconfirmable and this returns `None` (eviction skipped), accepting that a genuine zombie there is not auto-killed.
-fn live_grok_lock_holder(lock: &LeaderLock) -> Option<u32> {
+fn live_ezer_lock_holder(lock: &LeaderLock) -> Option<u32> {
     let file_pid = lock.read_pid()?;
     let pid = evictable_holder(file_pid, confirmed_flock_holder(lock.lock_path()))?;
-    (crate::util::is_process_alive(pid) && crate::util::is_grok_process_strict(pid)).then_some(pid)
+    (crate::util::is_process_alive(pid) && crate::util::is_ezer_process_strict(pid)).then_some(pid)
 }
 /// Safety gate: a file PID is evictable only when the confirmed flock `holder` is
 /// known AND equals it. An unknown holder, or a file PID that differs from the real
@@ -1371,7 +1371,7 @@ async fn evict_zombie_leader(pid: u32, sock_path: &Path, waited: Duration) {
     );
 }
 /// Connect to existing leader or spawn a new one. Uses OS-level file locking (flock) to coordinate: Try to connect to existing socket (fast path) If connection fails, try to acquire exclusive lock
-/// If lock acquired, we are responsible for spawning the leader If lock not acquired, another process is leader/spawning; wait and retry The `env_urls.grok_ws_url` determines which leader instance to connect to.
+/// If lock acquired, we are responsible for spawning the leader If lock not acquired, another process is leader/spawning; wait and retry The `env_urls.ezer_ws_url` determines which leader instance to connect to.
 /// Different WS URLs get different leader processes (via hashed socket paths).
 pub async fn connect_or_spawn(
     client_type: &str,
@@ -1383,7 +1383,7 @@ pub async fn connect_or_spawn(
         return Err(ConnectionError::SandboxConfinement(profile));
     }
     let start = std::time::Instant::now();
-    let mut lock = LeaderLock::new(&env_urls.grok_ws_url);
+    let mut lock = LeaderLock::new(&env_urls.ezer_ws_url);
     let sock_path = lock.socket_path().clone();
     let mut replacing_stale = false;
     if crate::leader::transport::listener_is_ready(&sock_path) {
@@ -1526,7 +1526,7 @@ pub async fn connect_or_spawn(
                 continue;
             }
             Err(e) if is_connect_level_failure(&e) => {
-                let holder = live_grok_lock_holder(&lock);
+                let holder = live_ezer_lock_holder(&lock);
                 match zombie_evict_decision(
                     holder,
                     Instant::now(),
@@ -1561,27 +1561,27 @@ pub async fn connect_or_spawn(
         }
     }
 }
-/// For a **managed install** — the running binary lives under `grok_home` (e.g. `~/.ezer/...`) — prefer the managed `~/.ezer/bin/ezer` symlink. After an auto-update or `ezer update` atomically swaps that symlink, `current_exe()` still resolves (via `/proc/self/exe` on Linux) to the *old* versioned target, so spawning it would relaunch the stale binary.
+/// For a **managed install** — the running binary lives under `ezer_home` (e.g. `~/.ezer/...`) — prefer the managed `~/.ezer/bin/ezer` symlink. After an auto-update or `ezer update` atomically swaps that symlink, `current_exe()` still resolves (via `/proc/self/exe` on Linux) to the *old* versioned target, so spawning it would relaunch the stale binary.
 /// The symlink always points to the freshly-installed version.
-/// For a **dev / out-of-tree binary** (`cargo run`, integration tests, installs not under `grok_home`), keep `current_exe()` so the spawned leader matches the calling binary. Falls back to `~/.ezer/bin/ezer` only when `current_exe()` is unavailable.
+/// For a **dev / out-of-tree binary** (`cargo run`, integration tests, installs not under `ezer_home`), keep `current_exe()` so the spawned leader matches the calling binary. Falls back to `~/.ezer/bin/ezer` only when `current_exe()` is unavailable.
 fn resolve_exe_for_spawn() -> Result<std::path::PathBuf, ConnectionError> {
-    resolve_binary_with_home(&crate::util::grok_home::grok_home())
+    resolve_binary_with_home(&crate::util::ezer_home::ezer_home())
 }
-fn resolve_binary_with_home(grok_home: &Path) -> Result<std::path::PathBuf, ConnectionError> {
-    resolve_binary_impl(grok_home, std::env::current_exe().ok())
+fn resolve_binary_with_home(ezer_home: &Path) -> Result<std::path::PathBuf, ConnectionError> {
+    resolve_binary_impl(ezer_home, std::env::current_exe().ok())
 }
 /// Binary file name for the managed ezer install (`ezer` / `ezer.exe`).
-fn managed_grok_bin_name() -> &'static str {
+fn managed_ezer_bin_name() -> &'static str {
     if cfg!(windows) { "ezer.exe" } else { "ezer" }
 }
 /// Core leader-binary resolution with the current-exe path injected, for testability.
 fn resolve_binary_impl(
-    grok_home: &Path,
+    ezer_home: &Path,
     current_exe: Option<std::path::PathBuf>,
 ) -> Result<std::path::PathBuf, ConnectionError> {
-    let managed_bin = grok_home.join("bin").join(managed_grok_bin_name());
+    let managed_bin = ezer_home.join("bin").join(managed_ezer_bin_name());
     if let Some(ref exe) = current_exe
-        && path_is_under(exe, grok_home)
+        && path_is_under(exe, ezer_home)
         && managed_bin.exists()
     {
         return Ok(managed_bin);
@@ -1611,8 +1611,8 @@ fn spawn_leader_subprocess(env_urls: &LeaderEnvUrls) -> Result<u32, ConnectionEr
     cmd.arg("agent").arg("leader");
     cmd.arg("--no-exit-on-disconnect");
     cmd.arg(RELAY_ON_DEMAND_FLAG);
-    cmd.arg("--relay-ws-url").arg(&env_urls.grok_ws_url);
-    cmd.arg("--relay-ws-origin").arg(&env_urls.grok_ws_origin);
+    cmd.arg("--relay-ws-url").arg(&env_urls.ezer_ws_url);
+    cmd.arg("--relay-ws-origin").arg(&env_urls.ezer_ws_origin);
     if let Some(socket) = std::env::var_os(crate::leader::LEADER_SOCKET_ENV) {
         cmd.env(crate::leader::LEADER_SOCKET_ENV, socket);
     }
@@ -1628,7 +1628,7 @@ fn spawn_leader_subprocess(env_urls: &LeaderEnvUrls) -> Result<u32, ConnectionEr
     }
     cmd.stdin(std::process::Stdio::null())
         .stdout(std::process::Stdio::null());
-    let log_path = crate::util::grok_home::grok_home().join("leader.log");
+    let log_path = crate::util::ezer_home::ezer_home().join("leader.log");
     match std::fs::File::create(&log_path) {
         Ok(log_file) => {
             info!("Leader stderr → log file");
@@ -1870,17 +1870,17 @@ mod tests {
         assert!(register_evict_attempt(&mut state, 200, 3));
         assert_eq!(state, Some((200, 1)));
     }
-    /// `live_grok_lock_holder` returns `None` for a missing or dead PID, so the zombie net never times/kills a recycled or unrelated PID.
+    /// `live_ezer_lock_holder` returns `None` for a missing or dead PID, so the zombie net never times/kills a recycled or unrelated PID.
     #[test]
-    fn live_grok_lock_holder_none_for_missing_or_dead_pid() {
+    fn live_ezer_lock_holder_none_for_missing_or_dead_pid() {
         let temp = TempDir::new().unwrap();
         let lock = LeaderLock::from_paths(
             temp.path().join("leader.lock"),
             temp.path().join("leader.sock"),
         );
-        assert_eq!(live_grok_lock_holder(&lock), None);
+        assert_eq!(live_ezer_lock_holder(&lock), None);
         fs::write(lock.lock_path(), "4000000000").unwrap();
-        assert_eq!(live_grok_lock_holder(&lock), None);
+        assert_eq!(live_ezer_lock_holder(&lock), None);
     }
     #[test]
     fn reachable_leader_pids_skips_stale_locks() {
@@ -2029,8 +2029,8 @@ mod tests {
         let fake =
             spawn_fake_leader(sock_path.clone(), FakeLeaderBehavior::SilentAfterAccept).await;
         let env_urls = LeaderEnvUrls {
-            grok_ws_url: "wss://test.invalid".into(),
-            grok_ws_origin: "https://test.invalid".into(),
+            ezer_ws_url: "wss://test.invalid".into(),
+            ezer_ws_origin: "https://test.invalid".into(),
         };
         let (status_tx, mut status_rx) = LeaderReconnector::status_channel();
         let reconnector = LeaderReconnector::new(
@@ -2204,8 +2204,8 @@ mod tests {
     #[test]
     fn notify_connected_increments_generation() {
         let env_urls = LeaderEnvUrls {
-            grok_ws_url: "wss://test.invalid".into(),
-            grok_ws_origin: "https://test.invalid".into(),
+            ezer_ws_url: "wss://test.invalid".into(),
+            ezer_ws_origin: "https://test.invalid".into(),
         };
         let (status_tx, status_rx) = LeaderReconnector::status_channel();
         let reconnector = LeaderReconnector::new(
@@ -2235,8 +2235,8 @@ mod tests {
         let handle = spawn_leader_server(sock_path.clone()).await.unwrap();
         tokio::time::sleep(Duration::from_millis(50)).await;
         let env_urls = LeaderEnvUrls {
-            grok_ws_url: "wss://test.invalid".into(),
-            grok_ws_origin: "https://test.invalid".into(),
+            ezer_ws_url: "wss://test.invalid".into(),
+            ezer_ws_origin: "https://test.invalid".into(),
         };
         let (status_tx, mut status_rx) = LeaderReconnector::status_channel();
         let reconnector = LeaderReconnector::new(
@@ -2278,8 +2278,8 @@ mod tests {
     #[tokio::test]
     async fn reconnector_bounded_fails_after_max_attempts() {
         let env_urls = LeaderEnvUrls {
-            grok_ws_url: "wss://test.invalid".into(),
-            grok_ws_origin: "https://test.invalid".into(),
+            ezer_ws_url: "wss://test.invalid".into(),
+            ezer_ws_origin: "https://test.invalid".into(),
         };
         let (status_tx, mut status_rx) = LeaderReconnector::status_channel();
         let reconnector = LeaderReconnector::new(
@@ -2313,8 +2313,8 @@ mod tests {
     #[tokio::test]
     async fn reconnector_cancelled_returns_error() {
         let env_urls = LeaderEnvUrls {
-            grok_ws_url: "wss://test.invalid".into(),
-            grok_ws_origin: "https://test.invalid".into(),
+            ezer_ws_url: "wss://test.invalid".into(),
+            ezer_ws_origin: "https://test.invalid".into(),
         };
         let (status_tx, _status_rx) = LeaderReconnector::status_channel();
         let reconnector = LeaderReconnector::new(
@@ -2504,7 +2504,7 @@ mod tests {
         let temp = TempDir::new().unwrap();
         let bin_dir = temp.path().join("bin");
         std::fs::create_dir_all(&bin_dir).unwrap();
-        std::fs::write(bin_dir.join("grok"), "fake-binary").unwrap();
+        std::fs::write(bin_dir.join("ezer"), "fake-binary").unwrap();
         let result = resolve_binary_with_home(temp.path()).unwrap();
         let current = std::env::current_exe().unwrap();
         assert_eq!(result, current);
@@ -2521,9 +2521,9 @@ mod tests {
         let temp = TempDir::new().unwrap();
         let bin_dir = temp.path().join("bin");
         std::fs::create_dir_all(&bin_dir).unwrap();
-        let target_v2 = bin_dir.join("grok-v2");
+        let target_v2 = bin_dir.join("ezer-v2");
         std::fs::write(&target_v2, "new-binary").unwrap();
-        std::os::unix::fs::symlink(&target_v2, bin_dir.join("grok")).unwrap();
+        std::os::unix::fs::symlink(&target_v2, bin_dir.join("ezer")).unwrap();
         let result = resolve_binary_with_home(temp.path()).unwrap();
         let current = std::env::current_exe().unwrap();
         assert_eq!(result, current);
@@ -2536,9 +2536,9 @@ mod tests {
         std::fs::create_dir_all(&bin_dir).unwrap();
         let new_target = bin_dir.join("ezer-v2");
         std::fs::write(&new_target, "new-binary").unwrap();
-        let managed = bin_dir.join(managed_grok_bin_name());
+        let managed = bin_dir.join(managed_ezer_bin_name());
         std::os::unix::fs::symlink(&new_target, &managed).unwrap();
-        let stale_target = bin_dir.join("grok-v1");
+        let stale_target = bin_dir.join("ezer-v1");
         std::fs::write(&stale_target, "old-binary").unwrap();
         let result = resolve_binary_impl(temp.path(), Some(stale_target)).unwrap();
         assert_eq!(result, managed);
@@ -2548,7 +2548,7 @@ mod tests {
         let temp = TempDir::new().unwrap();
         let bin_dir = temp.path().join("bin");
         std::fs::create_dir_all(&bin_dir).unwrap();
-        std::fs::write(bin_dir.join(managed_grok_bin_name()), "managed").unwrap();
+        std::fs::write(bin_dir.join(managed_ezer_bin_name()), "managed").unwrap();
         let dev_exe = std::env::current_exe().unwrap();
         let result = resolve_binary_impl(temp.path(), Some(dev_exe.clone())).unwrap();
         assert_eq!(result, dev_exe);
@@ -2558,7 +2558,7 @@ mod tests {
         let temp = TempDir::new().unwrap();
         let bin_dir = temp.path().join("bin");
         std::fs::create_dir_all(&bin_dir).unwrap();
-        let managed = bin_dir.join(managed_grok_bin_name());
+        let managed = bin_dir.join(managed_ezer_bin_name());
         std::fs::write(&managed, "managed").unwrap();
         let result = resolve_binary_impl(temp.path(), None).unwrap();
         assert_eq!(result, managed);

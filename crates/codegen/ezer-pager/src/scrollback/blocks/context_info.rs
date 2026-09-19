@@ -604,7 +604,7 @@ mod tests {
 
     #[test]
     fn build_lines_contains_header_tokens_and_model() {
-        let block = ContextInfoBlock::new(snapshot(), "grok-4");
+        let block = ContextInfoBlock::new(snapshot(), "test-model-4");
         let theme = test_theme();
         let lines = block.build_lines(&theme, BarLayout::WIDE);
         // Layout: Context / <blank> / tokens / model.
@@ -614,12 +614,12 @@ mod tests {
         assert!(l2.contains("tokens"));
         // Percent shows 2 decimal places (36.7k / 1m = 3.67%)
         assert!(l2.contains("(3.67%)"), "got: {l2:?}");
-        assert_eq!(line_text(&lines, 3), "grok-4");
+        assert_eq!(line_text(&lines, 3), "test-model-4");
     }
 
     #[test]
     fn build_lines_contains_tokens_summary() {
-        let block = ContextInfoBlock::new(snapshot(), "grok-4");
+        let block = ContextInfoBlock::new(snapshot(), "test-model-4");
         let theme = test_theme();
         let lines = block.build_lines(&theme, BarLayout::WIDE);
         let l2 = line_text(&lines, 2);
@@ -645,7 +645,7 @@ mod tests {
         // Auto-compact is close enough to mention but not so close that the "triggers next turn" line is also showing
         let mut snap = snapshot();
         snap.usage_pct = 80;
-        let block = ContextInfoBlock::new(snap, "grok-4");
+        let block = ContextInfoBlock::new(snap, "test-model-4");
         let theme = test_theme();
         let lines = block.build_lines(&theme, BarLayout::WIDE);
         let last = line_text(&lines, lines.len() - 1);
@@ -654,7 +654,7 @@ mod tests {
 
     #[test]
     fn build_lines_omits_tip_below_threshold() {
-        let block = ContextInfoBlock::new(snapshot(), "grok-4");
+        let block = ContextInfoBlock::new(snapshot(), "test-model-4");
         let theme = test_theme();
         let lines = block.build_lines(&theme, BarLayout::WIDE);
         assert!(!all_text(&lines).contains("/compact"));
@@ -666,7 +666,7 @@ mod tests {
         // The tip is suppressed to avoid stacking two contradicting warning-styled lines (manual /compact vs. auto-compact about to fire).
         let mut snap = snapshot();
         snap.usage_pct = 85; // the historical default (and value in snapshot() helper)
-        let block = ContextInfoBlock::new(snap, "grok-4");
+        let block = ContextInfoBlock::new(snap, "test-model-4");
         let theme = test_theme();
         let lines = block.build_lines(&theme, BarLayout::WIDE);
         assert!(!all_text(&lines).contains("/compact"));
@@ -674,7 +674,7 @@ mod tests {
 
     #[test]
     fn build_lines_shows_auto_compact_estimate_below_threshold() {
-        let block = ContextInfoBlock::new(snapshot(), "grok-4");
+        let block = ContextInfoBlock::new(snapshot(), "test-model-4");
         let theme = test_theme();
         let lines = block.build_lines(&theme, BarLayout::WIDE);
         let all = all_text(&lines);
@@ -692,7 +692,7 @@ mod tests {
         snap.total = 4_000_000;
         snap.used = 0;
         snap.usage_pct = 0;
-        let block = ContextInfoBlock::new(snap, "grok-4");
+        let block = ContextInfoBlock::new(snap, "test-model-4");
         let theme = test_theme();
         let lines = block.build_lines(&theme, BarLayout::WIDE);
         let all = all_text(&lines);
@@ -705,7 +705,7 @@ mod tests {
     #[test]
     fn build_lines_auto_compact_eta_arithmetic_at_known_snapshot() {
         // 1M window, 36_700 used: ceil(850_000) - 36_700 = 813_300, rendered as "813k"
-        let block = ContextInfoBlock::new(snapshot(), "grok-4");
+        let block = ContextInfoBlock::new(snapshot(), "test-model-4");
         let theme = test_theme();
         let lines = block.build_lines(&theme, BarLayout::WIDE);
         let all = all_text(&lines);
@@ -744,7 +744,7 @@ mod tests {
         let mut snap = snapshot();
         snap.total = 2_000_000;
         snap.used = 36_700;
-        let block = ContextInfoBlock::new(snap, "grok-4");
+        let block = ContextInfoBlock::new(snap, "test-model-4");
         let theme = test_theme();
         let lines = block.build_lines(&theme, BarLayout::WIDE);
         let l2 = line_text(&lines, 2);
@@ -758,7 +758,7 @@ mod tests {
     fn build_lines_shows_imminent_auto_compact_at_threshold() {
         let mut snap = snapshot();
         snap.usage_pct = 85;
-        let block = ContextInfoBlock::new(snap, "grok-4");
+        let block = ContextInfoBlock::new(snap, "test-model-4");
         let theme = test_theme();
         let lines = block.build_lines(&theme, BarLayout::WIDE);
         let all = all_text(&lines);
@@ -814,7 +814,7 @@ mod tests {
         snap.tool_definitions_tokens = 0;
         snap.free_tokens = 90_000;
         snap.usage_pct = 10;
-        let block = ContextInfoBlock::new(snap, "grok-4");
+        let block = ContextInfoBlock::new(snap, "test-model-4");
         let theme = test_theme();
         let lines = block.build_lines(&theme, BarLayout::WIDE);
         let (diamonds, tools, free, total) = count_bar_glyphs(&lines, BarLayout::WIDE);
@@ -829,7 +829,7 @@ mod tests {
 
     #[test]
     fn bar_total_cells_always_sum_to_one_hundred() {
-        let block = ContextInfoBlock::new(snapshot(), "grok-4");
+        let block = ContextInfoBlock::new(snapshot(), "test-model-4");
         let theme = test_theme();
         let lines = block.build_lines(&theme, BarLayout::WIDE);
         let (_, _, _, total) = count_bar_glyphs(&lines, BarLayout::WIDE);
@@ -845,7 +845,7 @@ mod tests {
         snap.tool_definitions_tokens = 0;
         snap.message_tokens = 0;
         snap.free_tokens = 0;
-        let block = ContextInfoBlock::new(snap, "grok-4");
+        let block = ContextInfoBlock::new(snap, "test-model-4");
         let theme = test_theme();
         let lines = block.build_lines(&theme, BarLayout::WIDE);
         let (diamonds, tools, free, total) = count_bar_glyphs(&lines, BarLayout::WIDE);
@@ -866,7 +866,7 @@ mod tests {
         snap.message_tokens = 1_000;
         snap.free_tokens = 0;
         snap.usage_pct = 100;
-        let block = ContextInfoBlock::new(snap, "grok-4");
+        let block = ContextInfoBlock::new(snap, "test-model-4");
         let theme = test_theme();
         let lines = block.build_lines(&theme, BarLayout::WIDE);
         let (diamonds, tools, free, total) = count_bar_glyphs(&lines, BarLayout::WIDE);
@@ -886,7 +886,7 @@ mod tests {
         snap.tool_definitions_tokens = 800;
         snap.free_tokens = 0;
         snap.usage_pct = 100;
-        let block = ContextInfoBlock::new(snap, "grok-4");
+        let block = ContextInfoBlock::new(snap, "test-model-4");
         let theme = test_theme();
         let lines = block.build_lines(&theme, BarLayout::WIDE);
         let (diamonds, tools, free, total) = count_bar_glyphs(&lines, BarLayout::WIDE);
@@ -943,7 +943,7 @@ mod tests {
             TokenUsageCategory::mcp_servers(&"y".repeat(1_200), 4),
             TokenUsageCategory::agents_md(&"z".repeat(4_400), 2),
         ];
-        let block = ContextInfoBlock::new(snap, "grok-4");
+        let block = ContextInfoBlock::new(snap, "test-model-4");
         let theme = test_theme();
         let lines = block.build_lines(&theme, BarLayout::WIDE);
         let all = all_text(&lines);
@@ -1050,7 +1050,7 @@ mod tests {
 
     #[test]
     fn narrow_bar_renders_10_rows() {
-        let block = ContextInfoBlock::new(snapshot(), "grok-4");
+        let block = ContextInfoBlock::new(snapshot(), "test-model-4");
         let theme = test_theme();
         let lines = block.build_lines(&theme, BarLayout::NARROW);
         // The bar starts at index 5 (header / blank / tokens / model / blank)
@@ -1071,7 +1071,7 @@ mod tests {
 
     #[test]
     fn narrow_bar_total_cells_still_100() {
-        let block = ContextInfoBlock::new(snapshot(), "grok-4");
+        let block = ContextInfoBlock::new(snapshot(), "test-model-4");
         let theme = test_theme();
         let lines = block.build_lines(&theme, BarLayout::NARROW);
         let (_, _, _, total) = count_bar_glyphs(&lines, BarLayout::NARROW);
@@ -1082,7 +1082,7 @@ mod tests {
     fn narrow_bar_each_row_has_at_most_10_cells() {
         // Sanity: no single bar row exceeds the narrow row_len
         // We count cell glyphs (not separator spaces) per row.
-        let block = ContextInfoBlock::new(snapshot(), "grok-4");
+        let block = ContextInfoBlock::new(snapshot(), "test-model-4");
         let theme = test_theme();
         let lines = block.build_lines(&theme, BarLayout::NARROW);
         let bar = lines
@@ -1110,7 +1110,7 @@ mod tests {
 
     #[test]
     fn wide_bar_each_row_has_at_most_20_cells() {
-        let block = ContextInfoBlock::new(snapshot(), "grok-4");
+        let block = ContextInfoBlock::new(snapshot(), "test-model-4");
         let theme = test_theme();
         let lines = block.build_lines(&theme, BarLayout::WIDE);
         let bar = lines
@@ -1155,7 +1155,7 @@ mod tests {
 
     #[test]
     fn legend_label_uses_secondary_color_wide() {
-        let block = ContextInfoBlock::new(snapshot(), "grok-4");
+        let block = ContextInfoBlock::new(snapshot(), "test-model-4");
         let theme = test_theme();
         let lines = block.build_lines(&theme, BarLayout::WIDE);
         let row = find_legend_line(&lines, "System prompt").expect("legend row");
@@ -1176,7 +1176,7 @@ mod tests {
 
     #[test]
     fn legend_label_uses_secondary_color_narrow() {
-        let block = ContextInfoBlock::new(snapshot(), "grok-4");
+        let block = ContextInfoBlock::new(snapshot(), "test-model-4");
         let theme = test_theme();
         let lines = block.build_lines(&theme, BarLayout::NARROW);
         let row = find_legend_line(&lines, "System prompt").expect("legend row 1");
@@ -1196,7 +1196,7 @@ mod tests {
 
     #[test]
     fn narrow_legend_wraps_to_two_lines_per_category() {
-        let block = ContextInfoBlock::new(snapshot(), "grok-4");
+        let block = ContextInfoBlock::new(snapshot(), "test-model-4");
         let theme = test_theme();
         let lines = block.build_lines(&theme, BarLayout::NARROW);
         let categories = [
@@ -1230,7 +1230,7 @@ mod tests {
 
     #[test]
     fn narrow_legend_data_row_starts_with_one_space_indent() {
-        let block = ContextInfoBlock::new(snapshot(), "grok-4");
+        let block = ContextInfoBlock::new(snapshot(), "test-model-4");
         let theme = test_theme();
         let lines = block.build_lines(&theme, BarLayout::NARROW);
         // The data row for the first legend entry sits at index 17 (16 is the "System prompt" header row, 17 its data row)
@@ -1251,7 +1251,7 @@ mod tests {
 
     #[test]
     fn wide_legend_remains_single_line_per_category() {
-        let block = ContextInfoBlock::new(snapshot(), "grok-4");
+        let block = ContextInfoBlock::new(snapshot(), "test-model-4");
         let theme = test_theme();
         let lines = block.build_lines(&theme, BarLayout::WIDE);
         let row_text = |i: usize| -> String {

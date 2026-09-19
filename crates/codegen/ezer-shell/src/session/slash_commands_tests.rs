@@ -34,7 +34,7 @@ async fn product_skill_infos_none_without_auth() {
 
 #[test]
 fn product_skills_cache_matches_identity_and_team() {
-    use ezer_login::{AuthMode, GrokAuth};
+    use ezer_login::{AuthMode, EzerAuth};
     let base = ProductSkillsCacheEntry {
         auth_key: "tok-a".into(),
         user_id: "user-1".into(),
@@ -43,7 +43,7 @@ fn product_skills_cache_matches_identity_and_team() {
         skills: vec![],
         fetched_at: std::time::Instant::now(),
     };
-    let same = GrokAuth {
+    let same = EzerAuth {
         key: "tok-a".into(),
         user_id: "user-1".into(),
         team_id: Some("team-a".into()),
@@ -52,12 +52,12 @@ fn product_skills_cache_matches_identity_and_team() {
         ..Default::default()
     };
     assert!(product_skills_cache_matches(&base, &same));
-    let other_team = GrokAuth {
+    let other_team = EzerAuth {
         team_id: Some("team-b".into()),
         ..same.clone()
     };
     assert!(!product_skills_cache_matches(&base, &other_team));
-    let same_user_other_key = GrokAuth {
+    let same_user_other_key = EzerAuth {
         key: "tok-b".into(),
         user_id: "user-1".into(),
         team_id: Some("team-a".into()),
@@ -66,7 +66,7 @@ fn product_skills_cache_matches_identity_and_team() {
         ..Default::default()
     };
     assert!(product_skills_cache_matches(&base, &same_user_other_key));
-    let other_user = GrokAuth {
+    let other_user = EzerAuth {
         key: "tok-c".into(),
         user_id: "user-2".into(),
         team_id: Some("team-a".into()),
@@ -76,7 +76,7 @@ fn product_skills_cache_matches_identity_and_team() {
     };
     assert!(!product_skills_cache_matches(&base, &other_user));
     // Personal (empty team) must not hit a team-keyed entry via user_id.
-    let personal_same_user = GrokAuth {
+    let personal_same_user = EzerAuth {
         key: "tok-personal".into(),
         user_id: "user-1".into(),
         team_id: None,
@@ -90,8 +90,8 @@ fn product_skills_cache_matches_identity_and_team() {
 
 #[test]
 fn product_skills_cache_after_untagged_recovery_keeps_primary_tenant() {
-    use ezer_login::{AuthMode, GrokAuth};
-    let primary = GrokAuth {
+    use ezer_login::{AuthMode, EzerAuth};
+    let primary = EzerAuth {
         key: "oidc-team".into(),
         user_id: "user-1".into(),
         team_id: Some("team-a".into()),
@@ -105,7 +105,7 @@ fn product_skills_cache_after_untagged_recovery_keeps_primary_tenant() {
     assert_eq!(entry.organization_id.as_deref(), Some("org-1"));
     assert_eq!(entry.user_id, "user-1");
     assert!(product_skills_cache_matches(&entry, &primary));
-    let personal = GrokAuth {
+    let personal = EzerAuth {
         key: "web-personal".into(),
         user_id: "user-1".into(),
         team_id: None,

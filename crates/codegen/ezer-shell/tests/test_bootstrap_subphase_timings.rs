@@ -2,7 +2,7 @@
 fn startup_completed_carries_bootstrap_subphase_fields() {
     let home = tempfile::TempDir::new().expect("ezer home");
     // SAFETY: this binary has one test; no other thread reads the environment.
-    unsafe { ezer_test_support::isolate_grok_env(home.path()) };
+    unsafe { ezer_test_support::isolate_ezer_env(home.path()) };
     ezer_telemetry::unified_log::redirect_to_temp_for_tests();
     ezer_telemetry::startup::mark_process_start();
     let _timer = ezer_telemetry::startup::begin(ezer_telemetry::startup::Owner::Client);

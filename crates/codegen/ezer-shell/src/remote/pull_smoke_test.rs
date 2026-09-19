@@ -8,13 +8,13 @@ mod tests {
     use crate::session::storage::{JsonlStorageAdapter, StorageAdapter};
     use std::collections::BTreeMap;
     use std::sync::Arc;
-    use ezer_login::GrokAuth;
+    use ezer_login::EzerAuth;
 
-    fn load_prod_auth() -> Option<GrokAuth> {
-        let path = crate::util::grok_home::grok_home().join("auth.json");
+    fn load_prod_auth() -> Option<EzerAuth> {
+        let path = crate::util::ezer_home::ezer_home().join("auth.json");
         let contents = std::fs::read_to_string(&path).ok()?;
-        let store: BTreeMap<String, GrokAuth> = serde_json::from_str(&contents).ok()?;
-        let scope = ezer_login::GrokComConfig::default().auth_scope();
+        let store: BTreeMap<String, EzerAuth> = serde_json::from_str(&contents).ok()?;
+        let scope = ezer_login::EzerComConfig::default().auth_scope();
         ezer_login::lookup_auth(&store, &scope)
     }
 
@@ -32,8 +32,8 @@ mod tests {
 
         let auth = load_prod_auth().expect("No auth.json — run `ezer login`");
         let am = Arc::new(ezer_login::AuthManager::new(
-            &crate::util::grok_home::grok_home(),
-            ezer_login::GrokComConfig::default(),
+            &crate::util::ezer_home::ezer_home(),
+            ezer_login::EzerComConfig::default(),
         ));
         am.hot_swap(auth);
         let client = BackendClient::new().with_auth_manager(am.clone());
@@ -46,7 +46,7 @@ mod tests {
         let metadata = ExportedMetadata {
             title: Some(test_title.into()),
             cwd: test_cwd.clone(),
-            model_id: Some("grok-3".into()),
+            model_id: Some("test-model-3".into()),
             created_at: Some(chrono::Utc::now().to_rfc3339()),
             updated_at: Some(chrono::Utc::now().to_rfc3339()),
             total_messages: None,

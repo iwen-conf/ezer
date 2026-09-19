@@ -2,7 +2,7 @@
 //!
 //! The shared compaction algorithms operate over a sequence of *items*
 //! (turns/messages) without knowing the concrete harness type. The chat
-//! harness implements [`CompactionItem`] for its `GrokTurn`;
+//! harness implements [`CompactionItem`] for its `EzerTurn`;
 //! ezer-build implements it for `ezer_sampling_types::ConversationItem`.
 //!
 //! Keeping the contract minimal is deliberate: the algorithms only need
@@ -14,12 +14,12 @@
 //!
 //! [`CompactionItemBuilder`] is the *constructive* extension used by the
 //! history-compaction algorithms that need to rebuild items (strip prior
-//! `<grok_user_queries>` blocks, drop tool content from assistant turns,
+//! `<ezer_user_queries>` blocks, drop tool content from assistant turns,
 //! wrap an LLM summary into a carrier item).
 
 /// Harness-agnostic role of a single conversation item.
 ///
-/// This is the common denominator of `GrokRole` (ezer chat) and the
+/// This is the common denominator of `EzerRole` (ezer chat) and the
 /// `ConversationItem` variants (ezer-build).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CompactionRole {
@@ -37,8 +37,8 @@ pub enum CompactionRole {
 }
 
 /// A file attached to a user item, as seen by the shared user-query
-/// extraction (`<grok_file id=".." name=".." />` lines in the
-/// `<grok_user_queries>` preamble).
+/// extraction (`<ezer_file id=".." name=".." />` lines in the
+/// `<ezer_user_queries>` preamble).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CompactionFileRef {
     /// Stable unique id of the attachment source.
@@ -51,7 +51,7 @@ pub struct CompactionFileRef {
 /// compaction algorithms.
 ///
 /// Implementors:
-/// - ezer chat: `GrokTurn`
+/// - ezer chat: `EzerTurn`
 /// - ezer-build: `ConversationItem`
 pub trait CompactionItem {
     /// The harness-agnostic role of this item.
@@ -61,7 +61,7 @@ pub trait CompactionItem {
     /// turns may have no text.
     ///
     /// Returns an owned `String` because some harnesses (ezer chat's
-    /// `GrokTurn`) compute the flattened text on demand rather than storing a
+    /// `EzerTurn`) compute the flattened text on demand rather than storing a
     /// borrowable slice.
     fn text(&self) -> Option<String>;
 
@@ -80,15 +80,15 @@ pub trait CompactionItem {
     ///
     /// The basic history filter keeps such items so earlier summaries get
     /// re-summarised instead of dropped, and `separate_prior_user_queries`
-    /// strips their `<grok_user_queries>` blocks before sampling.
+    /// strips their `<ezer_user_queries>` blocks before sampling.
     ///
     /// Required (no default) on purpose: a forgotten implementation or a
     /// missed `Arc` forwarding would silently drop prior summaries on
     /// re-compaction.
     fn is_compaction_summary(&self) -> bool;
 
-    /// File attachments on a (user) item, for the `<grok_file>` lines in the
-    /// `<grok_user_queries>` preamble. Empty for items without attachments.
+    /// File attachments on a (user) item, for the `<ezer_file>` lines in the
+    /// `<ezer_user_queries>` preamble. Empty for items without attachments.
     ///
     /// Required (no default) for the same reason as
     /// [`Self::is_compaction_summary`]: silent attachment loss on compaction
@@ -137,7 +137,7 @@ pub trait CompactionItemBuilder: CompactionItem + Clone {
 ///
 /// This is a sibling of [`CompactionItemBuilder`], not a part of it, on
 /// purpose. `CompactionItemBuilder` is already implemented by ezer chat's
-/// `GrokTurn`; adding these constructors to it as required methods would break
+/// `EzerTurn`; adding these constructors to it as required methods would break
 /// that impl. They are also ezer-build-specific (ezer chat's tail-keep path
 /// has no `user_meta` / `project_instructions` / `system_reminder` carrier
 /// concept), so they live in their own seam that only the full-replace
@@ -160,7 +160,7 @@ pub trait CompactionItemFactory: Sized {
 }
 
 /// Forward [`CompactionItem`] through shared references so the algorithms can
-/// operate over `&[Arc<T>]` (ezer chat stores turns as `Arc<GrokTurn>`).
+/// operate over `&[Arc<T>]` (ezer chat stores turns as `Arc<EzerTurn>`).
 impl<T: CompactionItem + ?Sized> CompactionItem for std::sync::Arc<T> {
     fn role(&self) -> CompactionRole {
         (**self).role()

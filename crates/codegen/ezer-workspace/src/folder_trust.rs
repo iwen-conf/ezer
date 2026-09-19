@@ -103,7 +103,7 @@ pub fn decide_inputs_with_interactive(
         is_interactive,
         // An over-broad key (home / fs-root / non-absolute) can never be recorded
         // by the store, so decide() trusts it rather than prompt on a key that
-        // can't persist (Case 2: cwd IS $HOME, incl. the default `~/.grok`).
+        // can't persist (Case 2: cwd IS $HOME, incl. the default `~/.ezer`).
         key_recordable: !crate::trust::is_unsafe_trust_root(key),
     }
 }
@@ -118,7 +118,7 @@ pub fn folder_trust_inert() -> bool {
 /// Kept local rather than in `ezer-version`: adding a symbol to that near-universal crate widens the rebuild/test fan-out for unrelated targets.
 /// `option_env!` resolves the same in any crate. Cross-crate callers use [`folder_trust_inert`].
 fn is_local_build() -> bool {
-    // Runtime escape hatch: a pinned GROK_TEST_VERSION simulates a release build
+    // Runtime escape hatch: a pinned EZER_TEST_VERSION simulates a release build
     // Tests/CI run unstamped, so they look like local builds; this lets them exercise the gate
     if std::env::var(ezer_version::TEST_VERSION_ENV).is_ok() {
         return false;
@@ -135,7 +135,7 @@ pub fn feature_enabled(remote: Option<&RemoteSettings>) -> bool {
 /// `feature_enabled` with the local-build flag fed in so both arms are unit-testable.
 fn feature_enabled_for_build(remote: Option<&RemoteSettings>, is_local_build: bool) -> bool {
     // Local/dev builds never gate (auto-trust): folder-trust applies only to shipped, release-stamped binaries
-    // Even an explicit GROK_FOLDER_TRUST/config opt-in is ignored here so a self-built grok never prompts
+    // Even an explicit EZER_FOLDER_TRUST/config opt-in is ignored here so a self-built ezer never prompts
     if is_local_build {
         return false;
     }
@@ -194,7 +194,7 @@ impl fmt::Display for GrantRefuse {
             Self::NoHome => write!(
                 f,
                 "Couldn't save folder trust: no home directory for the trust store. \
-                 Set GROK_HOME to an absolute directory (or unset it), then start ezer again."
+                 Set EZER_HOME to an absolute directory (or unset it), then start ezer again."
             ),
             Self::Unreadable => write!(
                 f,
@@ -525,7 +525,7 @@ fn collect_repo_config_kinds(cwd: &Path, first_only: bool) -> Vec<&'static str> 
     if !crate::project_config::find_mcp_json_files_in(&chain.dirs).is_empty() {
         hit!("mcp");
     }
-    // Project `.grok/config.toml` markers: a non-empty `[mcp_servers]` table or `[plugins].paths` array, or a contributing `[permission]` section
+    // Project `.ezer/config.toml` markers: a non-empty `[mcp_servers]` table or `[plugins].paths` array, or a contributing `[permission]` section
     // `[plugins].paths` loads as auto-trusted ConfigPath plugins; `[permission]` allow/deny/ask rules auto-approve or block tools
     // A clone whose ONLY repo-local config is either must still be gated (else it resolves Trusted and the loader runs ungated)
     for path in crate::project_config::find_project_configs_in(&chain.dirs) {
@@ -554,7 +554,7 @@ fn collect_repo_config_kinds(cwd: &Path, first_only: bool) -> Vec<&'static str> 
             hit!("permission");
         }
     }
-    // Project `.grok/lsp.json`.
+    // Project `.ezer/lsp.json`.
     if cwd.join(".ezer").join("lsp.json").is_file() {
         hit!("lsp");
     }
@@ -583,23 +583,23 @@ fn collect_repo_config_kinds(cwd: &Path, first_only: bool) -> Vec<&'static str> 
         hit!("hooks");
     }
     // Project PLUGIN dirs: project-scoped plugins fall under folder-trust too, so a repo-local plugin dir is repo-controlled code-exec (hooks/MCP)
-    // Else a plugin clone (e.g. `.grok/plugins/evil/`, even one in a subdir launched via `cd sub && grok`) would resolve trusted and run ungated.
+    // Else a plugin clone (e.g. `.ezer/plugins/evil/`, even one in a subdir launched via `cd sub && ezer`) would resolve trusted and run ungated.
     // Uses the shared cwd-to-git-root walk so detection matches exactly what `discover_plugins` scans for Project scope, erring on the secure side
     if !ezer_agent::plugins::project_plugin_dirs_in(&chain.dirs).is_empty() {
         hit!("plugins");
     }
-    // Project AGENT dirs (`.grok/agents` / `.claude/agents`): an agents-only clone must still be gated
+    // Project AGENT dirs (`.ezer/agents` / `.claude/agents`): an agents-only clone must still be gated
     // A project agent definition can carry an inline `hooks:` block (repo-controlled code-exec) and can shadow a built-in subagent by name
     // Uses the shared cwd-to-git-root walk so detection can't drift from agent discovery (same pattern as the plugin check above)
     if !ezer_agent::discovery::project_agent_dirs_in(&chain.dirs).is_empty() {
         hit!("agents");
     }
     // Presence matches exact-cwd discovery without parsing repository content.
-    let grok = cwd.join(".ezer");
-    if directory_present_or_uncertain(&grok.join("roles")) {
+    let ezer = cwd.join(".ezer");
+    if directory_present_or_uncertain(&ezer.join("roles")) {
         hit!("roles");
     }
-    if directory_present_or_uncertain(&grok.join("personas")) {
+    if directory_present_or_uncertain(&ezer.join("personas")) {
         hit!("personas");
     }
     if directory_present_or_uncertain(&hook_root.join(".ezer").join("workflows")) {
@@ -761,20 +761,20 @@ mod tests {
     }
 
     #[test]
-    fn repo_configs_present_detects_grok_config_mcp_servers() {
+    fn repo_configs_present_detects_ezer_config_mcp_servers() {
         let tmp = repo_tmp();
-        let grok = tmp.path().join(".ezer");
-        std::fs::create_dir_all(&grok).unwrap();
-        std::fs::write(grok.join("config.toml"), "[mcp_servers.x]\ncommand=\"y\"\n").unwrap();
+        let ezer = tmp.path().join(".ezer");
+        std::fs::create_dir_all(&ezer).unwrap();
+        std::fs::write(ezer.join("config.toml"), "[mcp_servers.x]\ncommand=\"y\"\n").unwrap();
         assert!(repo_configs_present(tmp.path()));
     }
 
     #[test]
-    fn repo_configs_present_detects_grok_lsp_json() {
+    fn repo_configs_present_detects_ezer_lsp_json() {
         let tmp = repo_tmp();
-        let grok = tmp.path().join(".ezer");
-        std::fs::create_dir_all(&grok).unwrap();
-        std::fs::write(grok.join("lsp.json"), "{}").unwrap();
+        let ezer = tmp.path().join(".ezer");
+        std::fs::create_dir_all(&ezer).unwrap();
+        std::fs::write(ezer.join("lsp.json"), "{}").unwrap();
         assert!(repo_configs_present(tmp.path()));
     }
 
@@ -850,7 +850,7 @@ mod tests {
 
     #[test]
     fn repo_configs_present_detects_project_agents() {
-        // A `.grok/agents`-only clone must be gated
+        // A `.ezer/agents`-only clone must be gated
         // A project agent definition can carry an inline `hooks:` block (code-exec) and can shadow a built-in subagent by name
         let tmp = repo_tmp();
         std::fs::create_dir_all(tmp.path().join(".ezer").join("agents")).unwrap();
@@ -897,9 +897,9 @@ mod tests {
     #[test]
     fn project_subagent_marker_regular_file_is_absent() {
         let tmp = repo_tmp();
-        let grok = tmp.path().join(".ezer");
-        std::fs::create_dir_all(&grok).unwrap();
-        std::fs::write(grok.join("roles"), "not a directory").unwrap();
+        let ezer = tmp.path().join(".ezer");
+        std::fs::create_dir_all(&ezer).unwrap();
+        std::fs::write(ezer.join("roles"), "not a directory").unwrap();
         assert!(!repo_configs_present(tmp.path()));
     }
 
@@ -917,10 +917,10 @@ mod tests {
     fn project_subagent_marker_symlink_to_directory_is_present() {
         let tmp = repo_tmp();
         let target = tmp.path().join("target-roles");
-        let grok = tmp.path().join(".ezer");
+        let ezer = tmp.path().join(".ezer");
         std::fs::create_dir_all(&target).unwrap();
-        std::fs::create_dir_all(&grok).unwrap();
-        std::os::unix::fs::symlink(&target, grok.join("roles")).unwrap();
+        std::fs::create_dir_all(&ezer).unwrap();
+        std::os::unix::fs::symlink(&target, ezer.join("roles")).unwrap();
         assert!(repo_configs_present(tmp.path()));
     }
 
@@ -928,9 +928,9 @@ mod tests {
     #[test]
     fn dangling_project_subagent_marker_is_absent() {
         let tmp = repo_tmp();
-        let grok = tmp.path().join(".ezer");
-        std::fs::create_dir_all(&grok).unwrap();
-        std::os::unix::fs::symlink("missing", grok.join("personas")).unwrap();
+        let ezer = tmp.path().join(".ezer");
+        std::fs::create_dir_all(&ezer).unwrap();
+        std::os::unix::fs::symlink("missing", ezer.join("personas")).unwrap();
         assert!(!repo_configs_present(tmp.path()));
     }
 
@@ -1044,7 +1044,7 @@ mod tests {
     }
 
     #[test]
-    fn repo_configs_present_detects_grok_config_plugins_paths() {
+    fn repo_configs_present_detects_ezer_config_plugins_paths() {
         // A repo whose ONLY repo-local config is `[plugins].paths` (no plugin dir, no MCP/LSP/hooks) must still be gated
         // Those paths load as auto-trusted ConfigPath plugins, so an ungated clone is a live RCE
         let tmp = repo_tmp();
@@ -1065,7 +1065,7 @@ mod tests {
     }
 
     #[test]
-    fn repo_configs_present_detects_grok_config_permission() {
+    fn repo_configs_present_detects_ezer_config_permission() {
         // A repo whose ONLY repo-local config is a contributing `[permission]` section (no MCP/plugins/hooks) must still be gated
         // Those allow rules auto-approve tool calls, so an ungated clone loads the attacker's policy
         // Also covers subdir launch (the cwd-to-git-root walk)
@@ -1142,7 +1142,7 @@ mod tests {
         );
     }
 
-    // Isolate `GROK_HOME`. No `serial_test` here; `ENV_LOCK` serializes in-process `cargo test` against other env-mutating modules
+    // Isolate `EZER_HOME`. No `serial_test` here; `ENV_LOCK` serializes in-process `cargo test` against other env-mutating modules
     // `EnvVarGuard` restores on drop so a panic cannot leak state
     use crate::ENV_TEST_LOCK as ENV_LOCK;
 
@@ -1162,8 +1162,8 @@ mod tests {
         // (Env/config isolated to unset so the remote flag is unambiguously the only enable being dropped here.)
         let _lock = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
         let home = tempfile::tempdir().unwrap();
-        let _home = EnvVarGuard::set("GROK_HOME", home.path());
-        let _flag = EnvVarGuard::unset("GROK_FOLDER_TRUST");
+        let _home = EnvVarGuard::set("EZER_HOME", home.path());
+        let _flag = EnvVarGuard::unset("EZER_FOLDER_TRUST");
 
         let remote = RemoteSettings {
             folder_trust_enabled: Some(true),
@@ -1181,11 +1181,11 @@ mod tests {
     #[test]
     fn release_build_keeps_gate_when_enabled() {
         // A release-stamped build honors the remote enable. Isolate config so on-disk or ambient flags cannot override it
-        // Empty `GROK_HOME` and unset `EZER_FOLDER_TRUST`; nextest's process-per-test lets `grok_home()` pick up the temp dir
+        // Empty `EZER_HOME` and unset `EZER_FOLDER_TRUST`; nextest's process-per-test lets `ezer_home()` pick up the temp dir
         let _lock = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
         let home = tempfile::tempdir().unwrap();
-        let _home = EnvVarGuard::set("GROK_HOME", home.path());
-        let _flag = EnvVarGuard::unset("GROK_FOLDER_TRUST");
+        let _home = EnvVarGuard::set("EZER_HOME", home.path());
+        let _flag = EnvVarGuard::unset("EZER_FOLDER_TRUST");
 
         let remote = RemoteSettings {
             folder_trust_enabled: Some(true),
@@ -1204,11 +1204,11 @@ mod tests {
     fn local_build_ignores_explicit_env_optin() {
         // Auto-trust is absolute on a local build: even an explicit EZER_FOLDER_TRUST=1 does NOT enable the feature
         // A self-built ezer therefore never prompts
-        // GROK_HOME is isolated so on-disk config can't influence it
+        // EZER_HOME is isolated so on-disk config can't influence it
         let _lock = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
         let home = tempfile::tempdir().unwrap();
-        let _home = EnvVarGuard::set("GROK_HOME", home.path());
-        let _flag = EnvVarGuard::set("GROK_FOLDER_TRUST", Path::new("1"));
+        let _home = EnvVarGuard::set("EZER_HOME", home.path());
+        let _flag = EnvVarGuard::set("EZER_FOLDER_TRUST", Path::new("1"));
 
         assert!(!feature_enabled_for_build(None, true));
     }
@@ -1216,11 +1216,11 @@ mod tests {
     #[test]
     fn release_build_defaults_on() {
         // A release-stamped build with no env/config/managed/remote signal defaults the feature ON
-        // An empty GROK_HOME (no config.toml/managed config) and EZER_FOLDER_TRUST unset leave only the default
+        // An empty EZER_HOME (no config.toml/managed config) and EZER_FOLDER_TRUST unset leave only the default
         let _lock = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
         let home = tempfile::tempdir().unwrap();
-        let _home = EnvVarGuard::set("GROK_HOME", home.path());
-        let _flag = EnvVarGuard::unset("GROK_FOLDER_TRUST");
+        let _home = EnvVarGuard::set("EZER_HOME", home.path());
+        let _flag = EnvVarGuard::unset("EZER_FOLDER_TRUST");
 
         assert!(feature_enabled_for_build(None, false));
     }
@@ -1236,7 +1236,7 @@ mod tests {
         // With it unset, an unstamped build (no EZER_VERSION) is a local build.
         // Guard to the unstamped case so a release-stamped test binary (CI release) doesn't spuriously fail this arm
         let _unset = EnvVarGuard::unset(ezer_version::TEST_VERSION_ENV);
-        if option_env!("GROK_VERSION").is_none() {
+        if option_env!("EZER_VERSION").is_none() {
             assert!(is_local_build());
         }
     }
@@ -1244,12 +1244,12 @@ mod tests {
     #[test]
     fn store_io_is_noop_on_local_build() {
         // On a local/dev build the feature is inert. Guards use a unique per-repo key so they hold under single-process `cargo test`
-        // Assert only when compiled unstamped. `GROK_HOME` isolated and `ENV_LOCK` held so toggling `EZER_TEST_VERSION` is race-safe
+        // Assert only when compiled unstamped. `EZER_HOME` isolated and `ENV_LOCK` held so toggling `EZER_TEST_VERSION` is race-safe
         let _lock = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
         let home = tempfile::tempdir().unwrap();
-        let _home = EnvVarGuard::set("GROK_HOME", home.path());
+        let _home = EnvVarGuard::set("EZER_HOME", home.path());
         let _unset = EnvVarGuard::unset(ezer_version::TEST_VERSION_ENV);
-        if option_env!("GROK_VERSION").is_some() {
+        if option_env!("EZER_VERSION").is_some() {
             return; // a release-stamped test binary is not a local build
         }
         let tmp = repo_tmp();
@@ -1290,10 +1290,10 @@ mod tests {
     fn revoke_folder_trust_store_persists_untrust_for_trusted_folder() {
         // This tests the store half of revoke directly (not just via the shell wrapper)
         // A previously-trusted folder reports was_trusted=true AND gets an explicit `set_untrusted` persisted, so it is untrusted on reload
-        // GROK_HOME is isolated so the seed/deny hit a temp store, not the real file
+        // EZER_HOME is isolated so the seed/deny hit a temp store, not the real file
         let _lock = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
         let home = tempfile::tempdir().unwrap();
-        let _env = EnvVarGuard::set("GROK_HOME", home.path());
+        let _env = EnvVarGuard::set("EZER_HOME", home.path());
         let _sim = simulate_release_build();
         let tmp = repo_tmp();
         let key = workspace_key(tmp.path());
@@ -1316,7 +1316,7 @@ mod tests {
     fn revoke_folder_trust_store_writes_no_deny_for_never_trusted_folder() {
         let _lock = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
         let home = tempfile::tempdir().unwrap();
-        let _env = EnvVarGuard::set("GROK_HOME", home.path());
+        let _env = EnvVarGuard::set("EZER_HOME", home.path());
         let _sim = simulate_release_build();
         let tmp = repo_tmp();
 
@@ -1335,10 +1335,10 @@ mod tests {
     #[test]
     fn grant_folder_trust_skips_rewrite_when_already_trusted_but_flips_untrust() {
         // Already-trusted grant must not rewrite the store; an explicit untrust record must still persist `--trust`
-        // GROK_HOME is isolated so the seed hits a temp store, not the real file
+        // EZER_HOME is isolated so the seed hits a temp store, not the real file
         let _lock = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
         let home = tempfile::tempdir().unwrap();
-        let _env = EnvVarGuard::set("GROK_HOME", home.path());
+        let _env = EnvVarGuard::set("EZER_HOME", home.path());
         let _sim = simulate_release_build();
         let tmp = repo_tmp();
         let key = workspace_key(tmp.path());
@@ -1349,7 +1349,7 @@ mod tests {
             "first grant must persist trust"
         );
 
-        let store_path = TrustStore::default_path().expect("isolated GROK_HOME");
+        let store_path = TrustStore::default_path().expect("isolated EZER_HOME");
         let after_grant = std::fs::read(&store_path).unwrap();
         // Marker a rewrite would drop.
         let mut marked = after_grant.clone();
@@ -1454,7 +1454,7 @@ mod tests {
         let text = unread.to_string();
         assert!(text.contains("trust store could not be read"), "{text}");
         assert!(
-            text.contains("Fix or delete ~/.grok/trusted_folders.toml"),
+            text.contains("Fix or delete ~/.ezer/trusted_folders.toml"),
             "{text}"
         );
         let no_home = GrantOutcome::Refused {
@@ -1524,7 +1524,7 @@ mod tests {
             ),
             "publish failure after a missing store is process-local only"
         );
-        let _home = EnvVarGuard::set("GROK_HOME", &blocker);
+        let _home = EnvVarGuard::set("EZER_HOME", &blocker);
         assert!(
             !TrustStore::load().is_trusted(&key),
             "durable store must stay ungranted when persist is denied"
@@ -1594,7 +1594,7 @@ mod tests {
             }
         ));
         assert_eq!(std::fs::read(&store_path).unwrap(), before);
-        let _home = EnvVarGuard::set("GROK_HOME", &fixture);
+        let _home = EnvVarGuard::set("EZER_HOME", &fixture);
         assert!(
             !is_trusted_this_process(&key),
             "unread store must not become process-local trusted"

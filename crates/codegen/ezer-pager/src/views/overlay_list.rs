@@ -236,7 +236,7 @@ mod tests {
         assert_eq!(cursor.bg, Some(Color::Reset), "no painted band");
         assert!(!normal.add_modifier.contains(Modifier::REVERSED));
 
-        crate::theme::cache::set(crate::theme::ThemeKind::GrokNight);
+        crate::theme::cache::set(crate::theme::ThemeKind::EzerNight);
         let (cursor, normal) = render();
         let theme = Theme::current();
         assert_eq!(cursor.bg, Some(theme.bg_visual), "RGB keeps the band");

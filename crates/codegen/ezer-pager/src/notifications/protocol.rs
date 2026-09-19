@@ -31,7 +31,7 @@ pub fn select_protocol(ctx: &TerminalContext) -> NotificationProtocol {
         | TerminalName::Vte
         | TerminalName::Terminator
         | TerminalName::Foot => NotificationProtocol::Osc777,
-        TerminalName::GrokDesktop => NotificationProtocol::None,
+        TerminalName::EzerDesktop => NotificationProtocol::None,
         TerminalName::AppleTerminal
         | TerminalName::Alacritty
         | TerminalName::Rio
@@ -165,7 +165,7 @@ mod tests {
 
     #[test]
     fn bytes_none_is_noop() {
-        let ctx = ctx_with_brand(TerminalName::GrokDesktop);
+        let ctx = ctx_with_brand(TerminalName::EzerDesktop);
         assert_eq!(
             notification_bytes(NotificationProtocol::None, "title", "body", &ctx),
             None
@@ -219,7 +219,7 @@ mod tests {
 
     #[test]
     fn emit_none_enqueues_nothing() {
-        let ctx = ctx_with_brand(TerminalName::GrokDesktop);
+        let ctx = ctx_with_brand(TerminalName::EzerDesktop);
         let (writer, rx) = capture_writer();
         emit_notification(NotificationProtocol::None, "title", "body", &ctx, &writer);
         assert!(rx.try_recv().is_err(), "no payload expected");
@@ -262,7 +262,7 @@ mod tests {
             (TerminalName::Ghostty, NotificationProtocol::Osc777),
             (TerminalName::Vte, NotificationProtocol::Osc777),
             (TerminalName::Foot, NotificationProtocol::Osc777),
-            (TerminalName::GrokDesktop, NotificationProtocol::None),
+            (TerminalName::EzerDesktop, NotificationProtocol::None),
             (TerminalName::AppleTerminal, NotificationProtocol::Bel),
             (TerminalName::Alacritty, NotificationProtocol::Bel),
             (TerminalName::VsCode, NotificationProtocol::Bel),

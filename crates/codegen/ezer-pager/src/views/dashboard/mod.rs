@@ -108,12 +108,12 @@ mod tests {
 
     /// Minimal mode always points at `/resume`: the dashboard is refused there no matter what the feature flag says, so the hint must not depend on it.
     /// Runs under the same serial key as the other `EZER_AGENT_DASHBOARD` env-mutating tests.
-    #[serial_test::serial(GROK_AGENT_DASHBOARD)]
+    #[serial_test::serial(EZER_AGENT_DASHBOARD)]
     #[test]
     fn switch_hint_minimal_is_resume_even_with_dashboard_disabled() {
         // SAFETY: the test temporarily mutates a process-wide env var.
         // `serial_test`'s lock ensures no other test marked with the same
-        // `GROK_AGENT_DASHBOARD` key reads it concurrently.
+        // `EZER_AGENT_DASHBOARD` key reads it concurrently.
         unsafe { std::env::set_var("EZER_AGENT_DASHBOARD", "0") };
         assert_eq!(session_switch_hint_command(true), Some("/resume"));
         unsafe { std::env::remove_var("EZER_AGENT_DASHBOARD") };
@@ -122,10 +122,10 @@ mod tests {
     /// Outside minimal the hint mirrors the dashboard flag.
     /// `None` when the env override disables it (the tip would name a refused command), otherwise whatever `dashboard_enabled()` says.
     /// The second assert checks consistency, not a fixed value, so the test doesn't depend on the machine's persisted `[dashboard].enabled`.
-    #[serial_test::serial(GROK_AGENT_DASHBOARD)]
+    #[serial_test::serial(EZER_AGENT_DASHBOARD)]
     #[test]
     fn switch_hint_non_minimal_follows_dashboard_flag() {
-        // SAFETY: see above; serialized on the GROK_AGENT_DASHBOARD key
+        // SAFETY: see above; serialized on the EZER_AGENT_DASHBOARD key
         unsafe { std::env::set_var("EZER_AGENT_DASHBOARD", "0") };
         assert_eq!(session_switch_hint_command(false), None);
         unsafe { std::env::remove_var("EZER_AGENT_DASHBOARD") };

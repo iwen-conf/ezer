@@ -9,10 +9,10 @@ fn temp_workspace(tag: &str, toml_body: &str) -> PathBuf {
         .unwrap()
         .as_nanos();
     let ws = std::env::temp_dir().join(format!("ezer-rdv-{tag}-{}-{nanos}", std::process::id()));
-    let grok = ws.join(".ezer");
-    std::fs::create_dir_all(&grok).unwrap();
+    let ezer = ws.join(".ezer");
+    std::fs::create_dir_all(&ezer).unwrap();
     std::fs::write(
-        grok.join(ezer_config::SANDBOX_CONFIG_FILENAME),
+        ezer.join(ezer_config::SANDBOX_CONFIG_FILENAME),
         toml_body,
     )
     .unwrap();

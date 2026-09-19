@@ -2359,7 +2359,7 @@ fn media_gen_block(tc: &acp::ToolCall, success: bool) -> RenderBlock {
     RenderBlock::ToolCall(ToolCallBlock::Other(block))
 }
 /// Plain-text body of a media-variant tool that returned `ToolOutput::Text` rather than a media file.
-/// That happens on the free / X Basic SuperGrok-upsell short-circuit.
+/// That happens on the free / X Basic MaxTier-upsell short-circuit.
 /// `None` for real media outputs (including ZDR upload-only results) so their typed rendering is untouched.
 fn media_gen_text(tc: &acp::ToolCall) -> Option<String> {
     match serde_json::from_value::<ToolOutput>(tc.raw_output.clone()?).ok()? {
@@ -2525,7 +2525,7 @@ fn task_ids_from_raw_input(raw: &serde_json::Value) -> Vec<String> {
     out
 }
 /// Check if a tool call is a background execute (`is_background=true`). These are deferred from scrollback; the
-/// `x.ai/task_backgrounded` notification creates a `BgTask` block instead of an `Execute` block. Still treat those
+/// `ezer/task_backgrounded` notification creates a `BgTask` block instead of an `Execute` block. Still treat those
 /// as execute tools when `raw_input` requests background so we don't flash the function name.
 fn is_bg_tool(tc: &acp::ToolCall) -> bool {
     let looks_like_execute =

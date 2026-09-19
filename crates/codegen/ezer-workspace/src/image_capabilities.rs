@@ -367,7 +367,7 @@ mod tests {
 
     #[test]
     fn only_plausible_tokens_are_noteworthy() {
-        for name in ["Grove.Daemon", "notes.txt", "grok_files.occ", "trailing."] {
+        for name in ["Grove.Daemon", "notes.txt", "ezer_files.occ", "trailing."] {
             assert!(is_rejection_noteworthy(name), "expected warn: {name}");
         }
         for name in [

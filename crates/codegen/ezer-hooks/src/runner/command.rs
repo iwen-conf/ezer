@@ -216,7 +216,7 @@ pub async fn run_command_hook(
         .stdout(std::process::Stdio::piped())
         .stderr(std::process::Stdio::piped())
         .current_dir(ctx.workspace_root)
-        // SECURITY: extra_env is applied before the GROK_* identity vars so a hook cannot spoof them.
+        // SECURITY: extra_env is applied before the EZER_* identity vars so a hook cannot spoof them.
         .envs(&spec.extra_env)
         .env("EZER_HOOK_EVENT", envelope.hook_event_name.to_string())
         .env("EZER_HOOK_NAME", &spec.name)
@@ -1972,10 +1972,10 @@ mod tests {
             resolve_command_path(&spec(
                 HandlerType::Command,
                 Some("bin/check.sh"),
-                "/project/.grok/hooks"
+                "/project/.ezer/hooks"
             )),
             Some(std::path::PathBuf::from(
-                "/project/.grok/hooks/bin/check.sh"
+                "/project/.ezer/hooks/bin/check.sh"
             ))
         );
         assert_eq!(
@@ -2172,7 +2172,7 @@ mod tests {
                 r#"powershell -File "$env:CLAUDE_PROJECT_DIR/.claude/hooks/foo.ps1""#,
             ),
             (
-                "$CLAUDE_PROJECT_DIR/$GROK_HOOK_NAME.ps1",
+                "$CLAUDE_PROJECT_DIR/$EZER_HOOK_NAME.ps1",
                 r#"& "$env:CLAUDE_PROJECT_DIR/$env:EZER_HOOK_NAME.ps1""#,
             ),
             (
@@ -2219,7 +2219,7 @@ mod tests {
         let mut env = std::collections::HashMap::new();
         env.insert("CLAUDE_PLUGIN_ROOT".to_string(), "/plugins/foo".to_string());
         let v = find_unresolved_env_vars(
-            "${GROK_HOOK_EVENT}/${CLAUDE_PROJECT_DIR}/${GROK_SESSION_ID}/${CLAUDE_PLUGIN_ROOT}/foo",
+            "${EZER_HOOK_EVENT}/${CLAUDE_PROJECT_DIR}/${EZER_SESSION_ID}/${CLAUDE_PLUGIN_ROOT}/foo",
             &env,
         );
         assert!(
@@ -2325,7 +2325,7 @@ mod tests {
     #[cfg(unix)]
     async fn tilde_expansion_runs_via_shell() {
         let tmp = tempfile::tempdir().unwrap();
-        let hook_dir = tmp.path().join(".grok-test-hooks-gb856");
+        let hook_dir = tmp.path().join(".ezer-test-hooks-gb856");
         std::fs::create_dir_all(&hook_dir).unwrap();
         let script = hook_dir.join("tilde-test.sh");
         std::fs::write(&script, "#!/bin/sh\nexit 0\n").unwrap();
@@ -2342,7 +2342,7 @@ mod tests {
             tmp.path().to_string_lossy().into_owned(),
         );
 
-        let mut spec = make_shell_spec("~/.grok-test-hooks-gb856/tilde-test.sh");
+        let mut spec = make_shell_spec("~/.ezer-test-hooks-gb856/tilde-test.sh");
         spec.extra_env = extra_env;
 
         let envelope = make_envelope();

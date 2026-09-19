@@ -209,7 +209,7 @@ mod tests {
             "turn_started_at": "2025-01-01T00:00:00Z",
             "user_id": null,
             "user_email": null,
-            "model": "grok-3",
+            "model": "test-model-3",
             "host_os": "linux",
             "host_arch": "x86_64"
         }"#
@@ -232,7 +232,7 @@ mod tests {
             "turn_started_at": "2025-01-01T00:00:00Z",
             "user_id": null,
             "user_email": null,
-            "model": "grok-3",
+            "model": "test-model-3",
             "host_os": "linux",
             "host_arch": "x86_64",
             "prompt_has_image": false,
@@ -298,12 +298,12 @@ mod tests {
             turn_number: 1,
             request_id: "req-1".into(),
             turn_started_at: "2025-01-01T00:00:00Z".into(),
-            model: "grok-3".into(),
+            model: "test-model-3".into(),
             host_os: "linux".into(),
             host_arch: "x86_64".into(),
             ..Default::default()
         });
         assert_eq!(meta.session_id, "abc");
-        assert_eq!(meta.model, "grok-3");
+        assert_eq!(meta.model, "test-model-3");
     }
 }

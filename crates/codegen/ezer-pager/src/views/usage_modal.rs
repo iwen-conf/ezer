@@ -74,7 +74,7 @@ pub struct UsageInfoContext {
     pub chat_kind: bool,
     /// Remote-settings kill switch: link out instead of showing billing.
     pub billing_redirect_url: Option<String>,
-    /// Plan name for the allowance header (e.g. "SuperGrok").
+    /// Plan name for the allowance header (e.g. "MaxTier").
     pub subscription_tier: Option<String>,
 }
 
@@ -961,7 +961,7 @@ mod tests {
                 usage_visible: true,
                 chat_kind: false,
                 billing_redirect_url: None,
-                subscription_tier: Some("SuperGrok".to_string()),
+                subscription_tier: Some("MaxTier".to_string()),
             },
         )
     }
@@ -1015,7 +1015,7 @@ mod tests {
         let text: Vec<String> = lines.iter().map(|l| l.to_string()).collect();
         assert_eq!(
             text.first().map(String::as_str),
-            Some("Weekly limit (SuperGrok)")
+            Some("Weekly limit (MaxTier)")
         );
         assert!(
             text.get(2).is_some_and(|l| l.ends_with("50%")),

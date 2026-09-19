@@ -795,7 +795,7 @@ pub fn parse_skill_files(skill_files: Vec<(PathBuf, SkillScope)>) -> Vec<SkillIn
 
     // Drop vendor-shipped default skills (vendor builtins) found under
     // a `/.cursor/` or `/.claude/` path. Always applied, independent of the
-    // per-vendor toggle, so vendor builtins never leak into Grok Build.
+    // per-vendor toggle, so vendor builtins never leak into Ezer Build.
     skills.retain(|s| !is_vendor_default_skill(&s.path, &s.name));
 
     skills
@@ -811,7 +811,7 @@ pub fn discover_skills_for_paths(
     already_checked: &mut HashSet<PathBuf>,
     compat: CompatConfig,
 ) -> Vec<SkillInfo> {
-    // `.grok` and `.agents` are always scanned; `.claude` is gated on the
+    // `.ezer` and `.agents` are always scanned; `.claude` is gated on the
     // claude-vendor skills cell. (`.cursor` is excluded here by design — see fn docs.)
     let mut config_dir_names: Vec<&str> = vec![".ezer", ".agents"];
     if compat.claude.skills {
@@ -1394,7 +1394,7 @@ model: test-model
 
     #[test]
     fn is_vendor_default_skill_spares_user_skill_outside_vendor_dir() {
-        // A user's own "shell" skill in ~/.grok is NOT a vendor builtin.
+        // A user's own "shell" skill in ~/.ezer is NOT a vendor builtin.
         assert!(!is_vendor_default_skill(
             "/home/u/.ezer/skills/shell/SKILL.md",
             "shell"
@@ -1429,18 +1429,18 @@ model: test-model
             "---\nname: shell\ndescription: cursor builtin\n---\n",
         )
         .unwrap();
-        // Same name under /.grok/ → kept (user content).
-        let grok_shell = tmp.path().join(".ezer").join("skills").join("shell");
-        std::fs::create_dir_all(&grok_shell).unwrap();
+        // Same name under /.ezer/ → kept (user content).
+        let ezer_shell_dir = tmp.path().join(".ezer").join("skills").join("shell");
+        std::fs::create_dir_all(&ezer_shell_dir).unwrap();
         std::fs::write(
-            grok_shell.join("SKILL.md"),
+            ezer_shell_dir.join("SKILL.md"),
             "---\nname: shell\ndescription: user content\n---\n",
         )
         .unwrap();
 
         let skills = parse_skill_files(vec![
             (cursor_shell.join("SKILL.md"), SkillScope::User),
-            (grok_shell.join("SKILL.md"), SkillScope::User),
+            (ezer_shell_dir.join("SKILL.md"), SkillScope::User),
         ]);
         assert_eq!(skills.len(), 1, "cursor builtin must be dropped");
         assert!(skills.first().is_some_and(|s| s.path.contains("/.ezer/")));
@@ -1478,7 +1478,7 @@ model: test-model
         let sub = repo.join("sub");
         std::fs::create_dir_all(&sub).unwrap();
 
-        // A .claude skill and a .grok skill in an intermediate dir.
+        // A .claude skill and a .ezer skill in an intermediate dir.
         let claude_skill = sub.join(".claude").join("skills").join("claude-dyn");
         std::fs::create_dir_all(&claude_skill).unwrap();
         std::fs::write(
@@ -1486,9 +1486,9 @@ model: test-model
             "---\nname: claude-dyn\n---\n",
         )
         .unwrap();
-        let grok_skill = sub.join(".ezer").join("skills").join("ezer-dyn");
-        std::fs::create_dir_all(&grok_skill).unwrap();
-        std::fs::write(grok_skill.join("SKILL.md"), "---\nname: ezer-dyn\n---\n").unwrap();
+        let ezer_skill = sub.join(".ezer").join("skills").join("ezer-dyn");
+        std::fs::create_dir_all(&ezer_skill).unwrap();
+        std::fs::write(ezer_skill.join("SKILL.md"), "---\nname: ezer-dyn\n---\n").unwrap();
 
         let file = sub.join("file.rs");
         std::fs::write(&file, "fn main() {}").unwrap();
@@ -1512,7 +1512,7 @@ model: test-model
             "claude-dyn should be found when claude.skills on: {names_on:?}"
         );
 
-        // claude.skills OFF → only grok-dyn discovered.
+        // claude.skills OFF → only ezer-dyn discovered.
         let mut compat_off = CompatConfig::default();
         compat_off.claude.skills = false;
         let mut checked2 = HashSet::new();

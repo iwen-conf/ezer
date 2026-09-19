@@ -259,7 +259,7 @@ pub fn campaigns_application_disabled(base_effective: &toml::Value) -> bool {
 /// Process-global `EZER_CAMPAIGNS` lock. A mutex local to the setter is not
 /// enough because `effective_config_with_campaigns` also reads the var.
 #[cfg(test)]
-pub(crate) fn lock_grok_campaigns_env() -> std::sync::MutexGuard<'static, ()> {
+pub(crate) fn lock_ezer_campaigns_env() -> std::sync::MutexGuard<'static, ()> {
     static LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
     LOCK.lock().unwrap_or_else(|p| p.into_inner())
 }
@@ -289,7 +289,7 @@ pub fn campaigns_state_path(home: &std::path::Path) -> std::path::PathBuf {
 
 /// Fail-open dismissed ids from `$EZER_HOME/campaigns_state.json`.
 pub fn load_dismissed_ids_from_home() -> std::collections::HashSet<String> {
-    let Some(home) = crate::user_grok_home() else {
+    let Some(home) = crate::user_ezer_home() else {
         return std::collections::HashSet::new();
     };
     let Ok(contents) = std::fs::read_to_string(campaigns_state_path(&home)) else {
@@ -326,12 +326,12 @@ mod tests {
     /// `EZER_CAMPAIGNS=0` disables campaign application regardless of config.
     #[test]
     fn kill_switch_env_var_disables() {
-        let _g = lock_grok_campaigns_env();
+        let _g = lock_ezer_campaigns_env();
         let prior = std::env::var_os("EZER_CAMPAIGNS");
         let empty = toml::Value::Table(Default::default());
 
-        // SAFETY: `lock_grok_campaigns_env` serializes this against every test that
-        // mutates or reads GROK_CAMPAIGNS.
+        // SAFETY: `lock_ezer_campaigns_env` serializes this against every test that
+        // mutates or reads EZER_CAMPAIGNS.
         unsafe { std::env::set_var("EZER_CAMPAIGNS", "0") };
         assert!(campaigns_application_disabled(&empty));
 
@@ -346,7 +346,7 @@ mod tests {
 
     #[test]
     fn env_overlay_precedence_and_overlay_free_merge() {
-        let _env = lock_grok_campaigns_env();
+        let _env = lock_ezer_campaigns_env();
         let mut layers = ConfigLayers {
             user: toml::from_str("[models]\ndefault = \"user\"\n[telemetry]\nmode = \"on\"\n")
                 .unwrap(),

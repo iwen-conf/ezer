@@ -527,7 +527,7 @@ mod tests {
     #[test]
     fn test_copy_git_dir_preserves_worktree_source_marker() {
         // A worktree-from-worktree (standalone) must inherit the source's
-        // `grok-worktree-source` marker so it still points at the ultimate
+        // `ezer-worktree-source` marker so it still points at the ultimate
         // main repo rather than the intermediate worktree.
         let temp = TempDir::new().unwrap();
         let source_git = temp.path().join("source/.git");

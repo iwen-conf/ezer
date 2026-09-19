@@ -136,8 +136,8 @@ pub(super) fn reseed_tip_for_new_session(app: &mut AppView) {
     if !matches!(app.active_view, ActiveView::Agent(_)) || app.tips.is_empty() {
         return;
     }
-    let grok_home = ezer_tools::util::grok_home::grok_home();
-    app.tip = ezer_shell::util::tips::pick_and_advance(&app.tips, &grok_home);
+    let ezer_home = ezer_tools::util::ezer_home::ezer_home();
+    app.tip = ezer_shell::util::tips::pick_and_advance(&app.tips, &ezer_home);
 }
 
 /// Switch to the welcome screen, clearing ephemeral per-visit state.

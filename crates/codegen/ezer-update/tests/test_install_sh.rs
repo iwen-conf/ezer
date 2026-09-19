@@ -121,7 +121,7 @@ fn seed_previous_good(home: &Path, platform: &str) -> PathBuf {
 }
 
 /// Re-resolve `$BIN_DIR/ezer` from disk and re-run it: the active ezer must always execute, and never be a `.tmp`/partial file.
-fn assert_active_grok_runs(home: &Path) {
+fn assert_active_ezer_runs(home: &Path) {
     let link = home.join(".ezer").join("bin").join("ezer");
     assert!(link.is_symlink(), "ezer must remain a symlink");
     let resolved =
@@ -310,11 +310,11 @@ fn run_shell_rc_case(case: &ShellRcCase) {
         }
     }
 
-    assert_active_grok_runs(&home_path);
+    assert_active_ezer_runs(&home_path);
 }
 
 #[test]
-fn install_sh_blitz_keeps_grok_runnable_under_corruption() {
+fn install_sh_blitz_keeps_ezer_runnable_under_corruption() {
     let Some(install_sh) = install_sh_path() else {
         eprintln!("skipping: install.sh not found relative to crate; run under cargo");
         return;
@@ -345,8 +345,8 @@ fn install_sh_blitz_keeps_grok_runnable_under_corruption() {
             "install.sh mode={mode} exit success mismatch"
         );
 
-        // The invariant holds on every path: the active grok always runs (new good binary on success, previous-good on rejection)
-        assert_active_grok_runs(home.path());
+        // The invariant holds on every path: the active ezer always runs (new good binary on success, previous-good on rejection)
+        assert_active_ezer_runs(home.path());
     }
 }
 
@@ -495,7 +495,7 @@ fn install_scripts_refuse_bad_proxy_url_for_deployment_key() {
 }
 
 #[test]
-fn install_sh_rejects_hostile_grok_channel() {
+fn install_sh_rejects_hostile_ezer_channel() {
     let Some(install_sh) = install_sh_path() else {
         eprintln!("skipping: install.sh not found relative to crate; run under cargo");
         return;
@@ -585,7 +585,7 @@ fn install_scripts_rosetta_shell_installs_arm64() {
             return;
         };
         assert!(
-            urls.contains("grok-0.1.181-macos-aarch64"),
+            urls.contains("ezer-0.1.181-macos-aarch64"),
             "{script}: Rosetta shell must request the arm64 artifact, urls:\n{urls}"
         );
         assert!(
@@ -603,7 +603,7 @@ fn install_scripts_intel_mac_keeps_x86_64() {
             return;
         };
         assert!(
-            urls.contains("grok-0.1.181-macos-x86_64"),
+            urls.contains("ezer-0.1.181-macos-x86_64"),
             "{script}: Intel Mac must keep the x86_64 artifact, urls:\n{urls}"
         );
     }

@@ -15,7 +15,7 @@ use rustls::pki_types::pem::PemObject;
 
 pub const MAX_EXTRA_CA_BUNDLE_BYTES: u64 = 1024 * 1024;
 
-pub const ENV_GROK_EXTRA_CA_BUNDLE: &str = "EZER_EXTRA_CA_BUNDLE";
+pub const ENV_EZER_EXTRA_CA_BUNDLE: &str = "EZER_EXTRA_CA_BUNDLE";
 
 pub const ENV_SSL_CERT_FILE: &str = "SSL_CERT_FILE";
 
@@ -217,7 +217,7 @@ fn bundle_snapshot() -> &'static BundleSnapshot {
 /// `EZER_EXTRA_CA_BUNDLE` wins over `SSL_CERT_FILE`; an empty value disables both, since `SSL_CERT_FILE` is often set process-wide (Nix, conda).
 fn configured_ca_bundle() -> Option<(&'static str, std::path::PathBuf)> {
     select_bundle(
-        std::env::var_os(ENV_GROK_EXTRA_CA_BUNDLE),
+        std::env::var_os(ENV_EZER_EXTRA_CA_BUNDLE),
         std::env::var_os(ENV_SSL_CERT_FILE),
     )
 }
@@ -229,7 +229,7 @@ fn select_bundle(
     ssl: Option<std::ffi::OsString>,
 ) -> Option<(&'static str, std::path::PathBuf)> {
     match bundle {
-        Some(p) if !p.is_empty() => Some((ENV_GROK_EXTRA_CA_BUNDLE, p.into())),
+        Some(p) if !p.is_empty() => Some((ENV_EZER_EXTRA_CA_BUNDLE, p.into())),
         Some(_) => None,
         None => match ssl {
             Some(p) if !p.is_empty() => Some((ENV_SSL_CERT_FILE, p.into())),

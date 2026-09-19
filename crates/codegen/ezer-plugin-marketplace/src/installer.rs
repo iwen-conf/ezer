@@ -908,7 +908,7 @@ mod tests {
         let _ = std::fs::remove_dir_all(&install_dir);
         std::fs::create_dir_all(&install_dir).unwrap();
         // Build the registry against an explicit tempdir rather than going through `InstallRegistry::load()`.
-        // `load()` resolves the install dir via the process-global `grok_home()` `OnceLock` (first-write-wins). A parallel test in this binary can cache the real `~/.grok` before this runs, which would leak the registry tests into the real home and make them order-dependent and flaky.
+        // `load()` resolves the install dir via the process-global `ezer_home()` `OnceLock` (first-write-wins). A parallel test in this binary can cache the real `~/.ezer` before this runs, which would leak the registry tests into the real home and make them order-dependent and flaky.
         let mut registry = InstallRegistry::empty(install_dir);
         f(&mut registry)
     }
@@ -1096,7 +1096,7 @@ mod tests {
                 .find(|p| p.relative_path == "plugins/demo")
                 .unwrap();
 
-            unsafe { std::env::set_var("XAI_GROK_TEST_FAIL_REGISTRY_SAVE_AFTER_SERIALIZE", "1") };
+            unsafe { std::env::set_var("EZER_TEST_FAIL_REGISTRY_SAVE_AFTER_SERIALIZE", "1") };
             let result = update_from_marketplace_entry_transactional(
                 marketplace.path(),
                 &entry,
@@ -1104,7 +1104,7 @@ mod tests {
                 registry,
                 false, // require_sha off: pin policy has its own tests
             );
-            unsafe { std::env::remove_var("XAI_GROK_TEST_FAIL_REGISTRY_SAVE_AFTER_SERIALIZE") };
+            unsafe { std::env::remove_var("EZER_TEST_FAIL_REGISTRY_SAVE_AFTER_SERIALIZE") };
 
             assert!(result.is_err());
             assert_eq!(

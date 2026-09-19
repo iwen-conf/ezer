@@ -163,7 +163,7 @@ fn test_app() -> AppView {
         agent_override: None,
         bootstrap_acp_commands: Vec::new(),
         auth_methods: vec![acp::AuthMethod::Agent(acp::AuthMethodAgent::new(
-            acp::AuthMethodId::new("grok.com"),
+            acp::AuthMethodId::new("example.test"),
             "ezer".to_string(),
         ))],
         auth_state: AuthState::Done,
@@ -573,11 +573,11 @@ pub(super) fn end_turn() -> Action {
         prompt_id: None,
     })
 }
-/// Plant a Build session under the process `grok_home()` (OnceLock-cached; do not rely on setting `GROK_HOME` mid-process).
+/// Plant a Build session under the process `ezer_home()` (OnceLock-cached; do not rely on setting `EZER_HOME` mid-process).
 /// Caller must remove `sess_dir`.
 fn plant_local_build_session(cwd: &std::path::Path, session_id: &str) -> std::path::PathBuf {
-    let home = ezer_shell::util::grok_home::grok_home();
-    let encoded = ezer_shell::util::grok_home::encode_cwd_dirname(&cwd.to_string_lossy());
+    let home = ezer_shell::util::ezer_home::ezer_home();
+    let encoded = ezer_shell::util::ezer_home::encode_cwd_dirname(&cwd.to_string_lossy());
     let sess_dir = home.join("sessions").join(encoded).join(session_id);
     std::fs::create_dir_all(&sess_dir).expect("plant session dir");
     std::fs::write(sess_dir.join("summary.json"), b"{}").expect("plant summary");
@@ -693,7 +693,7 @@ fn fork_test_app() -> AppView {
     app.agents.get_mut(&AgentId(0)).unwrap().current_branch = Some("main".into());
     app
 }
-/// Build a minimal `AcpArgs<acp::ExtRequest>` for an `x.ai/ask_user_question` ext-method request.
+/// Build a minimal `AcpArgs<acp::ExtRequest>` for an `ezer/ask_user_question` ext-method request.
 /// Returns the args and the receiver half of the response oneshot so the test can assert the handler completes the ACP roundtrip.
 fn make_ask_user_question_args(
     tool_call_id: &str,
@@ -722,7 +722,7 @@ fn make_ask_user_question_args(
     };
     let (tx, rx) = tokio::sync::oneshot::channel();
     let ext = acp::ExtRequest::new(
-        "x.ai/ask_user_question",
+        "ezer/ask_user_question",
         serde_json::value::to_raw_value(&req)
             .expect("serialize AskUserQuestionExtRequest")
             .into(),
@@ -1000,7 +1000,7 @@ fn with_theme_test_env(f: impl FnOnce()) {
         .unwrap_or_else(|e| e.into_inner());
     crate::theme::cache::reset_for_test();
     crate::theme::cache::seed_auto_theme_defaults_for_test();
-    crate::theme::cache::set(crate::theme::ThemeKind::GrokNight);
+    crate::theme::cache::set(crate::theme::ThemeKind::EzerNight);
     crate::theme::system_appearance::clear_mock();
     f();
     crate::theme::system_appearance::clear_mock();

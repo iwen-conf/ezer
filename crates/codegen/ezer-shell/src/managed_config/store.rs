@@ -1,6 +1,6 @@
 //! Every managed-config file read and write, and every flock acquisition site. Synchronous only.
 
-use ezer_login::GrokAuth;
+use ezer_login::EzerAuth;
 
 use super::policy::{
     GateSnapshot, ManagedPolicyRefusal, auth_mode, claim_binds_to, served_principal_of,
@@ -100,18 +100,18 @@ fn remove_managed_path(path: &std::path::Path) -> std::io::Result<bool> {
 }
 
 /// Non-expired only: an expired token would just 401.
-pub(super) fn eligible_team_principal(auth: GrokAuth) -> Option<GrokAuth> {
+pub(super) fn eligible_team_principal(auth: EzerAuth) -> Option<EzerAuth> {
     (auth.is_team_principal() && !ezer_login::is_expired(&auth)).then_some(auth)
 }
 
-/// Single-team: managed config is a grok.com feature with one grok.com auth.
-fn read_team_principal() -> std::io::Result<Option<GrokAuth>> {
-    let home = crate::util::grok_home::grok_home();
+/// Single-team: managed config is a ezer.com feature with one ezer.com auth.
+fn read_team_principal() -> std::io::Result<Option<EzerAuth>> {
+    let home = crate::util::ezer_home::ezer_home();
     let store = ezer_login::read_auth_json(&ezer_login::auth_json_path(&home))?;
     Ok(store.into_values().find(|a| a.is_team_principal()))
 }
 
-pub(super) fn read_active_team_auth() -> Option<GrokAuth> {
+pub(super) fn read_active_team_auth() -> Option<EzerAuth> {
     eligible_team_principal(read_team_principal().ok().flatten()?)
 }
 
@@ -140,7 +140,7 @@ pub fn clear_orphan() {
             return;
         }
     }
-    let home = crate::util::grok_home::grok_home();
+    let home = crate::util::ezer_home::ezer_home();
     let Some(_lock) = try_lock_managed_config(&home) else {
         return; // another process is syncing; retry next call
     };
@@ -224,7 +224,7 @@ fn open_managed_config_lock(home: &std::path::Path) -> std::io::Result<std::fs::
 const GATE_LOCK_RETRY_DELAY: std::time::Duration = std::time::Duration::from_millis(100);
 
 /// Purge, floor tick, and reads under the caller-held gate lock — one consistent state.
-/// `home` must be the process `grok_home()`: the identity reads resolve it internally.
+/// `home` must be the process `ezer_home()`: the identity reads resolve it internally.
 pub(super) fn gate_snapshot_locked(home: &std::path::Path) -> GateSnapshot {
     // Purge first so an offline team switch isn't misread as a substituted cache.
     purge_prior_tenant_locked(home);
@@ -261,7 +261,7 @@ pub(super) fn bump_managed_rollback_floor() {
     if !ezer_config::signed_policy::verification_active() {
         return;
     }
-    let home = crate::util::grok_home::grok_home();
+    let home = crate::util::ezer_home::ezer_home();
     match try_lock_managed_config(&home) {
         Some(_lock) => {
             ezer_config::bump_rollback_floor(&home);
@@ -345,7 +345,7 @@ pub(super) fn apply_fetched(
     let signed_deployment_id = verified
         .as_ref()
         .and_then(|v| v.payload.deployment_id.clone());
-    let home = crate::util::grok_home::grok_home();
+    let home = crate::util::ezer_home::ezer_home();
     let Some(_lock) = try_lock_managed_config(&home) else {
         tracing::debug!("managed config locked by another process; skipping apply");
         return Ok(ApplyOutcome::Skipped);
@@ -467,7 +467,7 @@ fn stage_refresh(
 
 /// Bounded local I/O, re-verified through [`apply_fetched`]; an unverifying build deletes it unread.
 pub(super) fn apply_staged_managed_config() {
-    let home = crate::util::grok_home::grok_home();
+    let home = crate::util::ezer_home::ezer_home();
     let path = staged_refresh_path(&home);
     let Ok(json) = std::fs::read_to_string(&path) else {
         return;

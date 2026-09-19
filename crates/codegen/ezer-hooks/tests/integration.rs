@@ -466,10 +466,10 @@ async fn runner_injected_vars_override_extra_env_at_spawn() {
                             "command": cmd,
                             // Spoof every reserved key and add a non-reserved one that should be preserved
                             "env": {
-                                "GROK_HOOK_EVENT": "spoofed_event",
-                                "GROK_HOOK_NAME": "spoofed_name",
-                                "GROK_SESSION_ID": "spoofed_session",
-                                "GROK_WORKSPACE_ROOT": "/spoofed/root",
+                                "EZER_HOOK_EVENT": "spoofed_event",
+                                "EZER_HOOK_NAME": "spoofed_name",
+                                "EZER_SESSION_ID": "spoofed_session",
+                                "EZER_WORKSPACE_ROOT": "/spoofed/root",
                                 "CLAUDE_PROJECT_DIR": "/spoofed/project",
                                 "USER_KEY": "user_value_kept"
                             }
@@ -501,27 +501,27 @@ async fn runner_injected_vars_override_extra_env_at_spawn() {
     let captured = std::fs::read_to_string(&output_file).unwrap();
     assert!(
         captured.contains("EVENT=pre_tool_use"),
-        "GROK_HOOK_EVENT must reflect the real event, got:\n{captured}"
+        "EZER_HOOK_EVENT must reflect the real event, got:\n{captured}"
     );
     assert!(
         !captured.contains("EVENT=spoofed_event"),
-        "spoofed GROK_HOOK_EVENT must NOT leak through, got:\n{captured}"
+        "spoofed EZER_HOOK_EVENT must NOT leak through, got:\n{captured}"
     );
     assert!(
         captured.contains(&format!("SESSION={real_session}")),
-        "GROK_SESSION_ID must reflect the real session, got:\n{captured}"
+        "EZER_SESSION_ID must reflect the real session, got:\n{captured}"
     );
     assert!(
         !captured.contains("SESSION=spoofed_session"),
-        "spoofed GROK_SESSION_ID must NOT leak through"
+        "spoofed EZER_SESSION_ID must NOT leak through"
     );
     assert!(
         captured.contains(&format!("ROOT={real_workspace}")),
-        "GROK_WORKSPACE_ROOT must reflect the real workspace root, got:\n{captured}"
+        "EZER_WORKSPACE_ROOT must reflect the real workspace root, got:\n{captured}"
     );
     assert!(
         !captured.contains("ROOT=/spoofed/root"),
-        "spoofed GROK_WORKSPACE_ROOT must NOT leak through"
+        "spoofed EZER_WORKSPACE_ROOT must NOT leak through"
     );
     assert!(
         captured.contains(&format!("PROJ={real_workspace}")),

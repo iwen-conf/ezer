@@ -30,7 +30,7 @@ enum StructuredOutputStep {
     Proceed,
 }
 const TASK_ABORTED_CANCELLATION_CATEGORY: &str = "task_aborted";
-/// Outcome-specific fields of a `grok_code.turn_completed` row.
+/// Outcome-specific fields of a `ezer_code.turn_completed` row.
 struct TurnTelemetryOutcome {
     outcome: ezer_telemetry::events::Outcome,
     cancellation_category: Option<String>,
@@ -105,7 +105,7 @@ impl TurnTelemetryOutcome {
         }
     }
 }
-/// Emits exactly one `grok_code.turn_completed` per turn task: [`emit`](Self::emit) once the outcome
+/// Emits exactly one `ezer_code.turn_completed` per turn task: [`emit`](Self::emit) once the outcome
 /// is known, else a `task_aborted` fallback on [`Drop`] when the turn future is aborted first.
 struct TurnCompletionEmitter {
     session: Arc<SessionActor>,
@@ -1885,7 +1885,7 @@ impl SessionActor {
     }
     /// The message is tagged `SyntheticReason::SystemReminder` so compaction/fork/pruning skip it.
     /// The latter persists a `UserMessageChunk` to `updates.jsonl`, which resume replays; the raw XML would render as a user prompt.
-    /// Clients see monitor events only via the structured `x.ai/monitor_event` channel.
+    /// Clients see monitor events only via the structured `ezer/monitor_event` channel.
     pub(crate) async fn inject_pending_monitor_events(&self) {
         let Some(buffer) = &self.tool_context.monitor_event_buffer else {
             return;
@@ -2929,14 +2929,14 @@ impl SessionActor {
                 })),
             );
             let mut request = request;
-            request.x_grok_session_id = Some(self.session_info.id.to_string());
-            request.x_grok_turn_idx =
+            request.x_ezer_session_id = Some(self.session_info.id.to_string());
+            request.x_ezer_turn_idx =
                 Some(self.chat_state_handle.get_prompt_index().await.to_string());
-            request.x_grok_agent_id = Some(ezer_telemetry::id::agent_id());
-            request.x_grok_transient_retry =
+            request.x_ezer_agent_id = Some(ezer_telemetry::id::agent_id());
+            request.x_ezer_transient_retry =
                 (transient_retry_attempts > 0).then(|| transient_retry_attempts.to_string());
-            if request.x_grok_deployment_id.is_none() {
-                request.x_grok_deployment_id = crate::managed_config::resolve_deployment_id(
+            if request.x_ezer_deployment_id.is_none() {
+                request.x_ezer_deployment_id = crate::managed_config::resolve_deployment_id(
                     crate::managed_config::resolve_deployment_key().as_deref(),
                 );
             }
@@ -4169,7 +4169,7 @@ mod user_echo_broadcast_tests {
         );
     }
     /// Interject-fallback turns are persist-only.
-    /// Every pane already rendered the text from the `x.ai/session/interjection` broadcast, so a live echo would duplicate the block.
+    /// Every pane already rendered the text from the `ezer/session/interjection` broadcast, so a live echo would duplicate the block.
     #[test]
     fn interject_fallback_turn_is_persist_only() {
         assert_eq!(

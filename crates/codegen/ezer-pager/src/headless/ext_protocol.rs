@@ -1,4 +1,4 @@
-//! Decodes the shell's `x.ai/*` extension notifications into the headless [`ExtEvent`] the orchestrator dispatches.
+//! Decodes the shell's `ezer/*` extension notifications into the headless [`ExtEvent`] the orchestrator dispatches.
 //! Also answers reverse `ext_method` requests with policy replies.
 //! This module owns the wire envelope shapes and the method-to-event mapping, kept out of `headless.rs`.
 
@@ -24,13 +24,13 @@ pub(crate) fn reply_headless_ext_method(args: AcpArgsBox<acp::ExtRequest>) {
     // Known methods are answered without parsing params: even a malformed request gets the policy reply rather than a dropped channel
     let response = match method {
         // The model sees the tool's NO_OPERATOR_TEXT (headless sessions are non-interactive), not the interactive "user declined" cancel text
-        "x.ai/ask_user_question" => ext_response_from(&AskUserQuestionExtResponse::Cancelled),
-        "x.ai/mcp/elicit" => {
+        "ezer/ask_user_question" => ext_response_from(&AskUserQuestionExtResponse::Cancelled),
+        "ezer/mcp/elicit" => {
             use ezer_tools::mcp_elicitation::McpElicitExtResponse;
             ext_response_from(&McpElicitExtResponse::Cancel)
         }
         // The model sees "Your plan has been approved. You can now start coding.".
-        "x.ai/exit_plan_mode" => ext_response_from(&ExitPlanModeExtResponse {
+        "ezer/exit_plan_mode" => ext_response_from(&ExitPlanModeExtResponse {
             outcome: "approved".to_string(),
             feedback: None,
         }),
@@ -104,14 +104,14 @@ pub(crate) fn handle_ext_notification(
         return decode_session_notification(method, params);
     }
     match method {
-        "x.ai/task_backgrounded" => decode_task_backgrounded(method, params),
-        "x.ai/task_completed" => decode_task_completed(method, params),
-        "x.ai/monitor_event" => ExtEvent::MonitorEvent,
-        "x.ai/leader/version_mismatch" => {
+        "ezer/task_backgrounded" => decode_task_backgrounded(method, params),
+        "ezer/task_completed" => decode_task_completed(method, params),
+        "ezer/monitor_event" => ExtEvent::MonitorEvent,
+        "ezer/leader/version_mismatch" => {
             match crate::acp::version_mismatch_banner(params) {
-                Some(banner) => tracing::warn!(%banner, "x.ai/leader/version_mismatch"),
+                Some(banner) => tracing::warn!(%banner, "ezer/leader/version_mismatch"),
                 None => {
-                    tracing::warn!("ignoring x.ai/leader/version_mismatch without usable versions")
+                    tracing::warn!("ignoring ezer/leader/version_mismatch without usable versions")
                 }
             }
             ExtEvent::None
@@ -151,7 +151,7 @@ fn decode_task_backgrounded(method: &str, params: &str) -> ExtEvent {
                 tracing::error!(
                     method,
                     payload = params,
-                    "headless: x.ai/task_backgrounded with mismatched sessionUpdate \
+                    "headless: ezer/task_backgrounded with mismatched sessionUpdate \
                      tag; background task will not be tracked for reaping"
                 );
                 ExtEvent::None
@@ -162,7 +162,7 @@ fn decode_task_backgrounded(method: &str, params: &str) -> ExtEvent {
                 method,
                 error = %e,
                 payload = params,
-                "headless: undecodable x.ai/task_backgrounded notification; \
+                "headless: undecodable ezer/task_backgrounded notification; \
                  background task will not be tracked for reaping"
             );
             ExtEvent::None
@@ -199,7 +199,7 @@ fn decode_task_completed(method: &str, params: &str) -> ExtEvent {
                 tracing::error!(
                     method,
                     payload = params,
-                    "headless: x.ai/task_completed with mismatched sessionUpdate \
+                    "headless: ezer/task_completed with mismatched sessionUpdate \
                      tag; background task completion will not be recorded"
                 );
                 ExtEvent::None
@@ -210,7 +210,7 @@ fn decode_task_completed(method: &str, params: &str) -> ExtEvent {
                 method,
                 error = %e,
                 payload = params,
-                "headless: undecodable x.ai/task_completed notification; \
+                "headless: undecodable ezer/task_completed notification; \
                  background task completion will not be recorded"
             );
             ExtEvent::None
@@ -312,7 +312,7 @@ fn decode_session_notification(method: &str, params: &str) -> ExtEvent {
             tracing::warn!(
                 method,
                 error = %e,
-                "headless: malformed x.ai session notification; ignoring"
+                "headless: malformed session notification; ignoring"
             );
             return ExtEvent::None;
         }
@@ -425,7 +425,7 @@ fn decode_session_notification(method: &str, params: &str) -> ExtEvent {
                     tag,
                     payload = params,
                     "headless: background-task lifecycle tag on a session notification \
-                     (expected the dedicated x.ai/task_backgrounded|task_completed method); \
+                     (expected the dedicated ezer/task_backgrounded|task_completed method); \
                      background tracking will not be updated"
                 );
             }

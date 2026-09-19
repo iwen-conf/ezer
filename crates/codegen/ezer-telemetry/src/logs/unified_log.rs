@@ -1,5 +1,5 @@
 //! Shell writes directly via [`emit()`].
-//! Pager and desktop forward entries over ACP (`x.ai/log` notifications).
+//! Pager and desktop forward entries over ACP (`ezer/log` notifications).
 //! Shell receives them in [`ingest_client_entries()`] and writes on their behalf.
 
 use std::fs::{self, File, OpenOptions};
@@ -11,7 +11,7 @@ use std::time::{Duration, Instant};
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
 
-use ezer_config::grok_home;
+use ezer_config::ezer_home;
 
 /// Binary version stamped into every log entry.
 /// Set once at startup via [`set_version()`]; entries emitted before that get `None`.
@@ -28,7 +28,7 @@ const LOG_FILE: &str = "unified.jsonl";
 pub const MAX_SIZE: u64 = 5 * 1024 * 1024;
 
 /// ACP method name for unified log notifications.
-pub const LOG_METHOD: &str = "x.ai/log";
+pub const LOG_METHOD: &str = "ezer/log";
 
 // ---------------------------------------------------------------------------
 // Log entry types
@@ -51,10 +51,10 @@ pub enum LogSource {
     Shell,
     #[strum(serialize = "ezer")]
     #[serde(rename = "ezer")]
-    GrokPager,
+    EzerPager,
     #[strum(serialize = "ezer-desktop")]
     #[serde(rename = "ezer-desktop")]
-    GrokDesktop,
+    EzerDesktop,
 }
 
 /// A single unified log entry, written as one JSONL line.
@@ -83,7 +83,7 @@ pub struct LogEntry {
     pub ctx: Option<serde_json::Value>,
 }
 
-/// Wire format for the `x.ai/log` ACP notification params.
+/// Wire format for the `ezer/log` ACP notification params.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LogNotificationParams {
     pub src: LogSource,
@@ -155,7 +155,7 @@ fn log_path() -> PathBuf {
     if TEST_REDIRECT.load(std::sync::atomic::Ordering::Relaxed) {
         return test_log_dir().join(LOG_FILE);
     }
-    grok_home().join(LOG_DIR).join(LOG_FILE)
+    ezer_home().join(LOG_DIR).join(LOG_FILE)
 }
 
 /// Owner-only (0o700), freshly-created directory for the test redirect. The non-recursive `create` fails on any
@@ -371,7 +371,7 @@ pub fn emit(lvl: LogLevel, msg: &str, sid: Option<&str>, ctx: Option<serde_json:
     write_entry(&entry);
 }
 
-/// Ingest a batch of log entries from a client (pager or desktop). Called by the `x.ai/log` notification handler. Entries
+/// Ingest a batch of log entries from a client (pager or desktop). Called by the `ezer/log` notification handler. Entries
 /// from [`LogSource::Shell`] are rejected to prevent spoofing.
 pub fn ingest_client_entries(src: LogSource, entries: &[ClientLogEntry]) {
     if matches!(src, LogSource::Shell) || entries.is_empty() {
@@ -478,7 +478,7 @@ mod tests {
         redirect_to_temp_for_tests();
     }
 
-    /// The redirect must cover both the writer and the snapshot readers: an emit lands in a per-process temp file, never under `grok_home()`.
+    /// The redirect must cover both the writer and the snapshot readers: an emit lands in a per-process temp file, never under `ezer_home()`.
     #[test]
     fn redirect_routes_writes_and_snapshots_to_process_temp_file() {
         info(
@@ -493,7 +493,7 @@ mod tests {
         );
         assert!(
             log_path().starts_with(std::env::temp_dir()),
-            "the shared file must live under the temp dir, not grok_home(): {}",
+            "the shared file must live under the temp dir, not ezer_home(): {}",
             log_path().display()
         );
     }
@@ -522,7 +522,7 @@ mod tests {
     fn log_entry_serializes_full() {
         let entry = LogEntry {
             ts: "2025-07-14T10:30:00.123Z".into(),
-            src: LogSource::GrokPager,
+            src: LogSource::EzerPager,
             pid: Some(4242),
             ver: Some("0.1.211".into()),
             lvl: LogLevel::Warn,
@@ -860,7 +860,7 @@ mod tests {
         for bad in &[
             r#"{"src":"evil","entries":[]}"#,
             r#"{"src":"","entries":[]}"#,
-            r#"{"src":"GROK-PAGER","entries":[]}"#,
+            r#"{"src":"EZER-PAGER","entries":[]}"#,
         ] {
             assert!(serde_json::from_str::<LogNotificationParams>(bad).is_err());
         }
@@ -869,7 +869,7 @@ mod tests {
     #[test]
     fn notification_params_round_trip() {
         let params = LogNotificationParams {
-            src: LogSource::GrokPager,
+            src: LogSource::EzerPager,
             entries: vec![
                 ClientLogEntry {
                     ts: "2025-07-14T10:30:00.123Z".into(),

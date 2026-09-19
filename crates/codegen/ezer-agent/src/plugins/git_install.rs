@@ -514,7 +514,7 @@ pub fn remove_repo_path(path: &Path) -> Result<(), InstallError> {
 
 /// Each plugin has a data dir at `~/.ezer/plugin-data/<plugin_id>/`.
 pub fn cleanup_plugin_data(repo: &InstalledRepo, scope: super::discovery::PluginScope) {
-    let plugin_data_base = ezer_config::grok_home().join("plugin-data");
+    let plugin_data_base = ezer_config::ezer_home().join("plugin-data");
 
     for (plugin_name, repo_plugin) in &repo.plugins {
         let plugin_root = match &repo_plugin.subdir {

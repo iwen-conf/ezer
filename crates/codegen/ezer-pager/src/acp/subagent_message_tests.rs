@@ -26,7 +26,7 @@ fn canonical_meta(name: &str, kind: ToolKind) -> acp::Meta {
 fn canonical_meta_with_version(name: &str, kind: ToolKind, version: u32) -> acp::Meta {
     let identity = ToolIdentity {
         tool_kind: kind,
-        namespace: ToolNamespace::GrokBuild,
+        namespace: ToolNamespace::EzerBuild,
         presentation_name: kind.presentation_name(),
         read_only: false,
     };

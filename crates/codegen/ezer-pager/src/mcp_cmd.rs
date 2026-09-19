@@ -7,7 +7,7 @@ use anyhow::{Result, bail};
 use clap::{Subcommand, ValueEnum};
 use ezer_shell::util::config::{McpServerConfig, McpServerTransportConfig};
 
-use crate::util::display_user_grok_path;
+use crate::util::display_user_ezer_path;
 
 const ADD_AFTER_HELP: &str = "\
 Examples:
@@ -528,7 +528,7 @@ fn scope_target(scope: McpScope) -> PathBuf {
 /// Display form of a scope's config file path.
 fn scope_display(scope: McpScope, path: &Path) -> String {
     match scope {
-        McpScope::User => display_user_grok_path(ezer_config::USER_CONFIG_FILENAME),
+        McpScope::User => display_user_ezer_path(ezer_config::USER_CONFIG_FILENAME),
         McpScope::Project => path.display().to_string(),
     }
 }
@@ -685,7 +685,7 @@ async fn run_set_enabled(name: &str, enabled: bool) -> Result<()> {
         if path == &user_config {
             println!(
                 "File modified: {}",
-                display_user_grok_path(ezer_config::USER_CONFIG_FILENAME)
+                display_user_ezer_path(ezer_config::USER_CONFIG_FILENAME)
             );
         } else {
             println!("File modified: {}", path.display());
@@ -722,7 +722,7 @@ async fn run_remove(name: &str, requested_scope: Option<McpScope>) -> Result<()>
             eprintln!("MCP server '{name}' exists in multiple scopes:");
             eprintln!(
                 "  user: {}",
-                display_user_grok_path(ezer_config::USER_CONFIG_FILENAME)
+                display_user_ezer_path(ezer_config::USER_CONFIG_FILENAME)
             );
             eprintln!("  project: {}", project_path.display());
             eprintln!("Specify which one to remove, e.g.: ezer mcp remove {name} --scope project");
@@ -740,7 +740,7 @@ async fn run_remove(name: &str, requested_scope: Option<McpScope>) -> Result<()>
     println!("Removed MCP server '{name}' from {} config", scope.label());
     println!("File modified: {}", scope_display(scope, &path));
 
-    // A scoped delete can leave the name defined in the other scope or an ancestor .grok/config.toml, where it still resolves for sessions
+    // A scoped delete can leave the name defined in the other scope or an ancestor .ezer/config.toml, where it still resolves for sessions
     let still_user_defined = mcp_server_defined_at(&user_config_path(), name);
     if let Some((survivor_scope, remaining)) =
         surviving_definition(still_user_defined, find_project_site())
@@ -1310,21 +1310,21 @@ mod tests {
     fn gateway_cli_toggle_names_are_rejected() {
         assert!(is_gateway_cli_toggle_name("managed_gateway:linear"));
         assert!(is_gateway_cli_toggle_name("other:colon"));
-        assert!(!is_gateway_cli_toggle_name("grok_com_slack"));
+        assert!(!is_gateway_cli_toggle_name("remote_slack"));
         assert!(!is_gateway_cli_toggle_name("user-slack"));
     }
 
     #[test]
-    fn grok_com_known_only_with_toml_definition() {
-        // Unique name: `grok_home()` is process-wide OnceLock, so GROK_HOME. `grok_com_*` in the real ~/.grok disabled
+    fn ezer_com_known_only_with_toml_definition() {
+        // Unique name: `ezer_home()` is process-wide OnceLock, so EZER_HOME. `ezer_com_*` in the real ~/.ezer disabled
         // list would fail an orphan assertion on a well-known name.
-        let name = format!("grok_com_orphan_{}", uuid::Uuid::new_v4().as_simple());
+        let name = format!("ezer_com_orphan_{}", uuid::Uuid::new_v4().as_simple());
 
         let orphan = tempfile::tempdir().unwrap();
         git2::Repository::init(orphan.path()).unwrap();
         assert!(
             !mcp_server_is_known(&name, orphan.path()),
-            "orphan grok_com_* must not be known by prefix"
+            "orphan ezer_com_* must not be known by prefix"
         );
 
         let defined = tempfile::tempdir().unwrap();

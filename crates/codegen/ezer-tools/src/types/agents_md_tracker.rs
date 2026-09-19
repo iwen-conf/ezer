@@ -233,7 +233,7 @@ impl AgentsMdTracker {
                     }
                 }
 
-                // Check for rules files in .grok/rules/, .claude/rules/, and
+                // Check for rules files in .ezer/rules/, .claude/rules/, and
                 // .cursor/rules/ subdirectories (vendor-compat paths).
                 // `rules_dirs` is computed once above the walk.
                 for rules_subdir in &rules_dirs {

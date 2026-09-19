@@ -1,9 +1,9 @@
-//! grok.com product Skills catalog, served by the same REST sources ezer-web uses:
+//! ezer.com product Skills catalog, served by the same REST sources ezer-web uses:
 //! - `POST /rest/skills`: first-party bundled skills (docx, pdf, ffmpeg, …)
 //! - `GET  /rest/user-skills`: enabled user-uploaded skills
 //!
 //! Transport only.
-//! Chat `x.ai/commands/list` / ACP `available_commands_update` map this catalog to slash commands.
+//! Chat `ezer/commands/list` / ACP `available_commands_update` map this catalog to slash commands.
 //!
 //! Desktop/shell chat uses this REST path, not gateway `conversation.commands.updated`.
 //! That keeps one process-local source for `available_commands_update`, list_commands, and slash resolve/expansion.
@@ -24,7 +24,7 @@ use ezer_tools::implementations::skills::types::{SkillInfo, SkillScope};
 
 use ezer_login::AuthManager;
 
-const GROK_WEB_URL: &str = "https://grok.com";
+const REMOTE_WEB_URL: &str = "";
 
 /// Marker stored on SkillInfo.metadata / AvailableCommand._meta so clients can tell product Skills from Build disk discovery without name allowlists.
 pub const CHAT_PRODUCT_META_VALUE: &str = "chat";
@@ -33,7 +33,7 @@ pub const CHAT_PRODUCT_META_KEY: &str = "product";
 const LIST_CATALOG_ATTEMPTS: u32 = 3;
 const LIST_CATALOG_BACKOFF: Duration = Duration::from_millis(100);
 /// Per-request budget for product Skills REST.
-/// The shared client only sets a connect timeout; without this a hung grok.com stalls the session actor.
+/// The shared client only sets a connect timeout; without this a hung ezer.com stalls the session actor.
 const LIST_REQUEST_TIMEOUT: Duration = Duration::from_secs(10);
 
 #[derive(Debug, Clone, Default, Deserialize)]
@@ -265,7 +265,7 @@ fn product_skill_info(
 
 #[derive(Debug, thiserror::Error)]
 pub enum SkillsError {
-    #[error("no grok.com credentials")]
+    #[error("no ezer.com credentials")]
     NoAuth,
     #[error("network error: {0}")]
     Network(#[from] reqwest::Error),
@@ -296,11 +296,11 @@ struct SkillsAuthCandidate {
     untagged_recovery: bool,
 }
 
-fn primary_is_tenant_tagged(auth: &ezer_login::GrokAuth) -> bool {
+fn primary_is_tenant_tagged(auth: &ezer_login::EzerAuth) -> bool {
     auth.team_id.is_some() || auth.organization_id.is_some()
 }
 
-fn entry_is_untagged(auth: &ezer_login::GrokAuth) -> bool {
+fn entry_is_untagged(auth: &ezer_login::EzerAuth) -> bool {
     auth.team_id.is_none() && auth.organization_id.is_none()
 }
 
@@ -308,8 +308,8 @@ fn entry_is_untagged(auth: &ezer_login::GrokAuth) -> bool {
 /// When either side carries a team and/or org, both `team_id` and `organization_id` must match (including both `None`).
 /// Prevents accepting an alt that is a strict superset of primary tags (e.g. a team-only primary matching a team and org alt).
 fn entry_matches_primary_tenant(
-    primary: &ezer_login::GrokAuth,
-    entry: &ezer_login::GrokAuth,
+    primary: &ezer_login::EzerAuth,
+    entry: &ezer_login::EzerAuth,
 ) -> bool {
     if !primary_is_tenant_tagged(primary) && !primary_is_tenant_tagged(entry) {
         return false;
@@ -320,8 +320,8 @@ fn entry_matches_primary_tenant(
 /// Build ordered alt credentials for product Skills REST (after primary). Prefer same-tagged alts when primary is tagged (exact team and org equality).
 /// Allow untagged same-user alts as OIDC/team 403 recovery when primary is tagged (catalog still cached under primary identity). Untagged primary never accepts more-tagged (team/org) alts.
 fn skills_auth_alt_candidates<'a>(
-    primary: &ezer_login::GrokAuth,
-    entries: impl IntoIterator<Item = &'a ezer_login::GrokAuth>,
+    primary: &ezer_login::EzerAuth,
+    entries: impl IntoIterator<Item = &'a ezer_login::EzerAuth>,
 ) -> Vec<SkillsAuthCandidate> {
     let mut tagged_match = Vec::new();
     let mut untagged = Vec::new();
@@ -376,7 +376,7 @@ impl SkillsClient {
                     .ok()
                     .filter(|s| !s.is_empty())
             })
-            .unwrap_or_else(|| GROK_WEB_URL.to_string());
+            .unwrap_or_else(|| REMOTE_WEB_URL.to_string());
         Self {
             http: crate::http::shared_client(),
             base_url,
@@ -395,7 +395,7 @@ impl SkillsClient {
             .header("Authorization", format!("Bearer {key}"))
             .header(
                 "X-XAI-Token-Auth",
-                self.auth.grok_com_config().token_header.clone(),
+                self.auth.ezer_com_config().token_header.clone(),
             )
             .header("x-userid", user_id)
             .header("x-ezer-client-version", ezer_version::VERSION)
@@ -414,8 +414,8 @@ impl SkillsClient {
         ezer_otel::inject_trace_context_into_request(builder)
     }
 
-    /// Grok.com product Skills require first-party session auth (the same gate as managed MCP and sibling grok.com clients), not plain BYOK API keys.
-    async fn require_skills_auth(&self) -> Result<ezer_login::GrokAuth, SkillsError> {
+    /// Ezer.com product Skills require first-party session auth (the same gate as managed MCP and sibling ezer.com clients), not plain BYOK API keys.
+    async fn require_skills_auth(&self) -> Result<ezer_login::EzerAuth, SkillsError> {
         let auth = self.auth.auth().await.map_err(|_| SkillsError::NoAuth)?;
         if !auth.is_managed_mcp_eligible() {
             return Err(SkillsError::NoAuth);
@@ -423,12 +423,12 @@ impl SkillsClient {
         Ok(auth)
     }
 
-    /// Credentials to try for grok.com product Skills REST. Primary first. When primary is OIDC on the default grok.com host, also try non-OIDC keys for the same user from this AuthManager's `auth.json`.
+    /// Credentials to try for ezer.com product Skills REST. Primary first. When primary is OIDC on the default ezer.com host, also try non-OIDC keys for the same user from this AuthManager's `auth.json`.
     /// Team OIDC is often rejected with `oauth2-auth-forbidden`.
     /// Order / isolation (see [`skills_auth_alt_candidates`]): same-tenant-tagged alts first when primary is tagged untagged same-user alts as 403 recovery when primary is tagged untagged primary never accepts team-tagged alts
     fn skills_auth_candidates(
         &self,
-        primary: &ezer_login::GrokAuth,
+        primary: &ezer_login::EzerAuth,
     ) -> Vec<SkillsAuthCandidate> {
         use ezer_login::AuthMode;
         let mut out = vec![SkillsAuthCandidate {
@@ -440,7 +440,7 @@ impl SkillsClient {
         if primary.auth_mode != AuthMode::Oidc || primary.user_id.is_empty() {
             return out;
         }
-        if self.base_url != GROK_WEB_URL {
+        if self.base_url != REMOTE_WEB_URL {
             return out;
         }
         let Ok(store) = ezer_login::read_auth_json(self.auth.auth_json_path()) else {
@@ -797,10 +797,10 @@ mod tests {
     }
 
     fn test_auth_manager() -> Arc<AuthManager> {
-        use ezer_login::{AuthMode, GrokAuth, GrokComConfig, XAI_OAUTH2_ISSUER};
+        use ezer_login::{AuthMode, EzerAuth, EzerComConfig, XAI_OAUTH2_ISSUER};
         let dir = tempfile::tempdir().unwrap();
-        let mgr = AuthManager::new(dir.path(), GrokComConfig::default());
-        mgr.hot_swap(GrokAuth {
+        let mgr = AuthManager::new(dir.path(), EzerComConfig::default());
+        mgr.hot_swap(EzerAuth {
             key: "token".into(),
             auth_mode: AuthMode::Oidc,
             create_time: chrono::Utc::now(),
@@ -936,8 +936,8 @@ mod tests {
 
     #[test]
     fn skills_auth_alts_prefer_tagged_then_untagged_recovery() {
-        use ezer_login::{AuthMode, GrokAuth};
-        let primary = GrokAuth {
+        use ezer_login::{AuthMode, EzerAuth};
+        let primary = EzerAuth {
             key: "oidc".into(),
             user_id: "u1".into(),
             team_id: Some("team-a".into()),
@@ -946,7 +946,7 @@ mod tests {
             create_time: chrono::Utc::now(),
             ..Default::default()
         };
-        let same_team = GrokAuth {
+        let same_team = EzerAuth {
             key: "web-team".into(),
             user_id: "u1".into(),
             team_id: Some("team-a".into()),
@@ -954,7 +954,7 @@ mod tests {
             create_time: chrono::Utc::now(),
             ..Default::default()
         };
-        let untagged = GrokAuth {
+        let untagged = EzerAuth {
             key: "web-personal".into(),
             user_id: "u1".into(),
             team_id: None,
@@ -963,7 +963,7 @@ mod tests {
             create_time: chrono::Utc::now(),
             ..Default::default()
         };
-        let other_team = GrokAuth {
+        let other_team = EzerAuth {
             key: "web-other".into(),
             user_id: "u1".into(),
             team_id: Some("team-b".into()),
@@ -972,7 +972,7 @@ mod tests {
             ..Default::default()
         };
         // Extra org tag must not match team-only primary (symmetric equality).
-        let team_plus_org = GrokAuth {
+        let team_plus_org = EzerAuth {
             key: "web-team-org".into(),
             user_id: "u1".into(),
             team_id: Some("team-a".into()),
@@ -996,8 +996,8 @@ mod tests {
 
     #[test]
     fn skills_auth_alts_untagged_primary_rejects_team_keys() {
-        use ezer_login::{AuthMode, GrokAuth};
-        let primary = GrokAuth {
+        use ezer_login::{AuthMode, EzerAuth};
+        let primary = EzerAuth {
             key: "oidc".into(),
             user_id: "u1".into(),
             team_id: None,
@@ -1006,7 +1006,7 @@ mod tests {
             create_time: chrono::Utc::now(),
             ..Default::default()
         };
-        let untagged = GrokAuth {
+        let untagged = EzerAuth {
             key: "web".into(),
             user_id: "u1".into(),
             team_id: None,
@@ -1014,7 +1014,7 @@ mod tests {
             create_time: chrono::Utc::now(),
             ..Default::default()
         };
-        let team = GrokAuth {
+        let team = EzerAuth {
             key: "web-team".into(),
             user_id: "u1".into(),
             team_id: Some("team-a".into()),
@@ -1032,8 +1032,8 @@ mod tests {
 
     #[test]
     fn entry_matches_primary_tenant_requires_symmetric_tags() {
-        use ezer_login::{AuthMode, GrokAuth};
-        let primary = GrokAuth {
+        use ezer_login::{AuthMode, EzerAuth};
+        let primary = EzerAuth {
             key: "oidc".into(),
             user_id: "u1".into(),
             team_id: Some("team-a".into()),
@@ -1042,7 +1042,7 @@ mod tests {
             create_time: chrono::Utc::now(),
             ..Default::default()
         };
-        let same = GrokAuth {
+        let same = EzerAuth {
             key: "web".into(),
             user_id: "u1".into(),
             team_id: Some("team-a".into()),
@@ -1052,12 +1052,12 @@ mod tests {
             ..Default::default()
         };
         assert!(entry_matches_primary_tenant(&primary, &same));
-        let extra_org = GrokAuth {
+        let extra_org = EzerAuth {
             organization_id: Some("org".into()),
             ..same.clone()
         };
         assert!(!entry_matches_primary_tenant(&primary, &extra_org));
-        let untagged = GrokAuth {
+        let untagged = EzerAuth {
             team_id: None,
             organization_id: None,
             ..same.clone()

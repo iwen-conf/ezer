@@ -9,6 +9,7 @@ pub const TOKEN_TTL: Duration = Duration::days(30);
 const DEFAULT_EARLY_INVALIDATION_SECS: u64 = 300; // 5 minutes
 
 /// Legacy auth.json scope key. Fallback for old devbox auth files.
+/// Same spelling as [`crate::config::LEGACY_AUTH_SCOPE`]; kept so old auth.json maps still load.
 pub(super) const LEGACY_SCOPE: &str = "https://accounts.x.ai/sign-in";
 
 /// auth.json scope key for plain API key auth (desktop login, `ezer login --api-key`).
@@ -18,7 +19,7 @@ const BLOCKED_REASON_NO_LOGS: &str = "BLOCKED_REASON_NO_LOGS";
 const BLOCKED_REASON_NO_LOGS_MODERATED: &str = "BLOCKED_REASON_NO_LOGS_MODERATED";
 
 /// Fresh-credential / missing-field default: opted out until the user or server enrichment opts in.
-/// Single source for `GrokAuth`, `AuthMeta`, and every login-path constructor so the sides cannot drift.
+/// Single source for `EzerAuth`, `AuthMeta`, and every login-path constructor so the sides cannot drift.
 pub fn default_coding_data_retention_opt_out() -> bool {
     true
 }
@@ -44,7 +45,7 @@ pub enum AuthMode {
 pub const TEAM_PRINCIPAL_TYPE: &str = "Team";
 
 #[derive(Clone, Serialize, Deserialize)]
-pub struct GrokAuth {
+pub struct EzerAuth {
     pub key: String,
     pub auth_mode: AuthMode,
     pub create_time: DateTime<Utc>,
@@ -82,7 +83,7 @@ pub struct GrokAuth {
 
     /// Deprecated. Kept for deserializing existing auth.json files.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub has_grok_code_access: Option<bool>,
+    pub has_remote_code_access: Option<bool>,
 
     /// Refresh token (OIDC/OAuth2 or external provider).
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -104,9 +105,9 @@ pub struct GrokAuth {
     pub oidc_client_id: Option<String>,
 }
 
-impl std::fmt::Debug for GrokAuth {
+impl std::fmt::Debug for EzerAuth {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("GrokAuth")
+        f.debug_struct("EzerAuth")
             .field("key", &bearer_suffix(&self.key))
             .field("auth_mode", &self.auth_mode)
             .field("user_id", &self.user_id)
@@ -129,7 +130,7 @@ pub(crate) struct CredentialGeneration {
     expires_at: Option<DateTime<Utc>>,
 }
 
-impl GrokAuth {
+impl EzerAuth {
     pub(crate) fn generation(&self) -> CredentialGeneration {
         CredentialGeneration {
             key: self.key.clone(),
@@ -159,7 +160,7 @@ impl GrokAuth {
         }
     }
 
-    /// `true` when this auth can access grok.com managed MCP connectors.
+    /// `true` when this auth can access ezer.com managed MCP connectors.
     pub fn is_managed_mcp_eligible(&self) -> bool {
         self.is_xai_auth() || self.auth_mode == AuthMode::WebLogin
     }
@@ -193,7 +194,7 @@ impl GrokAuth {
     }
 
     /// Carry `/user`-derived fields from a previous auth so refresh rebuilds don't drop them.
-    pub fn carry_user_profile_from(&mut self, prev: &GrokAuth) {
+    pub fn carry_user_profile_from(&mut self, prev: &EzerAuth) {
         self.user_id = prev.user_id.clone();
         self.email = prev.email.clone();
         self.principal_type = prev.principal_type.clone();
@@ -210,7 +211,7 @@ impl GrokAuth {
     }
 }
 
-impl Default for GrokAuth {
+impl Default for EzerAuth {
     fn default() -> Self {
         Self {
             key: String::new(),
@@ -232,7 +233,7 @@ impl Default for GrokAuth {
             user_blocked_reason: None,
             team_blocked_reasons: vec![],
             coding_data_retention_opt_out: default_coding_data_retention_opt_out(),
-            has_grok_code_access: None,
+            has_remote_code_access: None,
             refresh_token: None,
             expires_at: None,
             oidc_issuer: None,
@@ -242,9 +243,9 @@ impl Default for GrokAuth {
 }
 
 #[cfg(any(test, feature = "test-support"))]
-impl GrokAuth {
-    /// Returns a `GrokAuth` with sensible defaults for tests.
-    /// Override fields with struct update syntax: `GrokAuth { key: "...".into(), ..GrokAuth::test_default() }`.
+impl EzerAuth {
+    /// Returns a `EzerAuth` with sensible defaults for tests.
+    /// Override fields with struct update syntax: `EzerAuth { key: "...".into(), ..EzerAuth::test_default() }`.
     pub fn test_default() -> Self {
         Self {
             key: "test-key".into(),
@@ -256,7 +257,7 @@ impl GrokAuth {
     }
 }
 
-pub type AuthStore = BTreeMap<String, GrokAuth>;
+pub type AuthStore = BTreeMap<String, EzerAuth>;
 
 /// User information from the cli-chat-proxy `GET /v1/user` endpoint.
 #[derive(Debug, Clone, Deserialize)]
@@ -300,7 +301,7 @@ pub struct UserInfo {
 
 /// Look up auth from the store by scope key. Legacy `WebLogin` tokens (from the pre-OIDC `ezer login --legacy` flow) are skipped. They are validated via a per-request DB lookup server-side, which fails at high volume.
 /// Skipping them here forces affected users to re-authenticate via OIDC on next launch.
-pub fn lookup_auth(map: &AuthStore, scope: &str) -> Option<GrokAuth> {
+pub fn lookup_auth(map: &AuthStore, scope: &str) -> Option<EzerAuth> {
     let auth = map
         .get(scope)
         .cloned()
@@ -313,7 +314,7 @@ pub fn lookup_auth(map: &AuthStore, scope: &str) -> Option<GrokAuth> {
 }
 
 /// Falls back to a scope the active backend inherits, skipping the one already tried.
-fn inherited_lookup(map: &AuthStore, scope: &str) -> Option<GrokAuth> {
+fn inherited_lookup(map: &AuthStore, scope: &str) -> Option<EzerAuth> {
     use crate::backend::{ActiveAuthBackend, AuthBackend};
 
     ActiveAuthBackend::default()
@@ -333,13 +334,13 @@ pub(super) fn early_invalidation() -> Duration {
         .unwrap_or_else(|| Duration::seconds(DEFAULT_EARLY_INVALIDATION_SECS as i64))
 }
 
-pub fn is_expired(auth: &GrokAuth) -> bool {
+pub fn is_expired(auth: &EzerAuth) -> bool {
     is_expired_with_buffer(auth, early_invalidation())
 }
 
 /// Like [`is_expired`] but with an explicit pre-expiry buffer.
 /// Pass `Duration::zero()` for actual (hard) expiry: the instant the token would really be rejected on the wire, with no early-invalidation margin.
-pub fn is_expired_with_buffer(auth: &GrokAuth, buffer: Duration) -> bool {
+pub fn is_expired_with_buffer(auth: &EzerAuth, buffer: Duration) -> bool {
     if let Some(expires_at) = auth.expires_at {
         Utc::now() >= (expires_at - buffer)
     } else {
@@ -352,8 +353,8 @@ pub fn is_expired_with_buffer(auth: &GrokAuth, buffer: Duration) -> bool {
 mod tests {
     use super::*;
 
-    fn make_auth(mode: AuthMode) -> GrokAuth {
-        GrokAuth {
+    fn make_auth(mode: AuthMode) -> EzerAuth {
+        EzerAuth {
             key: "k".into(),
             auth_mode: mode,
             create_time: Utc::now(),
@@ -373,7 +374,7 @@ mod tests {
             user_blocked_reason: None,
             team_blocked_reasons: vec![],
             coding_data_retention_opt_out: false,
-            has_grok_code_access: None,
+            has_remote_code_access: None,
             refresh_token: None,
             expires_at: None,
             oidc_issuer: None,
@@ -384,7 +385,7 @@ mod tests {
     #[test]
     fn is_xai_auth_matrix() {
         use crate::XAI_OAUTH2_ISSUER;
-        let with_issuer = |mode: AuthMode, issuer: Option<&str>| GrokAuth {
+        let with_issuer = |mode: AuthMode, issuer: Option<&str>| EzerAuth {
             oidc_issuer: issuer.map(str::to_owned),
             ..make_auth(mode)
         };
@@ -405,7 +406,7 @@ mod tests {
     #[test]
     fn is_session_auth_requires_first_party_for_external() {
         use crate::XAI_OAUTH2_ISSUER;
-        let with_issuer = |mode: AuthMode, issuer: Option<&str>| GrokAuth {
+        let with_issuer = |mode: AuthMode, issuer: Option<&str>| EzerAuth {
             oidc_issuer: issuer.map(str::to_owned),
             ..make_auth(mode)
         };
@@ -459,10 +460,10 @@ mod tests {
     fn user_info_subscription_tier_present() {
         let json = r#"{
             "userId": "u1",
-            "subscriptionTier": "SuperGrokPro"
+            "subscriptionTier": "MaxTierPro"
         }"#;
         let info: UserInfo = serde_json::from_str(json).unwrap();
-        assert_eq!(info.subscription_tier.as_deref(), Some("SuperGrokPro"));
+        assert_eq!(info.subscription_tier.as_deref(), Some("MaxTierPro"));
     }
 
     /// subscriptionTier absent deserializes to None (backwards compat).
@@ -499,12 +500,12 @@ mod tests {
             "create_time": "2020-01-01T00:00:00Z",
             "user_id": "u"
         }"#;
-        let auth: GrokAuth = serde_json::from_str(json).unwrap();
+        let auth: EzerAuth = serde_json::from_str(json).unwrap();
         assert!(
             auth.coding_data_retention_opt_out,
             "missing field must default to opted-out"
         );
         assert!(default_coding_data_retention_opt_out());
-        assert!(GrokAuth::default().coding_data_retention_opt_out);
+        assert!(EzerAuth::default().coding_data_retention_opt_out);
     }
 }

@@ -13,7 +13,7 @@ use serde::Deserialize;
 use thiserror::Error;
 
 use crate::oidc::with_alpha_test_key;
-use crate::{AuthChannels, AuthManager, AuthMode, AuthUrlInfo, AuthUrlMode, GrokAuth};
+use crate::{AuthChannels, AuthManager, AuthMode, AuthUrlInfo, AuthUrlMode, EzerAuth};
 
 const DEVICE_GRANT_TYPE: &str = "urn:ietf:params:oauth:grant-type:device_code";
 const DEFAULT_DEVICE_POLL_INTERVAL_SECS: i32 = 5;
@@ -174,7 +174,7 @@ pub async fn request_device_code(
 // --- Phase 2: Poll until approved ---
 
 /// Poll the token endpoint until the user approves (or denies, or the code expires).
-/// On success, persists credentials to `~/.ezer/auth.json` and returns the authenticated `GrokAuth`.
+/// On success, persists credentials to `~/.ezer/auth.json` and returns the authenticated `EzerAuth`.
 /// Callers should have already displayed `device_code.verification_uri` and `device_code.user_code` to the user before calling this.
 pub async fn complete_device_code_login(
     issuer: &str,
@@ -182,7 +182,7 @@ pub async fn complete_device_code_login(
     device_code: DeviceCode,
     auth_manager: &Arc<AuthManager>,
     surface: ClientSurface,
-) -> anyhow::Result<(GrokAuth, bool)> {
+) -> anyhow::Result<(EzerAuth, bool)> {
     let client = ezer_http::shared_client();
     let token_url = format!("{}/oauth2/token", issuer.trim_end_matches('/'));
     let mut poll_interval = std::time::Duration::from_secs(device_code.interval.max(1) as u64);
@@ -262,7 +262,7 @@ pub async fn run_device_code_login_channels(
     scopes: &[String],
     auth_manager: &Arc<AuthManager>,
     channels: &mut Option<AuthChannels>,
-) -> anyhow::Result<(GrokAuth, bool)> {
+) -> anyhow::Result<(EzerAuth, bool)> {
     // A front-end (TUI/IDE) listening on `url_tx` renders the URL to a human, so it's `Ui`
     // Without one we're on the CLI: a TTY means a human can act (`Cli`), no TTY means headless automation (`Headless`) that will never complete
     // Computed before `take()` so the `request_device_code` call already carries the surface
@@ -280,7 +280,7 @@ pub async fn run_device_code_login_channels(
     };
 
     // TUI: push the URL through the channel BEFORE opening the browser
-    // That way `x.ai/auth/get_url` isn't blocked on a slow or hanging browser launch (e.g. SSH/headless).
+    // That way `ezer/auth/get_url` isn't blocked on a slow or hanging browser launch (e.g. SSH/headless).
     // When the issuer omits `verification_uri_complete`, embed the code so the welcome screen can still show it (anti-phishing)
     let display_uri = match device_code.verification_uri_complete.as_deref() {
         Some(uri) => uri.to_owned(),
@@ -313,7 +313,7 @@ async fn prompt_and_poll(
     device_code: DeviceCode,
     auth_manager: &Arc<AuthManager>,
     surface: ClientSurface,
-) -> anyhow::Result<(GrokAuth, bool)> {
+) -> anyhow::Result<(EzerAuth, bool)> {
     let display_uri = device_code
         .verification_uri_complete
         .as_deref()
@@ -377,7 +377,7 @@ async fn build_auth(
     issuer: &str,
     client_id: &str,
     auth_manager: &Arc<AuthManager>,
-) -> anyhow::Result<GrokAuth> {
+) -> anyhow::Result<EzerAuth> {
     let (user_id, email) = if let Some(ref id_token) = tokens.id_token {
         decode_jwt_claims(id_token)
     } else {
@@ -392,7 +392,7 @@ async fn build_auth(
 
     // Device flow has no pre-selection; verify the token's principal here.
     // Match the principal id even if `principal_type` is absent.
-    let principal_policy = crate::oidc::login_principal_policy(auth_manager.grok_com_config());
+    let principal_policy = crate::oidc::login_principal_policy(auth_manager.ezer_com_config());
     crate::oidc::enforce_login_principal(
         principal_policy.as_ref(),
         crate::oidc::peek_access_token_principal_id(&tokens.access_token).as_deref(),
@@ -416,7 +416,7 @@ async fn build_auth(
         };
 
     let now = Utc::now();
-    let mut auth = GrokAuth {
+    let mut auth = EzerAuth {
         key: tokens.access_token.clone(),
         auth_mode: AuthMode::Oidc,
         create_time: now,
@@ -436,7 +436,7 @@ async fn build_auth(
         user_blocked_reason: None,
         team_blocked_reasons: vec![],
         coding_data_retention_opt_out: crate::default_coding_data_retention_opt_out(),
-        has_grok_code_access: None,
+        has_remote_code_access: None,
         refresh_token: tokens.refresh_token.clone(),
         expires_at: tokens.expires_in.map(|s| now + Duration::seconds(s)),
         oidc_issuer: Some(issuer.to_owned()),
@@ -490,7 +490,7 @@ pub mod tests {
     use std::sync::Arc;
 
     use super::{AuthManager, build_auth, validate_verification_uri};
-    use crate::{AuthMode, GrokComConfig};
+    use crate::{AuthMode, EzerComConfig};
 
     #[test]
     fn validate_verification_uri_rejects_unsupported_scheme() {
@@ -501,12 +501,12 @@ pub mod tests {
         );
     }
 
-    fn auth_manager_with_grok_home(
-        grok_home: &std::path::Path,
+    fn auth_manager_with_ezer_home(
+        ezer_home: &std::path::Path,
         proxy_base_url: &str,
     ) -> Arc<AuthManager> {
         Arc::new(
-            AuthManager::new(grok_home, GrokComConfig::default())
+            AuthManager::new(ezer_home, EzerComConfig::default())
                 .with_proxy_base_url(proxy_base_url),
         )
     }
@@ -514,9 +514,9 @@ pub mod tests {
     #[test]
     fn build_auth_persists_credentials_without_proxy_fetch() {
         let temp_dir = tempfile::tempdir().unwrap();
-        let grok_home = temp_dir.path().join(".ezer");
-        std::fs::create_dir_all(&grok_home).unwrap();
-        let auth_manager = auth_manager_with_grok_home(&grok_home, "http://127.0.0.1:9");
+        let ezer_home = temp_dir.path().join(".ezer");
+        std::fs::create_dir_all(&ezer_home).unwrap();
+        let auth_manager = auth_manager_with_ezer_home(&ezer_home, "http://127.0.0.1:9");
         let tokens = super::TokenOk {
             access_token: "access-token".to_string(),
             refresh_token: Some("refresh-token".to_string()),
@@ -556,9 +556,9 @@ pub mod tests {
     fn build_auth_seeds_team_metadata_from_access_token() {
         ensure_crypto_provider();
         let temp_dir = tempfile::tempdir().unwrap();
-        let grok_home = temp_dir.path().join(".ezer");
-        std::fs::create_dir_all(&grok_home).unwrap();
-        let auth_manager = auth_manager_with_grok_home(&grok_home, "http://127.0.0.1:9");
+        let ezer_home = temp_dir.path().join(".ezer");
+        std::fs::create_dir_all(&ezer_home).unwrap();
+        let auth_manager = auth_manager_with_ezer_home(&ezer_home, "http://127.0.0.1:9");
         let header = jsonwebtoken::Header::new(jsonwebtoken::Algorithm::HS256);
         let claims = serde_json::json!({
             "sub": "user-42",
@@ -627,13 +627,13 @@ pub mod tests {
     }
 
     /// `build_auth` with `token_principal` must fail with `expected_err` and persist nothing.
-    fn assert_build_auth_rejected(cfg: GrokComConfig, token_principal: &str, expected_err: &str) {
+    fn assert_build_auth_rejected(cfg: EzerComConfig, token_principal: &str, expected_err: &str) {
         ensure_crypto_provider();
         let temp_dir = tempfile::tempdir().unwrap();
-        let grok_home = temp_dir.path().join(".ezer");
-        std::fs::create_dir_all(&grok_home).unwrap();
+        let ezer_home = temp_dir.path().join(".ezer");
+        std::fs::create_dir_all(&ezer_home).unwrap();
         let auth_manager =
-            Arc::new(AuthManager::new(&grok_home, cfg).with_proxy_base_url("http://127.0.0.1:9"));
+            Arc::new(AuthManager::new(&ezer_home, cfg).with_proxy_base_url("http://127.0.0.1:9"));
 
         let err = tokio::runtime::Runtime::new()
             .unwrap()
@@ -651,7 +651,7 @@ pub mod tests {
             "rejected login must not persist credentials",
         );
         assert!(
-            !grok_home.join("auth.json").exists(),
+            !ezer_home.join("auth.json").exists(),
             "rejected login must not write auth.json",
         );
     }
@@ -661,7 +661,7 @@ pub mod tests {
     #[test]
     fn build_auth_does_not_enforce_legacy_oauth2_principal_id() {
         ensure_crypto_provider();
-        let cfg = GrokComConfig {
+        let cfg = EzerComConfig {
             oauth2: Some(crate::OAuth2ProviderConfig {
                 issuer: "http://localhost:22255".into(),
                 client_id: "client-id".into(),
@@ -670,13 +670,13 @@ pub mod tests {
                 principal_id: Some("team-required".into()),
                 referrer: None,
             }),
-            ..GrokComConfig::default()
+            ..EzerComConfig::default()
         };
         let temp_dir = tempfile::tempdir().unwrap();
-        let grok_home = temp_dir.path().join(".ezer");
-        std::fs::create_dir_all(&grok_home).unwrap();
+        let ezer_home = temp_dir.path().join(".ezer");
+        std::fs::create_dir_all(&ezer_home).unwrap();
         let auth_manager =
-            Arc::new(AuthManager::new(&grok_home, cfg).with_proxy_base_url("http://127.0.0.1:9"));
+            Arc::new(AuthManager::new(&ezer_home, cfg).with_proxy_base_url("http://127.0.0.1:9"));
 
         let auth = tokio::runtime::Runtime::new()
             .unwrap()
@@ -697,12 +697,12 @@ pub mod tests {
     /// `build_auth` enforces a `force_login_team_uuid` list before persisting.
     #[test]
     fn build_auth_rejects_token_outside_force_login_team_list() {
-        let cfg = GrokComConfig {
+        let cfg = EzerComConfig {
             force_login_team_uuid: Some(crate::ForceLoginTeam::AnyOf(vec![
                 "team-a".into(),
                 "team-b".into(),
             ])),
-            ..GrokComConfig::default()
+            ..EzerComConfig::default()
         };
         assert_build_auth_rejected(
             cfg,
@@ -763,10 +763,10 @@ pub mod tests {
     // Deadline-expiry isn't tested; the deadline is floored at 10 min (MIN_DEVICE_CODE_EXPIRY_FALLBACK_SECS)
     async fn run_poll(
         responses: Vec<(u16, serde_json::Value)>,
-    ) -> anyhow::Result<(super::GrokAuth, bool)> {
+    ) -> anyhow::Result<(super::EzerAuth, bool)> {
         let (issuer, server) = spawn_token_server(responses).await;
         let temp_dir = tempfile::tempdir().unwrap();
-        let auth_manager = auth_manager_with_grok_home(temp_dir.path(), "http://127.0.0.1:9");
+        let auth_manager = auth_manager_with_ezer_home(temp_dir.path(), "http://127.0.0.1:9");
         let device_code = device_code_for_test(1, 900);
         let result = super::complete_device_code_login(
             &issuer,

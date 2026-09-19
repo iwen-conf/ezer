@@ -144,8 +144,8 @@ fn mixed_report() -> DiagnosticReport {
     report.facts.color = ColorFacts {
         level: RuntimeFact::Available(ColorLevel::Ansi256),
         available_themes: vec![
-            ThemeKind::GrokNight,
-            ThemeKind::GrokDay,
+            ThemeKind::EzerNight,
+            ThemeKind::EzerDay,
             ThemeKind::Terminal,
         ],
         total_themes: ThemeKind::ALL.len(),
@@ -835,7 +835,7 @@ fn stable_mapping_tables_are_complete() {
             TerminalName::Rio,
             TerminalName::Foot,
             TerminalName::JetBrains,
-            TerminalName::GrokDesktop,
+            TerminalName::EzerDesktop,
             TerminalName::Vte,
             TerminalName::Terminator,
             TerminalName::WindowsTerminal,
@@ -858,7 +858,7 @@ fn stable_mapping_tables_are_complete() {
             "rio",
             "foot",
             "jetbrains",
-            "grok_desktop",
+            "ezer_desktop",
             "vte",
             "terminator",
             "windows_terminal",

@@ -423,13 +423,13 @@ impl SessionActor {
             model: Some(model_id.clone()),
             temperature: Some(0.0),
             max_output_tokens: Some(LAZINESS_MAX_OUTPUT_TOKENS),
-            // `grok-4.5` and other tool-flavoured variants reject `reasoning_effort` with `400: Model does not support parameter reasoningEffort`
+            // `test-model-4.5` and other tool-flavoured variants reject `reasoning_effort` with `400: Model does not support parameter reasoningEffort`
             // Omitting it lets each model apply its own default, which suffices for one short JSON object
             reasoning_effort: None,
-            x_grok_conv_id: Some(format!("trace-classifier-{}", uuid::Uuid::new_v4())),
-            x_grok_req_id: Some(format!("{LAZINESS_REQ_ID_PREFIX}{}", uuid::Uuid::new_v4())),
-            x_grok_session_id: Some(session_id_str),
-            x_grok_agent_id: Some(ezer_telemetry::id::agent_id()),
+            x_ezer_conv_id: Some(format!("trace-classifier-{}", uuid::Uuid::new_v4())),
+            x_ezer_req_id: Some(format!("{LAZINESS_REQ_ID_PREFIX}{}", uuid::Uuid::new_v4())),
+            x_ezer_session_id: Some(session_id_str),
+            x_ezer_agent_id: Some(ezer_telemetry::id::agent_id()),
             ..ConversationRequest::default()
         };
 

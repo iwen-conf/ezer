@@ -366,8 +366,8 @@ pub enum ProtectedEditReason {
     Ssh,
     StartupFile,
     Etc,
-    GrokConfig,
-    GrokSandbox,
+    EzerConfig,
+    EzerSandbox,
     ClaudeSettings,
     CursorHooks,
     /// Fail-closed / unclassified sensitive path; no user copy yet.
@@ -382,8 +382,8 @@ impl ProtectedEditReason {
             Self::Ssh => "ssh",
             Self::StartupFile => "startup_file",
             Self::Etc => "etc",
-            Self::GrokConfig => "grok_config",
-            Self::GrokSandbox => "grok_sandbox",
+            Self::EzerConfig => "ezer_config",
+            Self::EzerSandbox => "ezer_sandbox",
             Self::ClaudeSettings => "claude_settings",
             Self::CursorHooks => "cursor_hooks",
             Self::Sensitive => "sensitive",
@@ -407,10 +407,10 @@ impl ProtectedEditReason {
             Self::Etc => Some(
                 "Note: This edit contains changes under `/etc`, which is system configuration and can affect this machine beyond the current project.",
             ),
-            Self::GrokConfig => Some(
+            Self::EzerConfig => Some(
                 "Note: This edit contains changes to ezer config, which can alter permissions, tools, and other behavior in later sessions.",
             ),
-            Self::GrokSandbox => Some(
+            Self::EzerSandbox => Some(
                 "Note: This edit contains changes to the ezer sandbox config, which can loosen filesystem and network restrictions on commands.",
             ),
             Self::ClaudeSettings => Some(
@@ -492,7 +492,7 @@ fn protected_edit_reason(path: &Path) -> Option<ProtectedEditReason> {
         ".xprofile",
     ];
 
-    if protected_grok_hook_root(path, &string_components) {
+    if protected_ezer_hook_root(path, &string_components) {
         return Some(ProtectedEditReason::HookRoot);
     }
     if string_components.ends_with(&[".claude", "settings.json"])
@@ -512,7 +512,7 @@ fn protected_edit_reason(path: &Path) -> Option<ProtectedEditReason> {
     if STARTUP_FILES.contains(&file) {
         return Some(ProtectedEditReason::StartupFile);
     }
-    if let Some(reason) = protected_grok_config_file(path, &string_components) {
+    if let Some(reason) = protected_ezer_config_file(path, &string_components) {
         return Some(reason);
     }
     if path == Path::new("/etc") || path.starts_with(Path::new("/etc")) {
@@ -524,18 +524,18 @@ fn protected_edit_reason(path: &Path) -> Option<ProtectedEditReason> {
 /// ezer config files that alter permissions or sandbox restrictions; a silent edit would let the agent loosen its own guardrails.
 /// Matched directly inside any `.ezer` dir (user-global default and workspace overlays) and directly under a custom `$EZER_HOME`.
 /// A custom home has no `.ezer` component, so the component match alone cannot see it.
-fn protected_grok_config_file(path: &Path, components: &[&str]) -> Option<ProtectedEditReason> {
-    protected_grok_config_file_with_home(
+fn protected_ezer_config_file(path: &Path, components: &[&str]) -> Option<ProtectedEditReason> {
+    protected_ezer_config_file_with_home(
         path,
         components,
-        ezer_config::user_grok_home().as_deref(),
+        ezer_config::user_ezer_home().as_deref(),
     )
 }
 
-fn protected_grok_config_file_with_home(
+fn protected_ezer_config_file_with_home(
     path: &Path,
     components: &[&str],
-    user_grok_home: Option<&Path>,
+    user_ezer_home: Option<&Path>,
 ) -> Option<ProtectedEditReason> {
     let file = components.last().copied()?;
     // Session grant store: `{home}/sessions/<scope>/permission.toml` (or permission_*.toml).
@@ -544,33 +544,33 @@ fn protected_grok_config_file_with_home(
         && components.get(components.len() - 3) == Some(&"sessions")
     {
         let n = components.len();
-        let in_dot_grok = n >= 4 && components.get(n - 4) == Some(&".ezer");
-        let in_grok_home = grok_home_matches(user_grok_home, |home| {
+        let in_dot_ezer = n >= 4 && components.get(n - 4) == Some(&".ezer");
+        let in_ezer_home = ezer_home_matches(user_ezer_home, |home| {
             path.parent()
                 .and_then(Path::parent)
                 .is_some_and(|sessions| sessions == home.join("sessions"))
         });
-        return (in_dot_grok || in_grok_home).then_some(ProtectedEditReason::GrokConfig);
+        return (in_dot_ezer || in_ezer_home).then_some(ProtectedEditReason::EzerConfig);
     }
     let reason = match file {
         ezer_config::USER_CONFIG_FILENAME
         | ezer_config::MANAGED_CONFIG_FILENAME
-        | ezer_config::REQUIREMENTS_FILENAME => ProtectedEditReason::GrokConfig,
+        | ezer_config::REQUIREMENTS_FILENAME => ProtectedEditReason::EzerConfig,
         // Spawn configs: the daemon hot-reloads `mcp.json` and starts what it names; `lsp.json` starts servers at the next load
-        "mcp.json" | "lsp.json" => ProtectedEditReason::GrokConfig,
-        ezer_config::SANDBOX_CONFIG_FILENAME => ProtectedEditReason::GrokSandbox,
+        "mcp.json" | "lsp.json" => ProtectedEditReason::EzerConfig,
+        ezer_config::SANDBOX_CONFIG_FILENAME => ProtectedEditReason::EzerSandbox,
         _ => return None,
     };
-    let in_dot_grok =
+    let in_dot_ezer =
         components.len() >= 2 && components.get(components.len() - 2) == Some(&".ezer");
-    let in_grok_home = || grok_home_matches(user_grok_home, |home| path.parent() == Some(home));
-    (in_dot_grok || in_grok_home()).then_some(reason)
+    let in_ezer_home = || ezer_home_matches(user_ezer_home, |home| path.parent() == Some(home));
+    (in_dot_ezer || in_ezer_home()).then_some(reason)
 }
 
 /// True when `pred` holds for the user ezer home in either its lexical or physically-resolved form.
 /// Both forms are checked because callers hold a lexical and a resolved candidate path, and the home itself may sit behind a symlink.
 /// The comparison is byte-exact (no case folding), like every other resolved-path check in this module.
-fn grok_home_matches(home: Option<&Path>, pred: impl Fn(&Path) -> bool) -> bool {
+fn ezer_home_matches(home: Option<&Path>, pred: impl Fn(&Path) -> bool) -> bool {
     home.is_some_and(|home| {
         let lexical = ezer_paths::normalize_lexically(home);
         pred(&lexical)
@@ -578,15 +578,15 @@ fn grok_home_matches(home: Option<&Path>, pred: impl Fn(&Path) -> bool) -> bool 
     })
 }
 
-fn path_is_under_user_grok_hook_root(path: &Path, grok_home: &Path) -> bool {
-    path.starts_with(grok_home.join("hooks")) || path == grok_home.join("hooks-paths")
+fn path_is_under_user_ezer_hook_root(path: &Path, ezer_home: &Path) -> bool {
+    path.starts_with(ezer_home.join("hooks")) || path == ezer_home.join("hooks-paths")
 }
 
-fn protected_grok_hook_root(path: &Path, components: &[&str]) -> bool {
+fn protected_ezer_hook_root(path: &Path, components: &[&str]) -> bool {
     components.windows(2).any(|pair| pair == [".ezer", "hooks"])
         || components.ends_with(&[".ezer", "hooks-paths"])
-        || grok_home_matches(ezer_config::user_grok_home().as_deref(), |home| {
-            path_is_under_user_grok_hook_root(path, home)
+        || ezer_home_matches(ezer_config::user_ezer_home().as_deref(), |home| {
+            path_is_under_user_ezer_hook_root(path, home)
         })
 }
 
@@ -1490,28 +1490,28 @@ mod tests {
             ("/etc/hosts", ProtectedEditReason::Etc),
             (
                 "/home/user/.ezer/config.toml",
-                ProtectedEditReason::GrokConfig,
+                ProtectedEditReason::EzerConfig,
             ),
             (
                 "/home/user/.ezer/sandbox.toml",
-                ProtectedEditReason::GrokSandbox,
+                ProtectedEditReason::EzerSandbox,
             ),
             (
                 "/work/project/.ezer/sandbox.toml",
-                ProtectedEditReason::GrokSandbox,
+                ProtectedEditReason::EzerSandbox,
             ),
             (
                 "/home/user/.ezer/managed_config.toml",
-                ProtectedEditReason::GrokConfig,
+                ProtectedEditReason::EzerConfig,
             ),
             (
                 "/home/user/.ezer/requirements.toml",
-                ProtectedEditReason::GrokConfig,
+                ProtectedEditReason::EzerConfig,
             ),
-            ("/home/user/.ezer/mcp.json", ProtectedEditReason::GrokConfig),
+            ("/home/user/.ezer/mcp.json", ProtectedEditReason::EzerConfig),
             (
                 "/work/project/.ezer/lsp.json",
-                ProtectedEditReason::GrokConfig,
+                ProtectedEditReason::EzerConfig,
             ),
             (
                 "/home/user/.claude/settings.json",
@@ -1542,11 +1542,11 @@ mod tests {
             .join("permission.toml");
         assert_eq!(
             edit_target_protection(&grant_client),
-            Some(ProtectedEditReason::GrokConfig)
+            Some(ProtectedEditReason::EzerConfig)
         );
         assert_eq!(
             edit_target_protection(&grant_default),
-            Some(ProtectedEditReason::GrokConfig)
+            Some(ProtectedEditReason::EzerConfig)
         );
         assert_eq!(
             edit_target_protection(Path::new("/home/user/project/src/main.rs")),
@@ -1593,7 +1593,7 @@ mod tests {
     }
 
     #[test]
-    fn path_is_under_user_grok_hook_root_matches_relocated_home() {
+    fn path_is_under_user_ezer_hook_root_matches_relocated_home() {
         let home = Path::new("/custom/ezer-home");
         for path in [
             "/custom/ezer-home/hooks/x.json",
@@ -1602,7 +1602,7 @@ mod tests {
             "/custom/ezer-home/hooks-paths",
         ] {
             assert!(
-                path_is_under_user_grok_hook_root(Path::new(path), home),
+                path_is_under_user_ezer_hook_root(Path::new(path), home),
                 "must match under custom ezer home: {path}"
             );
         }
@@ -1614,7 +1614,7 @@ mod tests {
             "/custom/ezer-home-extra/hooks/x.json",
         ] {
             assert!(
-                !path_is_under_user_grok_hook_root(Path::new(path), home),
+                !path_is_under_user_ezer_hook_root(Path::new(path), home),
                 "must not match outside hook roots: {path}"
             );
         }
@@ -1641,10 +1641,10 @@ mod tests {
             ws.path().join("module-hooks-link"),
         )
         .unwrap();
-        let grok_hook = outside.path().join(".ezer/hooks/evil.json");
-        std::fs::create_dir_all(grok_hook.parent().unwrap()).unwrap();
-        std::fs::write(&grok_hook, b"{}").unwrap();
-        symlink(&grok_hook, ws.path().join("ezer-hook-link")).unwrap();
+        let ezer_hook = outside.path().join(".ezer/hooks/evil.json");
+        std::fs::create_dir_all(ezer_hook.parent().unwrap()).unwrap();
+        std::fs::write(&ezer_hook, b"{}").unwrap();
+        symlink(&ezer_hook, ws.path().join("ezer-hook-link")).unwrap();
 
         for path in [
             ws.path().join("file-link"),
@@ -1662,31 +1662,31 @@ mod tests {
 
     /// A custom `$EZER_HOME` has no `.ezer` path component, so the live `config.toml` / `sandbox.toml` must be caught by the home-prefix branch.
     #[test]
-    fn grok_config_files_under_custom_grok_home_are_protected() {
+    fn ezer_config_files_under_custom_ezer_home_are_protected() {
         let home = tempfile::tempdir().unwrap();
         let home_path = home.path();
         for (file, reason) in [
             (
                 ezer_config::USER_CONFIG_FILENAME,
-                ProtectedEditReason::GrokConfig,
+                ProtectedEditReason::EzerConfig,
             ),
             (
                 ezer_config::MANAGED_CONFIG_FILENAME,
-                ProtectedEditReason::GrokConfig,
+                ProtectedEditReason::EzerConfig,
             ),
             (
                 ezer_config::REQUIREMENTS_FILENAME,
-                ProtectedEditReason::GrokConfig,
+                ProtectedEditReason::EzerConfig,
             ),
             (
                 ezer_config::SANDBOX_CONFIG_FILENAME,
-                ProtectedEditReason::GrokSandbox,
+                ProtectedEditReason::EzerSandbox,
             ),
         ] {
             let path = home_path.join(file);
             let components = [file];
             assert_eq!(
-                protected_grok_config_file_with_home(&path, &components, Some(home_path)),
+                protected_ezer_config_file_with_home(&path, &components, Some(home_path)),
                 Some(reason),
                 "{file} directly under $EZER_HOME must be protected"
             );
@@ -1696,12 +1696,12 @@ mod tests {
             .join("ws")
             .join("permission_ezer.toml");
         assert_eq!(
-            protected_grok_config_file_with_home(
+            protected_ezer_config_file_with_home(
                 &grant,
                 &["sessions", "ws", "permission_ezer.toml"],
                 Some(home_path)
             ),
-            Some(ProtectedEditReason::GrokConfig),
+            Some(ProtectedEditReason::EzerConfig),
             "per-client grant store under $EZER_HOME/sessions must be protected"
         );
         // Same file names elsewhere (or with no resolvable home) stay ordinary.
@@ -1709,7 +1709,7 @@ mod tests {
             .join("sub")
             .join(ezer_config::SANDBOX_CONFIG_FILENAME);
         assert_eq!(
-            protected_grok_config_file_with_home(
+            protected_ezer_config_file_with_home(
                 &elsewhere,
                 &["sub", ezer_config::SANDBOX_CONFIG_FILENAME],
                 Some(home_path)
@@ -1717,7 +1717,7 @@ mod tests {
             None
         );
         assert_eq!(
-            protected_grok_config_file_with_home(
+            protected_ezer_config_file_with_home(
                 &home_path.join(ezer_config::SANDBOX_CONFIG_FILENAME),
                 &[ezer_config::SANDBOX_CONFIG_FILENAME],
                 None
@@ -1730,7 +1730,7 @@ mod tests {
     /// `$EZER_HOME` points at a symlink while the edit targets the physical home directory, so the lexical parent-equality arm cannot fire.
     #[test]
     #[cfg(unix)]
-    fn grok_config_under_symlinked_grok_home_is_protected() {
+    fn ezer_config_under_symlinked_ezer_home_is_protected() {
         use std::os::unix::fs::symlink;
         let tmp = tempfile::tempdir().unwrap();
         let real_home = tmp.path().join("real-home");
@@ -1741,24 +1741,24 @@ mod tests {
         // Compare against the physical home the production resolver will produce
         let physical_home = resolve_following_symlinks(&real_home).unwrap();
         assert_eq!(
-            protected_grok_config_file_with_home(
+            protected_ezer_config_file_with_home(
                 &physical_home.join(ezer_config::SANDBOX_CONFIG_FILENAME),
                 &[ezer_config::SANDBOX_CONFIG_FILENAME],
                 Some(&link)
             ),
-            Some(ProtectedEditReason::GrokSandbox)
+            Some(ProtectedEditReason::EzerSandbox)
         );
         let grant = physical_home
             .join("sessions")
             .join("ws")
             .join("permission.toml");
         assert_eq!(
-            protected_grok_config_file_with_home(
+            protected_ezer_config_file_with_home(
                 &grant,
                 &["sessions", "ws", "permission.toml"],
                 Some(&link)
             ),
-            Some(ProtectedEditReason::GrokConfig)
+            Some(ProtectedEditReason::EzerConfig)
         );
     }
 

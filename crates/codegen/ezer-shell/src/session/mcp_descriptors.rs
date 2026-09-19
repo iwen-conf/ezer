@@ -228,8 +228,8 @@ mod tests {
     #[test]
     fn sanitize_replaces_unsafe_chars_and_never_empty() {
         assert_eq!(
-            sanitize_descriptor_segment("grok_com_linear"),
-            "grok_com_linear"
+            sanitize_descriptor_segment("ezer_com_linear"),
+            "ezer_com_linear"
         );
         assert_eq!(sanitize_descriptor_segment("a/b:c d"), "a_b_c_d");
         assert_eq!(sanitize_descriptor_segment(""), "_");

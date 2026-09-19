@@ -58,10 +58,10 @@ impl Drop for EnvGuard {
 
 /// # Safety
 /// No other thread may access the environment concurrently; call before any other thread exists.
-pub unsafe fn isolate_grok_env(home: &Path) {
+pub unsafe fn isolate_ezer_env(home: &Path) {
     // SAFETY: forwarded to the caller.
     unsafe {
-        std::env::set_var("GROK_HOME", home);
+        std::env::set_var("EZER_HOME", home);
         std::env::set_var("EZER_TELEMETRY_ENABLED", "false");
         std::env::set_var("EZER_TELEMETRY_MIXPANEL_ENABLED", "false");
         std::env::set_var("EZER_TELEMETRY_MIXPANEL_TOKEN", "");
@@ -145,11 +145,11 @@ pub fn ensure_cargo_bin(package: &str, bin: &str) -> PathBuf {
 }
 
 /// Resolve ezer binary: `EZER_BINARY` env (CI) or a locally built `ezer-pager` binary.
-pub fn grok_binary() -> PathBuf {
+pub fn ezer_binary() -> PathBuf {
     if let Ok(path) = std::env::var("EZER_BINARY") {
         let p = PathBuf::from(path);
         assert!(p.exists(), "EZER_BINARY does not exist: {}", p.display());
-        // Bazel's GROK_BINARY is runfiles-relative; the harness spawns the child with a different cwd
+        // Bazel's EZER_BINARY is runfiles-relative; the harness spawns the child with a different cwd
         // Absolutize against the (runfiles-root) cwd now
         return std::path::absolute(&p).unwrap_or(p);
     }

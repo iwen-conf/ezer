@@ -95,7 +95,7 @@ impl GoalNotifySender {
         }
         if let Some(raw) = raw {
             let ext = agent_client_protocol::ExtNotification::new(
-                "x.ai/session_notification",
+                "ezer/session_notification",
                 raw.into(),
             );
             self.gateway.forward_fire_and_forget(ext);
@@ -402,7 +402,7 @@ mod tests {
     #[test]
     fn build_goal_updated_gates_per_model_breakdown_on_two_or_more_models() {
         let mut o = make_base_orchestration();
-        o.live_tokens_by_model = vec![("grok-4".into(), 5_000)];
+        o.live_tokens_by_model = vec![("test-model-4".into(), 5_000)];
         match build_goal_updated(&o, 0, 0) {
             XaiSessionUpdate::GoalUpdated {
                 live_tokens_by_model,
@@ -415,14 +415,14 @@ mod tests {
         }
 
         // Two or more distinct models are transmitted verbatim
-        o.live_tokens_by_model = vec![("grok-4".into(), 5_000), ("grok-3".into(), 3_000)];
+        o.live_tokens_by_model = vec![("test-model-4".into(), 5_000), ("test-model-3".into(), 3_000)];
         match build_goal_updated(&o, 0, 0) {
             XaiSessionUpdate::GoalUpdated {
                 live_tokens_by_model,
                 ..
             } => assert_eq!(
                 live_tokens_by_model,
-                vec![("grok-4".to_owned(), 5_000), ("grok-3".to_owned(), 3_000)]
+                vec![("test-model-4".to_owned(), 5_000), ("test-model-3".to_owned(), 3_000)]
             ),
             _ => panic!("expected GoalUpdated"),
         }

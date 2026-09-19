@@ -266,7 +266,7 @@ impl crate::types::tool_metadata::ToolMetadata for ImageEditTool {
     }
 
     fn tool_namespace(&self) -> ToolNamespace {
-        ToolNamespace::GrokBuild
+        ToolNamespace::EzerBuild
     }
 
     fn description_template(&self) -> &str {

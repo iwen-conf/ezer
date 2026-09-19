@@ -8,7 +8,7 @@ use super::common::*;
 #[ignore = "PTY e2e; run the owning pty_e2e_* Cargo test with --ignored (see Cargo.toml)"]
 async fn managed_policy_gate_refusal_reaches_real_terminal() {
     let sandbox = ezer_test_support::TestSandbox::new();
-    let home_path = sandbox.grok_home();
+    let home_path = sandbox.ezer_home();
     std::fs::write(
         home_path.join("config.toml"),
         // A dead local port makes any incidental fetch fail fast offline (the gate is synchronous anyway)
@@ -45,7 +45,7 @@ async fn managed_policy_gate_refusal_reaches_real_terminal() {
         DEFAULT_COLS,
         &["--no-auto-update"],
         &sandbox,
-        // GROK_MANAGED_CONFIG=0 disables the background refetch so the gate decision is deterministic and offline.
+        // EZER_MANAGED_CONFIG=0 disables the background refetch so the gate decision is deterministic and offline.
         &[
             EnvOp::set("EZER_MANAGED_CONFIG", "0"),
             EnvOp::set("NO_COLOR", "1"),

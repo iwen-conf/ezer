@@ -78,7 +78,7 @@ fn messages(partials: bool) -> MessagesReducer {
     let mut r = MessagesReducer::new();
     r.begin(SessionContext {
         session_id: "sess-1".into(),
-        model: Some("grok-4".into()),
+        model: Some("test-model-4".into()),
         cwd: "/repo".into(),
         permission_mode: Some("bypassPermissions".into()),
         mcp_servers: vec![McpServer {

@@ -195,7 +195,7 @@ mod tests {
 
     const ENV_CONTEXTUAL_HINTS: &str = "EZER_CONTEXTUAL_HINTS";
 
-    // `GROK_CONTEXTUAL_HINTS` is process-global
+    // `EZER_CONTEXTUAL_HINTS` is process-global
     // Serialize the tests reading it and force it unset so a developer's shell value can't make them flaky
     static CONTEXTUAL_HINTS_ENV_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
 

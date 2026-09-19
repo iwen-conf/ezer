@@ -91,7 +91,7 @@ impl ResolvedStorageConfig {
     }
     /// Bearer this resolved config puts on the wire — `snapshot()` mirrors
     /// `HttpAuth::apply` for provider-backed configs; the static fallback
-    /// mirrors `GrokAuthCredentials::apply` precedence (deployment key wins).
+    /// mirrors `EzerAuthCredentials::apply` precedence (deployment key wins).
     fn wire_bearer(&self) -> Option<String> {
         if let Some(ref creds) = self.credentials {
             return creds.snapshot().token;
@@ -514,20 +514,20 @@ enum EnqueueAttempt {
 impl UploadQueue {
     /// Create the queue, initialize the temp directory, and spawn the background worker.
     pub fn spawn(
-        grok_home: &Path,
+        ezer_home: &Path,
         resolver: Arc<dyn TraceExportSource>,
         retry_policy: UploadRetryPolicy,
     ) -> Self {
-        Self::spawn_with_concurrency(grok_home, resolver, retry_policy, DEFAULT_MAX_CONCURRENT)
+        Self::spawn_with_concurrency(ezer_home, resolver, retry_policy, DEFAULT_MAX_CONCURRENT)
     }
     /// Create the queue with explicit concurrency limit for the background worker.
     pub fn spawn_with_concurrency(
-        grok_home: &Path,
+        ezer_home: &Path,
         resolver: Arc<dyn TraceExportSource>,
         mut retry_policy: UploadRetryPolicy,
         max_concurrent: usize,
     ) -> Self {
-        let queue_dir = grok_home.join("upload_queue");
+        let queue_dir = ezer_home.join("upload_queue");
         if let Err(e) = std::fs::create_dir_all(&queue_dir) {
             tracing::warn!(error = %e, "Failed to create upload queue dir");
         }
@@ -2163,8 +2163,8 @@ pub fn last_orphans_cleaned() -> u64 {
 }
 /// Clean up orphaned upload queue entries from previous sessions older than `max_age`.
 /// Called at agent startup. Returns the number of entries removed.
-pub fn cleanup_orphaned_uploads(grok_home: &Path, max_age: Duration) -> u64 {
-    let cleaned = cleanup_queue_dir(&grok_home.join("upload_queue"), max_age, None);
+pub fn cleanup_orphaned_uploads(ezer_home: &Path, max_age: Duration) -> u64 {
+    let cleaned = cleanup_queue_dir(&ezer_home.join("upload_queue"), max_age, None);
     LAST_ORPHANS_CLEANED.store(cleaned, Ordering::Relaxed);
     cleaned
 }

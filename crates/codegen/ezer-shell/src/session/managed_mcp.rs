@@ -1,5 +1,5 @@
 //! Shell-side MCP merge: local/plugin/compat sources plus admitted client servers.
-//! Managed connectors exist only via the gateway catalog (`GET /v1/mcp/tools/list`), not as injected `grok_com_*` HTTP servers.
+//! Managed connectors exist only via the gateway catalog (`GET /v1/mcp/tools/list`), not as injected `ezer_com_*` HTTP servers.
 //!
 //! Merge layers are applied in order, keyed by server NAME (two names sharing one URL are distinct servers).
 //! Later `insert()` beats earlier `or_insert()`:
@@ -242,7 +242,7 @@ pub(crate) fn mcp_subject_for_tier(
     let native = native_tier && !project_scoped;
     McpSubject {
         origin: if native {
-            PolicySubjectOrigin::GrokNative
+            PolicySubjectOrigin::EzerNative
         } else {
             PolicySubjectOrigin::Foreign
         },
@@ -326,7 +326,7 @@ fn apply_mcp_server_policy(
         .collect()
 }
 
-/// Policy gate for the session-less MCP pool (without it `x.ai/mcp/call` spawns blocked servers);
+/// Policy gate for the session-less MCP pool (without it `ezer/mcp/call` spawns blocked servers);
 /// native tier needs the payload to EQUAL the on-disk TOML definition, as in the session merge.
 pub(crate) fn filter_policy_blocked_agent_mcp(
     servers: Vec<acp::McpServer>,
@@ -409,7 +409,7 @@ pub(crate) fn merge_managed_mcp_servers_sourced(
     let toml_claimed_names = crate::util::config::all_toml_mcp_server_names(cwd);
 
     let config_source = ConfigSource::ConfigToml {
-        path: ezer_tools::util::grok_home::grok_home().join("config.toml"),
+        path: ezer_tools::util::ezer_home::ezer_home().join("config.toml"),
     };
 
     // Use the TOML-only loader so that entries from imported editor configs and .mcp.json are not pre-loaded with ConfigSource::ConfigToml
@@ -990,9 +990,9 @@ args = ["ok"]
         };
 
         let cwd = tempfile::tempdir().unwrap();
-        std::fs::create_dir_all(cwd.path().join(".grok")).unwrap();
+        std::fs::create_dir_all(cwd.path().join(".ezer")).unwrap();
         std::fs::write(
-            cwd.path().join(".grok").join("config.toml"),
+            cwd.path().join(".ezer").join("config.toml"),
             r#"
 disabled_mcp_servers = ["corp"]
 
@@ -1035,12 +1035,12 @@ url = "https://denied.corp.com/mcp"
     }
 
     /// A repo-declared definition is discoverable while the folder is trusted and gone once it is not; user-tier and plugin-tier definitions survive either way.
-    /// Runs in a re-exec of this binary: discovery reads `$EZER_HOME/config.toml` through the process-wide `grok_home()` `OnceLock`, so only a fresh process can isolate it.
+    /// Runs in a re-exec of this binary: discovery reads `$EZER_HOME/config.toml` through the process-wide `ezer_home()` `OnceLock`, so only a fresh process can isolate it.
     #[test]
     fn discovery_drops_project_definitions_for_untrusted_folder() {
-        let grok_home = tempfile::tempdir().unwrap();
+        let ezer_home = tempfile::tempdir().unwrap();
         std::fs::write(
-            grok_home.path().join("config.toml"),
+            ezer_home.path().join("config.toml"),
             format!("[mcp_servers.usersrv]\nurl = \"{USER_MCP_URL}\"\n"),
         )
         .unwrap();
@@ -1051,7 +1051,7 @@ url = "https://denied.corp.com/mcp"
             .unwrap_or_default();
         let exe = std::env::current_exe().expect("current_exe");
         let mut cmd = std::process::Command::new(exe);
-        cmd.env("GROK_HOME", grok_home.path())
+        cmd.env("EZER_HOME", ezer_home.path())
             .env_remove("EZER_CONFIG")
             .env_remove("EZER_CONFIG_PATH")
             .env(UNTRUSTED_DISCOVERY_CHILD, "1")
@@ -1339,7 +1339,7 @@ headers = { "X-A" = "1", "X-B" = "2", "X-C" = "3" }
 
     /// An advisory policy source binds only foreign-origin servers at the merge; a native source drops both.
     #[test]
-    fn advisory_policy_exempts_grok_native_servers() {
+    fn advisory_policy_exempts_ezer_native_servers() {
         use ezer_workspace::permission::resolution::{
             AllowedMcpServer, McpServerAllowlist, McpServerPolicy, PolicySourceAuthority,
         };
@@ -1368,13 +1368,13 @@ headers = { "X-A" = "1", "X-B" = "2", "X-C" = "3" }
 
         // Advisory deny + native server: survives.
         let tagged = apply_mcp_server_policy(
-            vec![(server(), subject(PolicySubjectOrigin::GrokNative))],
+            vec![(server(), subject(PolicySubjectOrigin::EzerNative))],
             &std::collections::HashSet::new(),
             &settings_with_policy(deny(PolicySourceAuthority::Advisory)),
         );
         assert!(
             at(&tagged, 0).disabled_reason.is_none(),
-            "advisory deny must not bind a grok-native server"
+            "advisory deny must not bind a ezer-native server"
         );
 
         // Advisory deny + foreign server: binds.
@@ -1390,7 +1390,7 @@ headers = { "X-A" = "1", "X-B" = "2", "X-C" = "3" }
 
         // Native (TOML) deny binds the native server too.
         let tagged = apply_mcp_server_policy(
-            vec![(server(), subject(PolicySubjectOrigin::GrokNative))],
+            vec![(server(), subject(PolicySubjectOrigin::EzerNative))],
             &std::collections::HashSet::new(),
             &settings_with_policy(deny(PolicySourceAuthority::Native)),
         );
@@ -1437,7 +1437,7 @@ headers = { "X-A" = "1", "X-B" = "2", "X-C" = "3" }
             root: plugin_root.to_path_buf(),
             canonical_root: plugin_root.to_path_buf(),
             scope: PluginScope::User,
-            origin: ezer_agent::plugins::PluginOrigin::UserGrok,
+            origin: ezer_agent::plugins::PluginOrigin::UserEzer,
             trusted: true,
             skill_dirs: vec![],
             command_dirs: vec![],
@@ -1564,7 +1564,7 @@ headers = { "X-A" = "1", "X-B" = "2", "X-C" = "3" }
         let empty = std::collections::HashSet::new();
         let native = [
             ConfigSource::ConfigToml {
-                path: "/u/.grok/config.toml".into(),
+                path: "/u/.ezer/config.toml".into(),
             },
             ConfigSource::Plugin {
                 plugin_name: "p".into(),
@@ -1574,13 +1574,13 @@ headers = { "X-A" = "1", "X-B" = "2", "X-C" = "3" }
         for source in &native {
             assert_eq!(
                 mcp_subject(&server, source, &empty).origin,
-                PolicySubjectOrigin::GrokNative,
+                PolicySubjectOrigin::EzerNative,
                 "{source:?}"
             );
         }
         let foreign = [
             ConfigSource::Project {
-                path: "/repo/.grok".into(),
+                path: "/repo/.ezer".into(),
             },
             ConfigSource::User { path: "/u".into() },
             ConfigSource::Bundled { path: "/b".into() },
@@ -1659,7 +1659,7 @@ headers = { "X-A" = "1", "X-B" = "2", "X-C" = "3" }
                     url_pattern: "https://ok.example.com/*".into(),
                 }],
                 vec![],
-                Some(std::path::PathBuf::from("/etc/grok/managed_config.toml")),
+                Some(std::path::PathBuf::from("/etc/ezer/managed_config.toml")),
             )
             .with_managed_only()
             .with_ownership(PolicyLayerOwnership::Admin),
@@ -1675,7 +1675,7 @@ headers = { "X-A" = "1", "X-B" = "2", "X-C" = "3" }
         // Project pin: ungranted project MCP is dropped outright; the
         // allow-granted server survives the pin (admin grant, admin pin).
         ms.project_mcp = PolicyPin::Disabled {
-            source: std::path::PathBuf::from("/etc/grok/managed_config.toml"),
+            source: std::path::PathBuf::from("/etc/ezer/managed_config.toml"),
             ownership: PolicyLayerOwnership::Admin,
         };
         let by_name = merge(&ms);
@@ -1808,7 +1808,7 @@ headers = { "X-A" = "1", "X-B" = "2", "X-C" = "3" }
         let tagged = apply_mcp_server_policy(
             vec![
                 foreign(acp::McpServer::Http(
-                    acp::McpServerHttp::new("grok_com_slack", "https://mcp.slack.com/sse")
+                    acp::McpServerHttp::new("remote_slack", "https://mcp.slack.com/sse")
                         .headers(vec![]),
                 )),
                 // Substring-only match must not be denied.
@@ -1823,7 +1823,7 @@ headers = { "X-A" = "1", "X-B" = "2", "X-C" = "3" }
 
         let slack = tagged
             .iter()
-            .find(|s| mcp_server_name(&s.server) == "grok_com_slack")
+            .find(|s| mcp_server_name(&s.server) == "remote_slack")
             .expect("managed server present in policy output");
         assert!(
             matches!(slack.disabled_reason, Some(McpBlockReason::Deny { .. })),
@@ -1871,7 +1871,7 @@ headers = { "X-A" = "1", "X-B" = "2", "X-C" = "3" }
                     },
                 ],
                 vec![],
-                Some(std::path::PathBuf::from("/etc/grok/requirements.toml")),
+                Some(std::path::PathBuf::from("/etc/ezer/requirements.toml")),
             )
             .with_managed_only(),
         );
@@ -1960,7 +1960,7 @@ headers = { "X-A" = "1", "X-B" = "2", "X-C" = "3" }
                     url_pattern: "https://allowed.example.com/*".into(),
                 }],
                 vec![],
-                Some(std::path::PathBuf::from("/etc/grok/requirements.toml")),
+                Some(std::path::PathBuf::from("/etc/ezer/requirements.toml")),
             )
             .with_ownership(PolicyLayerOwnership::Admin),
         );
@@ -1982,7 +1982,7 @@ headers = { "X-A" = "1", "X-B" = "2", "X-C" = "3" }
         // allowlisted one; the user-tier server survives.
         let mut ms = settings_with_policy(policy.clone());
         ms.project_mcp = PolicyPin::Disabled {
-            source: std::path::PathBuf::from("/etc/grok/requirements.toml"),
+            source: std::path::PathBuf::from("/etc/ezer/requirements.toml"),
             ownership: PolicyLayerOwnership::Admin,
         };
         let kept = apply_mcp_server_policy(paired(), &std::collections::HashSet::new(), &ms);
@@ -1996,7 +1996,7 @@ headers = { "X-A" = "1", "X-B" = "2", "X-C" = "3" }
             .expect("project server without a grant is dropped");
         assert!(
             matches!(&reason, McpBlockReason::ProjectPin { source }
-                if source == std::path::Path::new("/etc/grok/requirements.toml")),
+                if source == std::path::Path::new("/etc/ezer/requirements.toml")),
             "got {reason:?}"
         );
         assert!(
@@ -2017,9 +2017,9 @@ headers = { "X-A" = "1", "X-B" = "2", "X-C" = "3" }
     #[test]
     fn lower_precedence_http_servers_are_blocked_by_toml_name_claims() {
         let cwd = tempfile::tempdir().unwrap();
-        std::fs::create_dir_all(cwd.path().join(".grok")).unwrap();
+        std::fs::create_dir_all(cwd.path().join(".ezer")).unwrap();
         std::fs::write(
-            cwd.path().join(".grok").join("config.toml"),
+            cwd.path().join(".ezer").join("config.toml"),
             r#"
 [mcp_servers.github]
 url = "https://config.example.com/mcp"
@@ -2055,9 +2055,9 @@ enabled = false
     /// This mirrors a real setup: one ClickHouse endpoint, two orgs.
     fn same_url_project_repo() -> tempfile::TempDir {
         let cwd = empty_cwd();
-        std::fs::create_dir_all(cwd.path().join(".grok")).unwrap();
+        std::fs::create_dir_all(cwd.path().join(".ezer")).unwrap();
         std::fs::write(
-            cwd.path().join(".grok").join("config.toml"),
+            cwd.path().join(".ezer").join("config.toml"),
             r#"
 [mcp_servers.gb5207-org1]
 url = "https://dup-url.example.test/mcp"
@@ -2189,14 +2189,14 @@ Authorization = "Bearer org2-token"
 
         let mut ms = ezer_workspace::permission::resolution::ManagedSettings::default();
         ms.project_mcp = PolicyPin::Disabled {
-            source: std::path::PathBuf::from("/etc/grok/requirements.toml"),
+            source: std::path::PathBuf::from("/etc/ezer/requirements.toml"),
             ownership: PolicyLayerOwnership::Admin,
         };
         match ms.mcp_verdict(server, *subject) {
             McpVerdict::Blocked(McpBlockReason::ProjectPin { source }) => {
                 assert_eq!(
                     source,
-                    std::path::PathBuf::from("/etc/grok/requirements.toml")
+                    std::path::PathBuf::from("/etc/ezer/requirements.toml")
                 );
             }
             other => panic!("expected ProjectPin refusal, got {other:?}"),
@@ -2209,7 +2209,7 @@ Authorization = "Bearer org2-token"
             "mcpServers": {
                 "echo-mcp": {
                     "command": "python3",
-                    "args": ["${GROK_PLUGIN_ROOT}/mcp-echo-server.py"]
+                    "args": ["${EZER_PLUGIN_ROOT}/mcp-echo-server.py"]
                 }
             }
         }))
@@ -2218,8 +2218,8 @@ Authorization = "Bearer org2-token"
         let (servers, _) = load_plugin_mcp_servers_from_config(
             &config,
             "team-tool",
-            "/home/user/.grok/plugins/team-tool",
-            "/home/user/.grok/plugin-data/team-tool",
+            "/home/user/.ezer/plugins/team-tool",
+            "/home/user/.ezer/plugin-data/team-tool",
         );
 
         assert_eq!(servers.len(), 1, "should create one server");
@@ -2234,7 +2234,7 @@ Authorization = "Bearer org2-token"
                 assert_eq!(command.display().to_string(), "python3");
                 assert_eq!(
                     args.as_slice(),
-                    &["/home/user/.grok/plugins/team-tool/mcp-echo-server.py"]
+                    &["/home/user/.ezer/plugins/team-tool/mcp-echo-server.py"]
                 );
             }
             _other => panic!("expected Stdio server"),
@@ -2260,9 +2260,9 @@ Authorization = "Bearer org2-token"
         );
 
         git2::Repository::init(cwd.path()).unwrap();
-        std::fs::create_dir_all(cwd.path().join(".grok")).unwrap();
+        std::fs::create_dir_all(cwd.path().join(".ezer")).unwrap();
         std::fs::write(
-            cwd.path().join(".grok").join("config.toml"),
+            cwd.path().join(".ezer").join("config.toml"),
             "[mcp_servers.plugsrv]\nurl = \"https://plug.example.test/mcp\"\nenabled = false\n",
         )
         .unwrap();
@@ -2332,7 +2332,7 @@ Authorization = "Bearer org2-token"
             root: plugin_root.clone(),
             canonical_root: plugin_root.clone(),
             scope: PluginScope::User,
-            origin: ezer_agent::plugins::PluginOrigin::UserGrok,
+            origin: ezer_agent::plugins::PluginOrigin::UserEzer,
             trusted: true,
             skill_dirs: vec![],
             command_dirs: vec![],
@@ -2400,7 +2400,7 @@ Authorization = "Bearer org2-token"
             root: plugin_root.clone(),
             canonical_root: plugin_root.clone(),
             scope: PluginScope::User,
-            origin: ezer_agent::plugins::PluginOrigin::UserGrok,
+            origin: ezer_agent::plugins::PluginOrigin::UserEzer,
             trusted: true,
             skill_dirs: vec![],
             command_dirs: vec![],
@@ -2474,7 +2474,7 @@ Authorization = "Bearer org2-token"
             root: plugin_root.clone(),
             canonical_root: plugin_root.clone(),
             scope: PluginScope::User,
-            origin: ezer_agent::plugins::PluginOrigin::UserGrok,
+            origin: ezer_agent::plugins::PluginOrigin::UserEzer,
             trusted: true,
             skill_dirs: vec![],
             command_dirs: vec![],

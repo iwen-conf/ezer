@@ -80,7 +80,7 @@ fn read_forced_requirements() -> Option<String> {
     let cf_app = CFString::new(MANAGED_PREFERENCES_DOMAIN);
 
     // Trust only admin-forced values: otherwise the lookup falls through to the per-user domain
-    // A local user can set that domain (`defaults write ai.x.grok`) to forge an `is_system`-trusted layer
+    // A local user can set that domain (`defaults write ai.x.ezer`) to forge an `is_system`-trusted layer
     let forced = unsafe {
         CFPreferencesAppValueIsForced(cf_key.as_concrete_TypeRef(), cf_app.as_concrete_TypeRef())
     };

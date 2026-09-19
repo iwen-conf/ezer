@@ -240,7 +240,7 @@ mod tests {
     /// `AssistantItem` no longer has that field, so serde would silently drop it; the converter pre-extracts it from the raw JSON.
     #[test]
     fn test_assistant_with_reasoning() {
-        let v1 = r#"{"type":"assistant","content":"The answer is 42.","reasoning":{"text":"Let me think..."},"tool_calls":[],"model_id":"grok-3"}"#;
+        let v1 = r#"{"type":"assistant","content":"The answer is 42.","reasoning":{"text":"Let me think..."},"tool_calls":[],"model_id":"test-model-3"}"#;
         let out = convert_line_for_test(v1);
         let v = v0_value(&out);
         assert_eq!(v.get("role").and_then(|x| x.as_str()), Some("assistant"));
@@ -252,7 +252,7 @@ mod tests {
             v.get("reasoning_content").and_then(|x| x.as_str()),
             Some("Let me think...")
         );
-        assert_eq!(v.get("model_id").and_then(|x| x.as_str()), Some("grok-3"));
+        assert_eq!(v.get("model_id").and_then(|x| x.as_str()), Some("test-model-3"));
     }
 
     /// Current shape: reasoning is a sibling line before the assistant.
@@ -269,7 +269,7 @@ mod tests {
         );
         assert_eq!(pending.len(), 1);
 
-        let a_line = r#"{"type":"assistant","content":"The answer is 42.","tool_calls":[],"model_id":"grok-3"}"#;
+        let a_line = r#"{"type":"assistant","content":"The answer is 42.","tool_calls":[],"model_id":"test-model-3"}"#;
         let a = convert_line(a_line, &mut pending)
             .unwrap()
             .expect("assistant line produces a v0 message");

@@ -1,4 +1,4 @@
-use crate::model::{AuthMode, GrokAuth};
+use crate::model::{AuthMode, EzerAuth};
 
 /// What kind of bearer is loaded right now; the dispatch key for `auth()`, `unauthorized_recovery()`, and proactive refresh.
 /// It does not classify sessions; use `is_session_based_method` for that.
@@ -18,7 +18,7 @@ pub enum TokenType {
 
 impl TokenType {
     /// Classify the loaded credential (pure; no manager state).
-    pub fn from_auth(auth: Option<&GrokAuth>) -> Self {
+    pub fn from_auth(auth: Option<&EzerAuth>) -> Self {
         match auth {
             None => Self::None,
             // Oidc without a refresh_token cannot be refreshed, so it counts as LegacySession

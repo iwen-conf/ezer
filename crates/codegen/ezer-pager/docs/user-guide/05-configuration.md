@@ -216,12 +216,12 @@ timeout_secs = 1800                    # seconds to wait when enabled (default: 
 
 [toolset.web_fetch]
 proxy_endpoint = "https://proxy.example.com"   # egress proxy URL
-allowed_domains = ["docs.rs", "x.ai"]          # override the built-in allowlist
+allowed_domains = ["docs.rs", "example.test"]          # override the built-in allowlist
 allow_local = false                            # true = allow localhost / 127.0.0.0/8 / ::1 only
 
 [toolset.web_search]
 # Restrict web_search to these domains (max 5). Mutually exclusive with excluded_domains.
-allowed_domains = ["docs.x.ai", "arxiv.org"]
+allowed_domains = ["docs.rs", "arxiv.org"]
 # ...or block these domains instead (leave allowed_domains unset):
 # excluded_domains = ["reddit.com", "pinterest.com"]
 ```
@@ -598,7 +598,7 @@ process env (destination lock). `managed_config.toml` does not. There is no
 ### Version pinning
 
 Default runtime never auto-installs and never shows prompts fetched from xAI /
-grok.com / x.com (changelog CDN, inbox announcements, marketing tips). The
+ezer.com / x.com (changelog CDN, inbox announcements, marketing tips). The
 one-shot "update available" notice is GitHub (`iwen-conf/ezer` or
 `$EZER_UPSTREAM_REPO`) only.
 
@@ -774,7 +774,7 @@ The key ones. See the README for the complete list.
 
 | Variable | Description |
 |----------|-------------|
-| `XAI_API_KEY` | API key from console.x.ai |
+| `XAI_API_KEY` | API key from your API provider |
 | `EZER_AUTH_PROVIDER_COMMAND` | External auth binary path |
 | `EZER_AUTH_PROVIDER_LABEL` | Display name on TUI login screen |
 | `EZER_AUTH_TOKEN_TTL` | Token lifetime in seconds |

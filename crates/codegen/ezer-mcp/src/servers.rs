@@ -208,7 +208,7 @@ pub struct McpConfigChange {
     pub claim: InitClaimGuard,
 }
 
-/// MCP server name used as the key in client/tool maps (e.g. `"github"`, `"grok_com_linear"`).
+/// MCP server name used as the key in client/tool maps (e.g. `"github"`, `"ezer_com_linear"`).
 pub type McpServerName = String;
 
 /// Unqualified MCP tool name (e.g. `"create_issue"`, without the `server__` prefix).
@@ -343,9 +343,9 @@ impl InitProgress {
     }
 }
 
-/// One in-process SDK MCP server registration: its tool-namespace name and the SDK-side id echoed back in `x.ai/mcp/sdk_call`.
+/// One in-process SDK MCP server registration: its tool-namespace name and the SDK-side id echoed back in `ezer/mcp/sdk_call`.
 /// A named struct (rather than a `(String, String)` tuple) so callers can't transpose the two strings.
-/// `Deserialize`d from a `_meta["x.ai/mcp/servers"]` entry, so the `serverId` wire field name is declared (and serde-checked) exactly once here.
+/// `Deserialize`d from a `_meta["ezer/mcp/servers"]` entry, so the `serverId` wire field name is declared (and serde-checked) exactly once here.
 #[derive(Debug, Clone, serde::Deserialize)]
 pub struct AcpServerEntry {
     pub name: McpServerName,
@@ -353,12 +353,12 @@ pub struct AcpServerEntry {
     pub server_id: String,
 }
 
-/// The session's in-process SDK MCP servers (declared via `_meta["x.ai/mcp/servers"]`), bundled with the shared reverse-RPC invoker.
+/// The session's in-process SDK MCP servers (declared via `_meta["ezer/mcp/servers"]`), bundled with the shared reverse-RPC invoker.
 /// The registry survives `update_configs` clears; config reloads only touch `configs`/`owned_clients`.
 struct AcpMcpRegistry {
     /// Registered servers (`name -> serverId`).
     servers: Vec<AcpServerEntry>,
-    /// Shared reverse-RPC invoker all these servers' tools are called through (emits `x.ai/mcp/sdk_call` over the ACP connection).
+    /// Shared reverse-RPC invoker all these servers' tools are called through (emits `ezer/mcp/sdk_call` over the ACP connection).
     invoker: Arc<dyn crate::acp_transport::AcpReverseInvoker>,
 }
 
@@ -874,7 +874,7 @@ impl McpState {
     }
 
     /// Minimum wait between spawn attempts for an unreachable server.
-    /// Retry triggers (tool batches, `x.ai/mcp/list` refreshes) cannot dogpile the OAuth-discovery and probe timeout budget while a server is down.
+    /// Retry triggers (tool batches, `ezer/mcp/list` refreshes) cannot dogpile the OAuth-discovery and probe timeout budget while a server is down.
     pub const UNREACHABLE_RETRY_COOLDOWN: std::time::Duration = std::time::Duration::from_secs(60);
 
     /// Upper bound on an attempt's exclusivity (see [`UnreachableRetry`]).
@@ -1415,7 +1415,7 @@ pub struct McpTool {
 }
 
 /// Data needed to register an MCP tool via `register_erased()`.
-/// **Model-visible** (default, or `["model", "app"]`): registered in `ToolBridge` so the LLM can invoke them during a conversation; **App-visible only** (`["app"]`): not registered in `ToolBridge`, so the LLM never sees them. These are UI-only actions surfaced to the frontend via `x.ai/mcp/tools_changed` notifications. They are callable via `x.ai/mcp/call`.
+/// **Model-visible** (default, or `["model", "app"]`): registered in `ToolBridge` so the LLM can invoke them during a conversation; **App-visible only** (`["app"]`): not registered in `ToolBridge`, so the LLM never sees them. These are UI-only actions surfaced to the frontend via `ezer/mcp/tools_changed` notifications. They are callable via `ezer/mcp/call`.
 pub struct McpToolRegistration {
     pub name: String,
     pub description: String,
@@ -2800,7 +2800,7 @@ impl Transport<RoleClient> for SafeTokioChildProcess {
 /// Outcome of the `server/discover` probe phase (see `McpClient::probe_modern`).
 enum ProbeVerdict {
     /// Modern negotiation succeeded; this running service IS the connection.
-    Modern(Box<rmcp::service::RunningService<RoleClient, GrokClientHandler>>),
+    Modern(Box<rmcp::service::RunningService<RoleClient, EzerClientHandler>>),
     /// The server was reached but is not a usable modern server; run the
     /// legacy handshake. The probe's error is kept so a subsequent legacy
     /// failure can log both phases together.
@@ -2814,7 +2814,7 @@ enum PendingTransport {
         config: HttpConfig,
         auth_manager: Arc<tokio::sync::Mutex<rmcp::transport::auth::AuthorizationManager>>,
     },
-    /// In-process SDK MCP server reached over the ACP reverse channel (`x.ai/mcp/sdk_call`).
+    /// In-process SDK MCP server reached over the ACP reverse channel (`ezer/mcp/sdk_call`).
     /// Rebuildable from its `server_id` and invoker, so handshake failures restore like Http (unlike the consumed Stdio child).
     Acp {
         server_id: String,
@@ -2823,9 +2823,9 @@ enum PendingTransport {
 }
 
 /// A connected MCP service (rmcp's RunningService wrapped in Arc).
-/// Uses [`GrokClientHandler`] rather than rmcp's default `ClientInfo` handler.
+/// Uses [`EzerClientHandler`] rather than rmcp's default `ClientInfo` handler.
 /// rmcp 2.1 parameterizes `RunningService` over the handler type, and `ClientInfo` is only a `ClientHandler` impl with no notification routing.
-pub type McpService = Arc<RunningService<RoleClient, GrokClientHandler>>;
+pub type McpService = Arc<RunningService<RoleClient, EzerClientHandler>>;
 
 pub(crate) static MCP_SERVERS_CONNECTED: ezer_telemetry::activity::ActivityGauge =
     ezer_telemetry::activity::ActivityGauge::residency(
@@ -2873,8 +2873,8 @@ pub enum LivenessCheck {
 }
 
 /// Events emitted by a live MCP client to its session-side dispatcher.
-/// [`crate::liveness::spawn_transport_liveness`], when an `is_healthy` poll observes the rmcp service loop shut down (`TransportClosed`); [`GrokClientHandler`] when the server pushes a notification we care about. Currently `notifications/tools/list_changed` and `notifications/resources/list_changed`; The session/managed-config layer when a server is added, removed, or successfully (re-)initialized.
-/// Consumers fan these out to ACP `x.ai/mcp/server_status` after 50 ms of tumbling-window coalescing keyed by `(server, kind)`.
+/// [`crate::liveness::spawn_transport_liveness`], when an `is_healthy` poll observes the rmcp service loop shut down (`TransportClosed`); [`EzerClientHandler`] when the server pushes a notification we care about. Currently `notifications/tools/list_changed` and `notifications/resources/list_changed`; The session/managed-config layer when a server is added, removed, or successfully (re-)initialized.
+/// Consumers fan these out to ACP `ezer/mcp/server_status` after 50 ms of tumbling-window coalescing keyed by `(server, kind)`.
 #[derive(Debug, Clone)]
 pub enum McpClientEvent {
     /// The rmcp service loop has terminated; the client is no longer usable for tool calls and must be torn down (or restarted).
@@ -3057,7 +3057,7 @@ pub struct McpClient {
     liveness_handle: Arc<parking_lot::Mutex<Option<crate::liveness::TransportLivenessHandle>>>,
 }
 
-/// Shared sender slot: the same Arc lives on the [`McpClient`] and the [`GrokClientHandler`] it constructs during [`McpClient::try_handshake`].
+/// Shared sender slot: the same Arc lives on the [`McpClient`] and the [`EzerClientHandler`] it constructs during [`McpClient::try_handshake`].
 /// Mutating the slot via [`McpClient::set_event_tx`] is observed by the live rmcp service loop on the next notification.
 /// So there's no "snapshot at handshake" hazard.
 pub type SharedEventTx =
@@ -3445,7 +3445,7 @@ impl McpClient {
     }
 
     /// Build a client for an in-process SDK MCP server reached over the ACP reverse channel.
-    /// `server_id` is the id the agent echoes back in `x.ai/mcp/sdk_call`; the `invoker` performs the reverse request.
+    /// `server_id` is the id the agent echoes back in `ezer/mcp/sdk_call`; the `invoker` performs the reverse request.
     /// Same downstream path as HTTP/stdio.
     pub fn new_acp(
         server_name: String,
@@ -3715,7 +3715,7 @@ impl McpClient {
     async fn try_handshake(
         &self,
         pending: PendingTransport,
-    ) -> Result<rmcp::service::RunningService<RoleClient, GrokClientHandler>, McpError> {
+    ) -> Result<rmcp::service::RunningService<RoleClient, EzerClientHandler>, McpError> {
         match pending {
             // Stdio stays on the legacy `initialize`-only handshake. Probing it is unsafe on two counts: a slow-starting server can answer the abandoned `server/discover` after rmcp has already sent
             // `initialize` on the SAME byte stream, and rmcp rejects that late response as uncorrelated; and unlike the other transports the child process cannot be rebuilt here for a clean fallback.
@@ -3758,7 +3758,7 @@ impl McpClient {
     async fn probe_then_legacy<T, E, A>(
         &self,
         mut make_transport: impl FnMut() -> T,
-    ) -> Result<rmcp::service::RunningService<RoleClient, GrokClientHandler>, McpError>
+    ) -> Result<rmcp::service::RunningService<RoleClient, EzerClientHandler>, McpError>
     where
         T: rmcp::transport::IntoTransport<RoleClient, E, A>,
         E: std::error::Error + Send + Sync + 'static,
@@ -3890,7 +3890,7 @@ impl McpClient {
     async fn serve_legacy<T, E, A>(
         &self,
         transport: T,
-    ) -> Result<rmcp::service::RunningService<RoleClient, GrokClientHandler>, McpError>
+    ) -> Result<rmcp::service::RunningService<RoleClient, EzerClientHandler>, McpError>
     where
         T: rmcp::transport::IntoTransport<RoleClient, E, A>,
         E: std::error::Error + Send + Sync + 'static,
@@ -3914,7 +3914,7 @@ impl McpClient {
         server_id: String,
         invoker: &Arc<dyn crate::acp_transport::AcpReverseInvoker>,
     ) -> crate::acp_transport::AcpBridgeTransport {
-        // Per-reverse-call backstop on `x.ai/mcp/sdk_call`: the larger of the startup and tool timeouts
+        // Per-reverse-call backstop on `ezer/mcp/sdk_call`: the larger of the startup and tool timeouts
         // It never undercuts the real outer bound: the handshake is bounded per phase in `try_handshake`
         let invoke_timeout =
             std::time::Duration::from_secs(self.startup_timeout_sec.max(self.tool_timeout_sec));
@@ -4009,11 +4009,11 @@ impl McpClient {
         .with_protocol_version(rmcp::model::ProtocolVersion::V_2025_11_25)
     }
 
-    /// Build the [`GrokClientHandler`] that drives `client.serve_with_lifecycle(...)`.
+    /// Build the [`EzerClientHandler`] that drives `client.serve_with_lifecycle(...)`.
     ///
     /// The handler holds a **clone of `Arc<Mutex<Option<Sender>>>`**, not a snapshot, so a later [`Self::set_event_tx`] reaches the live handler.
-    fn make_client_handler(&self) -> GrokClientHandler {
-        GrokClientHandler {
+    fn make_client_handler(&self) -> EzerClientHandler {
+        EzerClientHandler {
             info: Self::make_client_info(
                 &self.server_name,
                 !self.is_acp() && self.elicitation_tx.lock().is_some(),
@@ -4478,7 +4478,7 @@ fn sanitize_mcp_log_filename(name: &str) -> String {
 /// Copy an MCP server's stderr to `~/.ezer/logs/mcp/<server>.stderr.log`
 /// in a background task. Truncated per spawn.
 fn drain_mcp_stderr_to_log(server_name: &str, mut stderr: tokio::process::ChildStderr) {
-    let log_dir = ezer_config::grok_home().join("logs").join("mcp");
+    let log_dir = ezer_config::ezer_home().join("logs").join("mcp");
     if let Err(e) = std::fs::create_dir_all(&log_dir) {
         tracing::warn!("MCP stderr drain: failed to create log dir: {e}");
         return;
@@ -4557,8 +4557,8 @@ fn is_figma_mcp(server_name: &str, url: &str) -> bool {
     if server_name.eq_ignore_ascii_case("figma") {
         return true;
     }
-    // Legacy direct managed name (`grok_com_figma`); newer clients use gateway tools (`managed_mcp_gateway_tools_enabled`).
-    const MANAGED_PREFIX: &str = "grok_com_";
+    // Legacy direct managed name (`ezer_com_figma`); newer clients use gateway tools (`managed_mcp_gateway_tools_enabled`).
+    const MANAGED_PREFIX: &str = "ezer_com_";
     if let (Some(prefix), Some(rest)) = (
         server_name.get(..MANAGED_PREFIX.len()),
         server_name.get(MANAGED_PREFIX.len()..),
@@ -4656,7 +4656,7 @@ pub struct McpSpawnCtx<'a> {
     pub(crate) mode: OauthInteractivity,
     pub(crate) scope: Option<&'a ProcessScope>,
     pub(crate) discovery: McpOauthDiscovery,
-    send_grok_agent_id_header: bool,
+    send_ezer_agent_id_header: bool,
 }
 
 impl<'a> McpSpawnCtx<'a> {
@@ -4672,12 +4672,12 @@ impl<'a> McpSpawnCtx<'a> {
             mode,
             scope,
             discovery: McpOauthDiscovery::Disk,
-            send_grok_agent_id_header: false,
+            send_ezer_agent_id_header: false,
         }
     }
 
-    pub fn with_grok_agent_id_header(mut self) -> Self {
-        self.send_grok_agent_id_header = true;
+    pub fn with_ezer_agent_id_header(mut self) -> Self {
+        self.send_ezer_agent_id_header = true;
         self
     }
 
@@ -4688,7 +4688,7 @@ impl<'a> McpSpawnCtx<'a> {
             mode: OauthInteractivity::Interactive,
             scope: None,
             discovery: McpOauthDiscovery::Disk,
-            send_grok_agent_id_header: false,
+            send_ezer_agent_id_header: false,
         }
     }
 
@@ -4807,9 +4807,9 @@ pub async fn start_mcp_server(
 
             let mut headers = expand_session_id_headers(headers, ctx.session_id);
             // Stripped unconditionally: the agent-id header identifies the session to first-party app endpoints, and a caller-supplied config must not be able to impersonate one (see
-            // [`EZER_AGENT_ID_HEADER`]). Re-added only from the spawn context, like `GROK_SESSION_ID` on stdio servers.
+            // [`EZER_AGENT_ID_HEADER`]). Re-added only from the spawn context, like `EZER_SESSION_ID` on stdio servers.
             headers.retain(|(name, _)| !name.eq_ignore_ascii_case(EZER_AGENT_ID_HEADER));
-            let local_agent_endpoint = ctx.send_grok_agent_id_header;
+            let local_agent_endpoint = ctx.send_ezer_agent_id_header;
             if local_agent_endpoint && let Some(session_id) = ctx.session_id {
                 reqwest::header::HeaderValue::try_from(session_id).map_err(|error| {
                     McpError::ClientError(format!("invalid {EZER_AGENT_ID_HEADER} value: {error}"))
@@ -4989,7 +4989,7 @@ impl McpClient {
 /// If the receiver has been dropped (subagent teardown, session shutdown, or never wired; see [`McpClient::notify_tx`]), the send fails silently.
 /// rmcp must not see an error from a notification handler or the service loop tears down.
 #[derive(Debug)]
-pub struct GrokClientHandler {
+pub struct EzerClientHandler {
     /// Static `ClientInfo` returned by [`Self::get_info`]; built once at handshake time and stored to avoid re-allocating per call.
     info: ClientInfo,
     /// MCP server name this handler is bound to.
@@ -5002,7 +5002,7 @@ pub struct GrokClientHandler {
     elicitation_tx: crate::elicitation::SharedElicitationTx,
 }
 
-impl GrokClientHandler {
+impl EzerClientHandler {
     /// Best-effort event emit.
     /// Splitting this out keeps the trait methods short.
     fn emit(&self, ev: McpClientEvent) {
@@ -5013,7 +5013,7 @@ impl GrokClientHandler {
     }
 }
 
-impl ClientHandler for GrokClientHandler {
+impl ClientHandler for EzerClientHandler {
     // NOTE: `async fn` here is sugar for the trait's `-> impl Future<Output = ()> + Send + '_`
     // We INTENTIONALLY do not use `#[async_trait]` rmcp 2.1's `ClientHandler` declares its notification methods as return-position `impl Future` async_trait would produce a different (incompatible) signature.
     async fn on_tool_list_changed(&self, _context: NotificationContext<RoleClient>) {

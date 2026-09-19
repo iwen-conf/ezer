@@ -54,7 +54,7 @@ pub struct AnnouncementCta {
     pub caption: Option<String>,
 }
 
-/// Payload for `x.ai/announcements/update` ACP notification.
+/// Payload for `ezer/announcements/update` ACP notification.
 // Name predates the method rename to `.../update`; renaming would churn the pager consumer.
 #[derive(Debug, Clone, Deserialize)]
 #[cfg_attr(feature = "ts", derive(ts_rs::TS))]
@@ -141,7 +141,7 @@ pub async fn write_hidden_announcement_ids(ids: &BTreeSet<String>) {
 }
 
 fn announcements_state_path() -> PathBuf {
-    ezer_tools::util::grok_home::grok_home().join("announcements.json")
+    ezer_tools::util::ezer_home::ezer_home().join("announcements.json")
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -297,12 +297,12 @@ mod tests {
     #[test]
     fn cta_parses_nested_partial_and_absent() {
         let full: RemoteAnnouncement = serde_json::from_str(
-            r#"{"id":"p","severity":"promo","cta":{"label":"Get SuperGrok","url":"https://x.ai/ezer","caption":"or use Ctrl+O"}}"#,
+            r#"{"id":"p","severity":"promo","cta":{"label":"Get MaxTier","url":"https://x.ai/ezer","caption":"or use Ctrl+O"}}"#,
         )
         .unwrap();
         let cta = full.cta.as_ref().expect("cta present");
-        assert_eq!(cta.label.as_deref(), Some("Get SuperGrok"));
-        assert_eq!(cta.url.as_deref(), Some("https://x.ai/grok"));
+        assert_eq!(cta.label.as_deref(), Some("Get MaxTier"));
+        assert_eq!(cta.url.as_deref(), Some("https://x.ai/ezer"));
         assert_eq!(cta.caption.as_deref(), Some("or use Ctrl+O"));
 
         let partial: RemoteAnnouncement =

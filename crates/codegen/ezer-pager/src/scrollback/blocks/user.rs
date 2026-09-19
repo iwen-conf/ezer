@@ -1181,7 +1181,7 @@ mod tests {
     /// Pure band logic (no global `terminal_native_lock`; that races other tests that call `Theme::current()` without the theme test mutex).
     #[test]
     fn prompt_band_color_native_vs_rgb() {
-        let theme = Theme::groknight();
+        let theme = Theme::ezernight();
         assert_eq!(
             UserPromptBlock::prompt_band_color_for(&theme, false, true),
             None

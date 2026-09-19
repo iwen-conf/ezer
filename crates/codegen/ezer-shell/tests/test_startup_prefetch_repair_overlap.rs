@@ -26,7 +26,7 @@ fn gate_exit_warm_starts_the_one_startup_load_after_the_repair_settles() {
             std::fs::read(home.path().join("auth.json")).expect("read seeded auth.json");
 
         // A team principal with no serving managed policy: repair is pending.
-        let scope = ezer_shell::auth::GrokComConfig::default().auth_scope();
+        let scope = ezer_shell::auth::EzerComConfig::default().auth_scope();
         let team_auth = serde_json::json!({
             scope: {
                 "key": "team-session-token",

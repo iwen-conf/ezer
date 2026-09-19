@@ -154,7 +154,7 @@ pub fn create_snapshot_with_symlink(btrfs_info: &BtrfsInfo, dest: &Path) -> Resu
     create_snapshot(snapshot_source, &snapshot_path)?;
 
     // Nested subvolumes are excluded from the snapshot, leaving an empty
-    // `.grok-snapshots/` placeholder. Remove it so the worktree stays clean.
+    // `.ezer-snapshots/` placeholder. Remove it so the worktree stays clean.
     let stale_snapshots_dir = snapshot_path.join(".ezer-snapshots");
     if stale_snapshots_dir.exists()
         && let Err(e) = std::fs::remove_dir(&stale_snapshots_dir)
@@ -332,7 +332,7 @@ fn is_safe_snapshot_delete_target_in(snapshot_path: &Path, btrfs_mounts: &[PathB
     let Ok(canonical_parent) = dunce::canonicalize(parent) else {
         return false;
     };
-    // Parent must be a snapshot-storage dir (`worktrees` / `.grok-snapshots`)...
+    // Parent must be a snapshot-storage dir (`worktrees` / `.ezer-snapshots`)...
     let named_ok = canonical_parent
         .file_name()
         .and_then(|n| n.to_str())
@@ -575,7 +575,7 @@ mod tests {
 
     #[test]
     fn test_snapshot_dest_path_subvol_mount() {
-        // btrfs mount IS the subvolume root → snapshots under .grok-snapshots/.
+        // btrfs mount IS the subvolume root → snapshots under .ezer-snapshots/.
         let mount = Path::new("/workspace/repo");
         let dest = Path::new("/home/user/.ezer/worktrees/repo/session/wt-xyz");
         let got = snapshot_dest_path(mount, mount, dest);

@@ -58,13 +58,13 @@ pub struct AuthMethodsBuildInputs<'a> {
     /// True if a cached session token is available (either present at startup or recovered via silent refresh).
     pub has_cached_token: bool,
     /// True if enterprise OIDC is configured.
-    /// Mutually exclusive with the default `grok.com` method.
+    /// Mutually exclusive with the default `ezer.com` method.
     pub has_enterprise_oidc: bool,
     /// Required when `has_enterprise_oidc` is true; ignored otherwise.
     pub enterprise_oidc_issuer: Option<&'a str>,
-    /// Optional display label for the login method (`grok.com` or `oidc`).
+    /// Optional display label for the login method (`ezer.com` or `oidc`).
     pub login_label: Option<&'a str>,
-    /// True if `grok_com_config.auth_provider_command` is configured (sets `meta.external_provider = true` on the `grok.com` method).
+    /// True if `ezer_com_config.auth_provider_command` is configured (sets `meta.external_provider = true` on the `ezer.com` method).
     pub has_auth_provider_command: bool,
     /// Config pin (`[auth] preferred_method`).
     /// `None` keeps multi-method fallthrough; `Some` is fail-closed (only that method family).
@@ -83,7 +83,7 @@ pub struct BuiltAuthMethods {
 }
 
 /// REGRESSION GUARD: when unpinned and `has_external_api_key` is true, the **first** entry MUST be `xai.api_key`.
-/// Unpinned ordering (when each method is enabled): `xai.api_key` (if `has_external_api_key`) `cached_token` (if `has_cached_token`) exactly one of: `oidc` (if `has_enterprise_oidc`) `grok.com` (otherwise)
+/// Unpinned ordering (when each method is enabled): `xai.api_key` (if `has_external_api_key`) `cached_token` (if `has_cached_token`) exactly one of: `oidc` (if `has_enterprise_oidc`) `ezer.com` (otherwise)
 /// Unpinned `default_auth_method_id`: `cached_token` if `has_cached_token` `xai.api_key` else if `has_external_api_key` `None` otherwise Pinned (`preferred_method`): `ApiKey`: only `xai.api_key` if available; else an empty list and `None` (fail). `Oidc`: `cached_token` (if any) then interactive login; never `xai.api_key`.
 pub fn build_auth_methods(inputs: AuthMethodsBuildInputs<'_>) -> BuiltAuthMethods {
     let AuthMethodsBuildInputs {
@@ -210,7 +210,7 @@ fn build_unpinned(
     }
 }
 
-/// Opt-in xAI / grok.com browser login. Off by default so ezer never blocks on SpaceXAI OAuth.
+/// Opt-in xAI / ezer.com browser login. Off by default so ezer never blocks on SpaceXAI OAuth.
 fn xai_login_enabled() -> bool {
     ezer_env::xai_login_enabled()
 }
@@ -224,16 +224,16 @@ fn push_interactive_login(
 ) {
     if has_enterprise_oidc {
         // Caller invariant: `enterprise_oidc_issuer` MUST be `Some(...)` when `has_enterprise_oidc` is true
-        // Production callers derive both from the same `cfg.grok_com_config.oidc` Option
+        // Production callers derive both from the same `cfg.ezer_com_config.oidc` Option
         // The inconsistent `(true, None)` combination is a programmer error, so panic loudly
         let issuer = enterprise_oidc_issuer
             .expect("enterprise_oidc_issuer is required when has_enterprise_oidc is true");
         methods.push(oidc_auth_method(issuer, login_label));
         return;
     }
-    // grok.com OAuth is optional and never the default first-run path.
+    // ezer.com OAuth is optional and never the default first-run path.
     if has_auth_provider_command || xai_login_enabled() {
-        methods.push(grok_com_auth_method(login_label, has_auth_provider_command));
+        methods.push(ezer_com_auth_method(login_label, has_auth_provider_command));
     }
 }
 
@@ -242,7 +242,7 @@ fn push_interactive_login(
 pub enum AuthMethodKind {
     XaiApiKey,
     CachedToken,
-    GrokCom,
+    EzerCom,
     Oidc,
     Unknown,
 }
@@ -252,7 +252,7 @@ impl AuthMethodKind {
         match id.0.as_ref() {
             XAI_API_KEY_METHOD_ID => Self::XaiApiKey,
             CACHED_TOKEN_AUTH_METHOD_ID => Self::CachedToken,
-            EZER_COM_METHOD_ID => Self::GrokCom,
+            EZER_COM_METHOD_ID => Self::EzerCom,
             OIDC_METHOD_ID => Self::Oidc,
             _ => Self::Unknown,
         }
@@ -263,18 +263,18 @@ impl AuthMethodKind {
         matches!(self, Self::XaiApiKey)
     }
 
-    /// `true` for session-based methods (cached_token, grok.com, oidc).
+    /// `true` for session-based methods (cached_token, ezer.com, oidc).
     pub(crate) fn is_session_based(self) -> bool {
-        matches!(self, Self::CachedToken | Self::GrokCom | Self::Oidc)
+        matches!(self, Self::CachedToken | Self::EzerCom | Self::Oidc)
     }
 
     /// Requires user interaction (browser, OIDC redirect, or external auth command).
     pub fn needs_interactive_login(self) -> bool {
-        matches!(self, Self::GrokCom | Self::Oidc)
+        matches!(self, Self::EzerCom | Self::Oidc)
     }
 }
 
-/// `true` for session-based ACP methods (cached_token, grok.com, oidc).
+/// `true` for session-based ACP methods (cached_token, ezer.com, oidc).
 pub(crate) fn is_session_based_method(method_id: &acp::AuthMethodId) -> bool {
     AuthMethodKind::from_id(method_id).is_session_based()
 }
@@ -313,7 +313,7 @@ pub const AUTH_ERROR_API_KEY: &str =
     "Authentication failed. Set EZER_API_KEY / XAI_API_KEY, or add api_key to ~/.ezer/config.toml.";
 
 /// Next ACP method id when `cached_token` cannot proceed (missing / expired / legacy WebLogin), or `None` when fallthrough is forbidden.
-/// Unpinned: prefer non-interactive `xai.api_key` when advertiseable, else interactive `grok.com`. Pinned `oidc`: **no** fallthrough to api_key; return `None` so the caller fails auth.
+/// Unpinned: prefer non-interactive `xai.api_key` when advertiseable, else interactive `ezer.com`. Pinned `oidc`: **no** fallthrough to api_key; return `None` so the caller fails auth.
 /// Pinned `api_key` should not reach this path (cached_token is not advertised).
 pub(crate) fn method_id_after_cached_token_unavailable(
     has_external_api_key: bool,
@@ -360,10 +360,10 @@ pub(crate) fn cached_token_auth_method() -> acp::AuthMethod {
     )
 }
 
-pub const EZER_COM_METHOD_ID: &str = "grok.com";
+pub const EZER_COM_METHOD_ID: &str = "example.test";
 
-/// xAI OAuth2/OIDC auth. Method id `"grok.com"` kept for ACP wire compatibility.
-pub(crate) fn grok_com_auth_method(
+/// xAI OAuth2/OIDC auth. Method id `"example.test"` kept for ACP wire compatibility.
+pub(crate) fn ezer_com_auth_method(
     label: Option<&str>,
     has_auth_provider_command: bool,
 ) -> acp::AuthMethod {
@@ -411,9 +411,9 @@ mod tests {
         );
     }
 
-    /// With no advertiseable API-key credentials, fall to interactive `grok.com`.
+    /// With no advertiseable API-key credentials, fall to interactive `ezer.com`.
     #[test]
-    fn after_cached_token_unavailable_falls_to_grok_com_without_api_key() {
+    fn after_cached_token_unavailable_falls_to_ezer_com_without_api_key() {
         assert_eq!(
             method_id_after_cached_token_unavailable(false, None),
             Some(EZER_COM_METHOD_ID),
@@ -567,7 +567,7 @@ mod tests {
         );
     }
 
-    /// Session-only user (no API key anywhere): cached_token first, then `grok.com`.
+    /// Session-only user (no API key anywhere): cached_token first, then `ezer.com`.
     /// `auth_methods.first()` does NOT need interactive login, so this user also skips the login screen at startup.
     #[test]
     fn session_only_user_first_method_is_cached_token() {
@@ -591,7 +591,7 @@ mod tests {
         );
     }
 
-    /// Brand-new user (no API key, no cached token): grok.com OAuth is not advertised.
+    /// Brand-new user (no API key, no cached token): ezer.com OAuth is not advertised.
     /// ezer launches without a login wall; configure BYOK in `~/.ezer/config.toml`.
     #[test]
     fn fresh_user_does_not_require_xai_login() {
@@ -607,10 +607,10 @@ mod tests {
         );
     }
 
-    /// Enterprise OIDC replaces `grok.com` (mutually exclusive).
+    /// Enterprise OIDC replaces `ezer.com` (mutually exclusive).
     /// xai.api_key, when present, still leads.
     #[test]
-    fn enterprise_oidc_replaces_grok_com_but_xai_api_key_still_first() {
+    fn enterprise_oidc_replaces_ezer_com_but_xai_api_key_still_first() {
         let inputs = AuthMethodsBuildInputs {
             has_external_api_key: true,
             has_cached_token: false,
@@ -632,12 +632,12 @@ mod tests {
             !built
                 .methods
                 .iter()
-                .any(|m| AuthMethodKind::from_id(m.id()) == AuthMethodKind::GrokCom),
-            "grok.com and oidc are mutually exclusive",
+                .any(|m| AuthMethodKind::from_id(m.id()) == AuthMethodKind::EzerCom),
+            "ezer.com and oidc are mutually exclusive",
         );
     }
 
-    /// `has_auth_provider_command` reaches the `grok.com` method as `meta.external_provider = true`.
+    /// `has_auth_provider_command` reaches the `ezer.com` method as `meta.external_provider = true`.
     /// Pinned here so the pager's `AuthStartMode::Command` path keeps working.
     #[test]
     fn auth_provider_command_sets_external_provider_meta() {
@@ -648,13 +648,13 @@ mod tests {
         };
         let built = build_auth_methods(inputs);
 
-        let grok = built
+        let ezer = built
             .methods
             .iter()
-            .find(|m| AuthMethodKind::from_id(m.id()) == AuthMethodKind::GrokCom)
-            .expect("grok.com must be advertised");
-        assert_eq!(grok.name(), "Acme Corp");
-        let meta = grok.meta().expect("meta should be set");
+            .find(|m| AuthMethodKind::from_id(m.id()) == AuthMethodKind::EzerCom)
+            .expect("ezer.com must be advertised");
+        assert_eq!(ezer.name(), "Acme Corp");
+        let meta = ezer.meta().expect("meta should be set");
         assert_eq!(
             meta.get("external_provider").and_then(|v| v.as_bool()),
             Some(true),
@@ -719,7 +719,7 @@ mod tests {
             assert!(has_external_api_key);
             let built = build_auth_methods(AuthMethodsBuildInputs {
                 has_external_api_key,
-                // Realistic enterprise user: no cached session token, default grok.com login (no enterprise OIDC)
+                // Realistic enterprise user: no cached session token, default ezer.com login (no enterprise OIDC)
                 has_cached_token: false,
                 ..default_inputs()
             });
@@ -787,7 +787,7 @@ mod tests {
         );
         assert_eq!(
             first_kind(&built.methods),
-            Some(AuthMethodKind::GrokCom),
+            Some(AuthMethodKind::EzerCom),
             "with api-key auth disabled and no cached token, the login method \
              must lead so the pager requires interactive login",
         );
@@ -813,7 +813,7 @@ mod tests {
             has_external_api_key: false,
             ..default_inputs()
         });
-        assert_eq!(first_kind(&built.methods), Some(AuthMethodKind::GrokCom));
+        assert_eq!(first_kind(&built.methods), Some(AuthMethodKind::EzerCom));
     }
 
     #[test]
@@ -880,7 +880,7 @@ mod tests {
         assert_eq!(read_xai_api_key_env().unwrap(), "new-key");
     }
 
-    // -- ezer login --legacy regression coverage ------------------------ `ezer login --legacy` produces a GrokAuth with `auth_mode: WebLogin`, `oidc_issuer: None`, and no `expires_at` (30-day hardcoded TTL)
+    // -- ezer login --legacy regression coverage ------------------------ `ezer login --legacy` produces a EzerAuth with `auth_mode: WebLogin`, `oidc_issuer: None`, and no `expires_at` (30-day hardcoded TTL)
     // When this token is in the `EZER_AUTH` env var (or the legacy scope fallback in auth.json), `AuthManager::new` returns it from `current()`
     // That feeds `has_cached_token = true` into `build_auth_methods`, which puts `cached_token` first `startup_auth_metadata()` then returns `needs_login = false`: legacy users get frictionless auth, no login screen This test pins the env-var path (highest priority in AuthManager) end-to-end
 
@@ -889,16 +889,16 @@ mod tests {
     /// The pager therefore skips the login screen (frictionless legacy auth).
     #[test]
     #[serial]
-    fn grok_login_legacy_token_does_not_require_login() {
-        use ezer_login::{AuthManager, AuthMode, GrokAuth, GrokComConfig};
+    fn ezer_login_legacy_token_does_not_require_login() {
+        use ezer_login::{AuthManager, AuthMode, EzerAuth, EzerComConfig};
 
         // Ensure clean slate for "no other auth available".
-        let _g1 = EnvGuard::unset("GROK_AUTH_PATH");
+        let _g1 = EnvGuard::unset("EZER_AUTH_PATH");
         let _g2 = EnvGuard::unset(XAI_API_KEY_ENV_VAR);
 
         // Construct a legacy-style token exactly as `ezer login --legacy` produces it
         // That means WebLogin mode, no OIDC fields, no refresh_token, no expires_at (is_expired falls back to the 30-day age check)
-        let legacy_token = GrokAuth {
+        let legacy_token = EzerAuth {
             key: "legacy-relay-token".into(),
             auth_mode: AuthMode::WebLogin,
             create_time: chrono::Utc::now(),
@@ -908,22 +908,22 @@ mod tests {
             oidc_client_id: None,
             refresh_token: None,
             expires_at: None,
-            ..GrokAuth::test_default()
+            ..EzerAuth::test_default()
         };
 
         // Provide it via the EZER_AUTH env var (highest priority code path in AuthManager::new)
         // This is the "legacy auth token exists in the env" case with no other auth
         let legacy_json = serde_json::to_string(&legacy_token).expect("serialize legacy token");
-        let _g = EnvGuard::set("GROK_AUTH", &legacy_json);
+        let _g = EnvGuard::set("EZER_AUTH", &legacy_json);
 
         // AuthManager picks it up from the env var directly (no file needed).
         let dir = tempfile::tempdir().unwrap();
-        let cfg = GrokComConfig::default();
+        let cfg = EzerComConfig::default();
         let mgr = AuthManager::new(dir.path(), cfg);
         let current = mgr.current();
         assert!(
             current.is_some(),
-            "legacy token in GROK_AUTH env MUST be loaded directly -- if this fails, \
+            "legacy token in EZER_AUTH env MUST be loaded directly -- if this fails, \
              users with legacy auth in env would be sent to the login screen",
         );
         assert_eq!(
@@ -972,14 +972,14 @@ mod tests {
     #[test]
     #[serial]
     fn no_legacy_token_means_no_cached_token_advertised() {
-        use ezer_login::{AuthManager, GrokComConfig};
+        use ezer_login::{AuthManager, EzerComConfig};
 
-        let _g1 = EnvGuard::unset("GROK_AUTH");
-        let _g2 = EnvGuard::unset("GROK_AUTH_PATH");
+        let _g1 = EnvGuard::unset("EZER_AUTH");
+        let _g2 = EnvGuard::unset("EZER_AUTH_PATH");
 
         let dir = tempfile::tempdir().unwrap();
         // No auth.json in the tempdir.
-        let cfg = GrokComConfig::default();
+        let cfg = EzerComConfig::default();
         let mgr = AuthManager::new(dir.path(), cfg);
         assert!(mgr.current().is_none());
 
@@ -990,8 +990,8 @@ mod tests {
         });
         assert_eq!(
             first_kind(&built.methods),
-            Some(AuthMethodKind::GrokCom),
-            "no cached token AND no api key: pager must show login (grok.com first)",
+            Some(AuthMethodKind::EzerCom),
+            "no cached token AND no api key: pager must show login (ezer.com first)",
         );
     }
 

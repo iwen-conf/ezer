@@ -135,7 +135,7 @@ fn toggle_vim_mode_propagates_to_open_subagent_views() {
 /// `/vim-mode` must toggle vim from the DASHBOARD too, not just an agent view.
 /// It used to early-return unless an agent was active, a silent no-op that left the overview's j/k off.
 /// Turning vim ON also focuses the overview so j/k navigate immediately; turning it OFF returns focus to the input.
-#[serial_test::serial(GROK_AGENT_DASHBOARD)]
+#[serial_test::serial(EZER_AGENT_DASHBOARD)]
 #[test]
 fn toggle_vim_mode_works_on_dashboard_and_focuses_overview() {
     crate::appearance::cache::set_vim_mode(false);
@@ -270,7 +270,7 @@ fn set_default_model_allowed_when_agent_chat_kind() {
 fn slash_model_valid_dispatches_set_default_model_with_switch_and_persist() {
     let mut app = test_app_with_agent();
     let id = AgentId(0);
-    let model_id = acp::ModelId::new(std::sync::Arc::from("grok-4.5"));
+    let model_id = acp::ModelId::new(std::sync::Arc::from("test-model-4.5"));
     app.agents
         .get_mut(&id)
         .unwrap()
@@ -1353,7 +1353,7 @@ fn set_default_model_resolves_known_name() {
     use agent_client_protocol as acp;
     use std::sync::Arc;
     let mut app = test_app_with_agent();
-    let id = acp::ModelId::new(Arc::from("grok-4.5"));
+    let id = acp::ModelId::new(Arc::from("test-model-4.5"));
     let info = acp::ModelInfo::new(id.clone(), "ezer 4.5".to_string());
     let agent_id = AgentId(0);
     app.agents
@@ -1368,7 +1368,7 @@ fn set_default_model_resolves_known_name() {
     assert!(matches!(effects.first(), Some(Effect::PersistSetting {
             key: "default_model",
             value: crate::settings::SettingValue::String(s),
-            .. }) if s == "grok-4.5"));
+            .. }) if s == "test-model-4.5"));
     assert!(
         matches!(effects.get(1), Some(Effect::SwitchModel { model_id: mid, .. }) if mid == &id)
     );
@@ -3087,7 +3087,7 @@ fn set_theme_emits_persist_setting_with_correct_payload() {
     with_theme_test_env(|| {
         let mut app = test_app_with_agent();
         assert_eq!(app.current_ui.theme, None);
-        crate::theme::cache::set(crate::theme::ThemeKind::GrokNight);
+        crate::theme::cache::set(crate::theme::ThemeKind::EzerNight);
         let effects = dispatch(Action::SetTheme("ezerday".into()), &mut app);
         assert_eq!(effects.len(), 1);
         match effects.first() {
@@ -3206,7 +3206,7 @@ fn preview_auto_light_theme_emits_no_persist_and_no_current_ui_mutation() {
 }
 /// Auto-theme commit applies the live theme **only** when `theme="auto"` AND the system is in the matching mode.
 /// Scenario: `theme="ezernight"` (concrete) while the system is Dark, and the user commits `auto_dark_theme="ezerday"`.
-/// The setting is dormant (parent theme is concrete, not auto), so the live display must stay on GrokNight.
+/// The setting is dormant (parent theme is concrete, not auto), so the live display must stay on EzerNight.
 #[test]
 fn set_auto_dark_theme_does_not_apply_when_theme_is_not_auto() {
     with_theme_test_env(|| {
@@ -3217,20 +3217,20 @@ fn set_auto_dark_theme_does_not_apply_when_theme_is_not_auto() {
         let _ = dispatch(Action::SetTheme("ezernight".into()), &mut app);
         assert_eq!(
             crate::theme::cache::current_kind(),
-            crate::theme::ThemeKind::GrokNight,
+            crate::theme::ThemeKind::EzerNight,
         );
         let _ = dispatch(Action::SetAutoDarkTheme("ezerday".into()), &mut app);
         assert_eq!(
             crate::theme::cache::current_kind(),
-            crate::theme::ThemeKind::GrokNight,
+            crate::theme::ThemeKind::EzerNight,
             "auto_dark_theme commit must NOT change live display when theme is not auto",
         );
         assert_eq!(app.current_ui.auto_dark_theme.as_deref(), Some("ezerday"));
     });
 }
 /// Auto-theme commit DOES apply the live theme when both (a) the parent theme is auto AND (b) the system matches.
-/// Uses `GrokDay` (non-truecolor-requiring) for the dark-mode fixture: the test environment may not report truecolor support.
-/// `Theme::apply_kind` clamps truecolor-only themes (TokyoNight, RosePineMoon) to GrokNight, so a non-truecolor theme avoids the clamp.
+/// Uses `EzerDay` (non-truecolor-requiring) for the dark-mode fixture: the test environment may not report truecolor support.
+/// `Theme::apply_kind` clamps truecolor-only themes (TokyoNight, RosePineMoon) to EzerNight, so a non-truecolor theme avoids the clamp.
 #[test]
 fn set_auto_dark_theme_applies_when_theme_is_auto_and_system_is_dark() {
     with_theme_test_env(|| {
@@ -3242,19 +3242,19 @@ fn set_auto_dark_theme_applies_when_theme_is_auto_and_system_is_dark() {
         assert!(crate::theme::cache::is_auto_mode());
         assert_eq!(
             crate::theme::cache::current_kind(),
-            crate::theme::ThemeKind::GrokNight,
+            crate::theme::ThemeKind::EzerNight,
         );
         let _ = dispatch(Action::SetAutoDarkTheme("ezerday".into()), &mut app);
         assert_eq!(
             crate::theme::cache::current_kind(),
-            crate::theme::ThemeKind::GrokDay,
+            crate::theme::ThemeKind::EzerDay,
             "auto_dark_theme commit must update live display when theme=auto + system=Dark",
         );
     });
 }
 /// Auto-theme commit does NOT apply when system is in the non-matching mode (auto_dark_theme while the system is Light).
 /// Uses `ezernight` for the auto_dark_theme value to avoid `clamp_to_terminal` ambiguity.
-/// We want a concrete kind that's clearly different from GrokDay, the active resolved theme.
+/// We want a concrete kind that's clearly different from EzerDay, the active resolved theme.
 #[test]
 fn set_auto_dark_theme_does_not_apply_when_system_is_light() {
     with_theme_test_env(|| {
@@ -3265,12 +3265,12 @@ fn set_auto_dark_theme_does_not_apply_when_system_is_light() {
         let _ = dispatch(Action::SetTheme("auto".into()), &mut app);
         assert_eq!(
             crate::theme::cache::current_kind(),
-            crate::theme::ThemeKind::GrokDay,
+            crate::theme::ThemeKind::EzerDay,
         );
         let _ = dispatch(Action::SetAutoDarkTheme("ezernight".into()), &mut app);
         assert_eq!(
             crate::theme::cache::current_kind(),
-            crate::theme::ThemeKind::GrokDay,
+            crate::theme::ThemeKind::EzerDay,
             "auto_dark_theme commit must NOT change live display when system=Light",
         );
         assert_eq!(app.current_ui.auto_dark_theme.as_deref(), Some("ezernight"),);
@@ -3288,12 +3288,12 @@ fn set_auto_light_theme_applies_when_theme_is_auto_and_system_is_light() {
         let _ = dispatch(Action::SetTheme("auto".into()), &mut app);
         assert_eq!(
             crate::theme::cache::current_kind(),
-            crate::theme::ThemeKind::GrokDay,
+            crate::theme::ThemeKind::EzerDay,
         );
         let _ = dispatch(Action::SetAutoLightTheme("ezernight".into()), &mut app);
         assert_eq!(
             crate::theme::cache::current_kind(),
-            crate::theme::ThemeKind::GrokNight,
+            crate::theme::ThemeKind::EzerNight,
             "auto_light_theme must update display when theme=auto + system=Light",
         );
     });
@@ -3409,7 +3409,7 @@ fn rollback_theme_reverts_current_ui_and_cache() {
         assert_eq!(app.current_ui.theme.as_deref(), Some("ezerday"));
         assert_eq!(
             crate::theme::cache::current_kind(),
-            crate::theme::ThemeKind::GrokDay,
+            crate::theme::ThemeKind::EzerDay,
         );
         let _ = dispatch(
             Action::TaskComplete(TaskResult::SettingPersistFailed {
@@ -3426,7 +3426,7 @@ fn rollback_theme_reverts_current_ui_and_cache() {
         );
         assert_eq!(
             crate::theme::cache::current_kind(),
-            crate::theme::ThemeKind::GrokNight,
+            crate::theme::ThemeKind::EzerNight,
             "rollback must update the live theme cache too",
         );
     });

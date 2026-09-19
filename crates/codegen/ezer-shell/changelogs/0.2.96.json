@@ -11,7 +11,7 @@
   },
   {
     "category": "features",
-    "description": "**x.ai/pr/status** now reports whether an open PR is in the merge queue.",
+    "description": "**ezer/pr/status** now reports whether an open PR is in the merge queue.",
     "breaking_change": false
   },
   {
@@ -121,7 +121,7 @@
   },
   {
     "category": "features",
-    "description": "**MCP tool output truncation** can now be set per-repo in `.grok/config.toml`.",
+    "description": "**MCP tool output truncation** can now be set per-repo in `.ezer/config.toml`.",
     "breaking_change": false
   },
   {

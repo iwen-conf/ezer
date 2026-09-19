@@ -335,9 +335,9 @@ fn build_extraction_request(
         max_output_tokens: Some(EXTRACTION_MAX_OUTPUT_TOKENS),
         reasoning_effort,
         json_schema: Some(extraction_schema()),
-        x_grok_conv_id: Some(format!("memory-capture-{}", uuid::Uuid::new_v4())),
-        x_grok_req_id: Some(format!("xai-memory-capture-{}", uuid::Uuid::new_v4())),
-        x_grok_session_id: Some(session_id.to_owned()),
+        x_ezer_conv_id: Some(format!("memory-capture-{}", uuid::Uuid::new_v4())),
+        x_ezer_req_id: Some(format!("xai-memory-capture-{}", uuid::Uuid::new_v4())),
+        x_ezer_session_id: Some(session_id.to_owned()),
         ..Default::default()
     }
 }

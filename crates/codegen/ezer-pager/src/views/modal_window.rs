@@ -514,7 +514,7 @@ fn render_tab_bar(
             let label_w = display.width();
             // Inactive tab labels use `theme.gray` (secondary-text tier), not `theme.gray_dim`
             // At ANSI16 `gray_dim` collapses to the softer slot (silver on White), leaving text at ~1.2:1 contrast
-            // That is fine for the modal frame's one-cell border line but unreadable as text glyphs on grokday
+            // That is fine for the modal frame's one-cell border line but unreadable as text glyphs on ezerday
             let style = if is_active {
                 if state.tabs_focused && !is_embedded {
                     Style::default()

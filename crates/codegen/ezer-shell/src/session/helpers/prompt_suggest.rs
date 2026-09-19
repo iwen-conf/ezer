@@ -382,10 +382,10 @@ mod tests {
     #[test]
     fn unset_effort_is_low_only_on_a_reasoning_model() {
         assert_eq!(
-            suggest_request_effort(None, "grok-4.6", true),
+            suggest_request_effort(None, "test-model-4.6", true),
             Some(ReasoningEffort::Low)
         );
-        assert_eq!(suggest_request_effort(None, "grok-4.6", false), None);
+        assert_eq!(suggest_request_effort(None, "test-model-4.6", false), None);
         assert_eq!(
             suggest_request_effort(
                 None,
@@ -395,11 +395,11 @@ mod tests {
             None
         );
         assert_eq!(
-            suggest_request_effort(Some(ReasoningEffort::High), "grok-4.6", true),
+            suggest_request_effort(Some(ReasoningEffort::High), "test-model-4.6", true),
             Some(ReasoningEffort::High)
         );
         assert_eq!(
-            suggest_request_effort(Some(ReasoningEffort::None), "grok-4.6", true),
+            suggest_request_effort(Some(ReasoningEffort::None), "test-model-4.6", true),
             Some(ReasoningEffort::None)
         );
     }

@@ -4,7 +4,7 @@ use crate::permission::types::EditPolicy;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use ezer_paths::AbsPathBuf;
-use ezer_tools::util::grok_home::grok_home;
+use ezer_tools::util::ezer_home::ezer_home;
 
 const VALIDATED_MCP_SERVER_GRANTS_VERSION: i64 = 1;
 
@@ -22,10 +22,10 @@ pub struct PermissionState {
     /// Domains the user has approved for `web_fetch`.
     /// Persisted per project like every other grant in this store (not session-scoped).
     pub allowed_web_fetch_domains: HashSet<String>,
-    /// Exact MCP tool names (e.g. `"grok_com_notion__notion-fetch"`) the user has granted "always allow" for.
+    /// Exact MCP tool names (e.g. `"ezer_com_notion__notion-fetch"`) the user has granted "always allow" for.
     /// Lookup is exact.
     pub allowed_mcp_tools: HashSet<String>,
-    /// Server components of valid qualified MCP IDs (e.g. `"grok_com_notion"`) for which the user has granted "always allow" to every tool.
+    /// Server components of valid qualified MCP IDs (e.g. `"ezer_com_notion"`) for which the user has granted "always allow" to every tool.
     /// Lookup validates and parses the complete qualified ID before matching.
     pub allowed_mcp_servers: HashSet<String>,
     /// Exact MCP tool names the user has denied with "never allow".
@@ -355,7 +355,7 @@ async fn persist_state_to_dir(
     let path = state_file_path(dir, client_identifier);
     let dir = dir.to_path_buf();
     // Owner-only dir creation runs inside the writer's spawn_blocking
-    // GROK_HOME may sit on a slow filesystem, so no blocking fs work on the async worker
+    // EZER_HOME may sit on a slow filesystem, so no blocking fs work on the async worker
     let result = persist_state_to_path_with_writer(&path, state, move |path, contents| {
         ezer_config::create_dir_all_owner_only(&dir)?;
         ezer_config::fs_atomic::write_atomically(path, contents, None)
@@ -403,7 +403,7 @@ pub(crate) async fn replace_state_on_disk(
 }
 
 pub async fn cleanup_stale_permission_state(max_age: std::time::Duration) {
-    let sessions_dir = grok_home().join("sessions");
+    let sessions_dir = ezer_home().join("sessions");
     let Ok(mut entries) = tokio::fs::read_dir(&sessions_dir).await else {
         return;
     };
@@ -605,7 +605,7 @@ allowed_mcp_tools = ["linear__list"]
         let mut state = PermissionState::default();
         state
             .allowed_mcp_tools
-            .insert("grok_com_notion__notion-fetch".to_string());
+            .insert("ezer_com_notion__notion-fetch".to_string());
         state
             .allowed_mcp_tools
             .insert("linear__list_issues".to_string());
@@ -617,7 +617,7 @@ allowed_mcp_tools = ["linear__list"]
         assert!(
             restored
                 .allowed_mcp_tools
-                .contains("grok_com_notion__notion-fetch")
+                .contains("ezer_com_notion__notion-fetch")
         );
         assert!(restored.allowed_mcp_tools.contains("linear__list_issues"));
         assert!(restored.allowed_mcp_servers.is_empty());
@@ -628,14 +628,14 @@ allowed_mcp_tools = ["linear__list"]
         let mut state = PermissionState::default();
         state
             .allowed_mcp_servers
-            .insert("grok_com_slack".to_string());
+            .insert("remote_slack".to_string());
         state.allowed_mcp_servers.insert("linear".to_string());
 
         let toml_str = toml::to_string_pretty(&state).unwrap();
         let restored: PermissionState = toml::from_str(&toml_str).unwrap();
 
         assert_eq!(restored.allowed_mcp_servers.len(), 2);
-        assert!(restored.allowed_mcp_servers.contains("grok_com_slack"));
+        assert!(restored.allowed_mcp_servers.contains("remote_slack"));
         assert!(restored.allowed_mcp_servers.contains("linear"));
         assert!(restored.allowed_mcp_tools.is_empty());
     }

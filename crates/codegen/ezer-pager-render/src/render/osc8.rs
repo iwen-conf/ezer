@@ -1378,8 +1378,8 @@ mod tests {
     }
 
     #[test]
-    fn scan_detects_grok_session_media_path() {
-        // The shape of `image_gen` output prose: a dot-directory (`.grok`), a percent-encoded session segment, and a trailing sentence period
+    fn scan_detects_ezer_session_media_path() {
+        // The shape of `image_gen` output prose: a dot-directory (`.ezer`), a percent-encoded session segment, and a trailing sentence period
         let line = make_line("Saved to /Users/alice/.ezer/sessions/%2Fabc/00000000/images/1.jpg.");
         let mut overlay = LinkOverlay::new();
         scan_unjoined(std::iter::once((0, &line)), 0, &[], &mut overlay);

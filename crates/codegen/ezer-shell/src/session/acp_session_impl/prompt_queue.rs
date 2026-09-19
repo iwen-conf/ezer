@@ -9,7 +9,7 @@ pub(super) struct SendNowOutcome {
     pub(super) mutated: bool,
 }
 
-/// Running-turn display fields for `x.ai/queue/changed` (clients paint turn-start UI).
+/// Running-turn display fields for `ezer/queue/changed` (clients paint turn-start UI).
 pub(super) struct RunningPromptDisplay {
     pub id: String,
     pub text: String,
@@ -522,7 +522,7 @@ impl SessionActor {
             entry_count = payload.entries.len(),
             entries = ?payload.entries.iter().map(|e| e.id.as_str()).collect::<Vec<_>>(),
             session = self.session_info.id.0.as_ref(),
-            "broadcasting x.ai/queue/changed to subscribers",
+            "broadcasting ezer/queue/changed to subscribers",
         );
         if let Ok(params) = serde_json::value::to_raw_value(&payload) {
             self.notifications

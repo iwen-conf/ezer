@@ -351,7 +351,7 @@ mod tests {
     #[test]
     fn requirements_win_over_campaign() {
         use crate::config_layers::ConfigLayers;
-        let _env = crate::config_layers::lock_grok_campaigns_env();
+        let _env = crate::config_layers::lock_ezer_campaigns_env();
         // A campaign (even from a lower layer) can't override a field the admin set in requirements
         // `apply_campaign_overrides` re-merges requirements on top
         let mut layers = ConfigLayers {
@@ -378,7 +378,7 @@ mod tests {
     #[test]
     fn effective_config_honors_dismiss() {
         use crate::config_layers::ConfigLayers;
-        let _env = crate::config_layers::lock_grok_campaigns_env();
+        let _env = crate::config_layers::lock_ezer_campaigns_env();
         // A dismissed campaign id stops overriding; the user's stored value returns.
         let mut layers = ConfigLayers {
             user: parse("[models]\ndefault = \"user-old\"\n"),

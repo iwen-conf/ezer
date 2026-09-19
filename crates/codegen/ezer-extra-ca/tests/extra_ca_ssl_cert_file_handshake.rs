@@ -20,7 +20,7 @@ fn handshake_succeeds_against_ca_loaded_from_ssl_cert_file() {
 
     // Safety: sole test in this binary; set before any OnceLock resolve.
     unsafe {
-        std::env::remove_var(ezer_extra_ca::ENV_GROK_EXTRA_CA_BUNDLE);
+        std::env::remove_var(ezer_extra_ca::ENV_EZER_EXTRA_CA_BUNDLE);
         std::env::set_var(ezer_extra_ca::ENV_SSL_CERT_FILE, ca_path.as_os_str());
     }
 

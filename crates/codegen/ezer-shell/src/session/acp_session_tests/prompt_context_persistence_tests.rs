@@ -15,7 +15,7 @@ fn test_json_round_trip() {
 
 /// Test that PromptContext survives a JSON write to disk and read back with field-level fidelity.
 /// This exercises serde and filesystem I/O but not the `save_prompt_context`/`load_prompt_context` wrappers.
-/// Those wrappers depend on `grok_home()` and `SessionInfo` path encoding.
+/// Those wrappers depend on `ezer_home()` and `SessionInfo` path encoding.
 #[test]
 fn test_json_round_trip_via_filesystem() {
     let tmp = tempfile::tempdir().unwrap();
@@ -102,7 +102,7 @@ fn test_system_prompt_matches_chat_history_system_message() {
     let session_dir = tmp.path().join("session-consistency");
     std::fs::create_dir_all(&session_dir).unwrap();
 
-    let system_prompt = "You are a Grok Build subagent.\n\n<tool_calling>\n...";
+    let system_prompt = "You are a Ezer Build subagent.\n\n<tool_calling>\n...";
 
     // Write system_prompt.txt (same string used for chat_history).
     std::fs::write(session_dir.join(SYSTEM_PROMPT_FILENAME), system_prompt).unwrap();
@@ -159,7 +159,7 @@ fn test_load_system_prompt_returns_content_when_present() {
     let session_dir = tmp.path().join("session-load-test");
     std::fs::create_dir_all(&session_dir).unwrap();
 
-    let prompt = "You are a Grok Build subagent.";
+    let prompt = "You are a Ezer Build subagent.";
     std::fs::write(session_dir.join(SYSTEM_PROMPT_FILENAME), prompt).unwrap();
 
     let loaded = load_system_prompt_from_dir(&session_dir);

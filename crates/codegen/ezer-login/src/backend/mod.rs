@@ -3,7 +3,7 @@
 //! One implementation compiles, so the trait is a checklist: a backend that forgets a decision fails to build.
 use crate::flow::StderrCallback;
 use crate::refresh::{DiagnosticUploader, TokenRefresher};
-use crate::{AuthManager, AuthUrlInfo, GrokAuth, GrokComConfig, LoginTransportOverride};
+use crate::{AuthManager, AuthUrlInfo, EzerAuth, EzerComConfig, LoginTransportOverride};
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::Arc;
@@ -12,8 +12,8 @@ mod xai;
 /// The inputs of one login attempt.
 pub struct LoginRequest<'a> {
     pub auth_manager: &'a Arc<AuthManager>,
-    pub grok_com_config: &'a GrokComConfig,
-    /// `[grok_com_config] login_device_flow` config tier, resolved by the caller (no longer a `GrokComConfig` field).
+    pub ezer_com_config: &'a EzerComConfig,
+    /// `[ezer_com_config] login_device_flow` config tier, resolved by the caller (no longer a `EzerComConfig` field).
     pub config_device_flow: Option<bool>,
     pub reauth: bool,
     pub force_interactive: bool,
@@ -26,21 +26,21 @@ pub struct LoginRequest<'a> {
 #[async_trait::async_trait(?Send)]
 pub trait AuthBackend {
     /// Key under which this backend owns its entry in auth.json.
-    fn scope_key(&self, config: &GrokComConfig) -> String;
+    fn scope_key(&self, config: &EzerComConfig) -> String;
     /// Older scope keys this backend minted, and so may adopt from and tidy, most recent first.
     fn inherited_scopes(&self) -> &'static [&'static str];
     /// Whether this backend minted the credential, which the scope key alone cannot establish.
-    fn owns(&self, auth: &GrokAuth) -> bool;
+    fn owns(&self, auth: &EzerAuth) -> bool;
     /// Whether this backend's session token may be sent to `url`.
     /// A model entry carries its own base URL, so without this a poisoned or hand-edited entry aims the bearer anywhere.
     fn may_receive_session(&self, url: &str) -> bool;
     /// The host to name when telling the user whose session they hold.
-    fn login_host(&self, config: &GrokComConfig) -> String;
+    fn login_host(&self, config: &EzerComConfig) -> String;
     /// Whether xAI issued this backend's credentials and may therefore receive them.
     /// Gates every request that carries the bearer to an xAI host, and every xAI-only policy.
     fn is_xai_authority(&self) -> bool;
     /// Obtain a credential; the flag reports whether a login actually ran.
-    async fn login(&self, req: LoginRequest<'_>) -> anyhow::Result<(GrokAuth, bool)>;
+    async fn login(&self, req: LoginRequest<'_>) -> anyhow::Result<(EzerAuth, bool)>;
     /// The renewal authority for the credentials this backend mints.
     fn refresher(
         &self,
@@ -49,7 +49,7 @@ pub trait AuthBackend {
         diagnostic_uploader: Option<DiagnosticUploader>,
     ) -> Arc<dyn TokenRefresher>;
 }
-pub type ActiveAuthBackend = xai::GrokAuthBackend;
+pub type ActiveAuthBackend = xai::EzerAuthBackend;
 /// Reports a URL the way a user says it, without the scheme.
 pub fn host_of(url: &str) -> String {
     url.strip_prefix("https://")
@@ -64,6 +64,6 @@ mod tests {
     fn host_of_drops_the_scheme_and_leaves_the_rest_alone() {
         assert_eq!(host_of("https://example.test"), "example.test");
         assert_eq!(host_of("http://localhost:8080"), "localhost:8080");
-        assert_eq!(host_of("grok.com"), "grok.com");
+        assert_eq!(host_of("example.test"), "example.test");
     }
 }

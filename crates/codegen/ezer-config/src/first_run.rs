@@ -124,7 +124,7 @@ pub fn should_write_first_run_config() -> bool {
     let ezer = std::env::var_os(xai_dirs::EZER_HOME_ENV)
         .filter(|v| !v.is_empty())
         .is_some();
-    let legacy_home = std::env::var_os(xai_dirs::GROK_HOME_ENV)
+    let legacy_home = std::env::var_os(xai_dirs::EZER_HOME_ENV)
         .filter(|v| !v.is_empty())
         .is_some();
     ezer || !legacy_home
@@ -198,7 +198,7 @@ mod tests {
         let tmp = TempDir::new().unwrap();
         unsafe {
             std::env::set_var(xai_dirs::EZER_HOME_ENV, tmp.path());
-            std::env::remove_var(xai_dirs::GROK_HOME_ENV);
+            std::env::remove_var(xai_dirs::EZER_HOME_ENV);
             std::env::remove_var("EZER_SKIP_DEFAULT_CONFIG");
         }
         assert!(ensure_first_run_config(tmp.path()));

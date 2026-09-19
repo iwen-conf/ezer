@@ -441,7 +441,7 @@ mod tests {
     use super::*;
     use crate::computer::local::LocalFs;
     use crate::implementations::ezer_build::read_file::{
-        ReadFileInput, ReadFileParams, ReadFileTool as GrokReadFileTool,
+        ReadFileInput, ReadFileParams, ReadFileTool as EzerReadFileTool,
     };
     use crate::notification::types::ToolNotificationHandle;
     use crate::types::output::ReadFileOutput;
@@ -465,7 +465,7 @@ mod tests {
         resources.into_shared()
     }
 
-    fn resources_with_grok_rules_on_read(root: &Path) -> SharedResources {
+    fn resources_with_ezer_rules_on_read(root: &Path) -> SharedResources {
         let mut resources = Resources::new();
         resources.insert(Cwd(root.to_path_buf()));
         resources.insert(FileSystem(Arc::new(LocalFs)));
@@ -680,7 +680,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn grok_read_file_output_includes_matching_rule_once() {
+    async fn ezer_read_file_output_includes_matching_rule_once() {
         let temp = TempDir::new().unwrap();
         let root = temp.path();
         std::fs::create_dir_all(root.join(".cursor/rules")).unwrap();
@@ -691,7 +691,7 @@ mod tests {
         .unwrap();
         std::fs::write(root.join("main.rs"), "fn main() {}\n").unwrap();
 
-        let shared = resources_with_grok_rules_on_read(root);
+        let shared = resources_with_ezer_rules_on_read(root);
         let input = ReadFileInput {
             path: "main.rs".to_owned(),
             offset: None,
@@ -700,7 +700,7 @@ mod tests {
             format: None,
         };
 
-        let first = xai_tool_runtime::Tool::run(&GrokReadFileTool, test_ctx(shared), input)
+        let first = xai_tool_runtime::Tool::run(&EzerReadFileTool, test_ctx(shared), input)
             .await
             .unwrap();
         let ReadFileOutput::FileContent(first) = first else {

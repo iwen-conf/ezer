@@ -6,7 +6,7 @@ use crate::views::dashboard::test_support::{buf_to_text, header_test_row};
 use ratatui::style::Modifier;
 
 fn fit_chips(badges: &[RowBadge], budget: usize, available: usize) -> String {
-    let theme = Theme::groknight();
+    let theme = Theme::ezernight();
     let mut row = header_test_row(1, RowState::Working, "Session");
     row.badges = badges.to_vec();
     RowTitle {
@@ -25,7 +25,7 @@ fn buf_cell(buf: &Buffer, x: u16, y: u16) -> &ratatui::buffer::Cell {
 
 #[test]
 fn wide_chips_collapse_before_title_or_subtitle_is_truncated() {
-    let theme = Theme::groknight();
+    let theme = Theme::ezernight();
     let mut row = header_test_row(1, RowState::Working, "Session");
     row.subtitle = Some("repo".to_owned());
     row.badges = vec![
@@ -60,7 +60,7 @@ fn wide_chips_collapse_before_title_or_subtitle_is_truncated() {
 
 #[test]
 fn narrow_chips_collapse_before_title_is_truncated() {
-    let theme = Theme::groknight();
+    let theme = Theme::ezernight();
     let mut row = header_test_row(1, RowState::Working, "Session");
     row.subtitle = Some("not rendered in narrow mode".repeat(10));
     row.badges = vec![RowBadge::Subagents(1), RowBadge::Workflows(1)];
@@ -80,7 +80,7 @@ fn narrow_chips_collapse_before_title_is_truncated() {
 
 #[test]
 fn left_text_truncates_only_after_smallest_chip_remains() {
-    let theme = Theme::groknight();
+    let theme = Theme::ezernight();
     let mut row = header_test_row(1, RowState::Working, &"1234567890".repeat(10));
     for (badges, expected) in [
         (
@@ -107,7 +107,7 @@ fn left_text_truncates_only_after_smallest_chip_remains() {
 
 #[test]
 fn chip_budget_uses_display_width_for_unicode_left_text() {
-    let theme = Theme::groknight();
+    let theme = Theme::ezernight();
     let mut row = header_test_row(1, RowState::Working, "中e\u{301}☁\u{fe0f}");
     row.subtitle = Some("界".to_owned());
     row.badges = vec![RowBadge::Watchers(2)];
@@ -152,7 +152,7 @@ fn chip_budget_uses_display_width_for_unicode_left_text() {
 
 #[test]
 fn chip_forms_use_independent_name_count_separator_and_bg_styles() {
-    for theme in [Theme::groknight(), Theme::grokday()] {
+    for theme in [Theme::ezernight(), Theme::ezerday()] {
         let mut row = header_test_row(1, RowState::Working, "Session");
         row.badges = vec![
             RowBadge::Subagents(3),
@@ -220,7 +220,7 @@ fn chip_forms_use_independent_name_count_separator_and_bg_styles() {
 
 #[test]
 fn failed_badge_counts_toward_left_text_width() {
-    let theme = Theme::groknight();
+    let theme = Theme::ezernight();
     let mut row = header_test_row(1, RowState::Failed, "Session");
     row.badges = vec![RowBadge::Failed, RowBadge::Watchers(2)];
     let expected = "Session · failed Watchers 2\n";
@@ -238,7 +238,7 @@ fn failed_badge_counts_toward_left_text_width() {
 
 #[test]
 fn rows_without_live_chips_keep_the_full_text_budget() {
-    let theme = Theme::groknight();
+    let theme = Theme::ezernight();
     let row = header_test_row(1, RowState::Idle, "Exact fit");
     let area = Rect::new(0, 0, row.label.width() as u16, 1);
     for paint in [RowTitle::render_wide, RowTitle::render_narrow] {
@@ -318,7 +318,7 @@ fn long_unicode_title_reserves_chips_and_age() {
     let mut row = header_test_row(1, RowState::Working, &"中e\u{301}👩🏽\u{200d}💻".repeat(50));
     row.subtitle = Some("long branch subtitle".repeat(20));
     row.badges = vec![RowBadge::Tasks(2), RowBadge::Watchers(1)];
-    let theme = Theme::groknight();
+    let theme = Theme::ezernight();
     for width in 8..110 {
         let mut buf = Buffer::empty(Rect::new(0, 0, width + 10, 1));
         buf.set_string(width + 2, 0, "   2 min", Style::default());
@@ -347,7 +347,7 @@ fn narrow_title_keeps_complete_chip_without_changing_single_line_layout() {
     let mut row = header_test_row(1, RowState::Working, &"長いタイトル".repeat(30));
     row.badges = vec![RowBadge::Watchers(1)];
     row.secondary_line = Some("must not add a second line".to_owned());
-    let theme = Theme::groknight();
+    let theme = Theme::ezernight();
     for width in 0..50 {
         let mut buf = Buffer::empty(Rect::new(0, 0, 50, 2));
         RowTitle {
@@ -376,7 +376,7 @@ fn assert_emoji_presentation_bounds(
     subtitle: &str,
     paint: impl Fn(&RowTitle<'_>, &mut Buffer, Rect),
 ) {
-    let theme = Theme::groknight();
+    let theme = Theme::ezernight();
     let mut row = header_test_row(1, RowState::Working, label);
     row.subtitle = Some(subtitle.to_owned());
     row.badges = vec![RowBadge::Tasks(1)];
@@ -442,7 +442,7 @@ fn emoji_presentation_narrow_title_cannot_overwrite_chips_or_right_edge() {
 
 #[test]
 fn fallback_and_failed_title_styles_stay_consistent() {
-    let theme = Theme::groknight();
+    let theme = Theme::ezernight();
     let mut row = header_test_row(1, RowState::Failed, "New session #abcd");
     row.badges = vec![RowBadge::Failed];
     let mut buf = Buffer::empty(Rect::new(0, 0, 50, 1));

@@ -20,7 +20,7 @@ fn messages_init_is_deferred_and_carries_tools() {
     };
     assert_eq!(msg_type(init), Some("system"));
     assert_eq!(json_str(init, "/subtype"), Some("init"));
-    assert_eq!(json_str(init, "/model"), Some("grok-4"));
+    assert_eq!(json_str(init, "/model"), Some("test-model-4"));
     assert_eq!(json_str(init, "/permissionMode"), Some("bypassPermissions"));
     assert_eq!(json_str(init, "/tools/0"), Some("read_file"));
     assert_eq!(json_str(init, "/slash_commands/0"), Some("review"));

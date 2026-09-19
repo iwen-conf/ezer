@@ -103,9 +103,9 @@ fn trusted_local_refresh_surfaces_new_agent_via_discovery() {
     // Canonicalize so auto-trust for installs under the home dir holds when the temp root is a symlink (on macOS `/var` links to `/private/var`)
     let home_tmp = TempDir::new().unwrap();
     let home = dunce::canonicalize(home_tmp.path()).unwrap();
-    let grok_home = home.join(".ezer");
+    let ezer_home = home.join(".ezer");
     let _home_guard = EnvVarGuard::set("HOME", &home);
-    let _grok_guard = EnvVarGuard::set("GROK_HOME", &grok_home);
+    let _ezer_guard = EnvVarGuard::set("EZER_HOME", &ezer_home);
 
     // Live source: a user-home local plugin (mirrors a `~/.claude` local tree).
     let source = home
@@ -116,7 +116,7 @@ fn trusted_local_refresh_surfaces_new_agent_via_discovery() {
     write_agent(&source, "old", "old-agent", "exists at install");
 
     // The install copies a full snapshot into installed-plugins, not a live symlink
-    let mut registry = InstallRegistry::empty(grok_home.join("installed-plugins"));
+    let mut registry = InstallRegistry::empty(ezer_home.join("installed-plugins"));
     let installed = register_local_install(&mut registry, &source);
     registry.save().expect("save registry");
 
@@ -157,7 +157,7 @@ fn trusted_local_refresh_surfaces_new_agent_via_discovery() {
     );
 
     // Session `_meta.pluginDirs` load
-    // This runs in the same test because grok_home() caches the first GROK_HOME per process
+    // This runs in the same test because ezer_home() caches the first EZER_HOME per process
     // A separate test could seed the cache first and break the assertions above
     let plugin_dir = home.join("session-plugin");
     write_minimal_plugin(&plugin_dir, "session-plugin");
@@ -202,8 +202,8 @@ async fn headless_session_refreshes_trusted_local_plugin_and_writes_session_json
     // Canonicalize so auto-trust for installs under the home dir holds when the temp root is a symlink (on macOS `/var` links to `/private/var`)
     let home_tmp = TempDir::new().unwrap();
     let home = dunce::canonicalize(home_tmp.path()).unwrap();
-    let grok_home = home.join(".ezer");
-    std::fs::create_dir_all(&grok_home).unwrap();
+    let ezer_home = home.join(".ezer");
+    std::fs::create_dir_all(&ezer_home).unwrap();
 
     let source = home
         .join(".claude")
@@ -212,13 +212,13 @@ async fn headless_session_refreshes_trusted_local_plugin_and_writes_session_json
     write_minimal_plugin(&source, "demo-plugin");
     write_agent(&source, "old", "old-agent", "exists at install");
 
-    // The spawned binary gets HOME and GROK_HOME via `cmd.env` below
-    // This global env only serves the discovery assertion run in-process after the binary exits; it resolves the registry via grok_home()
+    // The spawned binary gets HOME and EZER_HOME via `cmd.env` below
+    // This global env only serves the discovery assertion run in-process after the binary exits; it resolves the registry via ezer_home()
     // `#[serial]` keeps it from racing other tests
     let _home_guard = EnvVarGuard::set("HOME", &home);
-    let _grok_guard = EnvVarGuard::set("GROK_HOME", &grok_home);
+    let _ezer_guard = EnvVarGuard::set("EZER_HOME", &ezer_home);
 
-    let mut registry = InstallRegistry::empty(grok_home.join("installed-plugins"));
+    let mut registry = InstallRegistry::empty(ezer_home.join("installed-plugins"));
     let installed = register_local_install(&mut registry, &source);
     registry.save().expect("save registry");
 
@@ -226,7 +226,7 @@ async fn headless_session_refreshes_trusted_local_plugin_and_writes_session_json
     assert!(!installed.path.join("agents/new.md").exists());
 
     let workdir = git_workdir();
-    let mut cmd = tokio::process::Command::new(grok_binary());
+    let mut cmd = tokio::process::Command::new(ezer_binary());
     cmd.args([
         "-p",
         "say hello",
@@ -245,7 +245,7 @@ async fn headless_session_refreshes_trusted_local_plugin_and_writes_session_json
     sandbox
         .set_env("HOME", &home)
         .set_env("USERPROFILE", &home)
-        .set_env("GROK_HOME", &grok_home);
+        .set_env("EZER_HOME", &ezer_home);
 
     let result = run_headless_in_sandbox(cmd, sandbox).await;
     assert_headless_success(
@@ -282,8 +282,8 @@ async fn headless_session_refreshes_trusted_local_plugin_and_writes_session_json
         "new agent must surface in /agents after the binary's session-start refresh"
     );
 
-    // Session storage under GROK_HOME/sessions must hold JSON files that parse
-    let sessions_root = grok_home.join("sessions");
+    // Session storage under EZER_HOME/sessions must hold JSON files that parse
+    let sessions_root = ezer_home.join("sessions");
     assert!(
         sessions_root.is_dir(),
         "expected sessions dir at {}",

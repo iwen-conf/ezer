@@ -831,7 +831,7 @@ fn take_pending_for(
 #[cfg(test)]
 thread_local! {
     /// Per-test override for the session `mermaid/` cache dir. View-side tests set this to a private tempdir so [`AgentView::mermaid_out_path`] resolves a hermetic, writable cache dir *without* mutating the process-global
-    /// `GROK_HOME` (whose `grok_home()` value is cached first-write-wins, an isolation hazard under the full parallel suite; PNGs could land in the real `~/.ezer`). Thread-local, so each parallel test is independent; the `TempDir` guard lives here so the dir outlives the view. Mirrors the `subagent::REPLAY_GROK_HOME` test override. Production never sets this.
+    /// `EZER_HOME` (whose `ezer_home()` value is cached first-write-wins, an isolation hazard under the full parallel suite; PNGs could land in the real `~/.ezer`). Thread-local, so each parallel test is independent; the `TempDir` guard lives here so the dir outlives the view. Mirrors the `subagent::REPLAY_EZER_HOME` test override. Production never sets this.
     static TEST_MERMAID_DIR: std::cell::RefCell<Option<tempfile::TempDir>> =
         const { std::cell::RefCell::new(None) };
 }
@@ -867,7 +867,7 @@ impl AgentView {
 
     /// Per-session destination path for a diagram's PNG, or `None` until session identity is known (no on-disk cache before then).
     fn mermaid_out_path(&self, key: &MermaidCacheKey) -> Option<PathBuf> {
-        // Test override: a hermetic per-test cache dir (no `GROK_HOME` mutation)
+        // Test override: a hermetic per-test cache dir (no `EZER_HOME` mutation)
         #[cfg(test)]
         if let Some(path) = TEST_MERMAID_DIR.with(|d| {
             d.borrow()
@@ -1082,7 +1082,7 @@ mod tests {
     fn key(source: &str) -> MermaidCacheKey {
         MermaidCacheKey::derive(
             source,
-            ThemeKind::GrokNight,
+            ThemeKind::EzerNight,
             80,
             MermaidRenderQuality::Terminal,
         )
@@ -1871,12 +1871,12 @@ mod tests {
         let src = "flowchart LR\nA-->B";
         let dark_key = MermaidCacheKey::derive(
             src,
-            ThemeKind::GrokNight,
+            ThemeKind::EzerNight,
             80,
             MermaidRenderQuality::Terminal,
         );
         let light_key =
-            MermaidCacheKey::derive(src, ThemeKind::GrokDay, 80, MermaidRenderQuality::Terminal);
+            MermaidCacheKey::derive(src, ThemeKind::EzerDay, 80, MermaidRenderQuality::Terminal);
         assert_ne!(
             dark_key.cache_filename(),
             light_key.cache_filename(),
@@ -1917,9 +1917,9 @@ mod tests {
     // These drive the click, render, poll, action path through a real `AgentView` whose on-disk cache dir is a private tempdir
     // The unit tests above (pure helpers) and the `make_agent`-based view tests (no session dir) can't do that
 
-    /// Point this test's session `mermaid/` cache dir at a private tempdir: hermetic, with no process-global `GROK_HOME` mutation.
+    /// Point this test's session `mermaid/` cache dir at a private tempdir: hermetic, with no process-global `EZER_HOME` mutation.
     /// The `TempDir` lives in the [`TEST_MERMAID_DIR`] thread-local for the test thread's lifetime (so the dir outlives the view).
-    /// Each parallel test gets its own dir, so there is no cross-test contamination and no `grok_home()` cache race.
+    /// Each parallel test gets its own dir, so there is no cross-test contamination and no `ezer_home()` cache race.
     fn use_test_mermaid_dir() {
         let tmp = tempfile::tempdir().expect("tempdir creation");
         TEST_MERMAID_DIR.with(|d| *d.borrow_mut() = Some(tmp));
@@ -2108,7 +2108,7 @@ mod tests {
 
         // An on-click render in flight, keyed at the click-time theme and width
         let click_key =
-            MermaidCacheKey::derive(src, ThemeKind::GrokNight, 80, MermaidRenderQuality::Open);
+            MermaidCacheKey::derive(src, ThemeKind::EzerNight, 80, MermaidRenderQuality::Open);
         let mut rt = MermaidRuntime::new();
         rt.pending.push(PendingMermaidAction {
             key: click_key.clone(),
@@ -2118,7 +2118,7 @@ mod tests {
 
         // A later (live) theme and width derives a DIFFERENT full key for the same source; full-key matching would miss the pending render...
         let live_key =
-            MermaidCacheKey::derive(src, ThemeKind::GrokDay, 240, MermaidRenderQuality::Open);
+            MermaidCacheKey::derive(src, ThemeKind::EzerDay, 240, MermaidRenderQuality::Open);
         assert_ne!(
             click_key, live_key,
             "a theme/width change alters the full cache key",

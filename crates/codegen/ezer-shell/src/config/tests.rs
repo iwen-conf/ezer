@@ -73,7 +73,7 @@ command = "$EZER_TEST_CONFIG_MISSING/bin/server"
         panic!("Expected test table");
     };
     let command = test.get("command").and_then(|v| v.as_str()).unwrap();
-    assert_eq!(command, "$GROK_TEST_CONFIG_MISSING/bin/server");
+    assert_eq!(command, "$EZER_TEST_CONFIG_MISSING/bin/server");
 }
 #[test]
 fn preserves_literal_dollar_signs() {
@@ -114,18 +114,18 @@ fn with_env_var_opt<T>(name: &str, value: Option<&str>, f: impl FnOnce() -> T) -
     result.unwrap_or_else(|p| std::panic::resume_unwind(p))
 }
 /// Run `f` with EZER_MEMORY explicitly unset.
-fn without_grok_memory<T>(f: impl FnOnce() -> T) -> T {
+fn without_ezer_memory<T>(f: impl FnOnce() -> T) -> T {
     let _guard = MEMORY_ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
-    with_env_var_opt("GROK_MEMORY", None, f)
+    with_env_var_opt("EZER_MEMORY", None, f)
 }
 /// Run `f` with EZER_MEMORY set to a specific value.
-fn with_grok_memory<T>(value: &str, f: impl FnOnce() -> T) -> T {
+fn with_ezer_memory<T>(value: &str, f: impl FnOnce() -> T) -> T {
     let _guard = MEMORY_ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
-    with_env_var_opt("GROK_MEMORY", Some(value), f)
+    with_env_var_opt("EZER_MEMORY", Some(value), f)
 }
 #[test]
 fn memory_config_default_disabled() {
-    without_grok_memory(|| {
+    without_ezer_memory(|| {
         let config = toml::Value::Table(toml::map::Map::new());
         let mem = MemoryConfig::resolve(false, false, &config, None);
         assert!(!mem.enabled);
@@ -133,7 +133,7 @@ fn memory_config_default_disabled() {
 }
 #[test]
 fn memory_config_legacy_wrapper_matches_tri_state_override() {
-    without_grok_memory(|| {
+    without_ezer_memory(|| {
         let config = toml::Value::Table(toml::map::Map::new());
         let enabled = MemoryConfig::resolve(true, false, &config, None);
         let disabled = MemoryConfig::resolve(true, true, &config, None);
@@ -154,7 +154,7 @@ fn memory_config_legacy_wrapper_matches_tri_state_override() {
 }
 #[test]
 fn memory_config_from_toml() {
-    without_grok_memory(|| {
+    without_ezer_memory(|| {
         let config: toml::Value = toml::from_str(
                 "[memory]\nenabled = false\n[memory_v2]\nenabled = true",
             )
@@ -166,7 +166,7 @@ fn memory_config_from_toml() {
 }
 #[test]
 fn standalone_memory_mode_honors_remote_v2_enrollment() {
-    without_grok_memory(|| {
+    without_ezer_memory(|| {
         let config = toml::Value::Table(toml::map::Map::new());
         let remote = crate::util::config::RemoteSettings {
             memory_v2: Some(crate::config::MemoryV2Settings {
@@ -225,7 +225,7 @@ fn memory_config_deserializes_through_config() {
 }
 #[test]
 fn memory_config_toml_sentinels_beat_remote_values() {
-    without_grok_memory(|| {
+    without_ezer_memory(|| {
         let raw: toml::Value = toml::from_str(
                 "[memory.embedding]\nmodel = ''\n[memory.dream]\ncheck_interval_secs = 0\n[compaction.memory_flush]\nidle_timeout_secs = 0",
             )
@@ -245,7 +245,7 @@ fn memory_config_toml_sentinels_beat_remote_values() {
 }
 #[test]
 fn memory_config_toml_disabled() {
-    without_grok_memory(|| {
+    without_ezer_memory(|| {
         let config: toml::Value = toml::from_str("[memory]\nenabled = false").unwrap();
         let mem = MemoryConfig::resolve(false, false, &config, None);
         assert!(!mem.enabled);
@@ -253,7 +253,7 @@ fn memory_config_toml_disabled() {
 }
 #[test]
 fn memory_config_env_var_enables() {
-    with_grok_memory(
+    with_ezer_memory(
         "1",
         || {
             let config = toml::Value::Table(toml::map::Map::new());
@@ -264,7 +264,7 @@ fn memory_config_env_var_enables() {
 }
 #[test]
 fn memory_config_env_var_true_enables() {
-    with_grok_memory(
+    with_ezer_memory(
         "true",
         || {
             let config = toml::Value::Table(toml::map::Map::new());
@@ -275,7 +275,7 @@ fn memory_config_env_var_true_enables() {
 }
 #[test]
 fn memory_config_env_var_zero_does_not_enable() {
-    with_grok_memory(
+    with_ezer_memory(
         "0",
         || {
             let config = toml::Value::Table(toml::map::Map::new());
@@ -286,7 +286,7 @@ fn memory_config_env_var_zero_does_not_enable() {
 }
 #[test]
 fn memory_config_env_var_false_does_not_enable() {
-    with_grok_memory(
+    with_ezer_memory(
         "false",
         || {
             let config = toml::Value::Table(toml::map::Map::new());
@@ -297,7 +297,7 @@ fn memory_config_env_var_false_does_not_enable() {
 }
 #[test]
 fn memory_config_cli_overrides_toml_disabled() {
-    without_grok_memory(|| {
+    without_ezer_memory(|| {
         let config: toml::Value = toml::from_str("[memory]\nenabled = false").unwrap();
         let mem = MemoryConfig::resolve(true, false, &config, None);
         assert!(mem.enabled, "CLI flag should override config file");
@@ -305,7 +305,7 @@ fn memory_config_cli_overrides_toml_disabled() {
 }
 #[test]
 fn memory_config_env_zero_force_disables_toml_enabled() {
-    with_grok_memory(
+    with_ezer_memory(
         "0",
         || {
             let config: toml::Value = toml::from_str(
@@ -322,7 +322,7 @@ fn memory_config_env_zero_force_disables_toml_enabled() {
 }
 #[test]
 fn memory_config_env_false_force_disables_toml_enabled() {
-    with_grok_memory(
+    with_ezer_memory(
         "false",
         || {
             let config: toml::Value = toml::from_str("[memory]\nenabled = true")
@@ -337,7 +337,7 @@ fn memory_config_env_false_force_disables_toml_enabled() {
 }
 #[test]
 fn memory_config_cli_flag_overrides_env_disable() {
-    with_grok_memory(
+    with_ezer_memory(
         "0",
         || {
             let config = toml::Value::Table(toml::map::Map::new());
@@ -351,7 +351,7 @@ fn memory_config_cli_flag_overrides_env_disable() {
 }
 #[test]
 fn memory_config_no_memory_alone_disables() {
-    without_grok_memory(|| {
+    without_ezer_memory(|| {
         let config = toml::Value::Table(toml::map::Map::new());
         let mem = MemoryConfig::resolve(false, true, &config, None);
         assert!(!mem.enabled, "--no-memory alone should disable");
@@ -359,7 +359,7 @@ fn memory_config_no_memory_alone_disables() {
 }
 #[test]
 fn memory_config_no_memory_overrides_env_enable() {
-    with_grok_memory(
+    with_ezer_memory(
         "1",
         || {
             let config = toml::Value::Table(toml::map::Map::new());
@@ -370,7 +370,7 @@ fn memory_config_no_memory_overrides_env_enable() {
 }
 #[test]
 fn memory_config_no_memory_overrides_toml_enabled() {
-    without_grok_memory(|| {
+    without_ezer_memory(|| {
         let config: toml::Value = toml::from_str("[memory]\nenabled = true").unwrap();
         let mem = MemoryConfig::resolve(false, true, &config, None);
         assert!(!mem.enabled, "--no-memory should override TOML enabled=true");
@@ -378,7 +378,7 @@ fn memory_config_no_memory_overrides_toml_enabled() {
 }
 #[test]
 fn memory_config_no_memory_overrides_remote_enabled() {
-    without_grok_memory(|| {
+    without_ezer_memory(|| {
         let config = toml::Value::Table(toml::map::Map::new());
         let remote = crate::util::config::RemoteSettings {
             memory_enabled: Some(true),
@@ -397,7 +397,7 @@ fn memory_config_no_memory_overrides_remote_enabled() {
 }
 #[test]
 fn memory_config_defaults_are_correct() {
-    without_grok_memory(|| {
+    without_ezer_memory(|| {
         let config = toml::Value::Table(toml::map::Map::new());
         let mem = MemoryConfig::resolve(false, false, &config, None);
         assert_eq!(mem.index.max_chunk_chars, 1600);
@@ -452,7 +452,7 @@ fn memory_config_defaults_are_correct() {
 /// Verify that existing TOML config files that contain `debounce_ms` still parse without error (serde ignores unknown fields by default).
 #[test]
 fn memory_config_watcher_debounce_ms_in_toml_is_silently_ignored() {
-    without_grok_memory(|| {
+    without_ezer_memory(|| {
         let toml_str = "[memory.watcher]\nenabled = true\ndebounce_ms = 2000\n";
         let config: toml::Value = toml::from_str(toml_str).unwrap();
         let mem = MemoryConfig::resolve(false, false, &config, None);
@@ -462,7 +462,7 @@ fn memory_config_watcher_debounce_ms_in_toml_is_silently_ignored() {
 }
 #[test]
 fn memory_config_full_toml_parsing() {
-    without_grok_memory(|| {
+    without_ezer_memory(|| {
         let toml_str = r#"
 [memory]
 enabled = true
@@ -502,7 +502,7 @@ save_on_end = false
 [compaction.memory_flush]
 enabled = false
 soft_threshold_tokens = 8000
-flush_model = "grok-4"
+flush_model = "test-model-4"
 max_flush_write_chars = 16000
 idle_timeout_secs = 300
 semantic_dedup_threshold = 0.85
@@ -539,7 +539,7 @@ hard_clear_age_turns = 20
         assert!(!mem.session.save_on_end);
         assert!(!mem.flush.enabled);
         assert_eq!(mem.flush.soft_threshold_tokens, 8000);
-        assert_eq!(mem.flush.flush_model.as_deref(), Some("grok-4"));
+        assert_eq!(mem.flush.flush_model.as_deref(), Some("test-model-4"));
         assert_eq!(mem.flush.max_flush_write_chars, 16000);
         assert_eq!(mem.flush.idle_timeout_secs, Some(300));
         assert_eq!(mem.flush.semantic_dedup_threshold, Some(0.85));
@@ -550,7 +550,7 @@ hard_clear_age_turns = 20
 }
 #[test]
 fn memory_config_partial_toml_uses_defaults_for_missing() {
-    without_grok_memory(|| {
+    without_ezer_memory(|| {
         let toml_str = r#"
 [memory]
 enabled = true
@@ -571,7 +571,7 @@ max_chunk_chars = 3200
 }
 #[test]
 fn memory_config_remote_settings_enable() {
-    without_grok_memory(|| {
+    without_ezer_memory(|| {
         let config = toml::Value::Table(toml::map::Map::new());
         let remote = crate::util::config::RemoteSettings {
             memory_enabled: Some(true),
@@ -586,7 +586,7 @@ fn memory_config_remote_settings_enable() {
 }
 #[test]
 fn memory_config_remote_settings_pruning() {
-    without_grok_memory(|| {
+    without_ezer_memory(|| {
         let config = toml::Value::Table(toml::map::Map::new());
         let remote = crate::util::config::RemoteSettings {
             pruning_enabled: Some(true),
@@ -600,7 +600,7 @@ fn memory_config_remote_settings_pruning() {
 }
 #[test]
 fn partial_embedding_injection_and_watcher_use_remote_for_missing_fields() {
-    without_grok_memory(|| {
+    without_ezer_memory(|| {
         let config: toml::Value = toml::from_str(
                 "[memory.embedding]\ndimensions = 384\n[memory.initial_injection]\nenabled = false\n[memory.watcher]\nstale_claim_secs = 75",
             )
@@ -624,7 +624,7 @@ fn partial_embedding_injection_and_watcher_use_remote_for_missing_fields() {
 }
 #[test]
 fn memory_config_local_initial_injection_overrides_remote() {
-    without_grok_memory(|| {
+    without_ezer_memory(|| {
         let toml_str = r#"
 [memory.initial_injection]
 enabled = true
@@ -643,7 +643,7 @@ min_score = 0.25
 }
 #[test]
 fn memory_config_local_disabled_blocks_remote_enable() {
-    without_grok_memory(|| {
+    without_ezer_memory(|| {
         let config: toml::Value = toml::from_str("[memory]\nenabled = false").unwrap();
         let remote = crate::util::config::RemoteSettings {
             memory_enabled: Some(true),
@@ -658,7 +658,7 @@ fn memory_config_local_disabled_blocks_remote_enable() {
 }
 #[test]
 fn memory_config_partial_search_uses_remote_for_missing_field() {
-    without_grok_memory(|| {
+    without_ezer_memory(|| {
         let config: toml::Value = toml::from_str("[memory.search]\nmax_results = 20")
             .unwrap();
         let remote = crate::util::config::RemoteSettings {
@@ -673,7 +673,7 @@ fn memory_config_partial_search_uses_remote_for_missing_field() {
 }
 #[test]
 fn memory_config_remote_none_is_noop() {
-    without_grok_memory(|| {
+    without_ezer_memory(|| {
         let config = toml::Value::Table(toml::map::Map::new());
         let mem_without = MemoryConfig::resolve(false, false, &config, None);
         let mem_with_empty = MemoryConfig::resolve(
@@ -691,7 +691,7 @@ fn memory_config_remote_none_is_noop() {
 }
 #[test]
 fn flush_semantic_dedup_threshold_from_remote_when_no_local_flush() {
-    without_grok_memory(|| {
+    without_ezer_memory(|| {
         let config = toml::Value::Table(toml::map::Map::new());
         let remote = crate::util::config::RemoteSettings {
             flush_semantic_dedup_threshold: Some(0.85),
@@ -707,7 +707,7 @@ fn flush_semantic_dedup_threshold_from_remote_when_no_local_flush() {
 }
 #[test]
 fn flush_semantic_dedup_threshold_clamped_from_remote() {
-    without_grok_memory(|| {
+    without_ezer_memory(|| {
         let config = toml::Value::Table(toml::map::Map::new());
         let remote = crate::util::config::RemoteSettings {
             flush_semantic_dedup_threshold: Some(1.5),
@@ -733,7 +733,7 @@ fn flush_semantic_dedup_threshold_clamped_from_remote() {
 }
 #[test]
 fn partial_flush_and_pruning_use_remote_for_missing_fields() {
-    without_grok_memory(|| {
+    without_ezer_memory(|| {
         let config: toml::Value = toml::from_str(
                 "[compaction.memory_flush]\nsemantic_dedup_threshold = 0.88\n[compaction.pruning]\nkeep_last_n_turns = 7",
             )
@@ -754,7 +754,7 @@ fn partial_flush_and_pruning_use_remote_for_missing_fields() {
 }
 #[test]
 fn flush_semantic_dedup_threshold_defaults_to_none() {
-    without_grok_memory(|| {
+    without_ezer_memory(|| {
         let config = toml::Value::Table(toml::map::Map::new());
         let mem = MemoryConfig::resolve(false, false, &config, None);
         assert_eq!(
@@ -765,7 +765,7 @@ fn flush_semantic_dedup_threshold_defaults_to_none() {
 }
 #[test]
 fn memory_dream_config_defaults() {
-    without_grok_memory(|| {
+    without_ezer_memory(|| {
         let config = toml::Value::Table(toml::map::Map::new());
         let mem = MemoryConfig::resolve(false, false, &config, None);
         assert!(mem.dream.enabled);
@@ -777,7 +777,7 @@ fn memory_dream_config_defaults() {
 }
 #[test]
 fn memory_dream_config_toml_parsing() {
-    without_grok_memory(|| {
+    without_ezer_memory(|| {
         let toml_str = r#"
 [memory.dream]
 enabled = true
@@ -797,7 +797,7 @@ check_interval_secs = 600
 }
 #[test]
 fn memory_dream_config_remote_override_when_toml_absent() {
-    without_grok_memory(|| {
+    without_ezer_memory(|| {
         let config = toml::Value::Table(toml::map::Map::new());
         let remote = crate::util::config::RemoteSettings {
             dream_enabled: Some(true),
@@ -816,7 +816,7 @@ fn memory_dream_config_remote_override_when_toml_absent() {
 }
 #[test]
 fn memory_dream_config_partial_toml_uses_remote_for_missing_fields() {
-    without_grok_memory(|| {
+    without_ezer_memory(|| {
         let toml_str = r#"
 [memory.dream]
 enabled = false
@@ -840,11 +840,11 @@ min_hours = 6
 #[test]
 fn expands_multiple_vars_in_one_string() {
     with_env_var(
-        "GROK_TEST_USER",
+        "EZER_TEST_USER",
         "alice",
         || {
             with_env_var(
-                "GROK_TEST_ROOT",
+                "EZER_TEST_ROOT",
                 "/a/b/c/d",
                 || {
                     let toml_str = r#"
@@ -983,7 +983,7 @@ fn effective_half_life_disabled_legacy_recency_out_of_range_ignored() {
 }
 #[test]
 fn mmr_lambda_clamped_above_one() {
-    without_grok_memory(|| {
+    without_ezer_memory(|| {
         let toml_str = r#"
 [memory]
 enabled = true
@@ -1004,7 +1004,7 @@ lambda = 2.0
 }
 #[test]
 fn mmr_lambda_clamped_below_zero() {
-    without_grok_memory(|| {
+    without_ezer_memory(|| {
         let toml_str = r#"
 [memory]
 enabled = true
@@ -1025,7 +1025,7 @@ lambda = -0.5
 }
 #[test]
 fn memory_config_remote_temporal_decay() {
-    without_grok_memory(|| {
+    without_ezer_memory(|| {
         let config = toml::Value::Table(toml::map::Map::new());
         let remote = crate::util::config::RemoteSettings {
             memory_temporal_decay_enabled: Some(false),
@@ -1039,7 +1039,7 @@ fn memory_config_remote_temporal_decay() {
 }
 #[test]
 fn memory_config_remote_mmr() {
-    without_grok_memory(|| {
+    without_ezer_memory(|| {
         let config = toml::Value::Table(toml::map::Map::new());
         let remote = crate::util::config::RemoteSettings {
             memory_mmr_enabled: Some(true),
@@ -1053,7 +1053,7 @@ fn memory_config_remote_mmr() {
 }
 #[test]
 fn memory_config_remote_mmr_lambda_clamped() {
-    without_grok_memory(|| {
+    without_ezer_memory(|| {
         let config = toml::Value::Table(toml::map::Map::new());
         let remote = crate::util::config::RemoteSettings {
             memory_mmr_lambda: Some(5.0),
@@ -1068,7 +1068,7 @@ fn memory_config_remote_mmr_lambda_clamped() {
 }
 #[test]
 fn memory_config_partial_search_uses_remote_temporal_decay_and_mmr() {
-    without_grok_memory(|| {
+    without_ezer_memory(|| {
         let toml_str = r#"
 [memory.search]
 max_results = 8
@@ -1089,18 +1089,18 @@ max_results = 8
 /// Mutex to serialize tests that touch the EZER_SUBAGENTS env var.
 static SUBAGENTS_ENV_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
 /// Run `f` with EZER_SUBAGENTS explicitly unset.
-fn without_grok_subagents<T>(f: impl FnOnce() -> T) -> T {
+fn without_ezer_subagents<T>(f: impl FnOnce() -> T) -> T {
     let _guard = SUBAGENTS_ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
     with_env_var_opt("EZER_SUBAGENTS", None, f)
 }
 /// Run `f` with EZER_SUBAGENTS set to a specific value.
-fn with_grok_subagents<T>(value: &str, f: impl FnOnce() -> T) -> T {
+fn with_ezer_subagents<T>(value: &str, f: impl FnOnce() -> T) -> T {
     let _guard = SUBAGENTS_ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
     with_env_var_opt("EZER_SUBAGENTS", Some(value), f)
 }
 #[test]
 fn subagents_config_default_enabled() {
-    without_grok_subagents(|| {
+    without_ezer_subagents(|| {
         let config = toml::Value::Table(toml::map::Map::new());
         let sa = SubagentsConfig::resolve(None, &config);
         assert!(sa.enabled);
@@ -1158,7 +1158,7 @@ fn subagents_max_depth_invalid_env_falls_through() {
 }
 #[test]
 fn subagents_config_parses_max_depth_from_toml() {
-    without_grok_subagents(|| {
+    without_ezer_subagents(|| {
         let config: toml::Value = toml::from_str("[subagents]\nmax_depth = 2\n")
             .unwrap();
         let sa = SubagentsConfig::resolve(None, &config);
@@ -1245,7 +1245,7 @@ fn subagent_limit_behavior_resolves_env_over_toml_over_remote_over_queue() {
 }
 #[test]
 fn subagents_config_parses_limits_from_toml() {
-    without_grok_subagents(|| {
+    without_ezer_subagents(|| {
         let config: toml::Value = toml::from_str(
                 "[subagents]\nmax_concurrent = 4\nsampling_limit = 6\nlimit_behavior = \"fail\"\nworkflow_max_concurrent = 8\n",
             )
@@ -1259,7 +1259,7 @@ fn subagents_config_parses_limits_from_toml() {
 }
 #[test]
 fn subagents_config_parses_negative_max_depth_without_dropping_section() {
-    without_grok_subagents(|| {
+    without_ezer_subagents(|| {
         let config: toml::Value = toml::from_str(
                 "[subagents]\nenabled = true\nmax_depth = -1\n",
             )
@@ -1275,7 +1275,7 @@ fn subagents_config_parses_negative_max_depth_without_dropping_section() {
 }
 #[test]
 fn subagents_config_cli_flag_enables() {
-    without_grok_subagents(|| {
+    without_ezer_subagents(|| {
         let config = toml::Value::Table(toml::map::Map::new());
         let sa = SubagentsConfig::resolve(Some(true), &config);
         assert!(sa.enabled);
@@ -1283,7 +1283,7 @@ fn subagents_config_cli_flag_enables() {
 }
 #[test]
 fn subagents_config_no_subagents_cli_disables() {
-    without_grok_subagents(|| {
+    without_ezer_subagents(|| {
         let config: toml::Value = toml::from_str("[subagents]\nenabled = true").unwrap();
         let sa = SubagentsConfig::resolve(Some(false), &config);
         assert!(
@@ -1294,7 +1294,7 @@ fn subagents_config_no_subagents_cli_disables() {
 }
 #[test]
 fn subagents_config_limits_only_section_stays_enabled() {
-    without_grok_subagents(|| {
+    without_ezer_subagents(|| {
         let config: toml::Value = toml::from_str(
             "[subagents]\nmax_concurrent = 8\nlimit_behavior = \"queue\"\n",
         )
@@ -1309,7 +1309,7 @@ fn subagents_config_limits_only_section_stays_enabled() {
 }
 #[test]
 fn subagents_config_env_var_enables() {
-    with_grok_subagents(
+    with_ezer_subagents(
         "1",
         || {
             let config = toml::Value::Table(toml::map::Map::new());
@@ -1320,7 +1320,7 @@ fn subagents_config_env_var_enables() {
 }
 #[test]
 fn subagents_config_env_var_disables() {
-    with_grok_subagents(
+    with_ezer_subagents(
         "0",
         || {
             let config: toml::Value = toml::from_str("[subagents]\nenabled = true")
@@ -1332,7 +1332,7 @@ fn subagents_config_env_var_disables() {
 }
 #[test]
 fn subagents_config_toml_enables() {
-    without_grok_subagents(|| {
+    without_ezer_subagents(|| {
         let config: toml::Value = toml::from_str("[subagents]\nenabled = true").unwrap();
         let sa = SubagentsConfig::resolve(None, &config);
         assert!(sa.enabled);
@@ -1340,7 +1340,7 @@ fn subagents_config_toml_enables() {
 }
 #[test]
 fn subagents_config_local_disabled_wins() {
-    without_grok_subagents(|| {
+    without_ezer_subagents(|| {
         let config: toml::Value = toml::from_str("[subagents]\nenabled = false")
             .unwrap();
         let sa = SubagentsConfig::resolve(None, &config);
@@ -1349,7 +1349,7 @@ fn subagents_config_local_disabled_wins() {
 }
 #[test]
 fn subagents_config_env_var_disables_default() {
-    with_grok_subagents(
+    with_ezer_subagents(
         "0",
         || {
             let config = toml::Value::Table(toml::map::Map::new());
@@ -1364,7 +1364,7 @@ fn subagents_config_env_var_disables_default() {
 /// A `subagents_enabled` key served by an old cli-chat-proxy must parse as an unknown key and have no effect on resolution.
 #[test]
 fn subagents_config_remote_settings_key_is_ignored() {
-    without_grok_subagents(|| {
+    without_ezer_subagents(|| {
         let _settings: crate::util::config::RemoteSettings = serde_json::from_str(
                 r#"{"subagents_enabled": false}"#,
             )
@@ -1376,7 +1376,7 @@ fn subagents_config_remote_settings_key_is_ignored() {
 }
 #[test]
 fn subagents_config_cli_flag_overrides_env_var() {
-    with_grok_subagents(
+    with_ezer_subagents(
         "0",
         || {
             let config = toml::Value::Table(toml::map::Map::new());
@@ -1390,28 +1390,28 @@ fn subagents_config_cli_flag_overrides_env_var() {
 }
 #[test]
 fn subagents_config_models_parsed() {
-    without_grok_subagents(|| {
+    without_ezer_subagents(|| {
         let config: toml::Value = toml::from_str(
                 r#"
                 [subagents]
                 enabled = true
 
                 [subagents.models]
-                explore = "grok-3-fast"
-                plan = "grok-4.5"
+                explore = "test-model-3-fast"
+                plan = "test-model-4.5"
                 "#,
             )
             .unwrap();
         let sa = SubagentsConfig::resolve(None, &config);
         assert!(sa.enabled);
         assert_eq!(sa.models.len(), 2);
-        assert_eq!(sa.models.get("explore").unwrap(), "grok-3-fast");
-        assert_eq!(sa.models.get("plan").unwrap(), "grok-4.5");
+        assert_eq!(sa.models.get("explore").unwrap(), "test-model-3-fast");
+        assert_eq!(sa.models.get("plan").unwrap(), "test-model-4.5");
     });
 }
 #[test]
 fn subagents_config_models_empty_when_missing() {
-    without_grok_subagents(|| {
+    without_ezer_subagents(|| {
         let config: toml::Value = toml::from_str("[subagents]\nenabled = true").unwrap();
         let sa = SubagentsConfig::resolve(None, &config);
         assert!(sa.enabled);
@@ -1420,11 +1420,11 @@ fn subagents_config_models_empty_when_missing() {
 }
 #[test]
 fn subagents_config_models_without_enabled() {
-    without_grok_subagents(|| {
+    without_ezer_subagents(|| {
         let config: toml::Value = toml::from_str(
                 r#"
                 [subagents.models]
-                explore = "grok-3-fast"
+                explore = "test-model-3-fast"
                 "#,
             )
             .unwrap();
@@ -1434,30 +1434,30 @@ fn subagents_config_models_without_enabled() {
                 "model/concurrency pins must not disable the default-on subagent tool"
             );
         assert_eq!(sa.models.len(), 1);
-        assert_eq!(sa.models.get("explore").unwrap(), "grok-3-fast");
+        assert_eq!(sa.models.get("explore").unwrap(), "test-model-3-fast");
     });
 }
 #[test]
 fn subagents_config_models_with_env_var_enables() {
-    with_grok_subagents(
+    with_ezer_subagents(
         "1",
         || {
             let config: toml::Value = toml::from_str(
                     r#"
                 [subagents.models]
-                explore = "grok-3-fast"
+                explore = "test-model-3-fast"
                 "#,
                 )
                 .unwrap();
             let sa = SubagentsConfig::resolve(None, &config);
             assert!(sa.enabled, "EZER_SUBAGENTS=1 should enable");
-            assert_eq!(sa.models.get("explore").unwrap(), "grok-3-fast");
+            assert_eq!(sa.models.get("explore").unwrap(), "test-model-3-fast");
         },
     );
 }
 #[test]
 fn subagents_config_toggle_mixed_values() {
-    without_grok_subagents(|| {
+    without_ezer_subagents(|| {
         let config: toml::Value = toml::from_str(
                 r#"
                 [subagents]
@@ -1482,7 +1482,7 @@ fn subagents_config_toggle_mixed_values() {
 }
 #[test]
 fn subagents_config_toggle_missing_defaults_to_empty() {
-    without_grok_subagents(|| {
+    without_ezer_subagents(|| {
         let config: toml::Value = toml::from_str("[subagents]\nenabled = true").unwrap();
         let sa = SubagentsConfig::resolve(None, &config);
         assert!(sa.enabled);
@@ -1540,9 +1540,9 @@ fn with_managed_mcp_env<T>(
     static LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
     let _guard = LOCK.lock().unwrap_or_else(|e| e.into_inner());
     with_env_var_opt(
-        "GROK_MANAGED_MCPS_ENABLED",
+        "EZER_MANAGED_MCPS_ENABLED",
         managed_mcps,
-        || with_env_var_opt("GROK_MANAGED_MCP_GATEWAY_TOOLS_ENABLED", gateway_tools, f),
+        || with_env_var_opt("EZER_MANAGED_MCP_GATEWAY_TOOLS_ENABLED", gateway_tools, f),
     )
 }
 #[test]
@@ -1690,15 +1690,15 @@ fn with_model_overrides_env_full<T>(
     static LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
     let _guard = LOCK.lock().unwrap_or_else(|e| e.into_inner());
     with_env_var_opt(
-        "GROK_WEB_SEARCH_MODEL",
+        "EZER_WEB_SEARCH_MODEL",
         ws,
         || with_env_var_opt(
-            "GROK_SESSION_SUMMARY_MODEL",
+            "EZER_SESSION_SUMMARY_MODEL",
             ss,
             || with_env_var_opt(
-                "GROK_IMAGE_DESCRIPTION_MODEL",
+                "EZER_IMAGE_DESCRIPTION_MODEL",
                 id,
-                || with_env_var_opt("GROK_PROMPT_SUGGESTIONS_MODEL", ps, f),
+                || with_env_var_opt("EZER_PROMPT_SUGGESTIONS_MODEL", ps, f),
             ),
         ),
     )
@@ -2202,20 +2202,20 @@ fn with_tools_env<T>(
 ) -> T {
     let _guard = TOOLS_ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
     with_env_var_opt(
-        "GROK_RESPECT_GITIGNORE",
+        "EZER_RESPECT_GITIGNORE",
         respect_gitignore,
-        || with_env_var_opt("GROK_DISABLE_ZDR_INCOMPATIBLE_TOOLS", disable_zdr, f),
+        || with_env_var_opt("EZER_DISABLE_ZDR_INCOMPATIBLE_TOOLS", disable_zdr, f),
     )
 }
-fn without_grok_respect_gitignore<T>(f: impl FnOnce() -> T) -> T {
+fn without_ezer_respect_gitignore<T>(f: impl FnOnce() -> T) -> T {
     with_tools_env(None, None, f)
 }
-fn with_grok_respect_gitignore<T>(value: &str, f: impl FnOnce() -> T) -> T {
+fn with_ezer_respect_gitignore<T>(value: &str, f: impl FnOnce() -> T) -> T {
     with_tools_env(Some(value), None, f)
 }
 #[test]
 fn tools_config_default_disabled() {
-    without_grok_respect_gitignore(|| {
+    without_ezer_respect_gitignore(|| {
         let config = toml::Value::Table(toml::map::Map::new());
         let tc = ToolsConfig::resolve(&config);
         assert!(!tc.respect_gitignore);
@@ -2223,7 +2223,7 @@ fn tools_config_default_disabled() {
 }
 #[test]
 fn tools_config_toml_disables() {
-    without_grok_respect_gitignore(|| {
+    without_ezer_respect_gitignore(|| {
         let config: toml::Value = toml::from_str("[tools]\nrespect_gitignore = false")
             .unwrap();
         let tc = ToolsConfig::resolve(&config);
@@ -2232,7 +2232,7 @@ fn tools_config_toml_disables() {
 }
 #[test]
 fn tools_config_env_var_disables() {
-    with_grok_respect_gitignore(
+    with_ezer_respect_gitignore(
         "0",
         || {
             let config = toml::Value::Table(toml::map::Map::new());
@@ -2243,7 +2243,7 @@ fn tools_config_env_var_disables() {
 }
 #[test]
 fn tools_config_env_var_overrides_toml() {
-    with_grok_respect_gitignore(
+    with_ezer_respect_gitignore(
         "1",
         || {
             let config: toml::Value = toml::from_str(
@@ -2257,7 +2257,7 @@ fn tools_config_env_var_overrides_toml() {
 }
 #[test]
 fn tools_config_env_false_overrides_toml_true() {
-    with_grok_respect_gitignore(
+    with_ezer_respect_gitignore(
         "false",
         || {
             let config: toml::Value = toml::from_str("[tools]\nrespect_gitignore = true")
@@ -2265,7 +2265,7 @@ fn tools_config_env_false_overrides_toml_true() {
             let tc = ToolsConfig::resolve(&config);
             assert!(
                 !tc.respect_gitignore,
-                "GROK_RESPECT_GITIGNORE=false should override config file"
+                "EZER_RESPECT_GITIGNORE=false should override config file"
             );
         },
     );
@@ -2310,7 +2310,7 @@ fn zdr_video_output_s3_deserializes_from_tools_block() {
 }
 #[test]
 fn incomplete_zdr_video_output_s3_is_ignored() {
-    without_grok_respect_gitignore(|| {
+    without_ezer_respect_gitignore(|| {
         let config: toml::Value = toml::from_str(
                 r#"
                 [tools]
@@ -2331,7 +2331,7 @@ fn incomplete_zdr_video_output_s3_is_ignored() {
 }
 #[test]
 fn malformed_zdr_video_output_s3_preserves_zdr_flag() {
-    without_grok_respect_gitignore(|| {
+    without_ezer_respect_gitignore(|| {
         let config: toml::Value = toml::from_str(
                 r#"
                 [tools]
@@ -2381,7 +2381,7 @@ fn roles_parse_from_toml() {
             [roles.researcher]
             description = "Deep research agent"
             default_capability_mode = "read-only"
-            model = "grok-3"
+            model = "test-model-3"
 
             [roles.implementer]
             description = "Implementation agent"
@@ -2396,7 +2396,7 @@ fn roles_parse_from_toml() {
             researcher.default_capability_mode.as_deref(),
             Some("read-only")
         );
-    assert_eq!(researcher.model.as_deref(), Some("grok-3"));
+    assert_eq!(researcher.model.as_deref(), Some("test-model-3"));
     assert!(researcher.prompt_file.is_none());
     let implementer = cfg.get_role("implementer").unwrap();
     assert_eq!(implementer.description, "Implementation agent");
@@ -2404,7 +2404,7 @@ fn roles_parse_from_toml() {
     assert!(implementer.model.is_none());
     assert_eq!(
             implementer.prompt_file.as_deref(),
-            Some(".grok/prompts/impl.md")
+            Some(".ezer/prompts/impl.md")
         );
 }
 #[test]
@@ -2467,7 +2467,7 @@ fn validate_roles_passes_valid_config() {
             [roles.good]
             description = "Valid role"
             default_capability_mode = "read-write"
-            model = "grok-3"
+            model = "test-model-3"
         "#;
     let cfg: SubagentsConfig = toml::from_str(toml_str).unwrap();
     assert!(cfg.validate_roles().is_empty());
@@ -2500,7 +2500,7 @@ fn validate_roles_accepts_valid_prompt_file() {
 #[test]
 fn discover_roles_loads_from_directory() {
     let tmp = tempfile::TempDir::new().unwrap();
-    let roles_dir = tmp.path().join(".grok").join("roles");
+    let roles_dir = tmp.path().join(".ezer").join("roles");
     std::fs::create_dir_all(&roles_dir).unwrap();
     std::fs::write(
             roles_dir.join("reviewer.toml"),
@@ -2519,7 +2519,7 @@ fn discover_roles_loads_from_directory() {
 #[test]
 fn discover_roles_inline_takes_precedence() {
     let tmp = tempfile::TempDir::new().unwrap();
-    let roles_dir = tmp.path().join(".grok").join("roles");
+    let roles_dir = tmp.path().join(".ezer").join("roles");
     std::fs::create_dir_all(&roles_dir).unwrap();
     std::fs::write(
             roles_dir.join("researcher.toml"),
@@ -2543,7 +2543,7 @@ fn discover_roles_inline_takes_precedence() {
 #[test]
 fn discover_roles_ignores_non_toml_files() {
     let tmp = tempfile::TempDir::new().unwrap();
-    let roles_dir = tmp.path().join(".grok").join("roles");
+    let roles_dir = tmp.path().join(".ezer").join("roles");
     std::fs::create_dir_all(&roles_dir).unwrap();
     std::fs::write(roles_dir.join("readme.md"), "This is not a role definition")
         .unwrap();
@@ -2580,7 +2580,7 @@ fn personas_parse_from_toml() {
     assert_eq!(concise.instructions.as_deref(), Some("Be concise."));
     assert_eq!(
             concise.instructions_file.as_deref(),
-            Some(".grok/personas/concise.md")
+            Some(".ezer/personas/concise.md")
         );
 }
 #[test]
@@ -2596,7 +2596,7 @@ fn persona_lookup_returns_none_for_unknown() {
 #[test]
 fn discover_personas_loads_from_directory() {
     let tmp = tempfile::TempDir::new().unwrap();
-    let dir = tmp.path().join(".grok").join("personas");
+    let dir = tmp.path().join(".ezer").join("personas");
     std::fs::create_dir_all(&dir).unwrap();
     std::fs::write(
             dir.join("friendly.toml"),
@@ -2611,7 +2611,7 @@ fn discover_personas_loads_from_directory() {
 #[test]
 fn discover_personas_inline_takes_precedence() {
     let tmp = tempfile::TempDir::new().unwrap();
-    let dir = tmp.path().join(".grok").join("personas");
+    let dir = tmp.path().join(".ezer").join("personas");
     std::fs::create_dir_all(&dir).unwrap();
     std::fs::write(dir.join("strict.toml"), r#"instructions = "File-based strict""#)
         .unwrap();
@@ -2791,22 +2791,22 @@ fn bundled_personas_and_roles_have_lowest_priority_in_resolve_order() {
         )
         .unwrap();
     std::fs::write(
-            home.join(".grok/roles/reviewer.toml"),
+            home.join(".ezer/roles/reviewer.toml"),
             r#"description = "User reviewer""#,
         )
         .unwrap();
     std::fs::write(
-            home.join(".grok/personas/reviewer.toml"),
+            home.join(".ezer/personas/reviewer.toml"),
             r#"instructions = "User persona""#,
         )
         .unwrap();
     std::fs::write(
-            workspace.join(".grok/roles/reviewer.toml"),
+            workspace.join(".ezer/roles/reviewer.toml"),
             r#"description = "Project reviewer""#,
         )
         .unwrap();
     std::fs::write(
-            workspace.join(".grok/personas/reviewer.toml"),
+            workspace.join(".ezer/personas/reviewer.toml"),
             r#"instructions = "Project persona""#,
         )
         .unwrap();
@@ -2828,7 +2828,7 @@ fn bundled_personas_and_roles_have_lowest_priority_in_resolve_order() {
     let base = SubagentsConfig::resolve_base_with_sources(
         Some(true),
         &config,
-        Some(&home.join(".grok")),
+        Some(&home.join(".ezer")),
         &bundled,
     );
     let (roles, personas) = SubagentsConfig::effective_definition_maps(
@@ -2854,8 +2854,8 @@ fn bundled_personas_and_roles_have_lowest_priority_in_resolve_order() {
                 .as_deref(),
             Some("Inline persona")
         );
-    std::fs::remove_file(workspace.join(".grok/roles/reviewer.toml")).unwrap();
-    std::fs::remove_file(workspace.join(".grok/personas/reviewer.toml")).unwrap();
+    std::fs::remove_file(workspace.join(".ezer/roles/reviewer.toml")).unwrap();
+    std::fs::remove_file(workspace.join(".ezer/personas/reviewer.toml")).unwrap();
     let config = toml::from_str::<
         toml::Value,
     >(r#"
@@ -2866,7 +2866,7 @@ fn bundled_personas_and_roles_have_lowest_priority_in_resolve_order() {
     let base = SubagentsConfig::resolve_base_with_sources(
         Some(true),
         &config,
-        Some(&home.join(".grok")),
+        Some(&home.join(".ezer")),
         &bundled,
     );
     let (roles, personas) = SubagentsConfig::effective_definition_maps(
@@ -2892,8 +2892,8 @@ fn bundled_personas_and_roles_have_lowest_priority_in_resolve_order() {
                 .as_deref(),
             Some("User persona")
         );
-    std::fs::remove_file(home.join(".grok/roles/reviewer.toml")).unwrap();
-    std::fs::remove_file(home.join(".grok/personas/reviewer.toml")).unwrap();
+    std::fs::remove_file(home.join(".ezer/roles/reviewer.toml")).unwrap();
+    std::fs::remove_file(home.join(".ezer/personas/reviewer.toml")).unwrap();
     let config = toml::from_str::<
         toml::Value,
     >(r#"
@@ -2904,7 +2904,7 @@ fn bundled_personas_and_roles_have_lowest_priority_in_resolve_order() {
     let base = SubagentsConfig::resolve_base_with_sources(
         Some(true),
         &config,
-        Some(&home.join(".grok")),
+        Some(&home.join(".ezer")),
         &bundled,
     );
     let (roles, personas) = SubagentsConfig::effective_definition_maps(
@@ -2935,7 +2935,7 @@ fn bundled_personas_and_roles_have_lowest_priority_in_resolve_order() {
 fn render_io_summary_shows_bundled_for_bundled_personas() {
     let persona = SubagentPersona {
         instructions: Some("Bundled instructions".to_string()),
-        source_path: Some("/tmp/home/.grok/bundled/personas/reviewer.toml".to_string()),
+        source_path: Some("/tmp/home/.ezer/bundled/personas/reviewer.toml".to_string()),
         ..Default::default()
     };
     let summary = persona.render_io_summary("reviewer");
@@ -2957,7 +2957,7 @@ fn roles_coexist_with_models_and_toggle() {
     assert!(cfg.enabled);
     assert_eq!(
             cfg.models.get("explore").map(|s| s.as_str()),
-            Some("grok-fast")
+            Some("ezer-fast")
         );
     assert!(!cfg.is_subagent_enabled("plan"));
     assert!(cfg.get_role("researcher").is_some());
@@ -3184,15 +3184,15 @@ fn enterprise_two_file_merge_routes_deployment_key_to_proxy() {
             r#"
 [endpoints]
 xai_api_base_url = "https://inference.acme-corp.example/xai/v1"
-cli_chat_proxy_base_url = "https://cli-chat-proxy.grok.com/v1"
+cli_chat_proxy_base_url = "https://proxy.example.test/v1"
 
 [model.ezer-build]
 base_url = "https://inference.acme-corp.example/xai/v1"
 env_key = "ANTHROPIC_AUTH_TOKEN"
-model = "grok-4.5"
+model = "test-model-4.5"
 
 [models]
-default = "grok-4.5"
+default = "test-model-4.5"
 "#,
         )
         .unwrap();
@@ -3225,7 +3225,7 @@ trace_upload_endpoint_url = "https://s3.acme-corp.example"
         .unwrap();
     assert_eq!(
             cfg.endpoints.resolve_managed_config_url(),
-            "https://cli-chat-proxy.grok.com/v1/deployment/config"
+            "https://proxy.example.test/v1/deployment/config"
         );
     assert!(
             !cfg.endpoints
@@ -3244,7 +3244,7 @@ fn managed_config_feedback_user_reaches_resolved_config() {
     let managed = toml::from_str(
             r#"
 [endpoints]
-cli_chat_proxy_base_url = "https://cli-chat-proxy.grok.com/v1"
+cli_chat_proxy_base_url = "https://proxy.example.test/v1"
 
 [feedback.user]
 name = ["os_user"]
@@ -3281,12 +3281,12 @@ email_domain = "example.com"
 fn project_config_never_sources_feedback_user() {
     use ezer_test_support::EnvGuard;
     let home = tempfile::tempdir().unwrap();
-    let _env = EnvGuard::set("GROK_HOME", home.path());
-    let _flag = EnvGuard::unset("GROK_FOLDER_TRUST");
+    let _env = EnvGuard::set("EZER_HOME", home.path());
+    let _flag = EnvGuard::unset("EZER_FOLDER_TRUST");
     let _sim = simulate_release_build();
     let repo = tempfile::tempdir().unwrap();
     git2::Repository::init(repo.path()).unwrap();
-    let ezer = repo.path().join(".grok");
+    let ezer = repo.path().join(".ezer");
     std::fs::create_dir_all(&ezer).unwrap();
     std::fs::write(
             ezer.join("config.toml"),
@@ -3628,21 +3628,21 @@ fn apply_requirements_allowed_models_clamps_catalog_and_names_source() {
     let raw: toml::Value = toml::from_str(
             r#"
             [models]
-            default = "grok-3"
+            default = "test-model-3"
             allowed_models = ["*"]
-            [model.grok-3]
-            model = "grok-3"
+            [model.test-model-3]
+            model = "test-model-3"
             base_url = "https://api.x.ai/v1"
             context_window = 256000
-            [model.grok-4]
-            model = "grok-4"
+            [model.test-model-4]
+            model = "test-model-4"
             base_url = "https://api.x.ai/v1"
             context_window = 256000
             "#,
         )
         .unwrap();
     let mut cfg = crate::agent::config::Config::new_from_toml_cfg(&raw).unwrap();
-    pin_allowed_models(&mut cfg, "[models]\nallowed_models = [\"grok-4\"]\n");
+    pin_allowed_models(&mut cfg, "[models]\nallowed_models = [\"test-model-4\"]\n");
     let catalog = crate::agent::remote_config::resolve_model_catalog(&cfg, None);
     let selectable = |id| {
         catalog
@@ -3652,11 +3652,11 @@ fn apply_requirements_allowed_models_clamps_catalog_and_names_source() {
             .user_selectable
     };
     assert!(
-            selectable("grok-4"),
+            selectable("test-model-4"),
             "signed allowlist member must stay selectable"
         );
     assert!(
-            !selectable("grok-3"),
+            !selectable("test-model-3"),
             "models outside the signed set must not be selectable"
         );
     let err = crate::agent::remote_config::validate_selectable(&cfg, &catalog)
@@ -3669,32 +3669,32 @@ fn apply_requirements_allowed_models_clamps_catalog_and_names_source() {
             !err.contains("requirements.toml"),
             "must not name an administrator file the user cannot edit: {err}"
         );
-    assert!(err.contains("grok-3"), "error must name the excluded default: {err}");
+    assert!(err.contains("test-model-3"), "error must name the excluded default: {err}");
 }
 #[test]
 fn apply_requirements_allowed_models_ignores_user_catalog_key() {
     let raw: toml::Value = toml::from_str(
             r#"
             [models]
-            default = "grok-4"
+            default = "test-model-4"
             allowed_models = ["*"]
-            [model.grok-4]
-            model = "grok-4"
+            [model.test-model-4]
+            model = "test-model-4"
             base_url = "https://api.x.ai/v1"
             context_window = 256000
-            [model.grok-4-anything]
+            [model.test-model-4-anything]
             model = "other-model"
             base_url = "https://evil.example/v1"
             context_window = 256000
             [model.my-alias]
-            model = "grok-4"
+            model = "test-model-4"
             base_url = "https://api.x.ai/v1"
             context_window = 256000
             "#,
         )
         .unwrap();
     let mut cfg = crate::agent::config::Config::new_from_toml_cfg(&raw).unwrap();
-    pin_allowed_models(&mut cfg, "[models]\nallowed_models = [\"grok-4*\"]\n");
+    pin_allowed_models(&mut cfg, "[models]\nallowed_models = [\"test-model-4*\"]\n");
     let catalog = crate::agent::remote_config::resolve_model_catalog(&cfg, None);
     let selectable = |id| {
         catalog
@@ -3704,16 +3704,16 @@ fn apply_requirements_allowed_models_ignores_user_catalog_key() {
             .user_selectable
     };
     assert!(
-            selectable("grok-4"),
-            "routing slug grok-4 matches grok-4*"
+            selectable("test-model-4"),
+            "routing slug test-model-4 matches test-model-4*"
         );
     assert!(
             selectable("my-alias"),
-            "user alias whose model id is grok-4 stays selectable"
+            "user alias whose model id is test-model-4 stays selectable"
         );
     assert!(
-            !selectable("grok-4-anything"),
-            "catalog key grok-4-anything pointing at another model must not satisfy the pin"
+            !selectable("test-model-4-anything"),
+            "catalog key test-model-4-anything pointing at another model must not satisfy the pin"
         );
 }
 #[test]
@@ -3721,23 +3721,23 @@ fn apply_requirements_malformed_allowed_models_fail_closes() {
     let raw: toml::Value = toml::from_str(
             r#"
             [models]
-            default = "grok-4"
+            default = "test-model-4"
             allowed_models = ["*"]
-            [model.grok-4]
-            model = "grok-4"
+            [model.test-model-4]
+            model = "test-model-4"
             base_url = "https://api.x.ai/v1"
             context_window = 256000
             "#,
         )
         .unwrap();
     let mut cfg = crate::agent::config::Config::new_from_toml_cfg(&raw).unwrap();
-    pin_allowed_models(&mut cfg, "[models]\nallowed_models = \"grok-4\"\n");
+    pin_allowed_models(&mut cfg, "[models]\nallowed_models = \"test-model-4\"\n");
     let catalog = crate::agent::remote_config::resolve_model_catalog(&cfg, None);
-    let Some(grok4) = catalog.get("grok-4") else {
-        panic!("expected grok-4: {catalog:?}");
+    let Some(model4) = catalog.get("test-model-4") else {
+        panic!("expected test-model-4: {catalog:?}");
     };
     assert!(
-            !grok4.info.user_selectable,
+            !model4.info.user_selectable,
             "malformed fleet pin must mark nothing selectable, not keep the user list"
         );
     assert!(
@@ -3763,13 +3763,13 @@ fn apply_requirements_allowed_models_empty_array_is_unrestricted() {
     let raw: toml::Value = toml::from_str(
             r#"
             [models]
-            allowed_models = ["grok-4"]
-            [model.grok-3]
-            model = "grok-3"
+            allowed_models = ["test-model-4"]
+            [model.test-model-3]
+            model = "test-model-3"
             base_url = "https://api.x.ai/v1"
             context_window = 256000
-            [model.grok-4]
-            model = "grok-4"
+            [model.test-model-4]
+            model = "test-model-4"
             base_url = "https://api.x.ai/v1"
             context_window = 256000
             "#,
@@ -3786,7 +3786,7 @@ fn apply_requirements_allowed_models_empty_array_is_unrestricted() {
             .user_selectable
     };
     assert!(
-            selectable("grok-3") && selectable("grok-4"),
+            selectable("test-model-3") && selectable("test-model-4"),
             "empty fleet array must not restrict"
         );
     assert!(
@@ -3798,7 +3798,7 @@ fn apply_requirements_allowed_models_empty_array_is_unrestricted() {
         );
     assert_eq!(
             cfg.models.allowed_models,
-            Some(vec!["grok-4".to_string()]),
+            Some(vec!["test-model-4".to_string()]),
             "pin must not overwrite the user-field copy; EffectiveAllowlist reads the pin"
         );
 }
@@ -3808,19 +3808,19 @@ fn apply_requirements_allowed_models_replaces_user_list() {
             r#"
             [models]
             allowed_models = ["*"]
-            [model.grok-3]
-            model = "grok-3"
+            [model.test-model-3]
+            model = "test-model-3"
             base_url = "https://api.x.ai/v1"
             context_window = 256000
-            [model.grok-4]
-            model = "grok-4"
+            [model.test-model-4]
+            model = "test-model-4"
             base_url = "https://api.x.ai/v1"
             context_window = 256000
             "#,
         )
         .unwrap();
     let mut cfg = crate::agent::config::Config::new_from_toml_cfg(&raw).unwrap();
-    pin_allowed_models(&mut cfg, "[models]\nallowed_models = [\"grok-4\"]\n");
+    pin_allowed_models(&mut cfg, "[models]\nallowed_models = [\"test-model-4\"]\n");
     let catalog = crate::agent::remote_config::resolve_model_catalog(&cfg, None);
     let selectable = |id| {
         catalog
@@ -3829,9 +3829,9 @@ fn apply_requirements_allowed_models_replaces_user_list() {
             .info
             .user_selectable
     };
-    assert!(selectable("grok-4"));
+    assert!(selectable("test-model-4"));
     assert!(
-            !selectable("grok-3"),
+            !selectable("test-model-3"),
             "user * must not union with the fleet pin"
         );
 }
@@ -3840,21 +3840,21 @@ fn validate_selectable_rejects_dash_m_outside_fleet_pin() {
     let raw: toml::Value = toml::from_str(
             r#"
             [models]
-            default = "grok-4"
-            [model.grok-3]
-            model = "grok-3"
+            default = "test-model-4"
+            [model.test-model-3]
+            model = "test-model-3"
             base_url = "https://api.x.ai/v1"
             context_window = 256000
-            [model.grok-4]
-            model = "grok-4"
+            [model.test-model-4]
+            model = "test-model-4"
             base_url = "https://api.x.ai/v1"
             context_window = 256000
             "#,
         )
         .unwrap();
     let mut cfg = crate::agent::config::Config::new_from_toml_cfg(&raw).unwrap();
-    pin_allowed_models(&mut cfg, "[models]\nallowed_models = [\"grok-4\"]\n");
-    cfg.default_model_override = Some("grok-3".into());
+    pin_allowed_models(&mut cfg, "[models]\nallowed_models = [\"test-model-4\"]\n");
+    cfg.default_model_override = Some("test-model-3".into());
     let catalog = crate::agent::remote_config::resolve_model_catalog(&cfg, None);
     let err = crate::agent::remote_config::validate_selectable(&cfg, &catalog)
         .unwrap_err();
@@ -3902,7 +3902,7 @@ fn validate_hooks_path_rejects_relative_path() {
         );
 }
 #[test]
-fn validate_hooks_path_rejects_outside_grok_home() {
+fn validate_hooks_path_rejects_outside_ezer_home() {
     let result = validate_hooks_path("/tmp/evil-hooks");
     assert!(result.is_err());
     let msg = result.unwrap_err().to_string();
@@ -3913,8 +3913,8 @@ fn validate_hooks_path_rejects_outside_grok_home() {
 }
 #[test]
 fn validate_hooks_path_rejects_traversal_attack() {
-    let grok_home = crate::util::grok_home::grok_home();
-    let traversal = format!("{}/../evil", grok_home.display());
+    let ezer_home = crate::util::ezer_home::ezer_home();
+    let traversal = format!("{}/../evil", ezer_home.display());
     let result = validate_hooks_path(&traversal);
     assert!(result.is_err());
     let msg = result.unwrap_err().to_string();
@@ -3924,9 +3924,9 @@ fn validate_hooks_path_rejects_traversal_attack() {
         );
 }
 #[test]
-fn validate_hooks_path_accepts_grok_hooks_subdir() {
-    let grok_home = crate::util::grok_home::grok_home();
-    let valid_path = grok_home.join("hooks").join("my-hooks");
+fn validate_hooks_path_accepts_ezer_hooks_subdir() {
+    let ezer_home = crate::util::ezer_home::ezer_home();
+    let valid_path = ezer_home.join("hooks").join("my-hooks");
     let _ = std::fs::create_dir_all(&valid_path);
     let result = validate_hooks_path(valid_path.to_str().unwrap());
     assert!(result.is_ok(), "path under ~/.ezer/ should be accepted");
@@ -4082,7 +4082,7 @@ fn base_resolver_without_project_cwd_keeps_project_files_out() {
     assert!(base.get_persona("project").is_none());
 }
 #[test]
-fn explicit_grok_root_is_the_only_user_source() {
+fn explicit_ezer_root_is_the_only_user_source() {
     let tmp = tempfile::tempdir().unwrap();
     let ambient = tmp.path().join("ambient-home/.ezer");
     let configured = tmp.path().join("configured-ezer-home");
@@ -4101,13 +4101,13 @@ fn explicit_grok_root_is_the_only_user_source() {
 }
 /// SECURITY (plugin-RCE): a PROJECT-declared `[plugins].paths` loads as an auto-enabled, auto-trusted ConfigPath plugin.
 /// It must therefore merge into the effective config ONLY when the folder is trusted; project `[plugins].disabled` is never gated.
-/// The closing set-difference proves the gate toggles ONLY that path (user/global paths pass through both verdicts untouched). The test is GROK_HOME-isolated and `#[serial]` for folder-trust store hygiene: an empty store is deterministically untrusted. `EnvGuard` restores GROK_HOME even on panic. It is reliable only under nextest's process-per-test isolation.
+/// The closing set-difference proves the gate toggles ONLY that path (user/global paths pass through both verdicts untouched). The test is EZER_HOME-isolated and `#[serial]` for folder-trust store hygiene: an empty store is deterministically untrusted. `EnvGuard` restores EZER_HOME even on panic. It is reliable only under nextest's process-per-test isolation.
 #[test]
 #[serial_test::serial]
 fn resolve_effective_plugins_config_gates_project_paths_on_folder_trust() {
     use ezer_test_support::EnvGuard;
     let home = tempfile::tempdir().unwrap();
-    let _env = EnvGuard::set("GROK_HOME", home.path());
+    let _env = EnvGuard::set("EZER_HOME", home.path());
     let _flag = EnvGuard::unset("EZER_FOLDER_TRUST");
     let _sim = simulate_release_build();
     let repo = tempfile::tempdir().unwrap();
@@ -4161,7 +4161,7 @@ fn discover_plugins_excludes_untrusted_configpath_plugin_end_to_end() {
     use ezer_agent::plugins::{TrustStore, discover_plugins};
     use ezer_test_support::EnvGuard;
     let home = tempfile::tempdir().unwrap();
-    let _env = EnvGuard::set("GROK_HOME", home.path());
+    let _env = EnvGuard::set("EZER_HOME", home.path());
     let _flag = EnvGuard::unset("EZER_FOLDER_TRUST");
     let _sim = simulate_release_build();
     let repo = tempfile::tempdir().unwrap();
@@ -4171,7 +4171,7 @@ fn discover_plugins_excludes_untrusted_configpath_plugin_end_to_end() {
     std::fs::create_dir_all(&plugin_dir).unwrap();
     std::fs::write(plugin_dir.join("plugin.json"), r#"{"name":"cfgpath-probe"}"#)
         .unwrap();
-    let ezer = cwd.join(".grok");
+    let ezer = cwd.join(".ezer");
     std::fs::create_dir_all(&ezer).unwrap();
     std::fs::write(
             ezer.join("config.toml"),
@@ -4224,18 +4224,18 @@ fn discover_plugins_excludes_untrusted_configpath_plugin_end_to_end() {
 }
 /// Kill-switch ordering regression: `resolve_effective_plugins_config` reads the folder-trust gate internally. Its call sites (commands/list, plugin fan-out, reload) therefore resolve with the REAL RemoteSettings first.
 /// A cold key under an org kill-switch must end up allowed. If the plugins-config read ran first, the gate's remote-less backstop would record a durable kill-switch-blind deny.
-/// The `Some(false)` arm of `resolve_and_record_inner` (store-only reconcile) could never lift that deny. The test is GROK_HOME-isolated (empty store); EZER_FOLDER_TRUST is unset so the kill-switch is the only signal.
+/// The `Some(false)` arm of `resolve_and_record_inner` (store-only reconcile) could never lift that deny. The test is EZER_HOME-isolated (empty store); EZER_FOLDER_TRUST is unset so the kill-switch is the only signal.
 #[test]
 #[serial_test::serial]
 fn kill_switched_cold_cwd_stays_allowed_through_plugins_config_read() {
     use ezer_test_support::EnvGuard;
     let home = tempfile::tempdir().unwrap();
-    let _env = EnvGuard::set("GROK_HOME", home.path());
-    let _flag = EnvGuard::unset("GROK_FOLDER_TRUST");
+    let _env = EnvGuard::set("EZER_HOME", home.path());
+    let _flag = EnvGuard::unset("EZER_FOLDER_TRUST");
     let _sim = simulate_release_build();
     let repo = tempfile::tempdir().unwrap();
     git2::Repository::init(repo.path()).unwrap();
-    let ezer = repo.path().join(".grok");
+    let ezer = repo.path().join(".ezer");
     std::fs::create_dir_all(&ezer).unwrap();
     std::fs::write(ezer.join("config.toml"), "[plugins]\npaths = [\"./proj-plugin\"]\n")
         .unwrap();
@@ -4258,7 +4258,7 @@ fn kill_switched_cold_cwd_stays_allowed_through_plugins_config_read() {
             "gate must still allow the kill-switched folder after the config read"
         );
 }
-/// Writeback requires grok.com auth: remote may advertise it, but a non-xai credential is downgraded to `Local`.
+/// Writeback requires ezer.com auth: remote may advertise it, but a non-xai credential is downgraded to `Local`.
 #[test]
 #[serial_test::serial]
 fn from_remote_gated_requires_xai_auth_for_writeback() {

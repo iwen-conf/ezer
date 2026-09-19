@@ -1,7 +1,7 @@
 //! `/docs` opens How-to Guides (in-TUI) or the online Build docs.
 //!
 //! Bare `/docs` opens the same DocPicker as command-palette "How-to Guides".
-//! `/docs web` opens https://docs.x.ai/build/overview in the browser.
+//! `/docs web` opens the in-product docs landing page when a docs URL is configured.
 //! `/docs <title>` opens a single guide by title (case-insensitive).
 
 use crate::app::actions::Action;
@@ -10,8 +10,9 @@ use crate::slash::command::{
     AppCtx, ArgItem, CommandExecCtx, CommandResult, SlashCommand, slash_meta,
 };
 
-/// The online Build docs landing page, hardcoded like other TUI deep-links; docs.x.ai can redirect if the path moves.
-pub const BUILD_DOCS_URL: &str = "https://docs.x.ai/build/overview";
+/// Online Build docs landing page. Empty in BYOK builds so `/docs web` does not
+/// embed a first-party marketing host.
+pub const BUILD_DOCS_URL: &str = "";
 
 pub struct DocsCommand;
 
@@ -38,7 +39,7 @@ impl SlashCommand for DocsCommand {
                 display: "web".into(),
                 match_text: "web".into(),
                 insert_text: "web".into(),
-                description: "Open docs.x.ai/build in the browser".into(),
+                description: "Open online Build docs in the browser".into(),
             },
         ];
         items.extend(all_titles().map(|title| ArgItem {
@@ -56,6 +57,11 @@ impl SlashCommand for DocsCommand {
             return CommandResult::Action(Action::OpenHowtoGuides);
         }
         if is_web_arg(trimmed) {
+            if BUILD_DOCS_URL.is_empty() {
+                return CommandResult::Error(
+                    "Online Build docs are not configured in this build.".into(),
+                );
+            }
             return CommandResult::Action(Action::OpenUrl(BUILD_DOCS_URL.into()));
         }
         match find_doc(trimmed) {
@@ -147,11 +153,20 @@ mod tests {
         let models = ModelState::default();
         let mut ctx = make_ctx(&models);
         for args in ["web", "online", "browser"] {
-            match DocsCommand.run(&mut ctx, args) {
-                CommandResult::Action(Action::OpenUrl(url)) => {
-                    assert_eq!(url, BUILD_DOCS_URL, "args={args:?}");
+            if BUILD_DOCS_URL.is_empty() {
+                match DocsCommand.run(&mut ctx, args) {
+                    CommandResult::Error(msg) => {
+                        assert!(msg.contains("not configured"), "args={args:?}");
+                    }
+                    other => panic!("expected Error for args={args:?}, got {other:?}"),
                 }
-                other => panic!("expected OpenUrl for args={args:?}, got {other:?}"),
+            } else {
+                match DocsCommand.run(&mut ctx, args) {
+                    CommandResult::Action(Action::OpenUrl(url)) => {
+                        assert_eq!(url, BUILD_DOCS_URL, "args={args:?}");
+                    }
+                    other => panic!("expected OpenUrl for args={args:?}, got {other:?}"),
+                }
             }
         }
     }

@@ -46,14 +46,14 @@ fn default_team_oauth2_scopes() -> Vec<String> {
 pub enum PreferredAuthMethod {
     /// `XAI_API_KEY` / auth.json `xai::api_key` / per-model BYOK (`xai.api_key`).
     ApiKey,
-    /// OIDC / OAuth2 session (`cached_token`, interactive `grok.com` / `oidc`, including devbox-minted OIDC).
+    /// OIDC / OAuth2 session (`cached_token`, interactive `ezer.com` / `oidc`, including devbox-minted OIDC).
     Oidc,
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
-pub struct GrokComConfig {
-    pub grok_ws_origin: String,
-    pub grok_ws_url: String,
+pub struct EzerComConfig {
+    pub ezer_ws_origin: String,
+    pub ezer_ws_url: String,
     pub token_header: String,
     /// OIDC config for customer-provided IdPs. See [`OidcAuthConfig`].
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -92,7 +92,7 @@ pub enum ForceLoginTeam {
     /// Allowed teams; an empty list fails closed.
     AnyOf(Vec<String>),
 }
-/// Customer OIDC Identity Provider configuration (`[grok_com_config.oidc]`).
+/// Customer OIDC Identity Provider configuration (`[ezer_com_config.oidc]`).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OidcAuthConfig {
     pub issuer: String,
@@ -119,8 +119,12 @@ pub struct OAuth2ProviderConfig {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub referrer: Option<String>,
 }
+/// Opt-in first-party issuer for `EZER_ENABLE_XAI_LOGIN` only. Empty would
+/// break issuer matching for existing auth.json entries; BYOK never opens this
+/// host on the default path.
 pub const XAI_OAUTH2_ISSUER: &str = "https://auth.x.ai";
 /// A separate const so the frozen contract test pins the production allowlist even when the non-production feature adds staging and local origins.
+/// CORS allowlist for the opt-in accounts-app loopback; unused unless login is enabled.
 const PROD_ACCOUNTS_APP_ORIGINS: &[&str] = &["https://accounts.x.ai"];
 /// Production build: accepts only the production accounts app.
 pub fn allowed_accounts_app_origins() -> Vec<String> {
@@ -168,9 +172,9 @@ pub fn is_xai_oauth2_issuer(issuer: &str) -> bool {
     issuer == XAI_OAUTH2_ISSUER || issuer == XAI_OAUTH2_LOCAL_ISSUER
 }
 /// auth.json scope key used by the pre-OIDC `ezer login --legacy` flow.
-/// Matches the key format produced by the original `accounts.x.ai` relay auth.
+/// One-release reader for old `accounts.x.ai` relay entries; not advertised in help.
 pub const LEGACY_AUTH_SCOPE: &str = "https://accounts.x.ai/sign-in";
-impl GrokComConfig {
+impl EzerComConfig {
     /// Pinning a team (`force_login_team_uuid`) disables `xai.api_key` auth: team membership can't be verified from a bare API key.
     /// The `EZER_DISABLE_API_KEY_AUTH` env lockdown is read at call time and OR-ed in, so a lower-trust user `config.toml` cannot turn it back off.
     /// `requirements.toml` already wins by layer precedence.
@@ -238,7 +242,7 @@ impl OAuth2ProviderConfig {
         self.base_auth_scope()
     }
 }
-impl Default for GrokComConfig {
+impl Default for EzerComConfig {
     fn default() -> Self {
         let oidc = OidcAuthConfig::from_env();
         let oauth2 = if oidc.is_some() {
@@ -256,9 +260,9 @@ impl Default for GrokComConfig {
             )
         };
         Self {
-            grok_ws_origin: std::env::var("EZER_WS_ORIGIN")
+            ezer_ws_origin: std::env::var("EZER_WS_ORIGIN")
                 .unwrap_or_else(|_| PROD_WS_ORIGIN.to_owned()),
-            grok_ws_url: std::env::var("EZER_WS_URL")
+            ezer_ws_url: std::env::var("EZER_WS_URL")
                 .unwrap_or_else(|_| PROD_RELAY_WS_URL.to_owned()),
             token_header: "ezer-cli".to_owned(),
             oidc,
@@ -308,7 +312,7 @@ pub fn force_login_team_from_requirements_value(
     requirements: &toml::Value,
 ) -> Option<ForceLoginTeam> {
     let value = requirements
-        .get("grok_com_config")
+        .get("ezer_com_config")
         .and_then(|section| section.get("force_login_team_uuid"))
         .or_else(|| {
             requirements
@@ -439,21 +443,21 @@ mod tests {
     }
     #[test]
     fn preferred_method_deserializes_from_toml() {
-        let cfg: GrokComConfig = toml::from_str(
+        let cfg: EzerComConfig = toml::from_str(
             r#"
             preferred_method = "api_key"
             "#,
         )
         .expect("parse");
         assert_eq!(cfg.preferred_method, Some(PreferredAuthMethod::ApiKey));
-        let cfg: GrokComConfig = toml::from_str(
+        let cfg: EzerComConfig = toml::from_str(
             r#"
             preferred_method = "oidc"
             "#,
         )
         .expect("parse");
         assert_eq!(cfg.preferred_method, Some(PreferredAuthMethod::Oidc));
-        let cfg: GrokComConfig = toml::from_str("").expect("parse empty");
+        let cfg: EzerComConfig = toml::from_str("").expect("parse empty");
         assert_eq!(cfg.preferred_method, None);
     }
     /// Every `EZER_FORCE_LOGIN_TEAM_ID` shape: bare value, arrays, empty-array, malformed, and empty/whitespace.
@@ -499,7 +503,7 @@ mod tests {
         assert_eq!(resolve_force_login_team(None, None, cfg()), cfg());
         assert_eq!(resolve_force_login_team(None, None, None), None);
     }
-    /// Extraction from the `[grok_com_config]` key and its `[auth]` alias.
+    /// Extraction from the `[ezer_com_config]` key and its `[auth]` alias.
     /// A present but malformed value fails closed (empty any-of), never `None`; an absent field is `None`.
     #[test]
     fn force_login_team_from_requirements_value_extracts_and_fails_closed() {
@@ -507,7 +511,7 @@ mod tests {
             force_login_team_from_requirements_value(&toml::from_str(toml_str).expect("parse"))
         }
         assert_eq!(
-            pin("[grok_com_config]\nforce_login_team_uuid = \"team-a\"\n"),
+            pin("[ezer_com_config]\nforce_login_team_uuid = \"team-a\"\n"),
             Some(ForceLoginTeam::Single("team-a".into())),
         );
         assert_eq!(
@@ -518,10 +522,10 @@ mod tests {
             ])),
         );
         assert_eq!(
-            pin("[grok_com_config]\nforce_login_team_uuid = 123\n"),
+            pin("[ezer_com_config]\nforce_login_team_uuid = 123\n"),
             Some(ForceLoginTeam::AnyOf(vec![])),
         );
-        assert_eq!(pin("[grok_com_config]\n"), None);
+        assert_eq!(pin("[ezer_com_config]\n"), None);
         assert_eq!(pin(""), None);
     }
 }

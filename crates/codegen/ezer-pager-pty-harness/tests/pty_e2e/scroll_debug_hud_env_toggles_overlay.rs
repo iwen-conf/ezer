@@ -6,7 +6,7 @@ use super::scroll::*;
 
 use std::time::Duration;
 
-// Scroll-debug HUD e2e (`GROK_SCROLL_DEBUG`). The HUD is a release-compiled overlay gated at
+// Scroll-debug HUD e2e (`EZER_SCROLL_DEBUG`). The HUD is a release-compiled overlay gated at
 // runtime, so the stock harness binary must show it with the env var set and nothing without it.
 
 /// 120 one-row markers overflow the 50-row PTY, so the early markers sit above the visible screen.

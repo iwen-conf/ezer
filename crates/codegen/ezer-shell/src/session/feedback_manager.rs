@@ -579,7 +579,7 @@ impl FeedbackManager {
         None
     }
 
-    /// Engineers developing clients can call this via the `x.ai/debug/trigger_feedback` ACP extension method.
+    /// Engineers developing clients can call this via the `ezer/debug/trigger_feedback` ACP extension method.
     /// When a `feedback_client` is configured, the request is also recorded via the feedback API, exactly like a real trigger.
     /// The subsequent `complete_request` / `dismiss_request` round-trip from the client then works end-to-end.
     #[tracing::instrument(name = "feedback.force_feedback_request", skip_all, fields(
@@ -1888,18 +1888,18 @@ mod tests {
         use crate::agent::feedback_client::FeedbackClient;
         use std::sync::Arc;
         use ezer_login::error::RefreshTokenFailedReason;
-        use ezer_login::{AuthManager, GrokAuth, GrokComConfig};
+        use ezer_login::{AuthManager, EzerAuth, EzerComConfig};
 
         let dir = tempfile::tempdir().unwrap();
-        let am = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
+        let am = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
         let client = FeedbackClient::new("http://example/v1", None).with_auth_manager(am.clone());
 
         assert!(!client.is_auth_permanently_failed());
 
         // The verdict is scoped to the live credential's key.
-        am.hot_swap(GrokAuth {
+        am.hot_swap(EzerAuth {
             key: "tok".into(),
-            ..GrokAuth::test_default()
+            ..EzerAuth::test_default()
         });
         // Use a non-sticky reason: only recoverable verdicts age out (a sticky `RefreshTokenRejected` never expires), which exercises the TTL path
         am.record_permanent_failure("tok".to_string(), RefreshTokenFailedReason::Other.into());
@@ -1922,7 +1922,7 @@ mod tests {
     async fn test_has_token_refresher_requires_refresher_attached() {
         use crate::agent::feedback_client::FeedbackClient;
         use std::sync::Arc;
-        use ezer_login::{AuthManager, GrokComConfig};
+        use ezer_login::{AuthManager, EzerComConfig};
 
         struct NoOpRefresher;
         #[async_trait::async_trait]
@@ -1938,7 +1938,7 @@ mod tests {
         }
 
         let dir = tempfile::tempdir().unwrap();
-        let am = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
+        let am = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
 
         let bare = FeedbackClient::new("http://example/v1", None);
         assert!(!bare.has_token_refresher());
@@ -1976,7 +1976,7 @@ mod tests {
                 let mut expected = serde_json::json!({
                     "session_id": "sess-1",
                     "has_feedback_text": true,
-                    "model_id": "grok-4",
+                    "model_id": "test-model-4",
                     "is_solicited": false,
                     "outcome": wire,
                 });
@@ -1993,7 +1993,7 @@ mod tests {
                     ClientType::Tui,
                     FeedbackContent::Text("great session".to_owned()),
                 );
-                submission.model_id = Some("grok-4".to_owned());
+                submission.model_id = Some("test-model-4".to_owned());
                 submission.metadata = enveloped.then(|| envelope.clone());
                 assert_eq!(
                     serde_json::to_value(user_feedback_event(&submission, outcome, false)).unwrap(),
@@ -2048,7 +2048,7 @@ mod author_identity_tests {
             ClientType::Tui,
             FeedbackContent::Text("great session".to_string()),
         );
-        s.model_id = Some("grok-4".to_string());
+        s.model_id = Some("test-model-4".to_string());
         s
     }
 
@@ -2113,7 +2113,7 @@ email = ["$EZER_TEST_WORK_EMAIL"]
             body.get("authorEmail"),
             Some(&serde_json::json!("ada@corp.example"))
         );
-        assert_eq!(body.get("modelId"), Some(&serde_json::json!("grok-4")));
+        assert_eq!(body.get("modelId"), Some(&serde_json::json!("test-model-4")));
         assert_eq!(
             body.get("feedbackText"),
             Some(&serde_json::json!("great session"))
@@ -2127,7 +2127,7 @@ email = ["$EZER_TEST_WORK_EMAIL"]
         let persisted = entry.submission.expect("submission persisted");
         assert_eq!(persisted.author_name.as_deref(), Some("Ada Lovelace"));
         assert_eq!(persisted.author_email.as_deref(), Some("ada@corp.example"));
-        assert_eq!(persisted.model_id.as_deref(), Some("grok-4"));
+        assert_eq!(persisted.model_id.as_deref(), Some("test-model-4"));
     }
 
     /// `EZER_USER_METADATA` is merged into the submission and travels with it: onto the wire body for triage and onto the local feedback.jsonl entry.
@@ -2183,7 +2183,7 @@ email = ["$EZER_TEST_WORK_EMAIL"]
     #[serial_test::serial]
     async fn workflow_env_metadata_cannot_touch_structured_feedback() {
         let _guard = ezer_test_support::env::EnvGuard::set(
-            "GROK_USER_METADATA",
+            "EZER_USER_METADATA",
             r#"{"team": "platform-tools", "structured_feedback": {"type": "forged"}}"#,
         );
         let (addr, captured) = start_capture_server().await;

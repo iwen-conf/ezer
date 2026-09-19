@@ -386,18 +386,18 @@ impl SubagentsConfig {
     /// pins does not disable the feature.
     /// Project files are excluded from this trust-independent base; Task boundaries overlay them using the parent cwd's authoritative trust verdict.
     pub fn resolve(cli_flag: Option<bool>, config: &toml::Value) -> Self {
-        let user_grok_root = ezer_config::user_grok_home();
+        let user_ezer_root = ezer_config::user_ezer_home();
         Self::resolve_base_with_sources(
             cli_flag,
             config,
-            user_grok_root.as_deref(),
+            user_ezer_root.as_deref(),
             &bundle::bundled_root(),
         )
     }
     pub(crate) fn resolve_base_with_sources(
         cli_flag: Option<bool>,
         config: &toml::Value,
-        user_grok_root: Option<&std::path::Path>,
+        user_ezer_root: Option<&std::path::Path>,
         bundled_root: &std::path::Path,
     ) -> Self {
         let mut result: Self = config
@@ -413,7 +413,7 @@ impl SubagentsConfig {
             true,
         );
         result.enabled = resolved.value;
-        if let Some(root) = user_grok_root {
+        if let Some(root) = user_ezer_root {
             result.discover_roles_in_dir(&root.join("roles"));
             result.discover_personas_in_dir(&root.join("personas"));
         }
@@ -511,7 +511,7 @@ pub(crate) struct ModelOverrideConfig {
     pub web_search: String,
     /// `None` = current model.
     pub session_summary: Option<String>,
-    /// Compiled default (`grok-4.6`) when unset locally, remotely, and via env.
+    /// Compiled default (`test-model-4.6`) when unset locally, remotely, and via env.
     pub image_description: Option<String>,
     /// Next-prompt suggestion model pin.
     /// Unlike the other overrides this does NOT fill a compiled default; see [`PromptSuggestModelPin`].
@@ -553,7 +553,7 @@ fn non_empty_model_override(value: Option<&str>) -> Option<String> {
     })
 }
 impl ModelOverrideConfig {
-    /// CLI flag > env var > config.toml > remote settings > compiled default. `image_description` and `session_summary` always resolve to `Some(_)` (default `grok-4.6`), never the session model.
+    /// CLI flag > env var > config.toml > remote settings > compiled default. `image_description` and `session_summary` always resolve to `Some(_)` (default `test-model-4.6`), never the session model.
     /// `prompt_suggestion` resolves to a [`PromptSuggestModelPin`] instead of a model string. It has no CLI flag; the default and the catalog guard live at the consumer, `handle_suggest_prompt`.
     pub(crate) fn resolve(
         cli_web_search_model: Option<&str>,
@@ -860,7 +860,7 @@ impl StorageMode {
         }
         Self::Local
     }
-    /// Resolve from remote settings, enforcing the rule that `Writeback` requires grok.com auth (it syncs session history to the user's account).
+    /// Resolve from remote settings, enforcing the rule that `Writeback` requires ezer.com auth (it syncs session history to the user's account).
     /// This is the single home for that gate.
     /// It is used at boot ([`crate::agent::init`]) and by the post-readiness self-heal (`MvpAgent::reapply_storage_mode`).
     pub(crate) fn from_remote_gated(
@@ -883,7 +883,7 @@ pub use ezer_config::{
     load_toml_file, managed_config_identity_changed_at, managed_deployment_id,
     managed_policy_compromised_for, mark_managed_config_synced, mark_managed_config_synced_at,
     normalize_identity, requirements_layers, resolved_env_overlay, system_config_dir,
-    user_grok_home,
+    user_ezer_home,
 };
 /// Map of "dotted.path" to which config file the value came from.
 pub(crate) fn config_origins(
@@ -1538,7 +1538,7 @@ pub fn apply_sandbox(
                     eprintln!(
                         "error: sandbox reports bwrap but required hook write-deny \
                          mounts are missing or writable ({e}); refusing to start \
-                         (possible __GROK_INSIDE_BWRAP spoof)"
+                         (possible __EZER_INSIDE_BWRAP spoof)"
                     );
                     std::process::exit(1);
                 }
@@ -1549,7 +1549,7 @@ pub fn apply_sandbox(
                     eprintln!(
                         "error: sandbox reports bwrap but required read-deny mounts \
                          are not in effect ({e}); refusing to start \
-                         (possible __GROK_INSIDE_BWRAP spoof)"
+                         (possible __EZER_INSIDE_BWRAP spoof)"
                     );
                     std::process::exit(1);
                 }
@@ -1562,7 +1562,7 @@ pub fn apply_sandbox(
                     eprintln!(
                         "error: sandbox reports bwrap but the required /data write-deny \
                          mount is not in effect ({e}); refusing to start \
-                         (possible __GROK_INSIDE_BWRAP spoof)"
+                         (possible __EZER_INSIDE_BWRAP spoof)"
                     );
                     std::process::exit(1);
                 }
@@ -1650,11 +1650,11 @@ pub use ezer_config::{deep_merge_toml, expand_env_vars_in_string, expand_env_var
 /// Locked read-modify-write of `~/.ezer/config.toml`: the whole window runs under the config-init
 /// flock and lands via atomic replace; unchanged configs skip the write.
 fn update_config_toml_locked(
-    grok_home: &std::path::Path,
+    ezer_home: &std::path::Path,
     mutate: impl FnOnce(&mut toml::value::Table) -> Result<bool, Box<dyn std::error::Error>>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let config_path = grok_home.join("config.toml");
-    let _flock = crate::util::config::acquire_init_lock(grok_home)?;
+    let config_path = ezer_home.join("config.toml");
+    let _flock = crate::util::config::acquire_init_lock(ezer_home)?;
     let (dest, content) = crate::util::config::read_follow_bound(&config_path)?;
     let mut config: toml::Value = if content.is_empty() {
         toml::Value::Table(toml::map::Map::new())
@@ -1755,7 +1755,7 @@ pub(crate) async fn run_set_plugin_enabled(plugin_id: String, enabled: bool) -> 
 /// Add a plugin path to `[plugins].paths` in `~/.ezer/config.toml`.
 /// Deduplicates: if the path is already present, this is a no-op.
 pub(crate) fn add_plugin_path(path: &str) -> Result<(), Box<dyn std::error::Error>> {
-    update_config_toml_locked(&crate::util::grok_home::grok_home(), |table| {
+    update_config_toml_locked(&crate::util::ezer_home::ezer_home(), |table| {
         plugins_list_add(table, "paths", path)
     })
 }
@@ -1763,14 +1763,14 @@ pub(crate) fn add_plugin_path(path: &str) -> Result<(), Box<dyn std::error::Erro
 ///
 /// If the path is not found, this is a no-op (returns Ok).
 pub(crate) fn remove_plugin_path(path: &str) -> Result<(), Box<dyn std::error::Error>> {
-    update_config_toml_locked(&crate::util::grok_home::grok_home(), |table| {
+    update_config_toml_locked(&crate::util::ezer_home::ezer_home(), |table| {
         Ok(plugins_list_remove(table, "paths", path))
     })
 }
 /// Add a plugin to `[plugins].disabled` in `~/.ezer/config.toml`.
 /// Deduplicates: if already present, this is a no-op.
 pub fn add_disabled_plugin(plugin_id: &str) -> Result<(), Box<dyn std::error::Error>> {
-    update_config_toml_locked(&crate::util::grok_home::grok_home(), |table| {
+    update_config_toml_locked(&crate::util::ezer_home::ezer_home(), |table| {
         plugins_list_add(table, "disabled", plugin_id)
     })
 }
@@ -1778,7 +1778,7 @@ pub fn add_disabled_plugin(plugin_id: &str) -> Result<(), Box<dyn std::error::Er
 ///
 /// If the plugin is not in the disabled list, this is a no-op.
 pub fn remove_disabled_plugin(plugin_id: &str) -> Result<(), Box<dyn std::error::Error>> {
-    update_config_toml_locked(&crate::util::grok_home::grok_home(), |table| {
+    update_config_toml_locked(&crate::util::ezer_home::ezer_home(), |table| {
         Ok(plugins_list_remove(table, "disabled", plugin_id))
     })
 }
@@ -1791,7 +1791,7 @@ pub async fn run_add_dismissed_plugin_cta(plugin_id: String) -> Result<(), Strin
 /// Creates the `[plugin_cta]` section and `dismissed` array if they don't exist.
 /// Deduplicates: if already present, this is a no-op.
 pub fn add_dismissed_plugin_cta(plugin_id: &str) -> Result<(), Box<dyn std::error::Error>> {
-    let config_path = crate::util::grok_home::grok_home().join("config.toml");
+    let config_path = crate::util::ezer_home::ezer_home().join("config.toml");
     add_dismissed_plugin_cta_to_file(plugin_id, &config_path)
 }
 /// Add a dismissed plugin CTA to a specific config file (path-parameterized for tests); runs
@@ -1801,10 +1801,10 @@ pub fn add_dismissed_plugin_cta_to_file(
     plugin_id: &str,
     config_path: &std::path::Path,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let grok_home = config_path
+    let ezer_home = config_path
         .parent()
         .ok_or("config.toml path has no parent directory")?;
-    update_config_toml_locked(grok_home, |table| {
+    update_config_toml_locked(ezer_home, |table| {
         let plugin_cta = table
             .entry("plugin_cta".to_string())
             .or_insert_with(|| toml::Value::Table(toml::map::Map::new()))
@@ -1829,7 +1829,7 @@ pub fn add_dismissed_plugin_cta_to_file(
 ///
 /// Read once (e.g. on catalog load) and cached so the matched-debounce recompute doesn't parse the config from disk on the UI thread.
 pub fn dismissed_plugin_ctas() -> std::collections::HashSet<String> {
-    let config_path = crate::util::grok_home::grok_home().join("config.toml");
+    let config_path = crate::util::ezer_home::ezer_home().join("config.toml");
     dismissed_plugin_ctas_in_file(&config_path)
 }
 /// Read the dismissed plugin CTA set from a specific config file (for tests).
@@ -1864,7 +1864,7 @@ pub(crate) fn validate_hooks_path(path: &str) -> Result<(), Box<dyn std::error::
     if !candidate.is_absolute() {
         return Err("Hook path must be absolute.".into());
     }
-    let grok_home = crate::util::grok_home::grok_home();
+    let ezer_home = crate::util::ezer_home::ezer_home();
     let canonical = dunce::canonicalize(candidate)
         .or_else(|_| {
             let mut base = candidate.to_path_buf();
@@ -1884,7 +1884,7 @@ pub(crate) fn validate_hooks_path(path: &str) -> Result<(), Box<dyn std::error::
             Ok(resolved)
         })
         .map_err(|e: std::io::Error| format!("Cannot resolve hook path: {e}"))?;
-    let canonical_home = dunce::canonicalize(&grok_home).unwrap_or_else(|_| grok_home.clone());
+    let canonical_home = dunce::canonicalize(&ezer_home).unwrap_or_else(|_| ezer_home.clone());
     if !canonical.starts_with(&canonical_home) {
         return Err(format!(
             "Hook path must be under ~/.ezer/ ({}). Got: {}",
@@ -1925,13 +1925,13 @@ pub(crate) fn auto_enable_plugins(names: &[String]) -> Vec<String> {
 /// Used for project-scope plugins that are disabled by default.
 /// Deduplicates: if already present, this is a no-op.
 pub fn add_enabled_plugin(plugin_id: &str) -> Result<(), Box<dyn std::error::Error>> {
-    update_config_toml_locked(&crate::util::grok_home::grok_home(), |table| {
+    update_config_toml_locked(&crate::util::ezer_home::ezer_home(), |table| {
         plugins_list_add(table, "enabled", plugin_id)
     })
 }
 /// Remove a plugin from `[plugins].enabled` in `~/.ezer/config.toml`.
 pub fn remove_enabled_plugin(plugin_id: &str) -> Result<(), Box<dyn std::error::Error>> {
-    update_config_toml_locked(&crate::util::grok_home::grok_home(), |table| {
+    update_config_toml_locked(&crate::util::ezer_home::ezer_home(), |table| {
         Ok(plugins_list_remove(table, "enabled", plugin_id))
     })
 }
@@ -1942,7 +1942,7 @@ pub(crate) fn add_hooks_path(path: &str) -> Result<(), Box<dyn std::error::Error
     validate_hooks_path(path)?;
     add_hooks_path_to_file(
         path,
-        &crate::util::grok_home::grok_home().join("hooks-paths"),
+        &crate::util::ezer_home::ezer_home().join("hooks-paths"),
     )
 }
 /// Add a hook path to a specific file (for tests).
@@ -1968,7 +1968,7 @@ pub(crate) fn add_hooks_path_to_file(
 /// The user-registered hook directories (`~/.ezer/hooks-paths` lines) —
 /// exactly what `remove_hooks_path` can remove (same exact-string match).
 pub(crate) fn registered_hook_paths() -> std::collections::HashSet<String> {
-    let path = crate::util::grok_home::grok_home().join("hooks-paths");
+    let path = crate::util::ezer_home::ezer_home().join("hooks-paths");
     match std::fs::read_to_string(&path) {
         Ok(content) => content
             .lines()
@@ -1985,7 +1985,7 @@ pub(crate) fn registered_hook_paths() -> std::collections::HashSet<String> {
 pub(crate) fn remove_hooks_path(path: &str) -> Result<bool, Box<dyn std::error::Error>> {
     remove_hooks_path_from_file(
         path,
-        &crate::util::grok_home::grok_home().join("hooks-paths"),
+        &crate::util::ezer_home::ezer_home().join("hooks-paths"),
     )
 }
 /// Remove a hook path from a specific file (for tests).

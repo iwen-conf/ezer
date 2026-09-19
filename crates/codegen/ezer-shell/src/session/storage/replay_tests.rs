@@ -24,7 +24,7 @@ fn acp_envelope(session_update_json: &str) -> String {
 
 fn xai_envelope(session_update_json: &str) -> String {
     format!(
-        r#"{{"timestamp":1,"method":"_x.ai/session/update","params":{{"sessionId":"s","update":{session_update_json}}}}}"#
+        r#"{{"timestamp":1,"method":"_ezer/session/update","params":{{"sessionId":"s","update":{session_update_json}}}}}"#
     )
 }
 
@@ -37,12 +37,12 @@ fn acp_envelope_with_meta(session_update_json: &str, meta_json: &str) -> String 
 /// A session with no `updates.jsonl` streams nothing, so the emission gate reports `Empty` and forwards no updates.
 #[test]
 fn stream_replay_updates_at_missing_session_is_empty() {
-    let grok_home = tempfile::tempdir().unwrap();
-    std::fs::create_dir_all(grok_home.path().join("sessions")).unwrap();
+    let ezer_home = tempfile::tempdir().unwrap();
+    std::fs::create_dir_all(ezer_home.path().join("sessions")).unwrap();
 
     let mut count = 0usize;
     let emission =
-        stream_replay_updates_at("does-not-exist", grok_home.path(), |_| count += 1).unwrap();
+        stream_replay_updates_at("does-not-exist", ezer_home.path(), |_| count += 1).unwrap();
 
     assert_eq!(emission, ReplayEmission::Empty);
     assert_eq!(count, 0);
@@ -53,13 +53,13 @@ fn stream_replay_updates_at_missing_session_is_empty() {
 /// (The path is a directory, which `read_to_string` rejects.)
 #[test]
 fn stream_replay_updates_at_surfaces_read_errors() {
-    let grok_home = tempfile::tempdir().unwrap();
-    let session_dir = grok_home.path().join("sessions").join("cwd").join("sess");
+    let ezer_home = tempfile::tempdir().unwrap();
+    let session_dir = ezer_home.path().join("sessions").join("cwd").join("sess");
     std::fs::create_dir_all(&session_dir).unwrap();
     std::fs::write(session_dir.join(SUMMARY_FILE), "{}").unwrap();
     std::fs::create_dir(session_dir.join(UPDATES_FILE)).unwrap();
 
-    let result = stream_replay_updates_at("sess", grok_home.path(), |_| {});
+    let result = stream_replay_updates_at("sess", ezer_home.path(), |_| {});
     assert!(
         result.is_err(),
         "read fault must surface, not fold to Empty: {result:?}"
@@ -162,7 +162,7 @@ fn prepare_replay_cursor_refused_when_tail_has_event_id_less_line() {
         r#"{"eventId":"ev1"}"#,
     );
     // xAI-style line persisted by an older binary: no _meta at all.
-    let old_xai = r#"{"timestamp":2,"method":"_x.ai/session/update","params":{"sessionId":"s","update":{"sessionUpdate":"hook_annotation","message":"trailing"}}}"#;
+    let old_xai = r#"{"timestamp":2,"method":"_ezer/session/update","params":{"sessionId":"s","update":{"sessionUpdate":"hook_annotation","message":"trailing"}}}"#;
     let raw = format!("{a1}\n{old_xai}\n");
 
     let prepared = prepare_replay_lines(&raw, Some("ev1"));
@@ -173,7 +173,7 @@ fn prepare_replay_cursor_refused_when_tail_has_event_id_less_line() {
     assert_eq!(prepared.lines.len(), 2, "full history is replayed");
 
     // Same history with the trailing line stamped resolves incrementally.
-    let new_xai = r#"{"timestamp":2,"method":"_x.ai/session/update","params":{"sessionId":"s","update":{"sessionUpdate":"hook_annotation","message":"trailing"},"_meta":{"eventId":"ev2"}}}"#;
+    let new_xai = r#"{"timestamp":2,"method":"_ezer/session/update","params":{"sessionId":"s","update":{"sessionUpdate":"hook_annotation","message":"trailing"},"_meta":{"eventId":"ev2"}}}"#;
     let raw = format!("{a1}\n{new_xai}\n");
     let prepared = prepare_replay_lines(&raw, Some("ev1"));
     assert!(!prepared.mark_replay);
@@ -626,12 +626,12 @@ fn filter_delta_replay_drops_blank_acu_and_rewinds() {
 fn prepare_replay_reports_spawn_without_finish() {
     let spawn = |id: &str, child: &str| {
         format!(
-            r#"{{"method":"_x.ai/session/update","params":{{"sessionId":"s","update":{{"sessionUpdate":"subagent_spawned","subagent_id":"{id}","attempt_id":"attempt-{id}","parent_session_id":"s","child_session_id":"{child}","subagent_type":"general-purpose","description":"task"}},"_meta":{{"eventId":"s-1"}}}}}}"#
+            r#"{{"method":"_ezer/session/update","params":{{"sessionId":"s","update":{{"sessionUpdate":"subagent_spawned","subagent_id":"{id}","attempt_id":"attempt-{id}","parent_session_id":"s","child_session_id":"{child}","subagent_type":"general-purpose","description":"task"}},"_meta":{{"eventId":"s-1"}}}}}}"#
         )
     };
     let finish = |id: &str| {
         format!(
-            r#"{{"method":"_x.ai/session/update","params":{{"sessionId":"s","update":{{"sessionUpdate":"subagent_finished","subagent_id":"{id}","child_session_id":"c{id}","status":"completed","tool_calls":0,"turns":0,"duration_ms":0}},"_meta":{{"eventId":"s-2"}}}}}}"#
+            r#"{{"method":"_ezer/session/update","params":{{"sessionId":"s","update":{{"sessionUpdate":"subagent_finished","subagent_id":"{id}","child_session_id":"c{id}","status":"completed","tool_calls":0,"turns":0,"duration_ms":0}},"_meta":{{"eventId":"s-2"}}}}}}"#
         )
     };
     // `a` spawns and finishes (paired); `b` only spawns (orphan).

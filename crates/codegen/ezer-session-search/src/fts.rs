@@ -816,7 +816,7 @@ mod tests {
 
     #[test]
     fn test_open_or_create_uses_wal_on_local_fs() {
-        // The `GROK_SQLITE_JOURNAL_MODE` env var would override the decision; skip if set
+        // The `EZER_SQLITE_JOURNAL_MODE` env var would override the decision; skip if set
         if std::env::var("EZER_SQLITE_JOURNAL_MODE").is_ok() {
             return;
         }
@@ -925,7 +925,7 @@ mod tests {
             index
                 .upsert_doc(&test_doc("s1", "Rust debugging", "borrow checker"))
                 .unwrap();
-            // Simulate an index owned by a newer grok generation that has completed a bootstrap
+            // Simulate an index owned by a newer ezer generation that has completed a bootstrap
             index.set_meta(META_KEY_SCHEMA_VERSION, "5").unwrap();
             index.set_meta("last_bootstrap_at", "1700000000").unwrap();
         }

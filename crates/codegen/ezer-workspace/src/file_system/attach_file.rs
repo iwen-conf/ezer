@@ -217,7 +217,7 @@ async fn render_blob_attachment(blob: &BlobResourceContents) -> Option<String> {
 /// Base directory for Phase-1 session-scoped scratch files; the real session_dir lives in shell persistence.
 /// The PID suffix keeps concurrent test processes sharing `/tmp` from colliding on identical content-hash paths or racing each other's cleanup.
 fn session_scratch_root() -> PathBuf {
-    std::env::temp_dir().join(format!("grok-test-sessions-{}", std::process::id()))
+    std::env::temp_dir().join(format!("ezer-test-sessions-{}", std::process::id()))
 }
 /// The content-hash prefix in the filename dedups: identical content maps to the same path, different content to a unique path.
 async fn write_to_session_subdir(subdir: &str, filename: &str, content: &[u8]) -> Option<PathBuf> {
@@ -493,7 +493,7 @@ mod tests {
         let _ = std::fs::remove_file(&expected);
     }
     #[tokio::test]
-    async fn test_grok_render_embedded_resource_uses_file_contents_tag() {
+    async fn test_ezer_render_embedded_resource_uses_file_contents_tag() {
         let _info = test_info("ezer-text");
         let resource = EmbeddedResource::new(EmbeddedResourceResource::TextResourceContents(
             agent_client_protocol::TextResourceContents::new(
@@ -509,8 +509,8 @@ mod tests {
         assert!(!rendered.contains("code_selection"), "got: {rendered}");
     }
     #[tokio::test]
-    async fn test_grok_render_embedded_resource_full_file_uses_is_full_file() {
-        let _info = test_info("grok-full-file");
+    async fn test_ezer_render_embedded_resource_full_file_uses_is_full_file() {
+        let _info = test_info("ezer-full-file");
         let resource = EmbeddedResource::new(EmbeddedResourceResource::TextResourceContents(
             agent_client_protocol::TextResourceContents::new(
                 "fn main() {}\n",

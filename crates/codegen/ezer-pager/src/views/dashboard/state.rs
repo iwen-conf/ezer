@@ -4507,7 +4507,7 @@ fn atomic_write(path: &std::path::Path, bytes: &[u8]) -> std::io::Result<()> {
 }
 
 fn config_path() -> Option<PathBuf> {
-    let home = ezer_shell::util::grok_home::grok_home();
+    let home = ezer_shell::util::ezer_home::ezer_home();
     Some(home.join(ezer_config::USER_CONFIG_FILENAME))
 }
 

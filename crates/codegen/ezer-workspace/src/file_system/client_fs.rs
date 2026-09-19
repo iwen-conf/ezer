@@ -1,5 +1,5 @@
 //! Read-only filesystem helpers backing the client-facing `workspace.client_fs_*` RPCs.
-//! The grok.com conversation-files UI calls them, tunneled through the server.
+//! The ezer.com conversation-files UI calls them, tunneled through the server.
 //!
 //! Deliberately separate from the shell-facing ext ops in [`ext_fs`](super::ext_fs).
 //! Every path is relative to the client-fs base (`WorkspaceHandle::client_fs_base`) and resolves through the root-confinement helper.

@@ -138,30 +138,30 @@ impl Drop for EnvVarGuard {
         }
     }
 }
-/// Shared GROK_HOME boundary fixture for the resume-by-title startup and pre-sandbox tests. cwd-encoded dirnames
+/// Shared EZER_HOME boundary fixture for the resume-by-title startup and pre-sandbox tests. cwd-encoded dirnames
 /// are tempdir-unique, and cleanup runs on drop so it survives assertion panics. Callers must hold
-/// `[serial_test::serial(GROK_HOME)]`.
-pub struct GrokHomeFixture {
+/// `[serial_test::serial(EZER_HOME)]`.
+pub struct EzerHomeFixture {
     _home: tempfile::TempDir,
     cwd: tempfile::TempDir,
     cleanup: Vec<std::path::PathBuf>,
 }
-impl Drop for GrokHomeFixture {
+impl Drop for EzerHomeFixture {
     fn drop(&mut self) {
         for dir in &self.cleanup {
             let _ = std::fs::remove_dir_all(dir);
         }
     }
 }
-impl Default for GrokHomeFixture {
+impl Default for EzerHomeFixture {
     fn default() -> Self {
         Self::new()
     }
 }
-impl GrokHomeFixture {
+impl EzerHomeFixture {
     pub fn new() -> Self {
         let home = tempfile::tempdir().expect("home tempdir");
-        unsafe { std::env::set_var("GROK_HOME", home.path()) };
+        unsafe { std::env::set_var("EZER_HOME", home.path()) };
         let cwd = tempfile::tempdir().expect("cwd tempdir");
         Self {
             _home: home,
@@ -207,8 +207,8 @@ impl GrokHomeFixture {
         let _ = std::fs::remove_dir_all(Self::sessions_cwd_dir(cwd).join(id));
     }
     fn sessions_cwd_dir(cwd: &str) -> std::path::PathBuf {
-        let encoded = ezer_shell::util::grok_home::encode_cwd_dirname(cwd);
-        ezer_shell::util::grok_home::grok_home()
+        let encoded = ezer_shell::util::ezer_home::encode_cwd_dirname(cwd);
+        ezer_shell::util::ezer_home::ezer_home()
             .join("sessions")
             .join(&encoded)
     }

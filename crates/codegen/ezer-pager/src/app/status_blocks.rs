@@ -334,11 +334,11 @@ mod tests {
             .insert("ezer-build".into(), model_row(100, 10, None));
         usage
             .model_usage
-            .insert("grok-4".into(), model_row(50, 5, None));
+            .insert("test-model-4".into(), model_row(50, 5, None));
         let text = session_usage_block_text(&usage);
         assert!(text.contains("By model:"), "{text}");
         assert!(text.contains("ezer-build: 100 in / 10 out"), "{text}");
-        assert!(text.contains("grok-4: 50 in / 5 out"), "{text}");
+        assert!(text.contains("test-model-4: 50 in / 5 out"), "{text}");
     }
 
     #[test]

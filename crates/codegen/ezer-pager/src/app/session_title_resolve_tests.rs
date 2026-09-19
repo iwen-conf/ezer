@@ -1,5 +1,5 @@
 use super::*;
-use crate::test_util::GrokHomeFixture;
+use crate::test_util::EzerHomeFixture;
 use clap::Parser;
 
 /// Builds a `Summary` through serde: every field without `#[serde(default)]` must be present, and a struct literal would break on each new field.
@@ -137,10 +137,10 @@ fn worktree_failure_message_hint_follows_threaded_provenance() {
 
 /// Regression, through the production wiring: pinning rewrites the `-r` title to the canonical id and the profile peek sees the saved profile.
 /// A conflicting explicit profile is refused exactly as it is for id resume.
-#[serial_test::serial(GROK_HOME)]
+#[serial_test::serial(EZER_HOME)]
 #[test]
 fn pin_title_resume_finds_saved_profile_and_conflicts() {
-    let mut fx = GrokHomeFixture::new();
+    let mut fx = EzerHomeFixture::new();
     let cwd_str = fx.cwd_str();
     let id = "abcdabcd-1111-2222-3333-444444444444";
     fx.write_summary(
@@ -175,10 +175,10 @@ fn pin_title_resume_finds_saved_profile_and_conflicts() {
     }
 }
 
-#[serial_test::serial(GROK_HOME)]
+#[serial_test::serial(EZER_HOME)]
 #[test]
 fn headless_title_pin_is_caller_aware() {
-    let mut fx = GrokHomeFixture::new();
+    let mut fx = EzerHomeFixture::new();
     let cwd_str = fx.cwd_str();
     let id = "abababab-1111-2222-3333-444444444444";
     fx.write_summary(
@@ -208,10 +208,10 @@ fn headless_title_pin_is_caller_aware() {
 
 /// Regression: a non-UUID remote id with a restored local child pins to the child.
 /// The peek then reads the child's profile instead of an exact same-id session in another cwd.
-#[serial_test::serial(GROK_HOME)]
+#[serial_test::serial(EZER_HOME)]
 #[test]
 fn pin_prefers_restored_child_over_same_id_in_other_cwd() {
-    let mut fx = GrokHomeFixture::new();
+    let mut fx = EzerHomeFixture::new();
     let cwd_str = fx.cwd_str();
     let child = "cafecafe-1111-2222-3333-444444444444";
     fx.write_summary(
@@ -243,10 +243,10 @@ fn pin_prefers_restored_child_over_same_id_in_other_cwd() {
 
 /// Regression: materialization consumes the pinned id via the ordinary id path.
 /// A rename or create between the pre-sandbox pin and materialization must not re-select by title.
-#[serial_test::serial(GROK_HOME)]
+#[serial_test::serial(EZER_HOME)]
 #[tokio::test]
 async fn materialization_consumes_pinned_id_after_concurrent_rename() {
-    let mut fx = GrokHomeFixture::new();
+    let mut fx = EzerHomeFixture::new();
     let cwd_str = fx.cwd_str();
     let pinned = "dadadada-1111-2222-3333-444444444444";
     fx.write_summary(
@@ -297,10 +297,10 @@ fn pinned_local_ctx() -> crate::app::session_startup::MaterializeCtx {
 }
 
 /// Regression: an ambiguous title fails at the pin, before the irreversible sandbox, instead of deferring to materialization.
-#[serial_test::serial(GROK_HOME)]
+#[serial_test::serial(EZER_HOME)]
 #[test]
 fn pin_ambiguous_title_errors_before_sandbox() {
-    let mut fx = GrokHomeFixture::new();
+    let mut fx = EzerHomeFixture::new();
     let cwd_str = fx.cwd_str();
     fx.write_summary(
         &cwd_str,
@@ -326,10 +326,10 @@ fn pin_ambiguous_title_errors_before_sandbox() {
 
 /// Regression: a definitive pre-sandbox no-match must not be re-selected by title at materialization.
 /// A session created or renamed into the title after the sandbox would resume under an unverified profile.
-#[serial_test::serial(GROK_HOME)]
+#[serial_test::serial(EZER_HOME)]
 #[tokio::test]
 async fn pinned_no_match_does_not_retry_title_after_sandbox() {
-    let mut fx = GrokHomeFixture::new();
+    let mut fx = EzerHomeFixture::new();
     let cwd_str = fx.cwd_str();
 
     let mut args = crate::app::cli::PagerArgs::try_parse_from(["ezer", "-r", "ghost"]).unwrap();
@@ -375,10 +375,10 @@ async fn pinned_no_match_does_not_retry_title_after_sandbox() {
 }
 
 /// Regression: a pinned non-UUID id that vanishes before materialization must not be reinterpreted as another session's title.
-#[serial_test::serial(GROK_HOME)]
+#[serial_test::serial(EZER_HOME)]
 #[tokio::test]
 async fn pinned_non_uuid_id_is_not_reinterpreted_as_title() {
-    let mut fx = GrokHomeFixture::new();
+    let mut fx = EzerHomeFixture::new();
     let cwd_str = fx.cwd_str();
     fx.write_summary(&cwd_str, "legacy-remote-7", serde_json::json!({}));
 
@@ -412,10 +412,10 @@ async fn pinned_non_uuid_id_is_not_reinterpreted_as_title() {
 /// Regression: a legacy id duplicated across cwd dirs is ambiguous to the session listings, so its title never reaches selection.
 /// `RelocationView::select` drops ids that appear under multiple paths without a journal before the cwd filter runs.
 /// The pin therefore stays unresolved and the profile peek finds nothing.
-#[serial_test::serial(GROK_HOME)]
+#[serial_test::serial(EZER_HOME)]
 #[tokio::test]
 async fn duplicate_legacy_id_is_not_title_addressable() {
-    let mut fx = GrokHomeFixture::new();
+    let mut fx = EzerHomeFixture::new();
     let cwd_str = fx.cwd_str();
     fx.write_summary(
         &cwd_str,

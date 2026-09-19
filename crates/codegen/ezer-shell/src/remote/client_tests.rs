@@ -42,7 +42,7 @@ async fn start_settings_server(
 /// Only 401 yields `Rejected`; every other non-2xx outcome fails closed as `Retry`.
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn settings_fetch_maps_status_to_outcome() {
-    let auth = GrokAuth::test_default();
+    let auth = EzerAuth::test_default();
     let cases: [(StatusCode, &str, &str); 6] = [
         (StatusCode::OK, "{}", "Fetched"),
         (StatusCode::UNAUTHORIZED, "{}", "Rejected"),
@@ -174,8 +174,8 @@ async fn start_bundle_server(
     let handle = tokio::spawn(async move { axum::serve(listener, app).await.unwrap() });
     (format!("{base}/v1"), seen_headers, handle)
 }
-fn test_auth() -> GrokAuth {
-    GrokAuth {
+fn test_auth() -> EzerAuth {
+    EzerAuth {
         key: "token".to_string(),
         auth_mode: ezer_login::AuthMode::Oidc,
         create_time: chrono::Utc::now(),
@@ -195,7 +195,7 @@ fn test_auth() -> GrokAuth {
         user_blocked_reason: None,
         team_blocked_reasons: vec![],
         coding_data_retention_opt_out: false,
-        has_grok_code_access: None,
+        has_remote_code_access: None,
         refresh_token: None,
         expires_at: Some(chrono::Utc::now() + chrono::Duration::hours(1)),
         oidc_issuer: None,
@@ -205,7 +205,7 @@ fn test_auth() -> GrokAuth {
 fn test_auth_manager() -> Arc<ezer_login::AuthManager> {
     let dir = tempfile::tempdir().unwrap();
     let mgr =
-        ezer_login::AuthManager::new(dir.path(), ezer_login::GrokComConfig::default());
+        ezer_login::AuthManager::new(dir.path(), ezer_login::EzerComConfig::default());
     mgr.hot_swap(test_auth());
     std::mem::forget(dir);
     Arc::new(mgr)
@@ -298,15 +298,15 @@ async fn fetch_subagent_bundle_parse_failure() {
 #[test]
 fn parse_openai_format_uses_id_field() {
     let value = serde_json::json!({
-        "id": "grok-3",
+        "id": "test-model-3",
         "object": "model",
         "owned_by": "xai",
         "context_window": 131072
     });
     let result = parse_remote_model_value(&value, "https://api.x.ai/v1").unwrap();
-    assert_eq!(result.model, "grok-3");
+    assert_eq!(result.model, "test-model-3");
     assert_eq!(result.base_url, "https://api.x.ai/v1");
-    assert_eq!(result.name.as_deref(), Some("grok-3"));
+    assert_eq!(result.name.as_deref(), Some("test-model-3"));
 }
 
 /// WorkBuddy2API-Hub `/v1/models` is a rich OpenAI list: `id` only, dotted slugs, extra fields.
@@ -349,14 +349,14 @@ fn parse_model_field_takes_priority_over_id() {
 #[test]
 fn parse_reads_rate_limit_retry_threshold() {
     let value = serde_json::json!({
-        "model": "grok-4.5",
+        "model": "test-model-4.5",
         "context_window": 1_000_000,
         "rateLimitRetryThreshold": 6
     });
     let result = parse_remote_model_value(&value, "https://default.url").unwrap();
     assert_eq!(result.rate_limit_retry_threshold, Some(6));
     let value = serde_json::json!({
-        "model": "grok-4.5",
+        "model": "test-model-4.5",
         "context_window": 1_000_000,
         "rate_limit_retry_threshold": 7
     });
@@ -366,7 +366,7 @@ fn parse_reads_rate_limit_retry_threshold() {
 #[test]
 fn parse_reads_model_family() {
     let value = serde_json::json!({
-        "model": "grok-4.5",
+        "model": "test-model-4.5",
         "context_window": 1_000_000,
         "model_family": "xai"
     });
@@ -387,7 +387,7 @@ fn parse_reads_model_family() {
 fn parse_reads_reasoning_effort_fields() {
     use ezer_sampling_types::ReasoningEffort;
     let value = serde_json::json!({
-        "model": "grok-4.5",
+        "model": "test-model-4.5",
         "context_window": 1_000_000,
         "supports_reasoning_effort": true,
         "reasoning_effort": "high"
@@ -396,7 +396,7 @@ fn parse_reads_reasoning_effort_fields() {
     assert!(result.supports_reasoning_effort);
     assert_eq!(result.reasoning_effort, Some(ReasoningEffort::High));
     let value = serde_json::json!({
-        "model": "grok-4.5",
+        "model": "test-model-4.5",
         "contextWindow": 1_000_000,
         "supportsReasoningEffort": true,
         "reasoningEffort": "xhigh"
@@ -413,7 +413,7 @@ fn parse_reads_reasoning_effort_fields() {
 fn parse_reads_reasoning_efforts_list() {
     use ezer_sampling_types::ReasoningEffort;
     let value = serde_json::json!({
-        "model": "grok-4.5",
+        "model": "test-model-4.5",
         "context_window": 1_000_000,
         "reasoning_efforts": [
             { "id": "deep", "value": "xhigh", "label": "Deep" },
@@ -474,7 +474,7 @@ fn parse_reads_meta_fallback_fields() {
 #[test]
 fn parse_remote_model_value_no_laziness_detector_block_yields_default() {
     let value = serde_json::json!({
-        "model": "grok-4",
+        "model": "test-model-4",
         "context_window": 256_000,
     });
     let result = parse_remote_model_value(&value, "https://default.url").unwrap();
@@ -486,7 +486,7 @@ fn parse_remote_model_value_no_laziness_detector_block_yields_default() {
 #[test]
 fn parse_remote_model_value_parses_camelcase_key() {
     let value = serde_json::json!({
-        "model": "grok-4",
+        "model": "test-model-4",
         "context_window": 256_000,
         "lazinessDetector": {
             "enabled": true,
@@ -508,7 +508,7 @@ fn parse_remote_model_value_parses_camelcase_key() {
 #[test]
 fn parse_remote_model_value_parses_snake_case_laziness_detector() {
     let value = serde_json::json!({
-        "model": "grok-4",
+        "model": "test-model-4",
         "context_window": 256_000,
         "laziness_detector": {
             "enabled": true,
@@ -530,7 +530,7 @@ fn parse_remote_model_value_parses_snake_case_laziness_detector() {
 #[test]
 fn parse_remote_model_value_parses_meta_laziness_detector() {
     let value = serde_json::json!({
-        "model": "grok-4",
+        "model": "test-model-4",
         "context_window": 256_000,
         "_meta": {
             "lazinessDetector": {
@@ -554,7 +554,7 @@ fn parse_remote_model_value_parses_meta_laziness_detector() {
 #[test]
 fn parse_remote_model_value_partial_block_uses_field_defaults() {
     let value = serde_json::json!({
-        "model": "grok-4",
+        "model": "test-model-4",
         "context_window": 256_000,
         "lazinessDetector": {
             "enabled": true,
@@ -573,7 +573,7 @@ fn parse_remote_model_value_partial_block_uses_field_defaults() {
 #[test]
 fn parse_remote_model_value_malformed_block_falls_back_to_default() {
     let value = serde_json::json!({
-        "model": "grok-4",
+        "model": "test-model-4",
         "context_window": 256_000,
         "lazinessDetector": {
             "enabled": true,
@@ -589,7 +589,7 @@ fn parse_remote_model_value_malformed_block_falls_back_to_default() {
 #[test]
 fn parse_remote_model_value_non_object_value_falls_back_to_default() {
     let value = serde_json::json!({
-        "model": "grok-4",
+        "model": "test-model-4",
         "context_window": 256_000,
         "lazinessDetector": "not-an-object",
     });
@@ -602,7 +602,7 @@ fn parse_remote_model_value_non_object_value_falls_back_to_default() {
 #[test]
 fn parse_remote_model_value_top_level_camelcase_wins_over_snake_case() {
     let value = serde_json::json!({
-        "model": "grok-4",
+        "model": "test-model-4",
         "context_window": 256_000,
         "lazinessDetector": {
             "enabled": true,
@@ -628,7 +628,7 @@ fn parse_remote_model_value_top_level_camelcase_wins_over_snake_case() {
 #[test]
 fn parse_remote_model_value_parses_include_reasoning_under_camelcase_wrapper() {
     let value = serde_json::json!({
-        "model": "grok-4",
+        "model": "test-model-4",
         "context_window": 256_000,
         "lazinessDetector": {
             "enabled": true,
@@ -641,7 +641,7 @@ fn parse_remote_model_value_parses_include_reasoning_under_camelcase_wrapper() {
 #[test]
 fn parse_remote_model_value_parses_include_reasoning_under_snake_case_wrapper() {
     let value = serde_json::json!({
-        "model": "grok-4",
+        "model": "test-model-4",
         "context_window": 256_000,
         "laziness_detector": {
             "enabled": true,
@@ -654,7 +654,7 @@ fn parse_remote_model_value_parses_include_reasoning_under_snake_case_wrapper() 
 #[test]
 fn parse_remote_model_value_omitted_include_reasoning_defaults_to_none() {
     let value = serde_json::json!({
-        "model": "grok-4",
+        "model": "test-model-4",
         "context_window": 256_000,
         "lazinessDetector": {
             "enabled": true,
@@ -670,7 +670,7 @@ fn parse_remote_model_value_omitted_include_reasoning_defaults_to_none() {
 #[test]
 fn parse_remote_model_value_top_level_wins_over_meta() {
     let value = serde_json::json!({
-        "model": "grok-4",
+        "model": "test-model-4",
         "context_window": 256_000,
         "lazinessDetector": {
             "enabled": true,
@@ -768,13 +768,13 @@ fn endpoints(
 }
 #[test]
 fn inference_url_defaults_to_proxy() {
-    let ep = endpoints("https://proxy.grok.com/v1", None, None);
-    assert_eq!(ep.resolve_inference_base_url(), "https://proxy.grok.com/v1");
+    let ep = endpoints("https://proxy.example.test/v1", None, None);
+    assert_eq!(ep.resolve_inference_base_url(), "https://proxy.example.test/v1");
 }
 #[test]
 fn inference_url_uses_models_base_url() {
     let ep = endpoints(
-        "https://proxy.grok.com/v1",
+        "https://proxy.example.test/v1",
         Some("https://enterprise.acme.com/v1"),
         None,
     );
@@ -786,7 +786,7 @@ fn inference_url_uses_models_base_url() {
 #[test]
 fn inference_url_base_url_wins_over_proxy() {
     let ep = endpoints(
-        "https://proxy.grok.com/v1",
+        "https://proxy.example.test/v1",
         Some("https://inference.acme.com/v1"),
         Some("https://registry.acme.com/api/models"),
     );
@@ -797,16 +797,16 @@ fn inference_url_base_url_wins_over_proxy() {
 }
 #[test]
 fn list_url_defaults_to_proxy_models() {
-    let ep = endpoints("https://proxy.grok.com/v1", None, None);
+    let ep = endpoints("https://proxy.example.test/v1", None, None);
     assert_eq!(
         ep.resolve_models_list_url(),
-        "https://proxy.grok.com/v1/models"
+        "https://proxy.example.test/v1/models"
     );
 }
 #[test]
 fn list_url_derived_from_base_url() {
     let ep = endpoints(
-        "https://proxy.grok.com/v1",
+        "https://proxy.example.test/v1",
         Some("https://api.x.ai/v1"),
         None,
     );
@@ -815,7 +815,7 @@ fn list_url_derived_from_base_url() {
 #[test]
 fn list_url_explicit_overrides_derivation() {
     let ep = endpoints(
-        "https://proxy.grok.com/v1",
+        "https://proxy.example.test/v1",
         Some("https://inference.acme.com/v1"),
         Some("https://registry.acme.com/api/list-models"),
     );
@@ -844,7 +844,7 @@ fn deployment_config_url_uses_cli_chat_proxy_when_not_overridden() {
     )
     .unwrap();
     let url = EndpointsConfig::from_config_value(&managed).resolve_managed_config_url();
-    assert_eq!(url, "https://cli-chat-proxy.grok.com/v1/deployment/config");
+    assert_eq!(url, "https://proxy.example.test/v1/deployment/config");
     assert!(
         !url.contains("acme-corp"),
         "deployment key would be sent to the inference host: {url}"
@@ -859,7 +859,7 @@ fn deployment_config_url_uses_cli_chat_proxy_when_not_overridden() {
         EndpointsConfig::from_config_value(&pinned).resolve_managed_config_url(),
         "https://proxy.acme-corp.example/v1/deployment/config"
     );
-    unsafe { std::env::remove_var("GROK_DEPLOYMENT_KEY") };
+    unsafe { std::env::remove_var("EZER_DEPLOYMENT_KEY") };
 }
 #[derive(Clone)]
 struct DualBundleServerState {

@@ -148,7 +148,7 @@ pub(crate) fn extract_default_mode(value: &serde_json::Value, path: &Path) -> Op
         };
     }
 
-    // Nested key absent, fall back to the optional grok legacy root
+    // Nested key absent, fall back to the optional ezer legacy root
     match value.get("defaultMode") {
         Some(dm) => match dm.as_str() {
             Some(s) => Some(s.to_string()),
@@ -169,7 +169,7 @@ pub(crate) fn extract_default_mode(value: &serde_json::Value, path: &Path) -> Op
 /// Nested wins when both are present.
 fn extract_additional_directories(value: &serde_json::Value, path: &Path) -> Option<Vec<String>> {
     // Mirror `extract_default_mode`: prefer the Claude-canonical nested key
-    // A nested key of the wrong type does *not* resurrect the grok-legacy root value
+    // A nested key of the wrong type does *not* resurrect the ezer-legacy root value
     let arr = if let Some(nested) = value
         .get("permissions")
         .and_then(|p| p.get("additionalDirectories"))
@@ -439,10 +439,10 @@ pub fn load_claude_env_with_project(cwd: &Path, project_trusted: bool) -> HashMa
 pub fn is_claude_import_marked() -> bool {
     // Test escape hatch: shell tests call `refresh_marker_cache(true)`, which lives in ezer-shell (inaccessible from here at runtime)
     // They also set this env var so the gate in this crate honours the override without a cross-crate dependency
-    if std::env::var("_GROK_CLAUDE_MARKER_OVERRIDE").as_deref() == Ok("1") {
+    if std::env::var("_EZER_CLAUDE_MARKER_OVERRIDE").as_deref() == Ok("1") {
         return true;
     }
-    let Some(config_path) = ezer_config::user_grok_home().map(|g| g.join("config.toml")) else {
+    let Some(config_path) = ezer_config::user_ezer_home().map(|g| g.join("config.toml")) else {
         return false;
     };
     let Ok(contents) = std::fs::read_to_string(&config_path) else {

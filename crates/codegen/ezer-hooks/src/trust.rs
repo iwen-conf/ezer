@@ -1,12 +1,12 @@
 use std::path::{Path, PathBuf};
 
 // Project-hook trust is no longer stored here: the shell's folder-trust store
-// (`~/.grok/trusted_folders.toml`) is the single authority for whether a repo's project hooks run (the same gate as repo-local MCP/LSP). The helpers below exist only to migrate prior grants out of the legacy file.
+// (`~/.ezer/trusted_folders.toml`) is the single authority for whether a repo's project hooks run (the same gate as repo-local MCP/LSP). The helpers below exist only to migrate prior grants out of the legacy file.
 
-/// Path to the legacy project-hook trust file (`<user_grok_home>/trusted-hook-projects`), or `None` when no user ezer home resolves.
+/// Path to the legacy project-hook trust file (`<user_ezer_home>/trusted-hook-projects`), or `None` when no user ezer home resolves.
 /// It is retained only for the one-time migration into folder-trust.
 pub fn legacy_trust_file_path() -> Option<PathBuf> {
-    Some(ezer_config::user_grok_home()?.join(ezer_config::TRUSTED_HOOK_PROJECTS_FILENAME))
+    Some(ezer_config::user_ezer_home()?.join(ezer_config::TRUSTED_HOOK_PROJECTS_FILENAME))
 }
 
 /// The legacy format is one canonical absolute path per line; blank and `#`-comment lines are skipped.
@@ -159,7 +159,7 @@ fn enable_hook_with_file(hook_name: &str, file: &Path) -> Result<bool, String> {
 
 /// Returns the path to `$EZER_HOME/disabled-hooks`, or `None` when no user ezer home resolves.
 fn disabled_hooks_file_path() -> Option<PathBuf> {
-    Some(ezer_config::user_grok_home()?.join("disabled-hooks"))
+    Some(ezer_config::user_ezer_home()?.join("disabled-hooks"))
 }
 
 #[cfg(test)]
@@ -168,9 +168,9 @@ mod tests {
 
     /// Each test creates its own legacy file in its own temp dir, so no state is shared.
     fn trust_file_in(dir: &Path) -> PathBuf {
-        let grok_dir = dir.join(".ezer");
-        std::fs::create_dir_all(&grok_dir).unwrap();
-        grok_dir.join("trusted-hook-projects")
+        let ezer_dir = dir.join(".ezer");
+        std::fs::create_dir_all(&ezer_dir).unwrap();
+        ezer_dir.join("trusted-hook-projects")
     }
 
     #[test]

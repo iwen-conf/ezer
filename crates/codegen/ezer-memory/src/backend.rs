@@ -1336,7 +1336,7 @@ mod tests {
         );
         assert!(!scoped.is_empty(), "trusted endpoint keeps the credential");
         assert!(
-            scoped.approved_for("https://API.x.ai/v1"),
+            scoped.approved_for("https://API.ezer/v1"),
             "host casing normalizes"
         );
         assert!(

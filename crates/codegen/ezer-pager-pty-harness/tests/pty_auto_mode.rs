@@ -51,10 +51,10 @@ fn prepare_sandbox(sandbox: &mut TestSandbox, gate_on: bool) -> Vec<(String, Str
     sandbox.remove_env("XAI_API_KEY");
 
     let home = sandbox.home();
-    let grok = sandbox.grok_home();
-    let _ = std::fs::create_dir_all(grok);
+    let ezer = sandbox.ezer_home();
+    let _ = std::fs::create_dir_all(ezer);
     if let Some(src) = auth_json_source() {
-        let dest = grok.join("auth.json");
+        let dest = ezer.join("auth.json");
         if let Err(e) = std::fs::copy(&src, &dest) {
             eprintln!("pty_auto_mode: could not copy auth.json ({e}); login may block mode cycle");
         } else {
@@ -79,7 +79,7 @@ fn prepare_sandbox(sandbox: &mut TestSandbox, gate_on: bool) -> Vec<(String, Str
         ("TERM_PROGRAM".into(), "".into()),
         ("TMUX".into(), "".into()),
     ];
-    // `GROK_AUTO_PERMISSION_MODE` is the highest gate layer below requirements; "1" and "0" parse to on and off
+    // `EZER_AUTO_PERMISSION_MODE` is the highest gate layer below requirements; "1" and "0" parse to on and off
     // (`ezer_config::env_bool`) portable-pty merges this over the inherited environment, so a value exported in
     // the shell can't flip the result.
     env.push((

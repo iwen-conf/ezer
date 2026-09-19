@@ -116,7 +116,7 @@ fn write_item(
     tick_count: u64,
 ) -> bool {
     match item {
-        TitleItem::Grok => {
+        TitleItem::Ezer => {
             push_separator(buf, has_parts);
             buf.push_str("ezer");
         }
@@ -294,8 +294,8 @@ mod tests {
     }
 
     #[test]
-    fn grok_only_produces_just_grok() {
-        let cfg = config_with_items(vec![TitleItem::Grok]);
+    fn ezer_only_produces_just_ezer() {
+        let cfg = config_with_items(vec![TitleItem::Ezer]);
         let mut mgr = TitleManager::new(&cfg);
         let state = idle_state();
         mgr.update(&state);
@@ -303,8 +303,8 @@ mod tests {
     }
 
     #[test]
-    fn session_name_and_grok_joined_with_separator() {
-        let cfg = config_with_items(vec![TitleItem::SessionName, TitleItem::Grok]);
+    fn session_name_and_ezer_joined_with_separator() {
+        let cfg = config_with_items(vec![TitleItem::SessionName, TitleItem::Ezer]);
         let mut mgr = TitleManager::new(&cfg);
         let state = TitleState {
             session_name: Some("my project"),
@@ -316,7 +316,7 @@ mod tests {
 
     #[test]
     fn missing_session_name_skipped() {
-        let cfg = config_with_items(vec![TitleItem::SessionName, TitleItem::Grok]);
+        let cfg = config_with_items(vec![TitleItem::SessionName, TitleItem::Ezer]);
         let mut mgr = TitleManager::new(&cfg);
         let state = idle_state();
         mgr.update(&state);
@@ -325,7 +325,7 @@ mod tests {
 
     #[test]
     fn empty_session_name_skipped() {
-        let cfg = config_with_items(vec![TitleItem::SessionName, TitleItem::Grok]);
+        let cfg = config_with_items(vec![TitleItem::SessionName, TitleItem::Ezer]);
         let mut mgr = TitleManager::new(&cfg);
         let state = TitleState {
             session_name: Some(""),
@@ -337,7 +337,7 @@ mod tests {
 
     #[test]
     fn spinner_only_shown_when_active() {
-        let cfg = config_with_items(vec![TitleItem::Spinner, TitleItem::Grok]);
+        let cfg = config_with_items(vec![TitleItem::Spinner, TitleItem::Ezer]);
         let mut mgr = TitleManager::new(&cfg);
 
         mgr.update(&idle_state());
@@ -508,7 +508,7 @@ mod tests {
 
     #[test]
     fn activity_hidden_when_idle() {
-        let cfg = config_with_items(vec![TitleItem::Activity, TitleItem::Grok]);
+        let cfg = config_with_items(vec![TitleItem::Activity, TitleItem::Ezer]);
         let mut mgr = TitleManager::new(&cfg);
         mgr.update(&idle_state());
         assert_eq!(mgr.last_title, "ezer");
@@ -516,7 +516,7 @@ mod tests {
 
     #[test]
     fn spinner_shown_when_busy_without_activity() {
-        let cfg = config_with_items(vec![TitleItem::Spinner, TitleItem::Grok]);
+        let cfg = config_with_items(vec![TitleItem::Spinner, TitleItem::Ezer]);
         let mut mgr = TitleManager::new(&cfg);
         let state = TitleState {
             is_busy: true,
@@ -534,7 +534,7 @@ mod tests {
 
     #[test]
     fn activity_shows_waiting_when_busy_without_activity() {
-        let cfg = config_with_items(vec![TitleItem::Activity, TitleItem::Grok]);
+        let cfg = config_with_items(vec![TitleItem::Activity, TitleItem::Ezer]);
         let mut mgr = TitleManager::new(&cfg);
         let state = TitleState {
             is_busy: true,
@@ -546,7 +546,7 @@ mod tests {
 
     #[test]
     fn activity_prefers_specific_activity_over_waiting() {
-        let cfg = config_with_items(vec![TitleItem::Activity, TitleItem::Grok]);
+        let cfg = config_with_items(vec![TitleItem::Activity, TitleItem::Ezer]);
         let mut mgr = TitleManager::new(&cfg);
         let activity = TurnActivity::Thinking;
         let state = TitleState {
@@ -560,7 +560,7 @@ mod tests {
 
     #[test]
     fn action_required_visible_on_first_tick() {
-        let cfg = config_with_items(vec![TitleItem::ActionRequired, TitleItem::Grok]);
+        let cfg = config_with_items(vec![TitleItem::ActionRequired, TitleItem::Ezer]);
         let mut mgr = TitleManager::new(&cfg);
         let state = TitleState {
             has_pending_permissions: true,
@@ -578,7 +578,7 @@ mod tests {
 
     #[test]
     fn action_required_blinks_across_ticks() {
-        let cfg = config_with_items(vec![TitleItem::ActionRequired, TitleItem::Grok]);
+        let cfg = config_with_items(vec![TitleItem::ActionRequired, TitleItem::Ezer]);
         let mut mgr = TitleManager::new(&cfg);
         let state = TitleState {
             has_pending_permissions: true,
@@ -610,7 +610,7 @@ mod tests {
 
     #[test]
     fn action_required_hidden_when_no_permissions() {
-        let cfg = config_with_items(vec![TitleItem::ActionRequired, TitleItem::Grok]);
+        let cfg = config_with_items(vec![TitleItem::ActionRequired, TitleItem::Ezer]);
         let mut mgr = TitleManager::new(&cfg);
         let state = TitleState {
             has_pending_permissions: false,
@@ -624,7 +624,7 @@ mod tests {
 
     #[test]
     fn dedup_skips_emission_when_unchanged() {
-        let cfg = config_with_items(vec![TitleItem::Grok]);
+        let cfg = config_with_items(vec![TitleItem::Ezer]);
         let mut mgr = TitleManager::new(&cfg);
         let state = idle_state();
 
@@ -637,7 +637,7 @@ mod tests {
     }
 
     #[test]
-    fn empty_items_produces_grok_fallback() {
+    fn empty_items_produces_ezer_fallback() {
         let cfg = config_with_items(vec![]);
         let mut mgr = TitleManager::new(&cfg);
         mgr.update(&idle_state());
@@ -646,19 +646,19 @@ mod tests {
 
     #[test]
     fn model_item_shown_when_present() {
-        let cfg = config_with_items(vec![TitleItem::Model, TitleItem::Grok]);
+        let cfg = config_with_items(vec![TitleItem::Model, TitleItem::Ezer]);
         let mut mgr = TitleManager::new(&cfg);
         let state = TitleState {
-            model: Some("grok-3"),
+            model: Some("test-model-3"),
             ..idle_state()
         };
         mgr.update(&state);
-        assert_eq!(mgr.last_title, "grok-3 - ezer");
+        assert_eq!(mgr.last_title, "test-model-3 - ezer");
     }
 
     #[test]
     fn model_item_hidden_when_none() {
-        let cfg = config_with_items(vec![TitleItem::Model, TitleItem::Grok]);
+        let cfg = config_with_items(vec![TitleItem::Model, TitleItem::Ezer]);
         let mut mgr = TitleManager::new(&cfg);
         mgr.update(&idle_state());
         assert_eq!(mgr.last_title, "ezer");
@@ -666,7 +666,7 @@ mod tests {
 
     #[test]
     fn cwd_shows_last_component() {
-        let cfg = config_with_items(vec![TitleItem::Cwd, TitleItem::Grok]);
+        let cfg = config_with_items(vec![TitleItem::Cwd, TitleItem::Ezer]);
         let mut mgr = TitleManager::new(&cfg);
         let state = TitleState {
             cwd: Some("/home/user/my-project"),
@@ -678,7 +678,7 @@ mod tests {
 
     #[test]
     fn turn_timer_shown_when_above_one_second() {
-        let cfg = config_with_items(vec![TitleItem::TurnTimer, TitleItem::Grok]);
+        let cfg = config_with_items(vec![TitleItem::TurnTimer, TitleItem::Ezer]);
         let mut mgr = TitleManager::new(&cfg);
         let state = TitleState {
             turn_elapsed: Some(std::time::Duration::from_secs(42)),
@@ -690,7 +690,7 @@ mod tests {
 
     #[test]
     fn turn_timer_hidden_when_under_one_second() {
-        let cfg = config_with_items(vec![TitleItem::TurnTimer, TitleItem::Grok]);
+        let cfg = config_with_items(vec![TitleItem::TurnTimer, TitleItem::Ezer]);
         let mut mgr = TitleManager::new(&cfg);
         let state = TitleState {
             turn_elapsed: Some(std::time::Duration::from_millis(500)),
@@ -728,8 +728,8 @@ mod tests {
     }
 
     #[test]
-    fn reset_clears_state_and_emits_grok() {
-        let cfg = config_with_items(vec![TitleItem::SessionName, TitleItem::Grok]);
+    fn reset_clears_state_and_emits_ezer() {
+        let cfg = config_with_items(vec![TitleItem::SessionName, TitleItem::Ezer]);
         let mut mgr = TitleManager::new(&cfg);
         let activity = TurnActivity::Thinking;
         let state = TitleState {
@@ -797,13 +797,13 @@ mod tests {
             TitleItem::SessionName,
             TitleItem::Model,
             TitleItem::Cwd,
-            TitleItem::Grok,
+            TitleItem::Ezer,
         ]);
         let mut mgr = TitleManager::new(&cfg);
         let activity = TurnActivity::Thinking;
         let state = TitleState {
             session_name: Some("proj"),
-            model: Some("grok-3"),
+            model: Some("test-model-3"),
             activity: Some(&activity),
             cwd: Some("/home/user/workspace"),
             ..idle_state()
@@ -811,7 +811,7 @@ mod tests {
         mgr.update(&state);
         assert_eq!(
             mgr.last_title,
-            "Thinking - proj - grok-3 - workspace - ezer"
+            "Thinking - proj - test-model-3 - workspace - ezer"
         );
     }
 

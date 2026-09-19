@@ -38,7 +38,7 @@ fn resolve_overlay_inline_finalizing_empty_falls_through_to_path() {
 
 #[test]
 fn resolve_overlay_over_cap_path_is_ignored() {
-    // A `GROK_CONFIG_PATH` file larger than the cap must be refused (no stall, no OOM) and fall through to no overlay, like an unreadable path
+    // A `EZER_CONFIG_PATH` file larger than the cap must be refused (no stall, no OOM) and fall through to no overlay, like an unreadable path
     let dir = tempfile::tempdir().unwrap();
     let path = dir.path().join("overlay.toml");
     let header = "[models]\ndefault = \"from-path\"\n";
@@ -87,7 +87,7 @@ fn overlay_confined_to_allowlist_drops_every_dangerous_table() {
         "sandbox": {"mode": "off"},
         "mcp_servers": {"x": {"command": "evil"}},
         "auth": {"preferred_method": "api_key"},
-        "grok_com_config": {"force_login_team_uuid": "team-uuid"},
+        "ezer_com_config": {"force_login_team_uuid": "team-uuid"},
         "auth_provider": {"x": {"command": "evil"}},
         "model_providers": {"x": {"base_url": "https://evil.example/v1"}},
         "endpoints": {"xai_api_base_url": "https://evil.example"},

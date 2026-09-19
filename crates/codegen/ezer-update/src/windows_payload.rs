@@ -78,8 +78,8 @@ pub(super) fn valid_mingit_version(version: &str) -> bool {
 
 /// `.staging-<ezer-version>`: per ezer release, so a crashed extraction of an
 /// older release never collides with this one and is swept by the prune.
-pub(super) fn staging_dir_name(grok_version: &str) -> String {
-    format!("{STAGING_PREFIX}{grok_version}")
+pub(super) fn staging_dir_name(ezer_version: &str) -> String {
+    format!("{STAGING_PREFIX}{ezer_version}")
 }
 
 /// The tree under `version_dir` is one the locator will pick as usable
@@ -263,14 +263,14 @@ mod windows {
     /// Never fails: anything missing or broken is logged and left out.
     pub(crate) async fn download(
         base: &str,
-        grok_version: &str,
+        ezer_version: &str,
         platform: &str,
         download_dir: &Path,
     ) -> Payload {
         let base = base.trim_end_matches('/');
         let (grove, mingit) = tokio::join!(
-            download_grove_exes(base, grok_version, platform, download_dir),
-            download_mingit(base, grok_version, platform, download_dir),
+            download_grove_exes(base, ezer_version, platform, download_dir),
+            download_mingit(base, ezer_version, platform, download_dir),
         );
         Payload { grove, mingit }
     }
@@ -281,11 +281,11 @@ mod windows {
     /// probes run together, then (all published) the three downloads.
     async fn download_grove_exes(
         base: &str,
-        grok_version: &str,
+        ezer_version: &str,
         platform: &str,
         download_dir: &Path,
     ) -> Option<[PathBuf; 3]> {
-        let objects = GROVE_EXES.map(|exe| grove_object_name(exe, grok_version, platform));
+        let objects = GROVE_EXES.map(|exe| grove_object_name(exe, ezer_version, platform));
         let urls = objects
             .each_ref()
             .map(|object| format!("{base}/{object}.exe"));
@@ -329,11 +329,11 @@ mod windows {
     /// version it names is already installed.
     async fn download_mingit(
         base: &str,
-        grok_version: &str,
+        ezer_version: &str,
         platform: &str,
         download_dir: &Path,
     ) -> Option<MinGitDownload> {
-        let object = mingit_object_base(grok_version, platform);
+        let object = mingit_object_base(ezer_version, platform);
         let version = match fetch_text(&format!("{base}/{object}.version")).await {
             Ok(Some(text)) => text.trim().to_owned(),
             Ok(None) => {
@@ -406,14 +406,14 @@ mod windows {
     /// `bin_dir` and MinGit under `git\<version>` (independent, so together),
     /// then prune old MinGit versions. Best-effort; the downloads are removed
     /// afterwards either way.
-    pub(crate) async fn activate(payload: &Payload, bin_dir: &Path, grok_version: &str) {
+    pub(crate) async fn activate(payload: &Payload, bin_dir: &Path, ezer_version: &str) {
         let root = mingit_root();
         tokio::join!(
             activate_grove(payload.grove.as_ref(), bin_dir),
-            activate_mingit(payload.mingit.as_ref(), root.as_deref(), grok_version),
+            activate_mingit(payload.mingit.as_ref(), root.as_deref(), ezer_version),
         );
         if let Some(root) = root {
-            prune_mingit(&root, grok_version).await;
+            prune_mingit(&root, ezer_version).await;
         }
     }
 
@@ -431,12 +431,12 @@ mod windows {
     async fn activate_mingit(
         mingit: Option<&MinGitDownload>,
         root: Option<&Path>,
-        grok_version: &str,
+        ezer_version: &str,
     ) {
         let (Some(mingit), Some(root)) = (mingit, root) else {
             return;
         };
-        match install_mingit(mingit, root, grok_version).await {
+        match install_mingit(mingit, root, ezer_version).await {
             Ok(()) => tracing::info!("installed bundled git {}", mingit.version),
             Err(e) => tracing::warn!("bundled git {} not installed: {e:#}", mingit.version),
         }
@@ -460,10 +460,10 @@ mod windows {
     async fn install_mingit(
         mingit: &MinGitDownload,
         root: &Path,
-        grok_version: &str,
+        ezer_version: &str,
     ) -> Result<()> {
         let version_dir = root.join(&mingit.version);
-        let staging = root.join(staging_dir_name(grok_version));
+        let staging = root.join(staging_dir_name(ezer_version));
         let _ = tokio::fs::remove_dir_all(&staging).await;
         tokio::fs::create_dir_all(&staging)
             .await
@@ -502,7 +502,7 @@ mod windows {
     /// Keep the newest [`KEEP_MINGIT_VERSIONS`] payloads; never remove the one
     /// this process resolved (`bundled_git` is memoized, other processes may
     /// hold it too). A locked tree fails to delete and is retried next time.
-    async fn prune_mingit(root: &Path, grok_version: &str) {
+    async fn prune_mingit(root: &Path, ezer_version: &str) {
         let in_use = xai_tty_utils::bundled_git().and_then(|git| {
             git.cmd_dir
                 .parent()?
@@ -521,7 +521,7 @@ mod windows {
                 names.push(name.to_owned());
             }
         }
-        let staging = staging_dir_name(grok_version);
+        let staging = staging_dir_name(ezer_version);
         for name in prune_plan(&names, KEEP_MINGIT_VERSIONS, in_use.as_deref(), &staging) {
             if let Err(e) = tokio::fs::remove_dir_all(root.join(&name)).await {
                 tracing::debug!("could not remove old bundled git {name}: {e}");
@@ -546,7 +546,7 @@ mod tests {
         );
         assert_eq!(
             mingit_object_base("0.2.10", "windows-aarch64"),
-            "grok-0.2.10-windows-aarch64-mingit"
+            "ezer-0.2.10-windows-aarch64-mingit"
         );
         assert_eq!(staging_dir_name("0.2.10"), ".staging-0.2.10");
     }
@@ -556,7 +556,7 @@ mod tests {
         let digest = "56D7B226B7693196CFC71FEF26568F536C4A021AB6C37FF2DB4287BED908E96E";
         assert_eq!(
             parse_sha256_sidecar(&format!(
-                "{digest}  grok-0.2.10-windows-x86_64-mingit.zip\n"
+                "{digest}  ezer-0.2.10-windows-x86_64-mingit.zip\n"
             )),
             Some(digest.to_ascii_lowercase())
         );

@@ -20,7 +20,7 @@ fn test_home() -> &'static PathBuf {
         let dir = tempfile::TempDir::new().unwrap();
         let path = dir.keep();
         // SAFETY: called once at init before other threads touch this var.
-        unsafe { std::env::set_var("GROK_HOME", &path) };
+        unsafe { std::env::set_var("EZER_HOME", &path) };
         path
     })
 }
@@ -216,7 +216,7 @@ fn rule(action: RuleAction, pattern: &str) -> PermissionRule {
 #[tokio::test]
 #[serial]
 async fn mcp_tool_grant_persists_and_short_circuits_next_request() {
-    run_actor_test(ClientType::GrokPager, |handle, gw, cwd| async move {
+    run_actor_test(ClientType::EzerPager, |handle, gw, cwd| async move {
         gw.expect_allow_always_mcp_tool("linear__list");
         let d = request(&handle, mcp("linear__list"), "1").await;
         assert!(matches!(d, Decision::Allow));
@@ -313,7 +313,7 @@ async fn policy_ask_suppresses_mcp_tool_allowlist() {
                 make_session_id(),
                 gw.sender.clone(),
                 cwd.clone(),
-                ClientType::GrokPager,
+                ClientType::EzerPager,
                 Some(policy),
                 vec![],
                 vec![],
@@ -358,7 +358,7 @@ async fn policy_ask_suppresses_mcp_server_allowlist() {
                 make_session_id(),
                 gw.sender.clone(),
                 cwd.clone(),
-                ClientType::GrokPager,
+                ClientType::EzerPager,
                 Some(policy),
                 vec![],
                 vec![],
@@ -403,7 +403,7 @@ async fn policy_deny_takes_precedence_over_mcp_allowlist() {
                 make_session_id(),
                 gw.sender.clone(),
                 cwd.clone(),
-                ClientType::GrokPager,
+                ClientType::EzerPager,
                 Some(policy),
                 vec![],
                 vec![],
@@ -423,7 +423,7 @@ async fn policy_allow_short_circuits_before_mcp_allowlist() {
     let policy = PermissionConfig::new(vec![rule(RuleAction::Allow, "linear__*")]);
 
     run_actor_test_with_policy(
-        ClientType::GrokPager,
+        ClientType::EzerPager,
         Some(policy),
         |handle, _gw, _cwd| async move {
             let d = request(&handle, mcp("linear__list"), "1").await;
@@ -436,7 +436,7 @@ async fn policy_allow_short_circuits_before_mcp_allowlist() {
 #[tokio::test]
 #[serial]
 async fn empty_server_prefix_falls_back_to_tool_scope() {
-    run_actor_test(ClientType::GrokPager, |handle, gw, cwd| async move {
+    run_actor_test(ClientType::EzerPager, |handle, gw, cwd| async move {
         let meta = serde_json::json!({
             "kind": "server",
             "server": "",
@@ -464,7 +464,7 @@ async fn empty_server_prefix_falls_back_to_tool_scope() {
 #[tokio::test]
 #[serial]
 async fn allow_always_mcp_tool_ignores_client_supplied_tool_name() {
-    run_actor_test(ClientType::GrokPager, |handle, gw, cwd| async move {
+    run_actor_test(ClientType::EzerPager, |handle, gw, cwd| async move {
         let meta = serde_json::json!({
             "kind": "tool",
             "tool_name": "notion__fetch",
@@ -498,7 +498,7 @@ async fn allow_always_mcp_tool_ignores_client_supplied_tool_name() {
 #[tokio::test]
 #[serial]
 async fn allow_always_mcp_server_rejects_mismatched_prefix() {
-    run_actor_test(ClientType::GrokPager, |handle, gw, cwd| async move {
+    run_actor_test(ClientType::EzerPager, |handle, gw, cwd| async move {
         let meta = serde_json::json!({
             "kind": "server",
             "server": "notion",
@@ -536,7 +536,7 @@ async fn allow_always_mcp_server_rejects_mismatched_prefix() {
 #[tokio::test]
 #[serial]
 async fn allow_always_mcp_server_persists_canonical_prefix_on_match() {
-    run_actor_test(ClientType::GrokPager, |handle, gw, cwd| async move {
+    run_actor_test(ClientType::EzerPager, |handle, gw, cwd| async move {
         let meta = serde_json::json!({
             "kind": "server",
             "server": "linear",
@@ -564,7 +564,7 @@ async fn allow_always_mcp_server_persists_canonical_prefix_on_match() {
 #[tokio::test]
 #[serial]
 async fn allow_always_mcp_server_downgrades_when_access_has_no_separator() {
-    run_actor_test(ClientType::GrokPager, |handle, gw, cwd| async move {
+    run_actor_test(ClientType::EzerPager, |handle, gw, cwd| async move {
         let meta = serde_json::json!({
             "kind": "server",
             "server": "linear",
@@ -598,7 +598,7 @@ async fn dont_ask_policy_denies_without_prompting() {
     policy.prompt_policy = PromptPolicy::Deny;
 
     run_actor_test_with_policy(
-        ClientType::GrokPager,
+        ClientType::EzerPager,
         Some(policy),
         |handle, _gw, _cwd| async move {
             let d = request(&handle, mcp("linear__list"), "1").await;
@@ -630,7 +630,7 @@ async fn deny_rule_enforced_in_yolo_mode_bash() {
     }]);
 
     run_actor_test_full(
-        ClientType::GrokPager,
+        ClientType::EzerPager,
         Some(policy),
         true,
         |handle, _gw, _cwd| async move {
@@ -666,7 +666,7 @@ async fn deny_rule_enforced_in_yolo_mode_mcp() {
     }]);
 
     run_actor_test_full(
-        ClientType::GrokPager,
+        ClientType::EzerPager,
         Some(policy),
         true,
         |handle, _gw, _cwd| async move {
@@ -697,7 +697,7 @@ async fn deny_rule_enforced_in_yolo_mode_edit() {
     }]);
 
     run_actor_test_full(
-        ClientType::GrokPager,
+        ClientType::EzerPager,
         Some(policy),
         true,
         |handle, _gw, _cwd| async move {
@@ -728,7 +728,7 @@ async fn deny_rule_enforced_in_yolo_mode_web_fetch() {
     }]);
 
     run_actor_test_full(
-        ClientType::GrokPager,
+        ClientType::EzerPager,
         Some(policy),
         true,
         |handle, _gw, _cwd| async move {
@@ -762,7 +762,7 @@ async fn deny_rule_enforced_in_yolo_mode_web_fetch() {
 #[serial]
 async fn yolo_mode_without_deny_rules_approves_everything() {
     run_actor_test_full(
-        ClientType::GrokPager,
+        ClientType::EzerPager,
         None,
         true,
         |handle, _gw, _cwd| async move {

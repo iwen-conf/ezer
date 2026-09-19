@@ -1,5 +1,5 @@
 //! File I/O methods: the service-level `workspace.put_files` / `workspace.get_files` pair and the `workspace.fs_*` extension ops.
-//! The `workspace.fs_*` ops back the shell's `x.ai/fs/*` ACP methods.
+//! The `workspace.fs_*` ops back the shell's `ezer/fs/*` ACP methods.
 
 use std::path::PathBuf;
 
@@ -298,7 +298,7 @@ impl WorkspaceRpc for FsDeleteFileReq {
 }
 
 // Client-facing `workspace.client_fs_*`: root-relative paths, `mtimeMs`, post-sort pagination, binary-safe base64. Not the shell `workspace.fs_*` schema.
-// camelCase, fixed-width integers only. Server and grok.com backend share these structs; a field rename breaks both.
+// camelCase, fixed-width integers only. Server and ezer.com backend share these structs; a field rename breaks both.
 
 /// Wire method name for [`ClientFsListReq`].
 pub const CLIENT_FS_LIST_METHOD: &str = "workspace.client_fs_list";
@@ -307,7 +307,7 @@ pub const CLIENT_FS_STAT_METHOD: &str = "workspace.client_fs_stat";
 /// Wire method name for [`ClientFsReadFileReq`].
 pub const CLIENT_FS_READ_FILE_METHOD: &str = "workspace.client_fs_read_file";
 
-/// Filesystem node kind. Wire values match the shell's `x.ai/fs/list` node `type` strings.
+/// Filesystem node kind. Wire values match the shell's `ezer/fs/list` node `type` strings.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum FsNodeType {
@@ -346,7 +346,7 @@ fn default_max_bytes() -> u64 {
     1_048_576
 }
 
-/// ACP-compatible list request (camelCase wire format, mirrors `x.ai/fs/list` plus `offset` pagination).
+/// ACP-compatible list request (camelCase wire format, mirrors `ezer/fs/list` plus `offset` pagination).
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ClientFsListReq {

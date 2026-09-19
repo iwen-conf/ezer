@@ -28,7 +28,7 @@ async fn handle_hook_request_turn_hook_returns_reply() {
     let handler = WorkspaceRpcHandler::new(make_handle());
     let req = turn_hook::TurnHookRequest::Before(turn_hook::BeforeTurnPayload {
         turn_number: 1,
-        model_id: "grok-3".to_owned(),
+        model_id: "test-model-3".to_owned(),
         yolo_mode: false,
         conversation_message_count: 0,
         session_relationship: "primary".to_owned(),
@@ -65,7 +65,7 @@ async fn handle_hook_request_unbound_session_is_noop() {
     let handler = WorkspaceRpcHandler::new(make_handle());
     let req = turn_hook::TurnHookRequest::Before(turn_hook::BeforeTurnPayload {
         turn_number: 1,
-        model_id: "grok-3".to_owned(),
+        model_id: "test-model-3".to_owned(),
         yolo_mode: false,
         conversation_message_count: 0,
         session_relationship: "primary".to_owned(),
@@ -1340,7 +1340,7 @@ async fn handle_call_records_rpc_metrics_and_collapses_unknown_method() {
     );
     let has_bogus_series = prometheus::gather()
         .iter()
-        .filter(|mf| mf.name() == "grok_workspace_rpc_requests_total")
+        .filter(|mf| mf.name() == "ezer_workspace_rpc_requests_total")
         .flat_map(|mf| mf.get_metric())
         .any(|m| {
             m.get_label()
@@ -1398,7 +1398,7 @@ async fn handle_hook_before_turn_sets_turn_state() {
     let handler = WorkspaceRpcHandler::new(handle.clone());
     let payload = turn_hook::BeforeTurnPayload {
         turn_number: 1,
-        model_id: "grok-3".to_string(),
+        model_id: "test-model-3".to_string(),
         yolo_mode: false,
         conversation_message_count: 0,
         session_relationship: "primary".to_string(),

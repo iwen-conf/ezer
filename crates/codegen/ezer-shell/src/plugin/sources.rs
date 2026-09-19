@@ -46,17 +46,17 @@ fn load_marketplace_sources_with_origin_from(
 
     let mut sources: Vec<(MarketplaceSource, PolicySubjectOrigin)> = load_sources(config)
         .into_iter()
-        .map(|source| (source, PolicySubjectOrigin::GrokNative))
+        .map(|source| (source, PolicySubjectOrigin::EzerNative))
         .collect();
     sources.extend(
         managed_extra_marketplace_sources(managed, &plain(&sources))
             .into_iter()
-            .map(|source| (source, PolicySubjectOrigin::GrokNative)),
+            .map(|source| (source, PolicySubjectOrigin::EzerNative)),
     );
     sources.extend(
         load_extra_sources_from_settings_in(&plain(&sources), native_roots)
             .into_iter()
-            .map(|source| (source, PolicySubjectOrigin::GrokNative)),
+            .map(|source| (source, PolicySubjectOrigin::EzerNative)),
     );
     sources.extend(
         load_extra_sources_from_settings_in(&plain(&sources), foreign_roots)
@@ -155,7 +155,7 @@ fn filter_sources_by_allowlist(
                 allowed
             }
             SourceKind::Local { path } => {
-                // Extras accumulate from every layer: a pin in user-writable ~/.grok files must not carve an
+                // Extras accumulate from every layer: a pin in user-writable ~/.ezer files must not carve an
                 // exception out of a root-owned lockdown.
                 let admin_pinned = managed_pins.iter().any(|pin| {
                     pin.ownership
@@ -222,20 +222,20 @@ mod tests {
                 ),
                 (
                     local_source("Local", "/tmp/p"),
-                    PolicySubjectOrigin::GrokNative,
+                    PolicySubjectOrigin::EzerNative,
                 ),
                 (
                     local_source("Pinned Local", "/opt/marketplace"),
-                    PolicySubjectOrigin::GrokNative,
+                    PolicySubjectOrigin::EzerNative,
                 ),
                 // Squats the pin's name with a different path — not exempt.
                 (
                     local_source("Pinned Local", "/tmp/squat"),
-                    PolicySubjectOrigin::GrokNative,
+                    PolicySubjectOrigin::EzerNative,
                 ),
                 (
                     local_source("User Pin", "/tmp/user-pin"),
-                    PolicySubjectOrigin::GrokNative,
+                    PolicySubjectOrigin::EzerNative,
                 ),
             ]
         };
@@ -355,7 +355,7 @@ mod tests {
         write_known(
             foreign_home.path(),
             &[
-                // Same URL as the native root: dedups grok-native-first.
+                // Same URL as the native root: dedups ezer-native-first.
                 ("shared", "https://example.com/shared.git"),
                 ("claude-only", "https://example.com/claude-only.git"),
             ],
@@ -383,12 +383,12 @@ mod tests {
         };
         assert_eq!(
             origin_of("https://example.com/cfg.git"),
-            PolicySubjectOrigin::GrokNative,
+            PolicySubjectOrigin::EzerNative,
             "config.toml sources are ezer-native"
         );
         assert_eq!(
             origin_of("https://example.com/shared.git"),
-            PolicySubjectOrigin::GrokNative,
+            PolicySubjectOrigin::EzerNative,
             "a URL in both homes must dedup to the ezer-native entry"
         );
         assert_eq!(
@@ -413,7 +413,7 @@ mod tests {
         let sources = vec![
             (
                 git_source("Native Unlisted", "https://github.com/native/repo.git"),
-                PolicySubjectOrigin::GrokNative,
+                PolicySubjectOrigin::EzerNative,
             ),
             (
                 git_source("Foreign Unlisted", "https://github.com/foreign/repo.git"),
@@ -422,7 +422,7 @@ mod tests {
             // Local sources drop only when the strict list binds their origin.
             (
                 local_source("Native Local", "/tmp/native"),
-                PolicySubjectOrigin::GrokNative,
+                PolicySubjectOrigin::EzerNative,
             ),
             (
                 local_source("Foreign Local", "/tmp/foreign"),

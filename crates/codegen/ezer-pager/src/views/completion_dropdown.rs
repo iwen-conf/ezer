@@ -236,7 +236,7 @@ mod tests {
             "terminal theme description must be dim, got {desc:?}"
         );
 
-        let theme = Theme::groknight();
+        let theme = Theme::ezernight();
         let line = build_item_line(&item, false, 10, 60, theme.bg_light, &theme);
         let desc = line.spans.last().unwrap().style;
         assert_eq!(desc.fg, Some(theme.gray), "RGB keeps the gray fg");

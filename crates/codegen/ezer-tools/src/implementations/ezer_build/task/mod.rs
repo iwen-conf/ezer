@@ -250,11 +250,11 @@ impl crate::types::tool_metadata::ToolMetadata for TaskTool {
     }
 
     fn tool_namespace(&self) -> ToolNamespace {
-        ToolNamespace::GrokBuild
+        ToolNamespace::EzerBuild
     }
 
     fn description_template(&self) -> &str {
-        // Grok Build normally supplies the description via `ToolConfig::with_description(...)` using `build_task_description()` in
+        // Ezer Build normally supplies the description via `ToolConfig::with_description(...)` using `build_task_description()` in
         // ezer-agent/src/builder.rs (live subagent roster). But a registration without an override must still ship a real description, never a
         // placeholder: default to the built-in roster with templated tool/param names, resolved by the registry renderer at finalize time.
         fn guard_kind_tokens(template: &str) -> String {

@@ -192,7 +192,7 @@ pub struct IntraCompactionConfig {
     //    preamble). --
     /// [HistoryOnly / HistoryThenSteps] Character threshold above which an
     /// original user message gets middle-truncated when included in the
-    /// `<grok_user_queries>` preamble prepended to the history compaction
+    /// `<ezer_user_queries>` preamble prepended to the history compaction
     /// summary. Mirrors the inter-compaction Basic threshold. Has no
     /// effect for `Steps` target — steps compaction has no user-queries
     /// preamble. Default: `3000`. (Not always exposed by remote agent-config

@@ -240,7 +240,7 @@ pub fn record_auth_401(
 ) {
     let payload = compute_attribution_payload(auth_manager, consumer, sent_bearer);
 
-    // Sink 1 -- local file (~/.grok/logs/unified.jsonl) + scrubbed tracing event
+    // Sink 1 -- local file (~/.ezer/logs/unified.jsonl) + scrubbed tracing event
     // The local file is reliable but only ships to GCS on OIDC refresh failure (auth/refresh.rs::spawn_diagnostic_upload)
     // By itself it does not show the steady-state 401 population; Sink 2 below provides that
     ezer_telemetry::unified_log::warn(
@@ -319,7 +319,7 @@ fn compute_attribution_payload(
 
     // Mint-age and expiry come from the same `current_auth` we already read; sentinels `-1 / 0` when the manager holds nothing
     // For a hard-expired token these report true age and (negative) time-past-expiry: how long the bearer was dead at the 401
-    // TODO: mirror the full External-with-ttl branch from `AuthManager::is_token_expired` (uses `grok_com_config.auth_token_ttl` when `expires_at` is `None` and `auth_mode == External`) The current 2-branch fallback (`expires_at` if Some else `create_time + TOKEN_TTL`) is good enough for diagnostic metadata The External-ttl branch is worth wiring once a real consumer needs it
+    // TODO: mirror the full External-with-ttl branch from `AuthManager::is_token_expired` (uses `ezer_com_config.auth_token_ttl` when `expires_at` is `None` and `auth_mode == External`) The current 2-branch fallback (`expires_at` if Some else `create_time + TOKEN_TTL`) is good enough for diagnostic metadata The External-ttl branch is worth wiring once a real consumer needs it
     let (mint_age_seconds, expires_at_seconds_from_now) = match current_auth {
         Some(auth) => {
             let mint_age = now.signed_duration_since(auth.create_time).num_seconds();
@@ -345,7 +345,7 @@ mod tests {
 
     use chrono::{Duration, Utc};
 
-    use crate::{AuthManager, GrokAuth, GrokComConfig};
+    use crate::{AuthManager, EzerAuth, EzerComConfig};
 
     use super::*;
 
@@ -353,17 +353,17 @@ mod tests {
     /// nothing from a developer's actual `~/.ezer/auth.json` leaks in.
     fn empty_auth_manager() -> (tempfile::TempDir, AuthManager) {
         let dir = tempfile::tempdir().expect("tempdir");
-        let cfg = GrokComConfig::default();
+        let cfg = EzerComConfig::default();
         let am = AuthManager::new(dir.path(), cfg);
         (dir, am)
     }
 
-    fn fresh_auth(key: &str) -> GrokAuth {
-        GrokAuth {
+    fn fresh_auth(key: &str) -> EzerAuth {
+        EzerAuth {
             key: key.to_string(),
             create_time: Utc::now(),
             expires_at: Some(Utc::now() + Duration::hours(1)),
-            ..GrokAuth::test_default()
+            ..EzerAuth::test_default()
         }
     }
 
@@ -446,12 +446,12 @@ mod tests {
 
     /// Test helper: a token minted 2h ago that hard-expired 1h ago.
     /// That is the in-memory state during the exact window most 401s occur in (`current()` is `None`, `expired_auth()` is `Some`).
-    fn hard_expired_auth(key: &str) -> GrokAuth {
-        GrokAuth {
+    fn hard_expired_auth(key: &str) -> EzerAuth {
+        EzerAuth {
             key: key.to_string(),
             create_time: Utc::now() - Duration::hours(2),
             expires_at: Some(Utc::now() - Duration::hours(1)),
-            ..GrokAuth::test_default()
+            ..EzerAuth::test_default()
         }
     }
 
@@ -530,11 +530,11 @@ mod tests {
     #[test]
     fn legacy_token_uses_two_branch_fallback() {
         let (_dir, am) = empty_auth_manager();
-        let auth = GrokAuth {
+        let auth = EzerAuth {
             key: "k".into(),
             create_time: Utc::now() - Duration::seconds(60),
             // No expires_at falls through to create_time + TOKEN_TTL (30 days)
-            ..GrokAuth::test_default()
+            ..EzerAuth::test_default()
         };
         am.hot_swap(auth);
 

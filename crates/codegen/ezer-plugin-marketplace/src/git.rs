@@ -135,7 +135,7 @@ fn is_cache_fresh(cache_dir: &Path) -> bool {
 }
 
 pub fn default_cache_root() -> PathBuf {
-    ezer_config::grok_home().join("marketplace-cache")
+    ezer_config::ezer_home().join("marketplace-cache")
 }
 
 /// Deterministic hash for a URL (used as cache directory name).
@@ -665,7 +665,7 @@ mod tests {
     }
 
     #[test]
-    fn default_cache_root_under_grok() {
+    fn default_cache_root_under_ezer() {
         let root = default_cache_root();
         assert!(root.to_string_lossy().contains("marketplace-cache"));
     }

@@ -247,7 +247,7 @@ mod tests {
         use super::*;
 
         #[test]
-        fn grok_dirs_are_unsafe() {
+        fn ezer_dirs_are_unsafe() {
             if let Some(home) = xai_dirs::home_dir() {
                 assert!(!is_project_dir(&home.join(".ezer")));
                 assert!(!is_project_dir(&home.join(".ezer/bin")));
@@ -255,7 +255,7 @@ mod tests {
         }
 
         #[test]
-        fn grok_prefixed_dirs_are_unsafe() {
+        fn ezer_prefixed_dirs_are_unsafe() {
             if let Some(home) = xai_dirs::home_dir() {
                 assert!(!is_project_dir(&home.join(".ezer-proxy-work")));
             }

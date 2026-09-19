@@ -3,9 +3,9 @@
 #[test]
 fn env_override_pins_the_agent_id_without_persisting_it() {
     let home = tempfile::tempdir().expect("tempdir");
-    // SAFETY: single-threaded here; set before anything caches `grok_home()`.
+    // SAFETY: single-threaded here; set before anything caches `ezer_home()`.
     unsafe {
-        std::env::set_var("GROK_HOME", home.path());
+        std::env::set_var("EZER_HOME", home.path());
         std::env::set_var("EZER_AGENT_ID", "pinned-agent-id");
     }
     assert_eq!(ezer_telemetry::id::agent_id(), "pinned-agent-id");

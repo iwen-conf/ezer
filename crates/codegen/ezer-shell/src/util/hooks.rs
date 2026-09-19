@@ -35,7 +35,7 @@ impl HookSourcePaths {
 }
 
 /// Vendor settings-file paths are classified at the call site so a directory there cannot load as a hook dir.
-fn classify_grok_hook_source(path: PathBuf) -> HookSourceConfig {
+fn classify_ezer_hook_source(path: PathBuf) -> HookSourceConfig {
     if path.is_dir() {
         HookSourceConfig::Directory(path)
     } else {
@@ -59,14 +59,14 @@ pub(crate) fn discover_hook_source_paths(
     git_root: Option<&Path>,
     compat: &ezer_tools::types::compat::CompatConfig,
 ) -> HookSourcePaths {
-    let grok = ezer_config::user_grok_home();
+    let ezer = ezer_config::user_ezer_home();
     let home = xai_dirs::home_dir();
     let include_claude = include_claude_hooks(compat);
     let include_cursor = include_cursor_hooks(compat);
 
-    // An unreadable hooks-paths file keeps the fixed Grok sources; a hard resolve failure omits all Grok global sources
+    // An unreadable hooks-paths file keeps the fixed Ezer sources; a hard resolve failure omits all Ezer global sources
     let mut global: Vec<HookSourceConfig> =
-        match resolve_global_hook_sources(grok.as_deref(), /* reject_symlinks */ false) {
+        match resolve_global_hook_sources(ezer.as_deref(), /* reject_symlinks */ false) {
             Ok(resolved) => {
                 if let Some(e) = &resolved.configured_error {
                     tracing::warn!(
@@ -76,7 +76,7 @@ pub(crate) fn discover_hook_source_paths(
                 }
                 resolved
                     .discovery_sources()
-                    .map(|s| classify_grok_hook_source(s.path.clone()))
+                    .map(|s| classify_ezer_hook_source(s.path.clone()))
                     .collect()
             }
             Err(e) => {
@@ -114,7 +114,7 @@ pub(crate) fn discover_hook_source_paths(
                 root.join(".claude").join("settings.local.json"),
             ));
         }
-        project.push(classify_grok_hook_source(root.join(".ezer").join("hooks")));
+        project.push(classify_ezer_hook_source(root.join(".ezer").join("hooks")));
         if include_cursor {
             project.push(HookSourceConfig::SettingsFile(
                 root.join(".cursor").join("hooks.json"),

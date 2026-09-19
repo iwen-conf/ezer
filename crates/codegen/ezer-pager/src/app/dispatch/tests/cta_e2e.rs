@@ -516,7 +516,7 @@ fn plugin_cta_catalog_load_recomputes_match_for_typed_draft() {
         HOME.get_or_init(|| {
             let tmp = tempfile::tempdir().expect("tempdir creation");
             unsafe {
-                std::env::set_var("GROK_HOME", tmp.path());
+                std::env::set_var("EZER_HOME", tmp.path());
             }
             tmp
         });
@@ -1661,20 +1661,20 @@ mod cta_e2e {
         })
     }
 
-    fn isolate_grok_home() {
+    fn isolate_ezer_home() {
         use std::sync::OnceLock;
         static HOME: OnceLock<tempfile::TempDir> = OnceLock::new();
         HOME.get_or_init(|| {
             let tmp = tempfile::tempdir().expect("tempdir creation");
             unsafe {
-                std::env::set_var("GROK_HOME", tmp.path());
+                std::env::set_var("EZER_HOME", tmp.path());
             }
             tmp
         });
     }
 
     fn app_matched() -> AppView {
-        isolate_grok_home();
+        isolate_ezer_home();
         let mut app = test_app_with_agent();
         let id = AgentId(0);
         app.plugin_cta_enabled = true;
@@ -1800,7 +1800,7 @@ mod cta_e2e {
         ));
 
         let servers = vec![
-            cta_mcp_server("grok_com_managed", None, McpServerDisplayStatus::Ready),
+            cta_mcp_server("ezer_com_managed", None, McpServerDisplayStatus::Ready),
             cta_mcp_server("local-srv", None, McpServerDisplayStatus::Ready),
             cta_mcp_server("other-srv", Some("slack"), McpServerDisplayStatus::Ready),
             cta_mcp_server(

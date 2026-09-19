@@ -14,7 +14,7 @@ fn jwt_tier_claim_maps_free_and_paid() {
     assert_eq!(jwt_tier_claim(&jwt_with_tier(0)).as_deref(), Some("free"));
     assert_eq!(
         jwt_tier_claim(&jwt_with_tier(1)).as_deref(),
-        Some("supergrok")
+        Some("upgrade")
     );
     assert_eq!(
         jwt_tier_claim(&jwt_with_tier(2)).as_deref(),
@@ -30,21 +30,21 @@ fn jwt_tier_claim_maps_free_and_paid() {
     );
     assert_eq!(
         jwt_tier_claim(&jwt_with_tier(5)).as_deref(),
-        Some("supergrok_heavy")
+        Some("max_tier")
     );
     assert_eq!(
         jwt_tier_claim(&jwt_with_tier(6)).as_deref(),
-        Some("supergrok_lite")
+        Some("upgrade_lite")
     );
     assert_eq!(
         jwt_tier_claim(&jwt_with_tier(7)).as_deref(),
-        Some("supergrok_plus")
+        Some("upgrade_plus")
     );
     assert_eq!(jwt_tier_claim(&jwt_with_tier(9)).as_deref(), Some("9"));
     assert_eq!(jwt_tier_claim(&jwt_with_tier(99)).as_deref(), Some("99"));
 }
-fn auth_with_mode(mode: ezer_login::AuthMode, key: &str) -> ezer_login::GrokAuth {
-    ezer_login::GrokAuth {
+fn auth_with_mode(mode: ezer_login::AuthMode, key: &str) -> ezer_login::EzerAuth {
+    ezer_login::EzerAuth {
         key: key.into(),
         auth_mode: mode,
         create_time: chrono::Utc::now(),
@@ -64,7 +64,7 @@ fn auth_with_mode(mode: ezer_login::AuthMode, key: &str) -> ezer_login::GrokAuth
         user_blocked_reason: None,
         team_blocked_reasons: vec![],
         coding_data_retention_opt_out: false,
-        has_grok_code_access: None,
+        has_remote_code_access: None,
         refresh_token: None,
         expires_at: None,
         oidc_issuer: None,
@@ -100,14 +100,14 @@ fn resolve_subscription_tier_prefers_display_then_api_key_then_jwt() {
 #[test]
 fn jwt_claim_matches_user_subscription_tier_known_pairs() {
     let cases = [
-        ("supergrok", "GrokPro"),
+        ("upgrade", "EzerPro"),
         ("x_basic", "XBasic"),
         ("x_premium", "XPremium"),
         ("x_premium_plus", "XPremiumPlus"),
-        ("supergrok_heavy", "SuperGrokPro"),
+        ("max_tier", "MaxTierPro"),
         ("9", "EnterpriseMystery"),
-        ("supergrok_lite", "SuperGrokLite"),
-        ("supergrok_plus", "SuperGrokPlus"),
+        ("upgrade_lite", "MaxTierLite"),
+        ("upgrade_plus", "MaxTierPlus"),
     ];
     for (claim, user_tier) in cases {
         assert!(
@@ -120,24 +120,24 @@ fn jwt_claim_matches_user_subscription_tier_known_pairs() {
 fn jwt_claim_matches_user_subscription_tier_rejects_stale_and_unknown() {
     assert!(!jwt_claim_matches_user_subscription_tier(
         "x_basic",
-        "SuperGrokPro"
+        "MaxTierPro"
     ));
     assert!(!jwt_claim_matches_user_subscription_tier(
-        "supergrok",
-        "SuperGrokPro"
+        "upgrade",
+        "MaxTierPro"
     ));
     assert!(!jwt_claim_matches_user_subscription_tier(
-        "supergrok",
-        "SuperGrokPlus"
+        "upgrade",
+        "MaxTierPlus"
     ));
     assert!(!jwt_claim_matches_user_subscription_tier(
-        "supergrok_heavy",
-        "SuperGrokPlus"
+        "max_tier",
+        "MaxTierPlus"
     ));
-    assert!(!jwt_claim_matches_user_subscription_tier("free", "GrokPro"));
+    assert!(!jwt_claim_matches_user_subscription_tier("free", "EzerPro"));
     assert!(!jwt_claim_matches_user_subscription_tier("", "XPremium"));
     assert!(!jwt_claim_matches_user_subscription_tier(
-        "supergrok_heavy",
+        "max_tier",
         "EnterpriseMystery"
     ));
     assert!(!jwt_claim_matches_user_subscription_tier(
@@ -684,9 +684,9 @@ async fn upload_harness_trace_turns_build_per_turn_manifest() {
 #[test]
 #[serial_test::serial]
 fn resolve_agent_definition_defaults_to_ezer_build() {
-    let prev = std::env::var("GROK_AGENT").ok();
+    let prev = std::env::var("EZER_AGENT").ok();
     unsafe {
-        std::env::remove_var("GROK_AGENT");
+        std::env::remove_var("EZER_AGENT");
     }
     let tmp = tempfile::tempdir().unwrap();
     let def = MvpAgent::resolve_agent_definition(
@@ -698,16 +698,16 @@ fn resolve_agent_definition_defaults_to_ezer_build() {
     );
     assert_eq!(def.name, config::DEFAULT_AGENT_TYPE);
     if let Some(v) = prev {
-        unsafe { std::env::set_var("GROK_AGENT", v) }
+        unsafe { std::env::set_var("EZER_AGENT", v) }
     }
 }
 /// When model_agent_type = Some("codex"), the codex agent is selected even though the default chain would return ezer-build.
 #[test]
 #[serial_test::serial]
 fn resolve_agent_definition_model_agent_type_overrides_default() {
-    let prev = std::env::var("GROK_AGENT").ok();
+    let prev = std::env::var("EZER_AGENT").ok();
     unsafe {
-        std::env::remove_var("GROK_AGENT");
+        std::env::remove_var("EZER_AGENT");
     }
     let tmp = tempfile::tempdir().unwrap();
     let def = MvpAgent::resolve_agent_definition(
@@ -719,7 +719,7 @@ fn resolve_agent_definition_model_agent_type_overrides_default() {
     );
     assert_eq!(def.name, "codex");
     if let Some(v) = prev {
-        unsafe { std::env::set_var("GROK_AGENT", v) }
+        unsafe { std::env::set_var("EZER_AGENT", v) }
     }
 }
 /// When model_agent_type is None, the chain-resolved default agent is NOT overridden.
@@ -727,9 +727,9 @@ fn resolve_agent_definition_model_agent_type_overrides_default() {
 #[test]
 #[serial_test::serial]
 fn resolve_agent_definition_none_agent_type_does_not_override() {
-    let prev = std::env::var("GROK_AGENT").ok();
+    let prev = std::env::var("EZER_AGENT").ok();
     unsafe {
-        std::env::remove_var("GROK_AGENT");
+        std::env::remove_var("EZER_AGENT");
     }
     let tmp = tempfile::tempdir().unwrap();
     let def = MvpAgent::resolve_agent_definition(
@@ -741,16 +741,16 @@ fn resolve_agent_definition_none_agent_type_does_not_override() {
     );
     assert_eq!(def.name, config::DEFAULT_AGENT_TYPE);
     if let Some(v) = prev {
-        unsafe { std::env::set_var("GROK_AGENT", v) }
+        unsafe { std::env::set_var("EZER_AGENT", v) }
     }
 }
 /// Regression for the web-client devbox bug: an ACP profile must win when the model's `agent_type` is the default value.
 #[test]
 #[serial_test::serial]
 fn resolve_agent_definition_acp_profile_wins_when_model_agent_type_is_default() {
-    let prev = std::env::var("GROK_AGENT").ok();
+    let prev = std::env::var("EZER_AGENT").ok();
     unsafe {
-        std::env::remove_var("GROK_AGENT");
+        std::env::remove_var("EZER_AGENT");
     }
     let tmp = tempfile::tempdir().unwrap();
     let acp_profile = ezer_agent::AgentDefinition::from_json(&serde_json::json!(
@@ -771,7 +771,7 @@ fn resolve_agent_definition_acp_profile_wins_when_model_agent_type_is_default() 
         "ACP _meta.agentProfile must win when model_agent_type is the default value"
     );
     if let Some(v) = prev {
-        unsafe { std::env::set_var("GROK_AGENT", v) }
+        unsafe { std::env::set_var("EZER_AGENT", v) }
     }
 }
 /// Regression: `DEFAULT_AGENT_TYPE` flipped to `ezer-build-plan`.
@@ -780,9 +780,9 @@ fn resolve_agent_definition_acp_profile_wins_when_model_agent_type_is_default() 
 #[test]
 #[serial_test::serial]
 fn resolve_agent_definition_acp_profile_wins_for_explicit_ezer_build_family() {
-    let prev = std::env::var("GROK_AGENT").ok();
+    let prev = std::env::var("EZER_AGENT").ok();
     unsafe {
-        std::env::remove_var("GROK_AGENT");
+        std::env::remove_var("EZER_AGENT");
     }
     let tmp = tempfile::tempdir().unwrap();
     let acp_profile = ezer_agent::AgentDefinition::from_json(&serde_json::json!({
@@ -790,7 +790,7 @@ fn resolve_agent_definition_acp_profile_wins_for_explicit_ezer_build_family() {
         "description": "Custom devbox profile",
     }))
     .expect("agent definition must parse");
-    for family_variant in ["grok-build", "grok-build-plan", "grok-build-concise"] {
+    for family_variant in ["ezer-build", "ezer-build-plan", "ezer-build-concise"] {
         let def = MvpAgent::resolve_agent_definition(
             tmp.path(),
             None,
@@ -800,11 +800,11 @@ fn resolve_agent_definition_acp_profile_wins_for_explicit_ezer_build_family() {
         );
         assert_eq!(
             def.name, "custom-devbox-profile",
-            "ACP profile must win for grok-build family variant `{family_variant}`"
+            "ACP profile must win for ezer-build family variant `{family_variant}`"
         );
     }
     if let Some(v) = prev {
-        unsafe { std::env::set_var("GROK_AGENT", v) }
+        unsafe { std::env::set_var("EZER_AGENT", v) }
     }
 }
 /// A non-strict (stock / vision-capable) model leaves the template alone, so such models keep native image input.
@@ -833,9 +833,9 @@ fn inherited_harness_template_respects_explicit_template() {
 #[test]
 #[serial_test::serial]
 fn resolve_agent_definition_cli_agent_profile_wins_when_model_agent_type_is_default() {
-    let prev = std::env::var("GROK_AGENT").ok();
+    let prev = std::env::var("EZER_AGENT").ok();
     unsafe {
-        std::env::remove_var("GROK_AGENT");
+        std::env::remove_var("EZER_AGENT");
     }
     let tmp = tempfile::tempdir().unwrap();
     let profile_path = tmp.path().join("cli-profile.md");
@@ -853,19 +853,19 @@ fn resolve_agent_definition_cli_agent_profile_wins_when_model_agent_type_is_defa
     );
     assert_eq!(def.name, "cli-profile");
     if let Some(v) = prev {
-        unsafe { std::env::set_var("GROK_AGENT", v) }
+        unsafe { std::env::set_var("EZER_AGENT", v) }
     }
 }
 /// Agent profile with `model: Override(id)` preserves the field through resolution.
 #[test]
 #[serial_test::serial]
 fn resolve_agent_definition_agent_profile_with_model_override() {
-    let prev = std::env::var("GROK_AGENT").ok();
+    let prev = std::env::var("EZER_AGENT").ok();
     unsafe {
-        std::env::remove_var("GROK_AGENT");
+        std::env::remove_var("EZER_AGENT");
     }
     let tmp = tempfile::tempdir().unwrap();
-    let agents_dir = tmp.path().join(".grok").join("agents");
+    let agents_dir = tmp.path().join(".ezer").join("agents");
     std::fs::create_dir_all(&agents_dir).unwrap();
     std::fs::write(
             agents_dir.join("test-architect.md"),
@@ -885,8 +885,8 @@ fn resolve_agent_definition_agent_profile_with_model_override() {
         "agent profile model override must be preserved through resolution"
     );
     match prev {
-        Some(v) => unsafe { std::env::set_var("GROK_AGENT", v) },
-        None => unsafe { std::env::remove_var("GROK_AGENT") },
+        Some(v) => unsafe { std::env::set_var("EZER_AGENT", v) },
+        None => unsafe { std::env::remove_var("EZER_AGENT") },
     }
 }
 #[test]
@@ -1047,55 +1047,55 @@ fn enqueue_replace_system_prompt_override_noop_when_absent_or_empty() {
 /// Compatible means the harness rebuild is skipped and the custom prompt body preserved.
 #[test]
 fn harnesses_are_compatible_for_stock_family_pairs() {
-    assert!(harnesses_are_compatible("grok-build", "grok-build-plan"));
-    assert!(harnesses_are_compatible("grok-build-plan", "grok-build"));
-    assert!(harnesses_are_compatible("grok-build", "grok-build"));
+    assert!(harnesses_are_compatible("ezer-build", "ezer-build-plan"));
+    assert!(harnesses_are_compatible("ezer-build-plan", "ezer-build"));
+    assert!(harnesses_are_compatible("ezer-build", "ezer-build"));
     assert!(harnesses_are_compatible(
-        "grok-build-concise",
-        "grok-build-plan"
+        "ezer-build-concise",
+        "ezer-build-plan"
     ));
     assert!(harnesses_are_compatible(
         "remote-sidebar",
-        "grok-build-plan"
+        "ezer-build-plan"
     ));
 }
 #[test]
 fn harnesses_are_compatible_rejects_strict_mismatches() {
     assert!(harnesses_are_compatible("codex", "codex"));
-    assert!(!harnesses_are_compatible("grok-build-plan", "codex"));
+    assert!(!harnesses_are_compatible("ezer-build-plan", "codex"));
 }
 #[test]
 fn explicit_agent_type_wins_over_session_default() {
     assert_eq!(
-        resolve_required_agent_type(Some("cursor"), "grok-build-plan"),
+        resolve_required_agent_type(Some("cursor"), "ezer-build-plan"),
         "cursor"
     );
 }
 #[test]
 fn null_agent_type_falls_back_to_session_default_ezer_build_plan() {
     assert_eq!(
-        resolve_required_agent_type(None, "grok-build-plan"),
-        "grok-build-plan"
+        resolve_required_agent_type(None, "ezer-build-plan"),
+        "ezer-build-plan"
     );
 }
 #[test]
 fn null_agent_type_falls_back_to_session_default_ezer_build() {
     assert_eq!(
-        resolve_required_agent_type(None, "grok-build"),
-        "grok-build"
+        resolve_required_agent_type(None, "ezer-build"),
+        "ezer-build"
     );
 }
 #[test]
 fn null_agent_type_returns_to_session_default_after_cursor_switch() {
-    let session_default = "grok-build-plan";
+    let session_default = "ezer-build-plan";
     let required_after_null = resolve_required_agent_type(None, session_default);
-    assert_eq!(required_after_null, "grok-build-plan");
+    assert_eq!(required_after_null, "ezer-build-plan");
     assert_ne!(required_after_null, "cursor");
 }
 /// Compatible stock switches (no rebuild) must NOT mutate `agent_name`, preserving the session's original ACP `agentProfile`.
 #[test]
 fn agent_name_unchanged_without_harness_rebuild() {
-    let unchanged = agent_name_after_model_switch(false, "grok-build-plan", "remote-sidebar");
+    let unchanged = agent_name_after_model_switch(false, "ezer-build-plan", "remote-sidebar");
     assert_eq!(
         unchanged, "remote-sidebar",
         "a compatible stock switch must preserve the original agent profile name"
@@ -1250,7 +1250,7 @@ fn make_test_handle(
         force_compact: std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false)),
         permission_handle: ezer_workspace::permission::PermissionHandle::allow_all(),
         attribution_callback: None,
-        agent_name: "grok-build".to_string(),
+        agent_name: "ezer-build".to_string(),
         managed_mcp_proxy_base_url: String::new(),
         session_default_agent_profile: None,
         allowed_subagent_types: None,
@@ -1265,10 +1265,10 @@ fn make_test_handle(
 async fn lookup_session_model_returns_per_session_model() {
     let default_model = acp::ModelId::new("default-model");
     assert_eq!(
-        lookup_session_model(Some(acp::ModelId::new("grok-3-fast")), &default_model)
+        lookup_session_model(Some(acp::ModelId::new("test-model-3-fast")), &default_model)
             .0
             .as_ref(),
-        "grok-3-fast"
+        "test-model-3-fast"
     );
     assert_eq!(
         lookup_session_model(Some(acp::ModelId::new("codex-mini")), &default_model)
@@ -1279,10 +1279,10 @@ async fn lookup_session_model_returns_per_session_model() {
 }
 #[tokio::test]
 async fn lookup_session_model_fallback_no_session() {
-    let default_model = acp::ModelId::new("grok-3");
+    let default_model = acp::ModelId::new("test-model-3");
     assert_eq!(
         lookup_session_model(None, &default_model).0.as_ref(),
-        "grok-3"
+        "test-model-3"
     );
 }
 /// Mutating session A's model_id via the handle does not affect session B.
@@ -1292,8 +1292,8 @@ async fn set_session_model_does_not_cross_contaminate() {
     let sid_b = acp::SessionId::new("sess-b");
     let default_model = acp::ModelId::new("default");
     let mut sessions: HashMap<acp::SessionId, crate::session::SessionHandle> = [
-        (sid_a.clone(), make_test_handle("grok-3", false, None)),
-        (sid_b.clone(), make_test_handle("grok-3", false, None)),
+        (sid_a.clone(), make_test_handle("test-model-3", false, None)),
+        (sid_b.clone(), make_test_handle("test-model-3", false, None)),
     ]
     .into();
     sessions.get_mut(&sid_a).unwrap().model_id = acp::ModelId::new("codex-mini");
@@ -1313,7 +1313,7 @@ async fn set_session_model_does_not_cross_contaminate() {
         )
         .0
         .as_ref(),
-        "grok-3",
+        "test-model-3",
         "Session B's model must not be affected by session A's model change"
     );
 }
@@ -1592,7 +1592,7 @@ async fn new_session_meta_effort_seeds_spawn_for_supported_model_and_drops_for_u
     assert_eq!(plain_cfg.reasoning_effort, None);
 }
 /// `/new` / `/clear` send no `_meta.reasoningEffort`.
-/// The last-used / config default must seed spawn so a fresh chat does not snap back to the catalog default (`high` on grok-4.6).
+/// The last-used / config default must seed spawn so a fresh chat does not snap back to the catalog default (`high` on test-model-4.6).
 #[tokio::test]
 async fn new_session_without_meta_keeps_current_effort_over_catalog_default() {
     use crate::agent::config::{EndpointsConfig, ModelEntry};
@@ -1723,16 +1723,16 @@ async fn yolo_toggle_scoped_by_client_identifier() {
     let mut sessions: HashMap<acp::SessionId, crate::session::SessionHandle> = [
         (
             sid_tui.clone(),
-            make_test_handle("grok-3", false, Some("grok-tui")),
+            make_test_handle("test-model-3", false, Some("ezer-tui")),
         ),
         (
             sid_vscode.clone(),
-            make_test_handle("grok-3", false, Some("grok-code-extension")),
+            make_test_handle("test-model-3", false, Some("ezer-code-extension")),
         ),
     ]
     .into();
     let updated =
-        apply_yolo_mode_to_matching_sessions(sessions.values_mut(), Some("grok-tui"), true);
+        apply_yolo_mode_to_matching_sessions(sessions.values_mut(), Some("ezer-tui"), true);
     assert_eq!(updated, 1, "exactly one matching session should be updated");
     assert!(
         sessions.get(&sid_tui).is_some_and(|s| s.yolo_mode),
@@ -1751,16 +1751,16 @@ async fn yolo_toggle_can_disable_session_started_with_yolo_enabled() {
     let mut sessions: HashMap<acp::SessionId, crate::session::SessionHandle> = [
         (
             sid_tui.clone(),
-            make_test_handle("grok-3", true, Some("grok-tui")),
+            make_test_handle("test-model-3", true, Some("ezer-tui")),
         ),
         (
             sid_other.clone(),
-            make_test_handle("grok-3", true, Some("grok-code-extension")),
+            make_test_handle("test-model-3", true, Some("ezer-code-extension")),
         ),
     ]
     .into();
     let updated =
-        apply_yolo_mode_to_matching_sessions(sessions.values_mut(), Some("grok-tui"), false);
+        apply_yolo_mode_to_matching_sessions(sessions.values_mut(), Some("ezer-tui"), false);
     assert_eq!(updated, 1, "only the sender's session should be updated");
     assert!(
         sessions.get(&sid_tui).is_some_and(|s| !s.yolo_mode),
@@ -1850,7 +1850,7 @@ async fn drain_respects_deadline() {
 fn parse_code_nav_capability_present_and_true() {
     let mut meta = serde_json::Map::new();
     meta.insert(
-        "x.ai/codeNavigation".to_string(),
+        "ezer/codeNavigation".to_string(),
         serde_json::json!({ "enabled": true }),
     );
     let init = acp::InitializeRequest::new(acp::ProtocolVersion::V1).client_capabilities(
@@ -1874,7 +1874,7 @@ fn parse_code_nav_capability_absent_returns_false() {
 fn parse_code_nav_capability_false_returns_false() {
     let mut meta = serde_json::Map::new();
     meta.insert(
-        "x.ai/codeNavigation".to_string(),
+        "ezer/codeNavigation".to_string(),
         serde_json::json!({ "enabled": false }),
     );
     let init = acp::InitializeRequest::new(acp::ProtocolVersion::V1).client_capabilities(
@@ -1891,18 +1891,18 @@ fn parse_code_nav_capability_false_returns_false() {
 #[tokio::test]
 async fn test_per_session_code_nav_isolation() {
     let web_handle = {
-        let mut h = make_test_handle("model", false, Some("grok-web"));
+        let mut h = make_test_handle("model", false, Some("ezer-web"));
         h.code_nav_enabled = true;
         h
     };
     let tui_handle = {
-        let mut h = make_test_handle("model", false, Some("grok-tui"));
+        let mut h = make_test_handle("model", false, Some("ezer-tui"));
         h.code_nav_enabled = false;
         h
     };
     let check = |handle: &crate::session::SessionHandle| {
         let ct = crate::http::client_type_from_origin(handle.origin_client.as_ref());
-        if !matches!(ct, ClientType::GrokWeb) {
+        if !matches!(ct, ClientType::EzerWeb) {
             return Err(CodeNavEligibility::ClientNotWeb);
         }
         if !handle.code_nav_enabled {
@@ -1936,10 +1936,10 @@ async fn ext_method_routes_auth_cleared_and_refreshes_resident_sessions() {
     let local = tokio::task::LocalSet::new();
     local
         .run_until(async {
-            let agent = build_agent_with_auth(ezer_login::GrokAuth {
+            let agent = build_agent_with_auth(ezer_login::EzerAuth {
                 key: "eligible".into(),
                 auth_mode: ezer_login::AuthMode::WebLogin,
-                ..ezer_login::GrokAuth::test_default()
+                ..ezer_login::EzerAuth::test_default()
             });
             use acp::Agent as _;
             agent.managed_mcp_cache.lock().await.enable_gateway_tools();
@@ -1949,7 +1949,7 @@ async fn ext_method_routes_auth_cleared_and_refreshes_resident_sessions() {
             let params = serde_json::json!({});
             agent
                 .ext_method(acp::ExtRequest::new(
-                    "x.ai/internal/auth_cleared",
+                    "ezer/internal/auth_cleared",
                     std::sync::Arc::from(serde_json::value::to_raw_value(&params).unwrap()),
                 ))
                 .await
@@ -2015,10 +2015,10 @@ async fn mcp_list_gateway_refresh_fans_only_on_committed_uncached_catalog() {
             let proxy_url = format!("http://{}", listener.local_addr().unwrap());
             let server = tokio::spawn(async move { axum::serve(listener, app).await.unwrap() });
             let (agent, _rx) = build_agent_with_auth_and_proxy(
-                ezer_login::GrokAuth {
+                ezer_login::EzerAuth {
                     key: "eligible".into(),
                     auth_mode: ezer_login::AuthMode::WebLogin,
-                    ..ezer_login::GrokAuth::test_default()
+                    ..ezer_login::EzerAuth::test_default()
                 },
                 proxy_url,
                 crate::agent::config::AgentMode::Generic,
@@ -2106,10 +2106,10 @@ async fn mcp_list_gateway_off_disables_cached_catalog() {
         .run_until(async {
             use crate::session::managed_mcp::GatewayToolCatalogCache;
             let (agent, _rx) = build_agent_with_auth_and_proxy(
-                ezer_login::GrokAuth {
+                ezer_login::EzerAuth {
                     key: "eligible".into(),
                     auth_mode: ezer_login::AuthMode::WebLogin,
-                    ..ezer_login::GrokAuth::test_default()
+                    ..ezer_login::EzerAuth::test_default()
                 },
                 "http://127.0.0.1:1".into(),
                 crate::agent::config::AgentMode::Generic,
@@ -2160,7 +2160,7 @@ async fn skills_list_refreshes_session_skill_baseline() {
     let (handle, _tx, mut cmd_rx) = make_live_session_handle(&sid, None);
     agent.insert_resident(&sid, handle);
     let req = acp::ExtRequest::new(
-        "x.ai/skills/list",
+        "ezer/skills/list",
         serde_json::value::to_raw_value(&serde_json::json!({ "cwd": "/tmp" }))
             .unwrap()
             .into(),
@@ -2223,10 +2223,10 @@ fn assert_root_views(
 }
 fn build_minimal_agent_for_tests() -> MvpAgent {
     use crate::agent::config::Config as AgentConfig;
-    use ezer_login::{AuthManager, GrokComConfig};
+    use ezer_login::{AuthManager, EzerComConfig};
     let temp_dir = tempfile::tempdir().unwrap();
     let auth_manager =
-        std::sync::Arc::new(AuthManager::new(temp_dir.path(), GrokComConfig::default()));
+        std::sync::Arc::new(AuthManager::new(temp_dir.path(), EzerComConfig::default()));
     let (tx, _rx) = tokio::sync::mpsc::unbounded_channel();
     let gateway = GatewaySender::new(tx);
     let cfg = AgentConfig::default();
@@ -2234,7 +2234,7 @@ fn build_minimal_agent_for_tests() -> MvpAgent {
 }
 fn session_usage_request(session_id: &str) -> acp::ExtRequest {
     acp::ExtRequest::new(
-        "x.ai/session/usage",
+        "ezer/session/usage",
         serde_json::value::to_raw_value(&serde_json::json!({ "sessionId": session_id }))
             .unwrap()
             .into(),
@@ -2282,12 +2282,12 @@ async fn session_meta_publishes_the_sessions_spawn_pins() {
         "session meta must carry the handle's pinned memory mode"
     );
 }
-fn build_agent_with_auth(auth: ezer_login::GrokAuth) -> MvpAgent {
+fn build_agent_with_auth(auth: ezer_login::EzerAuth) -> MvpAgent {
     use crate::agent::config::Config as AgentConfig;
-    use ezer_login::{AuthManager, GrokComConfig};
+    use ezer_login::{AuthManager, EzerComConfig};
     let temp_dir = tempfile::tempdir().unwrap();
     let auth_manager =
-        std::sync::Arc::new(AuthManager::new(temp_dir.path(), GrokComConfig::default()));
+        std::sync::Arc::new(AuthManager::new(temp_dir.path(), EzerComConfig::default()));
     auth_manager.hot_swap(auth);
     let (tx, _rx) = tokio::sync::mpsc::unbounded_channel();
     let gateway = GatewaySender::new(tx);
@@ -2301,20 +2301,20 @@ fn make_trace_card_eligible(agent: &MvpAgent) {
     cfg.features.telemetry = Some(crate::agent::config::TelemetryMode::Enabled);
     cfg.telemetry.trace_upload = Some(false);
 }
-fn personal_xai_oauth_auth() -> ezer_login::GrokAuth {
-    ezer_login::GrokAuth {
+fn personal_xai_oauth_auth() -> ezer_login::EzerAuth {
+    ezer_login::EzerAuth {
         auth_mode: ezer_login::AuthMode::Oidc,
         oidc_issuer: Some(ezer_login::XAI_OAUTH2_ISSUER.to_string()),
-        ..ezer_login::GrokAuth::test_default()
+        ..ezer_login::EzerAuth::test_default()
     }
 }
 #[tokio::test]
 #[serial_test::serial]
 async fn feedback_trace_offer_asks_personal_oauth_accounts() {
     use ezer_test_support::EnvGuard;
-    let _e1 = EnvGuard::unset("GROK_TELEMETRY_ENABLED");
-    let _e2 = EnvGuard::unset("GROK_TELEMETRY_TRACE_UPLOAD");
-    let _e3 = EnvGuard::unset("GROK_FEEDBACK_TRACE_CARD");
+    let _e1 = EnvGuard::unset("EZER_TELEMETRY_ENABLED");
+    let _e2 = EnvGuard::unset("EZER_TELEMETRY_TRACE_UPLOAD");
+    let _e3 = EnvGuard::unset("EZER_FEEDBACK_TRACE_CARD");
     let _e4 = EnvGuard::unset("DISABLE_TELEMETRY");
     let agent = build_agent_with_auth(personal_xai_oauth_auth());
     make_trace_card_eligible(&agent);
@@ -2331,12 +2331,12 @@ async fn feedback_trace_offer_asks_personal_oauth_accounts() {
 #[serial_test::serial]
 async fn feedback_trace_offer_suppressed_for_team_accounts_even_admins() {
     use ezer_test_support::EnvGuard;
-    let _e1 = EnvGuard::unset("GROK_TELEMETRY_ENABLED");
-    let _e2 = EnvGuard::unset("GROK_TELEMETRY_TRACE_UPLOAD");
-    let _e3 = EnvGuard::unset("GROK_FEEDBACK_TRACE_CARD");
+    let _e1 = EnvGuard::unset("EZER_TELEMETRY_ENABLED");
+    let _e2 = EnvGuard::unset("EZER_TELEMETRY_TRACE_UPLOAD");
+    let _e3 = EnvGuard::unset("EZER_FEEDBACK_TRACE_CARD");
     let _e4 = EnvGuard::unset("DISABLE_TELEMETRY");
     for role in ["Admin", "Member"] {
-        let agent = build_agent_with_auth(ezer_login::GrokAuth {
+        let agent = build_agent_with_auth(ezer_login::EzerAuth {
             team_name: Some("acme".into()),
             team_role: Some(role.into()),
             ..personal_xai_oauth_auth()
@@ -2359,9 +2359,9 @@ async fn feedback_trace_offer_suppressed_for_team_accounts_even_admins() {
 #[serial_test::serial]
 async fn feedback_trace_offer_suppressed_for_managed_deployments() {
     use ezer_test_support::EnvGuard;
-    let _e1 = EnvGuard::unset("GROK_TELEMETRY_ENABLED");
-    let _e2 = EnvGuard::unset("GROK_TELEMETRY_TRACE_UPLOAD");
-    let _e3 = EnvGuard::unset("GROK_FEEDBACK_TRACE_CARD");
+    let _e1 = EnvGuard::unset("EZER_TELEMETRY_ENABLED");
+    let _e2 = EnvGuard::unset("EZER_TELEMETRY_TRACE_UPLOAD");
+    let _e3 = EnvGuard::unset("EZER_FEEDBACK_TRACE_CARD");
     let _e4 = EnvGuard::unset("DISABLE_TELEMETRY");
     let agent = build_agent_with_auth(personal_xai_oauth_auth());
     make_trace_card_eligible(&agent);
@@ -2379,21 +2379,21 @@ async fn feedback_trace_offer_suppressed_for_managed_deployments() {
     );
 }
 /// Pin every env var feeding the trace-offer / one-shot ladders and sandbox
-/// `GROK_HOME`, so a developer's shell can't flip a gate under test.
-fn trace_gate_env(grok_home: &std::path::Path) -> Vec<ezer_test_support::EnvGuard> {
+/// `EZER_HOME`, so a developer's shell can't flip a gate under test.
+fn trace_gate_env(ezer_home: &std::path::Path) -> Vec<ezer_test_support::EnvGuard> {
     use ezer_test_support::EnvGuard;
     vec![
-        EnvGuard::set("GROK_HOME", grok_home),
-        EnvGuard::unset("GROK_TELEMETRY_ENABLED"),
+        EnvGuard::set("EZER_HOME", ezer_home),
+        EnvGuard::unset("EZER_TELEMETRY_ENABLED"),
         EnvGuard::unset("DISABLE_TELEMETRY"),
-        EnvGuard::unset("GROK_TELEMETRY_TRACE_UPLOAD"),
-        EnvGuard::unset("GROK_FEEDBACK_TRACE_CARD"),
-        EnvGuard::unset("GROK_FEEDBACK_ENABLED"),
-        EnvGuard::unset("GROK_CLI_CHAT_PROXY_BASE_URL"),
-        EnvGuard::unset("GROK_TRACE_UPLOAD_URL"),
-        EnvGuard::unset("GROK_TRACE_UPLOAD_BUCKET"),
-        EnvGuard::unset("GROK_TRACE_UPLOAD_ENDPOINT_URL"),
-        EnvGuard::unset("GROK_DEPLOYMENT_KEY"),
+        EnvGuard::unset("EZER_TELEMETRY_TRACE_UPLOAD"),
+        EnvGuard::unset("EZER_FEEDBACK_TRACE_CARD"),
+        EnvGuard::unset("EZER_FEEDBACK_ENABLED"),
+        EnvGuard::unset("EZER_CLI_CHAT_PROXY_BASE_URL"),
+        EnvGuard::unset("EZER_TRACE_UPLOAD_URL"),
+        EnvGuard::unset("EZER_TRACE_UPLOAD_BUCKET"),
+        EnvGuard::unset("EZER_TRACE_UPLOAD_ENDPOINT_URL"),
+        EnvGuard::unset("EZER_DEPLOYMENT_KEY"),
     ]
 }
 fn insert_resident_session(agent: &MvpAgent, session_id: &str, cwd: &std::path::Path) {
@@ -2409,7 +2409,7 @@ async fn upload_trace_error(
     session_dir: Option<std::path::PathBuf>,
 ) -> acp::Error {
     let request = acp::ExtRequest::new(
-        "x.ai/feedback/upload-trace",
+        "ezer/feedback/upload-trace",
         serde_json::value::to_raw_value(&params).unwrap().into(),
     );
     crate::extensions::feedback_trace::handle_upload_trace_for_test(agent, &request, session_dir)
@@ -2585,7 +2585,7 @@ async fn upload_trace_feedback_disabled_rejects_even_the_exact_intent() {
 async fn upload_trace_zdr_team_rejects_even_the_exact_intent() {
     let tmp = tempfile::tempdir().unwrap();
     let _env = trace_gate_env(tmp.path());
-    let agent = build_agent_with_auth(ezer_login::GrokAuth {
+    let agent = build_agent_with_auth(ezer_login::EzerAuth {
         team_blocked_reasons: vec!["BLOCKED_REASON_NO_LOGS".into()],
         ..personal_xai_oauth_auth()
     });
@@ -2604,7 +2604,7 @@ async fn upload_trace_zdr_team_rejects_even_the_exact_intent() {
 async fn upload_trace_team_account_rejects_even_the_exact_intent() {
     let tmp = tempfile::tempdir().unwrap();
     let _env = trace_gate_env(tmp.path());
-    let agent = build_agent_with_auth(ezer_login::GrokAuth {
+    let agent = build_agent_with_auth(ezer_login::EzerAuth {
         team_name: Some("acme".into()),
         ..personal_xai_oauth_auth()
     });
@@ -2719,9 +2719,9 @@ async fn one_shot_requires_a_cached_credential() {
 async fn one_shot_rejects_non_xai_credentials() {
     let tmp = tempfile::tempdir().unwrap();
     let _env = trace_gate_env(tmp.path());
-    let agent = build_agent_with_auth(ezer_login::GrokAuth {
+    let agent = build_agent_with_auth(ezer_login::EzerAuth {
         auth_mode: ezer_login::AuthMode::ApiKey,
-        ..ezer_login::GrokAuth::test_default()
+        ..ezer_login::EzerAuth::test_default()
     });
     make_trace_card_eligible(&agent);
     assert!(
@@ -2736,10 +2736,10 @@ async fn one_shot_rejects_non_xai_credentials() {
 async fn one_shot_fails_closed_when_the_auth_fetch_fails() {
     let tmp = tempfile::tempdir().unwrap();
     let _env = trace_gate_env(tmp.path());
-    let agent = build_agent_with_auth(ezer_login::GrokAuth {
+    let agent = build_agent_with_auth(ezer_login::EzerAuth {
         auth_mode: ezer_login::AuthMode::ApiKey,
         expires_at: Some(chrono::Utc::now() - chrono::Duration::days(1)),
-        ..ezer_login::GrokAuth::test_default()
+        ..ezer_login::EzerAuth::test_default()
     });
     make_trace_card_eligible(&agent);
     assert!(
@@ -2754,7 +2754,7 @@ async fn one_shot_fails_closed_when_the_auth_fetch_fails() {
 async fn one_shot_rejects_zdr_teams() {
     let tmp = tempfile::tempdir().unwrap();
     let _env = trace_gate_env(tmp.path());
-    let agent = build_agent_with_auth(ezer_login::GrokAuth {
+    let agent = build_agent_with_auth(ezer_login::EzerAuth {
         team_blocked_reasons: vec!["BLOCKED_REASON_NO_LOGS".into()],
         ..personal_xai_oauth_auth()
     });
@@ -2847,10 +2847,10 @@ async fn one_shot_requires_a_resolvable_upload_method() {
 async fn one_shot_rejects_non_proxy_upload_methods() {
     let tmp = tempfile::tempdir().unwrap();
     let _env = trace_gate_env(tmp.path());
-    let agent = build_agent_with_auth(ezer_login::GrokAuth {
+    let agent = build_agent_with_auth(ezer_login::EzerAuth {
         auth_mode: ezer_login::AuthMode::ApiKey,
         expires_at: Some(chrono::Utc::now() - chrono::Duration::days(1)),
-        ..ezer_login::GrokAuth::test_default()
+        ..ezer_login::EzerAuth::test_default()
     });
     make_trace_card_eligible(&agent);
     {
@@ -2875,10 +2875,10 @@ async fn one_shot_rejects_non_proxy_upload_methods() {
 #[serial_test::serial]
 async fn ensure_plugin_registry_lazily_populates_snapshot() {
     use crate::agent::config::Config as AgentConfig;
-    use ezer_login::{AuthManager, GrokComConfig};
+    use ezer_login::{AuthManager, EzerComConfig};
     use ezer_test_support::EnvGuard;
-    let grok_home = tempfile::tempdir().unwrap();
-    let _env = EnvGuard::set("GROK_HOME", grok_home.path());
+    let ezer_home = tempfile::tempdir().unwrap();
+    let _env = EnvGuard::set("EZER_HOME", ezer_home.path());
     let plugin_dir = tempfile::tempdir().unwrap();
     std::fs::write(
         plugin_dir.path().join("plugin.json"),
@@ -2892,7 +2892,7 @@ async fn ensure_plugin_registry_lazily_populates_snapshot() {
     .unwrap();
     let auth_home = tempfile::tempdir().unwrap();
     let auth_manager =
-        std::sync::Arc::new(AuthManager::new(auth_home.path(), GrokComConfig::default()));
+        std::sync::Arc::new(AuthManager::new(auth_home.path(), EzerComConfig::default()));
     let (tx, _rx) = tokio::sync::mpsc::unbounded_channel();
     let gateway = GatewaySender::new(tx);
     let mut cfg = AgentConfig::default();
@@ -2903,7 +2903,7 @@ async fn ensure_plugin_registry_lazily_populates_snapshot() {
         "snapshot must start empty (boot discovery deferred past initialize)"
     );
     let list_req = acp::ExtRequest::new(
-        "x.ai/plugins/list",
+        "ezer/plugins/list",
         serde_json::value::to_raw_value(&serde_json::json!({ "sessionId": "no-such-session" }))
             .unwrap()
             .into(),
@@ -2945,16 +2945,16 @@ async fn ensure_plugin_registry_lazily_populates_snapshot() {
 /// Regression: the shared snapshot was built from the boot-time in-memory `[plugins]` config, which
 /// `config.toml` edits never refresh. A plugin toggled after the agent started (marketplace install,
 /// `ezer plugin enable|disable`, a client editing the file) kept its boot-time `enabled` for
-/// session-less `x.ai/plugins/list` / `x.ai/skills/list` callers until restart, while per-session
+/// session-less `ezer/plugins/list` / `ezer/skills/list` callers until restart, while per-session
 /// registries, which read disk, were right. The shared rebuild must read disk too.
 ///
 /// Exercised through a project `.ezer/config.toml` (merged by `resolve_effective_plugins_config` for
-/// the given cwd): `grok_home()` is a process-wide `OnceLock`, so the user layer cannot be isolated
+/// the given cwd): `ezer_home()` is a process-wide `OnceLock`, so the user layer cannot be isolated
 /// per test.
 #[tokio::test]
 async fn shared_plugin_registry_snapshot_reads_plugins_config_from_disk() {
     use crate::agent::config::Config as AgentConfig;
-    use ezer_login::{AuthManager, GrokComConfig};
+    use ezer_login::{AuthManager, EzerComConfig};
     let plugin_dir = tempfile::tempdir().unwrap();
     std::fs::write(
         plugin_dir.path().join("plugin.json"),
@@ -2963,11 +2963,11 @@ async fn shared_plugin_registry_snapshot_reads_plugins_config_from_disk() {
     .unwrap();
     let repo = tempfile::tempdir().unwrap();
     git2::Repository::init(repo.path()).unwrap();
-    let project_config_dir = repo.path().join(".grok");
+    let project_config_dir = repo.path().join(".ezer");
     std::fs::create_dir_all(&project_config_dir).unwrap();
     let auth_home = tempfile::tempdir().unwrap();
     let auth_manager =
-        std::sync::Arc::new(AuthManager::new(auth_home.path(), GrokComConfig::default()));
+        std::sync::Arc::new(AuthManager::new(auth_home.path(), EzerComConfig::default()));
     let (tx, _rx) = tokio::sync::mpsc::unbounded_channel();
     let gateway = GatewaySender::new(tx);
     let mut cfg = AgentConfig::default();
@@ -2997,7 +2997,7 @@ async fn shared_plugin_registry_snapshot_reads_plugins_config_from_disk() {
         "rebuild must take `disabled` from config on disk, not the boot-time config"
     );
 }
-/// Scaffolding for the session-less `x.ai/plugins/reload` regressions: a hermetic GROK_HOME, the
+/// Scaffolding for the session-less `ezer/plugins/reload` regressions: a hermetic EZER_HOME, the
 /// folder-trust feature in its release-build default (`EZER_FOLDER_TRUST` unset), and an agent whose
 /// launch dir is `repo` (captured from the process cwd at construction, so callers hold `serial`).
 struct ReloadHarness {
@@ -3009,11 +3009,11 @@ struct ReloadHarness {
 }
 impl ReloadHarness {
     fn launched_in(repo: &std::path::Path, cfg: &crate::agent::config::Config) -> Self {
-        use ezer_login::{AuthManager, GrokComConfig};
+        use ezer_login::{AuthManager, EzerComConfig};
         use ezer_test_support::EnvGuard;
         let home = tempfile::tempdir().unwrap();
         let env = vec![
-            EnvGuard::set("GROK_HOME", home.path()),
+            EnvGuard::set("EZER_HOME", home.path()),
             EnvGuard::unset("EZER_FOLDER_TRUST"),
             EnvGuard::set(ezer_version::TEST_VERSION_ENV, "0.0.0-sim"),
         ];
@@ -3021,7 +3021,7 @@ impl ReloadHarness {
         std::env::set_current_dir(repo).unwrap();
         let auth_home = tempfile::tempdir().unwrap();
         let auth_manager =
-            std::sync::Arc::new(AuthManager::new(auth_home.path(), GrokComConfig::default()));
+            std::sync::Arc::new(AuthManager::new(auth_home.path(), EzerComConfig::default()));
         let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
         let agent = MvpAgent::new(GatewaySender::new(tx), cfg, auth_manager, None, None)
             .expect("valid test config");
@@ -3041,7 +3041,7 @@ impl ReloadHarness {
     }
     async fn reload(&self) {
         let req = acp::ExtRequest::new(
-            "x.ai/plugins/reload",
+            "ezer/plugins/reload",
             serde_json::value::to_raw_value(&serde_json::json!({}))
                 .unwrap()
                 .into(),
@@ -3055,7 +3055,7 @@ fn write_plugin_manifest(dir: &std::path::Path, name: &str) {
     std::fs::create_dir_all(dir).unwrap();
     std::fs::write(dir.join("plugin.json"), format!(r#"{{"name": "{name}"}}"#)).unwrap();
 }
-/// Kill-switch ordering through the production session-less `x.ai/plugins/reload` path (no resident
+/// Kill-switch ordering through the production session-less `ezer/plugins/reload` path (no resident
 /// session, so the rebuild targets the launch dir). `resolve_effective_plugins_config` consults the
 /// folder-trust gate, whose cold-key backstop resolves WITHOUT remote settings and records a durable
 /// verdict; if the disk read ran before the real-remote resolve, a cold launch dir under an org
@@ -3098,7 +3098,7 @@ async fn plugins_reload_resolves_real_remote_trust_before_reading_disk_config() 
         "kill-switched folder counts trusted, so the project [plugins].paths plugin must be discovered"
     );
 }
-/// A session-less `x.ai/plugins/reload` must re-resolve the launch dir's folder trust rather than
+/// A session-less `ezer/plugins/reload` must re-resolve the launch dir's folder trust rather than
 /// reuse the startup primer's memoized verdict. The primer records a point-in-time answer, and a
 /// no-configs launch dir yields a non-durable "trusted" allow; if repo-local plugin configs appear
 /// afterwards, a reload that reused that allow would grant them executable trust with no check.
@@ -3153,7 +3153,7 @@ async fn plugins_reload_rechecks_launch_dir_trust() {
 }
 /// The lazy boot build reads disk config through the folder-trust gate. It must not lean on the
 /// startup primer: with the gate on, a no-configs launch dir leaves the primer's allow non-durable
-/// (nothing recorded), so a later lazy build — reachable from a session-less `x.ai/plugins/list`
+/// (nothing recorded), so a later lazy build — reachable from a session-less `ezer/plugins/list`
 /// long after startup, once repo-local configs have appeared and remote settings have moved to the
 /// kill-switch — would hit the gate's cold-key backstop, which resolves WITHOUT remote settings and
 /// records a kill-switch-blind deny that no reconcile can lift.
@@ -3296,7 +3296,7 @@ async fn resident_activity_reports_needs_input_when_pending() {
     use crate::agent::roster::RosterActivity;
     let agent = build_minimal_agent_for_tests();
     let sid = acp::SessionId::new("sess-pending");
-    let handle = make_test_handle("grok-3", false, None);
+    let handle = make_test_handle("test-model-3", false, None);
     let pending = handle.pending_interactions.clone();
     let prompt_id = handle.current_prompt_id.clone();
     agent.insert_resident(&sid, handle);
@@ -3313,7 +3313,7 @@ async fn resident_activity_reports_needs_input_when_pending() {
     pending.lock().unwrap().clear();
     assert_eq!(agent.resident_activity(&sid), RosterActivity::Working);
 }
-/// Drain the agent gateway, returning the first `x.ai/sessions/changed` payload that carries an upserted entry.
+/// Drain the agent gateway, returning the first `ezer/sessions/changed` payload that carries an upserted entry.
 /// Unrelated notifications parse into an empty `RosterChanged` and are ignored.
 fn drain_roster_changed(
     rx: &mut tokio::sync::mpsc::UnboundedReceiver<xai_acp_lib::AcpClientMessage>,
@@ -3334,23 +3334,23 @@ fn drain_roster_changed(
     }
     found
 }
-/// A turn-boundary activity delta (`push_roster_activity_delta`) broadcasts an `x.ai/sessions/changed` upsert carrying the *overridden* activity.
+/// A turn-boundary activity delta (`push_roster_activity_delta`) broadcasts an `ezer/sessions/changed` upsert carrying the *overridden* activity.
 /// Every attached dashboard then reflects Working/Idle immediately instead of waiting out the roster poll's up-to-1s lag (turn-start/turn-end).
 /// The override matters because at turn-start the actor has not yet published `current_prompt_id`. A natural `resident_activity` read would emit `Idle` for a session that is in fact starting a turn.
 #[tokio::test]
 async fn headless_residents_are_excluded_from_snapshots_and_deltas() {
     use crate::agent::config::Config as AgentConfig;
     use crate::agent::roster::RosterActivity;
-    use ezer_login::{AuthManager, GrokComConfig};
+    use ezer_login::{AuthManager, EzerComConfig};
     let temp_dir = tempfile::tempdir().unwrap();
     let auth_manager =
-        std::sync::Arc::new(AuthManager::new(temp_dir.path(), GrokComConfig::default()));
+        std::sync::Arc::new(AuthManager::new(temp_dir.path(), EzerComConfig::default()));
     let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
     let gateway = GatewaySender::new(tx);
     let agent = MvpAgent::new(gateway, &AgentConfig::default(), auth_manager, None, None)
         .expect("valid test config");
     let sid = acp::SessionId::new("sess-headless");
-    agent.insert_resident(&sid, make_test_handle("grok-3", false, None));
+    agent.insert_resident(&sid, make_test_handle("test-model-3", false, None));
     agent.session_registry.mark_headless(&sid);
     assert!(agent.resident_roster_entry(&sid).is_none());
     assert!(agent.resident_roster_entries().is_empty());
@@ -3362,16 +3362,16 @@ async fn headless_residents_are_excluded_from_snapshots_and_deltas() {
 async fn push_roster_activity_delta_broadcasts_overridden_activity() {
     use crate::agent::config::Config as AgentConfig;
     use crate::agent::roster::RosterActivity;
-    use ezer_login::{AuthManager, GrokComConfig};
+    use ezer_login::{AuthManager, EzerComConfig};
     let temp_dir = tempfile::tempdir().unwrap();
     let auth_manager =
-        std::sync::Arc::new(AuthManager::new(temp_dir.path(), GrokComConfig::default()));
+        std::sync::Arc::new(AuthManager::new(temp_dir.path(), EzerComConfig::default()));
     let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
     let gateway = GatewaySender::new(tx);
     let cfg = AgentConfig::default();
     let agent = MvpAgent::new(gateway, &cfg, auth_manager, None, None).expect("valid test config");
     let sid = acp::SessionId::new("sess-activity");
-    agent.insert_resident(&sid, make_test_handle("grok-3", false, None));
+    agent.insert_resident(&sid, make_test_handle("test-model-3", false, None));
     agent.push_roster_activity_delta(&sid, RosterActivity::Working);
     let changed = drain_roster_changed(&mut rx).expect("turn-start delta emitted");
     assert_eq!(changed.upserted.len(), 1);
@@ -3418,7 +3418,7 @@ fn check_nav_eligibility_from_sessions(
         return Err(CodeNavEligibility::SessionRequired);
     };
     let ct = crate::http::client_type_from_origin(handle.origin_client.as_ref());
-    if !matches!(ct, ClientType::GrokWeb) {
+    if !matches!(ct, ClientType::EzerWeb) {
         return Err(CodeNavEligibility::ClientNotWeb);
     }
     if !handle.code_nav_enabled {
@@ -3576,12 +3576,12 @@ fn write_updates(dir: &std::path::Path, lines: &[&str]) -> PathBuf {
 }
 fn bg_line(task_id: &str) -> String {
     format!(
-        r#"{{"timestamp":1,"method":"_x.ai/session/update","params":{{"sessionId":"s","update":{{"sessionUpdate":"task_backgrounded","task_id":"{task_id}","command":"sleep 99","cwd":"/tmp"}}}}}}"#
+        r#"{{"timestamp":1,"method":"_ezer/session/update","params":{{"sessionId":"s","update":{{"sessionUpdate":"task_backgrounded","task_id":"{task_id}","command":"sleep 99","cwd":"/tmp"}}}}}}"#
     )
 }
 fn completed_line(task_id: &str) -> String {
     format!(
-        r#"{{"timestamp":2,"method":"_x.ai/session/update","params":{{"sessionId":"s","update":{{"sessionUpdate":"task_completed","task_snapshot":{{"task_id":"{task_id}","completed":true}}}}}}}}"#
+        r#"{{"timestamp":2,"method":"_ezer/session/update","params":{{"sessionId":"s","update":{{"sessionUpdate":"task_completed","task_snapshot":{{"task_id":"{task_id}","completed":true}}}}}}}}"#
     )
 }
 fn orphaned_ids(tasks: &[OrphanedTask]) -> std::collections::HashSet<&str> {
@@ -3658,7 +3658,7 @@ fn orphaned_tasks_skips_malformed_lines() {
 fn orphaned_tasks_ignores_unrelated_updates() {
     let tmp = tempfile::tempdir().unwrap();
     let bg = bg_line("t1");
-    let unrelated = r#"{"timestamp":1,"method":"_x.ai/session/update","params":{"sessionId":"s","update":{"sessionUpdate":"auto_compact_started","percentage":80}}}"#;
+    let unrelated = r#"{"timestamp":1,"method":"_ezer/session/update","params":{"sessionId":"s","update":{"sessionUpdate":"auto_compact_started","percentage":80}}}"#;
     let path = write_updates(tmp.path(), &[&bg, unrelated]);
     let result = MvpAgent::find_orphaned_background_tasks(&Some(path));
     assert_eq!(result.len(), 1);
@@ -3668,7 +3668,7 @@ fn orphaned_tasks_filters_rewind_dead_branches() {
     let tmp = tempfile::tempdir().unwrap();
     let user_msg = r#"{"timestamp":0,"method":"session/update","params":{"sessionId":"s","update":{"sessionUpdate":"user_message_chunk","content":{"type":"text","text":"hello"}}}}"#;
     let bg_before_rewind = bg_line("t-dead");
-    let rewind = r#"{"timestamp":3,"method":"_x.ai/session/update","params":{"sessionId":"s","update":{"sessionUpdate":"rewind_marker","target_prompt_index":0,"created_at":"2025-01-01T00:00:00Z"}}}"#;
+    let rewind = r#"{"timestamp":3,"method":"_ezer/session/update","params":{"sessionId":"s","update":{"sessionUpdate":"rewind_marker","target_prompt_index":0,"created_at":"2025-01-01T00:00:00Z"}}}"#;
     let user_msg2 = r#"{"timestamp":4,"method":"session/update","params":{"sessionId":"s","update":{"sessionUpdate":"user_message_chunk","content":{"type":"text","text":"retry"}}}}"#;
     let bg_after_rewind = bg_line("t-alive");
     let path = write_updates(
@@ -3759,12 +3759,12 @@ async fn auth_type_xai_api_key_no_current_returns_api_key() {
 /// This is the common case during a healthy session.
 #[tokio::test(flavor = "current_thread")]
 async fn auth_type_session_based_with_current_returns_session_token() {
-    use ezer_login::GrokAuth;
+    use ezer_login::EzerAuth;
     let agent = build_minimal_agent_for_tests();
     agent.set_auth_method(acp::AuthMethodId::new(
         crate::agent::auth_method::OIDC_METHOD_ID,
     ));
-    agent.auth_manager.hot_swap(GrokAuth::test_default());
+    agent.auth_manager.hot_swap(EzerAuth::test_default());
     assert!(agent.auth_manager.current().is_some());
     assert_eq!(agent.auth_type(), xai_chat_state::AuthType::SessionToken,);
 }
@@ -3781,24 +3781,24 @@ async fn auth_type_no_method_id_no_current_returns_api_key() {
 /// A token is hot-swapped in before `authenticate()` writes the method id. Reporting `SessionToken` here matches pre-fix behavior and keeps logging stable.
 #[tokio::test(flavor = "current_thread")]
 async fn auth_type_no_method_id_with_current_returns_session_token() {
-    use ezer_login::GrokAuth;
+    use ezer_login::EzerAuth;
     let agent = build_minimal_agent_for_tests();
-    agent.auth_manager.hot_swap(GrokAuth::test_default());
+    agent.auth_manager.hot_swap(EzerAuth::test_default());
     assert!(agent.auth_method_id.load().is_none());
     assert!(agent.auth_manager.current().is_some());
     assert_eq!(agent.auth_type(), xai_chat_state::AuthType::SessionToken,);
 }
-/// Minimal agent whose `grok_com_config` engages the api-key kill switch (`disable_api_key_auth = true`), mirroring a forced-IdP deployment.
+/// Minimal agent whose `ezer_com_config` engages the api-key kill switch (`disable_api_key_auth = true`), mirroring a forced-IdP deployment.
 fn build_agent_with_api_key_auth_disabled() -> MvpAgent {
     use crate::agent::config::Config as AgentConfig;
-    use ezer_login::{AuthManager, GrokComConfig};
+    use ezer_login::{AuthManager, EzerComConfig};
     let temp_dir = tempfile::tempdir().unwrap();
     let auth_manager =
-        std::sync::Arc::new(AuthManager::new(temp_dir.path(), GrokComConfig::default()));
+        std::sync::Arc::new(AuthManager::new(temp_dir.path(), EzerComConfig::default()));
     let (tx, _rx) = tokio::sync::mpsc::unbounded_channel();
     let gateway = GatewaySender::new(tx);
     let mut cfg = AgentConfig::default();
-    cfg.grok_com_config.disable_api_key_auth = Some(true);
+    cfg.ezer_com_config.disable_api_key_auth = Some(true);
     MvpAgent::new(gateway, &cfg, auth_manager, None, None).expect("valid test config")
 }
 /// Deployment-key / managed-config user: `XAI_API_KEY` resolves and the kill switch is off.
@@ -3809,7 +3809,7 @@ fn build_agent_with_api_key_auth_disabled() -> MvpAgent {
 async fn cached_token_fallthrough_prefers_api_key_for_deployment_key() {
     use crate::agent::auth_method::{XAI_API_KEY_ENV_VAR, XAI_API_KEY_METHOD_ID};
     use ezer_test_support::EnvGuard;
-    let _lockdown = EnvGuard::unset("GROK_DISABLE_API_KEY_AUTH");
+    let _lockdown = EnvGuard::unset("EZER_DISABLE_API_KEY_AUTH");
     let _key = EnvGuard::set(XAI_API_KEY_ENV_VAR, "test-deployment-key");
     let agent = build_minimal_agent_for_tests();
     assert_eq!(
@@ -3822,14 +3822,14 @@ async fn cached_token_fallthrough_prefers_api_key_for_deployment_key() {
          through to xai.api_key on a dead cached_token -- not interactive login",
     );
 }
-/// Forced-IdP deployment: even with `XAI_API_KEY` present, the admin kill switch keeps the fallthrough on interactive `grok.com`.
+/// Forced-IdP deployment: even with `XAI_API_KEY` present, the admin kill switch keeps the fallthrough on interactive `ezer.com`.
 /// Api-key auth is neither advertised nor an eligible fallthrough.
 #[tokio::test(flavor = "current_thread")]
 #[serial_test::serial]
 async fn cached_token_fallthrough_respects_kill_switch() {
     use crate::agent::auth_method::{EZER_COM_METHOD_ID, XAI_API_KEY_ENV_VAR};
     use ezer_test_support::EnvGuard;
-    let _lockdown = EnvGuard::unset("GROK_DISABLE_API_KEY_AUTH");
+    let _lockdown = EnvGuard::unset("EZER_DISABLE_API_KEY_AUTH");
     let _key = EnvGuard::set(XAI_API_KEY_ENV_VAR, "test-deployment-key");
     let agent = build_agent_with_api_key_auth_disabled();
     assert_eq!(
@@ -3839,19 +3839,19 @@ async fn cached_token_fallthrough_respects_kill_switch() {
             .map(|id| id.0.as_ref()),
         Some(EZER_COM_METHOD_ID),
         "disable_api_key_auth must keep the cached_token fallthrough on \
-         interactive grok.com so XAI_API_KEY can't bypass forced IdP login",
+         interactive ezer.com so XAI_API_KEY can't bypass forced IdP login",
     );
 }
 /// No advertiseable credentials at all (no env key, no kill switch): the user genuinely needs to log in.
-/// The fallthrough is interactive `grok.com`.
+/// The fallthrough is interactive `ezer.com`.
 #[tokio::test(flavor = "current_thread")]
 #[serial_test::serial]
-async fn cached_token_fallthrough_falls_to_grok_com_without_credentials() {
+async fn cached_token_fallthrough_falls_to_ezer_com_without_credentials() {
     use crate::agent::auth_method::{
         EZER_COM_METHOD_ID, LEGACY_XAI_API_KEY_ENV_VAR, XAI_API_KEY_ENV_VAR,
     };
     use ezer_test_support::EnvGuard;
-    let _lockdown = EnvGuard::unset("GROK_DISABLE_API_KEY_AUTH");
+    let _lockdown = EnvGuard::unset("EZER_DISABLE_API_KEY_AUTH");
     let _new = EnvGuard::unset(XAI_API_KEY_ENV_VAR);
     let _legacy = EnvGuard::unset(LEGACY_XAI_API_KEY_ENV_VAR);
     let agent = build_minimal_agent_for_tests();
@@ -3861,7 +3861,7 @@ async fn cached_token_fallthrough_falls_to_grok_com_without_credentials() {
             .as_ref()
             .map(|id| id.0.as_ref()),
         Some(EZER_COM_METHOD_ID),
-        "no API-key creds and no kill switch -> interactive grok.com login",
+        "no API-key creds and no kill switch -> interactive ezer.com login",
     );
 }
 /// Verifies the 4-state matrix of `(disable_zdr_incompatible_tools, zdr_video_output_s3)`: | ZDR flag | S3 config | Result | |----------|-----------|---------------------------------------------| | false | None | Enabled, no S3 (normal non-ZDR mode) | | true | None | Disabled (ZDR with no escape hatch) | | false | Some | Enabled, S3 **not** threaded (non-ZDR) | | true | Some | Enabled, S3 threaded (ZDR with upload path) |
@@ -3875,7 +3875,7 @@ async fn prepare_video_gen_config_disabled_when_zdr_flag_set() {
             bucket: "team-videos".into(),
             endpoint: "https://s3.example.com".into(),
             region: "us-east-1".into(),
-            key_prefix: "grok-videos/".into(),
+            key_prefix: "ezer-videos/".into(),
             expires_secs: 900,
             read_write: S3AccessCredentials {
                 access_key_id: "AKIA...".into(),
@@ -3969,7 +3969,7 @@ async fn prepare_image_gen_config_sends_client_identifier_header() {
     };
     assert_eq!(
         extra_headers
-            .get("x-grok-client-identifier")
+            .get("x-ezer-client-identifier")
             .map(String::as_str),
         Some(crate::http::process_client_identifier().as_str()),
         "imagine API calls must carry the client identifier so the server \
@@ -3987,28 +3987,28 @@ async fn prepare_video_gen_config_sends_client_identifier_header() {
     };
     assert_eq!(
         extra_headers
-            .get("x-grok-client-identifier")
+            .get("x-ezer-client-identifier")
             .map(String::as_str),
         Some(crate::http::process_client_identifier().as_str()),
         "video gen API calls must carry the client identifier so the server \
          applies the coding ZDR opt-out to Build traffic"
     );
 }
-/// Regression: `x.ai/auth/info` must return profile fields even when the access token is expired.
+/// Regression: `ezer/auth/info` must return profile fields even when the access token is expired.
 /// Profile data does not expire with the token, and hiding it made the desktop render "Signed in" with no identity.
 #[tokio::test]
 async fn auth_info_returns_profile_when_token_expired() {
-    let agent = build_agent_with_auth(ezer_login::GrokAuth {
+    let agent = build_agent_with_auth(ezer_login::EzerAuth {
         email: Some("user@example.com".into()),
         first_name: Some("Test".into()),
         refresh_token: Some("rt".into()),
         expires_at: Some(chrono::Utc::now() - chrono::Duration::hours(1)),
-        ..ezer_login::GrokAuth::test_default()
+        ..ezer_login::EzerAuth::test_default()
     });
     let resp = crate::extensions::auth::handle(
         &agent,
         &acp::ExtRequest::new(
-            "x.ai/auth/info",
+            "ezer/auth/info",
             std::sync::Arc::from(serde_json::value::to_raw_value(&serde_json::json!({})).unwrap()),
         ),
     )
@@ -4023,7 +4023,7 @@ async fn auth_info_returns_profile_when_token_expired() {
 }
 #[tokio::test]
 async fn data_collection_enabled_for_normal_user() {
-    let agent = build_agent_with_auth(ezer_login::GrokAuth::test_default());
+    let agent = build_agent_with_auth(ezer_login::EzerAuth::test_default());
     assert!(
         !agent.is_data_collection_disabled(),
         "normal user must have data collection enabled"
@@ -4031,9 +4031,9 @@ async fn data_collection_enabled_for_normal_user() {
 }
 #[tokio::test]
 async fn data_collection_disabled_for_zdr_team() {
-    let agent = build_agent_with_auth(ezer_login::GrokAuth {
+    let agent = build_agent_with_auth(ezer_login::EzerAuth {
         team_blocked_reasons: vec!["BLOCKED_REASON_NO_LOGS".into()],
-        ..ezer_login::GrokAuth::test_default()
+        ..ezer_login::EzerAuth::test_default()
     });
     assert!(
         agent.is_data_collection_disabled(),
@@ -4046,9 +4046,9 @@ async fn data_collection_disabled_for_zdr_team() {
 }
 #[tokio::test]
 async fn data_collection_disabled_for_zdr_moderated_team() {
-    let agent = build_agent_with_auth(ezer_login::GrokAuth {
+    let agent = build_agent_with_auth(ezer_login::EzerAuth {
         team_blocked_reasons: vec!["BLOCKED_REASON_NO_LOGS_MODERATED".into()],
-        ..ezer_login::GrokAuth::test_default()
+        ..ezer_login::EzerAuth::test_default()
     });
     assert!(
         agent.is_data_collection_disabled(),
@@ -4057,9 +4057,9 @@ async fn data_collection_disabled_for_zdr_moderated_team() {
 }
 #[tokio::test]
 async fn data_collection_disabled_for_opted_out_team() {
-    let agent = build_agent_with_auth(ezer_login::GrokAuth {
+    let agent = build_agent_with_auth(ezer_login::EzerAuth {
         coding_data_retention_opt_out: true,
-        ..ezer_login::GrokAuth::test_default()
+        ..ezer_login::EzerAuth::test_default()
     });
     assert!(
         agent.is_data_collection_disabled(),
@@ -4072,10 +4072,10 @@ async fn data_collection_disabled_for_opted_out_team() {
 }
 #[tokio::test]
 async fn data_collection_disabled_for_zdr_plus_opt_out() {
-    let agent = build_agent_with_auth(ezer_login::GrokAuth {
+    let agent = build_agent_with_auth(ezer_login::EzerAuth {
         team_blocked_reasons: vec!["BLOCKED_REASON_NO_LOGS".into()],
         coding_data_retention_opt_out: true,
-        ..ezer_login::GrokAuth::test_default()
+        ..ezer_login::EzerAuth::test_default()
     });
     assert!(
         agent.is_data_collection_disabled(),
@@ -4084,12 +4084,12 @@ async fn data_collection_disabled_for_zdr_plus_opt_out() {
 }
 #[tokio::test]
 async fn data_collection_enabled_for_non_zdr_team_with_unrelated_blocks() {
-    let agent = build_agent_with_auth(ezer_login::GrokAuth {
+    let agent = build_agent_with_auth(ezer_login::EzerAuth {
         team_blocked_reasons: vec![
             "BLOCKED_REASON_BILLING".into(),
             "BLOCKED_REASON_SUSPENDED".into(),
         ],
-        ..ezer_login::GrokAuth::test_default()
+        ..ezer_login::EzerAuth::test_default()
     });
     assert!(
         !agent.is_data_collection_disabled(),
@@ -4107,15 +4107,15 @@ fn enable_trace_upload_config(agent: &MvpAgent) {
 }
 #[tokio::test]
 async fn product_analytics_enabled_for_normal_user_with_telemetry_on() {
-    let agent = build_agent_with_auth(ezer_login::GrokAuth::test_default());
+    let agent = build_agent_with_auth(ezer_login::EzerAuth::test_default());
     enable_product_telemetry(&agent);
     assert!(agent.product_analytics_enabled());
 }
 #[tokio::test]
 async fn product_analytics_enabled_despite_coding_retention_opt_out() {
-    let agent = build_agent_with_auth(ezer_login::GrokAuth {
+    let agent = build_agent_with_auth(ezer_login::EzerAuth {
         coding_data_retention_opt_out: true,
-        ..ezer_login::GrokAuth::test_default()
+        ..ezer_login::EzerAuth::test_default()
     });
     enable_product_telemetry(&agent);
     assert!(agent.is_data_collection_disabled());
@@ -4123,16 +4123,16 @@ async fn product_analytics_enabled_despite_coding_retention_opt_out() {
 }
 #[tokio::test]
 async fn product_analytics_disabled_for_zdr_team() {
-    let agent = build_agent_with_auth(ezer_login::GrokAuth {
+    let agent = build_agent_with_auth(ezer_login::EzerAuth {
         team_blocked_reasons: vec!["BLOCKED_REASON_NO_LOGS".into()],
-        ..ezer_login::GrokAuth::test_default()
+        ..ezer_login::EzerAuth::test_default()
     });
     enable_product_telemetry(&agent);
     assert!(!agent.product_analytics_enabled());
 }
 #[tokio::test]
 async fn product_analytics_disabled_when_telemetry_off() {
-    let agent = build_agent_with_auth(ezer_login::GrokAuth::test_default());
+    let agent = build_agent_with_auth(ezer_login::EzerAuth::test_default());
     agent.cfg.borrow_mut().features.telemetry = Some(crate::agent::config::TelemetryMode::Disabled);
     assert!(!agent.product_analytics_enabled());
 }
@@ -4160,9 +4160,9 @@ async fn spawn_counting_storage_stub() -> (String, std::sync::Arc<std::sync::ato
 #[tokio::test]
 async fn diagnostic_upload_skipped_for_opted_out_user() {
     let (stub_url, count) = spawn_counting_storage_stub().await;
-    let agent = build_agent_with_auth(ezer_login::GrokAuth {
+    let agent = build_agent_with_auth(ezer_login::EzerAuth {
         coding_data_retention_opt_out: true,
-        ..ezer_login::GrokAuth::test_default()
+        ..ezer_login::EzerAuth::test_default()
     });
     enable_trace_upload_config(&agent);
     agent.cfg.borrow_mut().endpoints.trace_upload_url = Some(stub_url);
@@ -4179,7 +4179,7 @@ async fn diagnostic_upload_skipped_for_opted_out_user() {
 #[tokio::test]
 async fn diagnostic_upload_sent_for_normal_user() {
     let (stub_url, count) = spawn_counting_storage_stub().await;
-    let agent = build_agent_with_auth(ezer_login::GrokAuth::test_default());
+    let agent = build_agent_with_auth(ezer_login::EzerAuth::test_default());
     enable_trace_upload_config(&agent);
     agent.cfg.borrow_mut().endpoints.trace_upload_url = Some(stub_url);
     let uploader = agent
@@ -4215,7 +4215,7 @@ async fn diagnostic_upload_skipped_without_credentials() {
 #[tokio::test]
 async fn diagnostic_upload_skipped_after_mid_session_trace_upload_kill_switch() {
     let (stub_url, count) = spawn_counting_storage_stub().await;
-    let agent = build_agent_with_auth(ezer_login::GrokAuth::test_default());
+    let agent = build_agent_with_auth(ezer_login::EzerAuth::test_default());
     enable_trace_upload_config(&agent);
     agent.cfg.borrow_mut().endpoints.trace_upload_url = Some(stub_url);
     agent.sync_collection_config_gate();
@@ -4239,13 +4239,13 @@ async fn diagnostic_upload_skipped_after_mid_session_trace_upload_kill_switch() 
 use crate::session::storage::search::IndexDecision;
 /// A ezer home of its own, with the switch left at its registered default.
 /// `decide_search_index` stops short of a session store, but do not reach `bootstrap_once`.
-/// `bootstrap_once` takes the process-cached `grok_home()`, which these guards cannot redirect, so it could index the developer's own store.
+/// `bootstrap_once` takes the process-cached `ezer_home()`, which these guards cannot redirect, so it could index the developer's own store.
 fn search_index_env() -> (tempfile::TempDir, [ezer_test_support::EnvGuard; 2]) {
     use ezer_test_support::EnvGuard;
     let home = tempfile::tempdir().unwrap();
     let guards = [
-        EnvGuard::set("GROK_HOME", home.path()),
-        EnvGuard::unset("GROK_SESSION_SEARCH"),
+        EnvGuard::set("EZER_HOME", home.path()),
+        EnvGuard::unset("EZER_SESSION_SEARCH"),
     ];
     (home, guards)
 }
@@ -4254,15 +4254,15 @@ fn search_index_env() -> (tempfile::TempDir, [ezer_test_support::EnvGuard; 2]) {
 async fn search_index_honors_the_session_search_feature() {
     let (_home, _env) = search_index_env();
     {
-        let _off = ezer_test_support::EnvGuard::set("GROK_SESSION_SEARCH", "0");
-        let agent = build_agent_with_auth(ezer_login::GrokAuth::test_default());
+        let _off = ezer_test_support::EnvGuard::set("EZER_SESSION_SEARCH", "0");
+        let agent = build_agent_with_auth(ezer_login::EzerAuth::test_default());
         agent.decide_search_index();
         assert!(
             matches!(agent.search_index(), IndexDecision::Off),
             "the switch is off, so this process keeps no index"
         );
     }
-    let agent = build_agent_with_auth(ezer_login::GrokAuth::test_default());
+    let agent = build_agent_with_auth(ezer_login::EzerAuth::test_default());
     agent.decide_search_index();
     assert!(
         matches!(agent.search_index(), IndexDecision::On(_)),
@@ -4274,7 +4274,7 @@ async fn search_index_honors_the_session_search_feature() {
 #[serial_test::serial]
 async fn auto_gc_declines_until_the_remote_answer_settles() {
     let (_home, _env) = search_index_env();
-    let agent = build_agent_with_auth(ezer_login::GrokAuth::test_default());
+    let agent = build_agent_with_auth(ezer_login::EzerAuth::test_default());
     assert!(
         !agent.remote_settings_settled(),
         "precondition: remote fetch is on and no settings have arrived"
@@ -4303,14 +4303,14 @@ async fn auto_gc_declines_until_the_remote_answer_settles() {
 #[serial_test::serial]
 async fn search_before_the_decision_asks_the_caller_to_retry() {
     let (_home, _env) = search_index_env();
-    let agent = build_agent_with_auth(ezer_login::GrokAuth::test_default());
+    let agent = build_agent_with_auth(ezer_login::EzerAuth::test_default());
     assert!(
         matches!(agent.search_index(), IndexDecision::Pending),
         "precondition: nothing has decided yet"
     );
     let resp = crate::session::storage::search::execute_search(
         agent.search_index(),
-        &crate::util::grok_home::grok_home(),
+        &crate::util::ezer_home::ezer_home(),
         &crate::session::storage::search::SessionSearchRequest {
             query: "zzqqpending".to_string(),
             cwd: None,
@@ -4333,7 +4333,7 @@ async fn search_before_the_decision_asks_the_caller_to_retry() {
 #[serial_test::serial]
 async fn read_before_the_remote_settings_land_does_not_decide() {
     let (_home, _env) = search_index_env();
-    let agent = build_agent_with_auth(ezer_login::GrokAuth::test_default());
+    let agent = build_agent_with_auth(ezer_login::EzerAuth::test_default());
     assert!(
         !agent.remote_settings_settled(),
         "precondition: remote fetch is on and no settings have arrived"
@@ -4360,14 +4360,14 @@ async fn read_before_the_remote_settings_land_does_not_decide() {
 #[serial_test::serial]
 async fn exhausted_fetch_decides_on_the_local_layers() {
     use crate::agent::config::Config as AgentConfig;
-    use ezer_login::{AuthManager, GrokComConfig};
+    use ezer_login::{AuthManager, EzerComConfig};
     use ezer_test_support::EnvGuard;
     let (_home, _env) = search_index_env();
-    let _no_inline_auth = EnvGuard::unset("GROK_AUTH");
-    let _no_auth_path = EnvGuard::unset("GROK_AUTH_PATH");
+    let _no_inline_auth = EnvGuard::unset("EZER_AUTH");
+    let _no_auth_path = EnvGuard::unset("EZER_AUTH_PATH");
     let auth_dir = tempfile::tempdir().unwrap();
     let auth_manager =
-        std::sync::Arc::new(AuthManager::new(auth_dir.path(), GrokComConfig::default()));
+        std::sync::Arc::new(AuthManager::new(auth_dir.path(), EzerComConfig::default()));
     assert!(
         auth_manager.current().is_none(),
         "precondition: no identity to fetch with"
@@ -4396,7 +4396,7 @@ async fn exhausted_fetch_decides_on_the_local_layers() {
 #[serial_test::serial]
 async fn kill_switch_after_the_decision_leaves_the_index_up() {
     let (_home, _env) = search_index_env();
-    let agent = build_agent_with_auth(ezer_login::GrokAuth::test_default());
+    let agent = build_agent_with_auth(ezer_login::EzerAuth::test_default());
     agent.cfg.borrow_mut().remote_settings = Some(crate::util::config::RemoteSettings {
         session_search: Some(true),
         ..Default::default()
@@ -4421,7 +4421,7 @@ async fn kill_switch_after_the_decision_leaves_the_index_up() {
 #[serial_test::serial]
 async fn session_opened_before_the_decision_sees_it_land() {
     let (_home, _env) = search_index_env();
-    let agent = build_agent_with_auth(ezer_login::GrokAuth::test_default());
+    let agent = build_agent_with_auth(ezer_login::EzerAuth::test_default());
     let held_by_a_session = agent.search_index_cell();
     assert!(
         matches!(held_by_a_session.decision(), IndexDecision::Pending),
@@ -4442,7 +4442,7 @@ async fn session_opened_before_the_decision_sees_it_land() {
 /// A mid-session remote-settings flip (kill switch) then stops collection without a new session.
 #[tokio::test]
 async fn collection_config_gate_mirror_follows_trace_upload_flip() {
-    let agent = build_agent_with_auth(ezer_login::GrokAuth::test_default());
+    let agent = build_agent_with_auth(ezer_login::EzerAuth::test_default());
     enable_trace_upload_config(&agent);
     agent.sync_collection_config_gate();
     assert!(
@@ -4473,22 +4473,22 @@ fn parse_session_kind_matrix() {
     let cases: &[(&str, serde_json::Value, SessionKind)] = &[
         (
             "chat",
-            json!({"x.ai/session": {"kind": "chat"}}),
+            json!({"ezer/session": {"kind": "chat"}}),
             SessionKind::Chat,
         ),
         (
             "build",
-            json!({"x.ai/session": {"kind": "build"}}),
+            json!({"ezer/session": {"kind": "build"}}),
             SessionKind::Build,
         ),
         (
             "chat_malformed_sibling",
-            json!({"x.ai/session": {"kind": "chat", "facets": "not-a-map"}}),
+            json!({"ezer/session": {"kind": "chat", "facets": "not-a-map"}}),
             SessionKind::Chat,
         ),
         (
             "unknown_kind",
-            json!({"x.ai/session": {"kind": "frob"}}),
+            json!({"ezer/session": {"kind": "frob"}}),
             SessionKind::Build,
         ),
         ("absent", json!({}), SessionKind::Build),
@@ -4502,13 +4502,13 @@ fn parse_session_kind_matrix() {
 fn reject_chat_kind_without_feature_errors_without_chat_feature() {
     use serde_json::json;
     assert!(
-        reject_chat_kind_without_feature(json!({"x.ai/session": {"kind": "chat"}}).as_object())
+        reject_chat_kind_without_feature(json!({"ezer/session": {"kind": "chat"}}).as_object())
             .is_err()
     );
     assert!(reject_chat_kind_without_feature(None).is_ok());
     assert!(
         reject_chat_kind_without_feature(
-            json!({ "x.ai/session" : { "kind" : "build" } }).as_object()
+            json!({ "ezer/session" : { "kind" : "build" } }).as_object()
         )
         .is_ok()
     );
@@ -4516,9 +4516,9 @@ fn reject_chat_kind_without_feature_errors_without_chat_feature() {
 #[test]
 fn chat_initial_model_matrix() {
     let cases: &[(&str, bool, Option<&str>, Option<&str>)] = &[
-        ("chat_with_model", true, Some("grok-4.5"), Some("grok-4.5")),
+        ("chat_with_model", true, Some("test-model-4.5"), Some("test-model-4.5")),
         ("chat_without_model", true, None, None),
-        ("build_with_model", false, Some("grok-4.5"), None),
+        ("build_with_model", false, Some("test-model-4.5"), None),
         ("build_without_model", false, None, None),
     ];
     for (label, is_chat_kind, custom_model_id, expected) in cases {
@@ -4545,27 +4545,27 @@ fn chat_new_session_model_state_matrix() {
     let cases: &[(&str, acp::SessionModelState, Option<&str>, &str)] = &[
         (
             "requested_in_catalog",
-            state_with("auto", &["auto", "grok-4"]),
-            Some("grok-4"),
-            "grok-4",
+            state_with("auto", &["auto", "test-model-4"]),
+            Some("test-model-4"),
+            "test-model-4",
         ),
         (
             "no_request_keeps_catalog_default",
-            state_with("auto", &["auto", "grok-4"]),
+            state_with("auto", &["auto", "test-model-4"]),
             None,
             "auto",
         ),
         (
             "requested_not_in_catalog",
             state_with("auto", &["auto"]),
-            Some("grok-4.5"),
-            "grok-4.5",
+            Some("test-model-4.5"),
+            "test-model-4.5",
         ),
         (
             "requested_with_empty_catalog",
             state_with("", &[]),
-            Some("grok-4"),
-            "grok-4",
+            Some("test-model-4"),
+            "test-model-4",
         ),
     ];
     for (label, state, requested, expected) in cases {
@@ -4578,7 +4578,7 @@ fn chat_new_session_model_state_matrix() {
         );
     }
 }
-/// A valid `x.ai/local_workspace` parses to ExistingWorkspace only.
+/// A valid `ezer/local_workspace` parses to ExistingWorkspace only.
 /// It never reads `envId` and never emits SandboxEnvironment.
 #[cfg(feature = "local-workspace")]
 #[test]
@@ -4595,7 +4595,7 @@ fn parse_session_computer_sessions_local_workspace_matrix() {
         (
             "attach_server_id_on_local",
             json!({
-                "x.ai/local_workspace": {
+                "ezer/local_workspace": {
                     "mode": "attach",
                     "server_id": "lw-attach-1",
                     "cwd": "/repo",
@@ -4607,11 +4607,11 @@ fn parse_session_computer_sessions_local_workspace_matrix() {
         (
             "attach_server_id_from_cloud_existing",
             json!({
-                "x.ai/local_workspace": {
+                "ezer/local_workspace": {
                     "mode": "attach",
                     "cwd": "/repo",
                 },
-                "x.ai/cloud_existing_workspace": {
+                "ezer/cloud_existing_workspace": {
                     "server_id": "lw-attach-2",
                     "cwd": "/repo-existing",
                 },
@@ -4622,7 +4622,7 @@ fn parse_session_computer_sessions_local_workspace_matrix() {
         (
             "own_with_server_id_ignores_envid",
             json!({
-                "x.ai/local_workspace": {
+                "ezer/local_workspace": {
                     "mode": "own",
                     "server_id": "lw-own-1",
                     "cwd": "/Users/me/src",
@@ -4634,7 +4634,7 @@ fn parse_session_computer_sessions_local_workspace_matrix() {
         (
             "own_without_server_id_no_sandbox_fallback",
             json!({
-                "x.ai/local_workspace": {
+                "ezer/local_workspace": {
                     "mode": "own",
                     "cwd": "/Users/me/src",
                 },
@@ -4645,7 +4645,7 @@ fn parse_session_computer_sessions_local_workspace_matrix() {
         (
             "invalid_mode_falls_through_to_envid",
             json!({
-                "x.ai/local_workspace": {
+                "ezer/local_workspace": {
                     "mode": "bogus",
                     "server_id": "lw-x",
                 },
@@ -4658,7 +4658,7 @@ fn parse_session_computer_sessions_local_workspace_matrix() {
         (
             "non_object_local_falls_through_to_envid",
             json!({
-                "x.ai/local_workspace": "not-an-object",
+                "ezer/local_workspace": "not-an-object",
                 "envId": "env-prod",
             }),
             Some(vec![ComputerSession::SandboxEnvironment {
@@ -4681,8 +4681,8 @@ fn parse_session_computer_sessions_local_workspace_matrix() {
 fn resolve_local_workspace_missing_server_id_fails_closed() {
     use serde_json::json;
     let meta = json!({
-        "x.ai/session": { "kind": "chat" },
-        "x.ai/local_workspace": {
+        "ezer/session": { "kind": "chat" },
+        "ezer/local_workspace": {
             "mode": "own",
             "cwd": "/repo",
         }
@@ -4767,12 +4767,12 @@ fn start_own_registers_and_stamps_server_id() {
         let server_id = handle.server_id.clone();
         let mut meta = acp::Meta::new();
         meta.insert(
-            "x.ai/local_workspace".into(),
+            "ezer/local_workspace".into(),
             serde_json::json!({"mode": "own", "cwd": "/tmp/repo"}),
         );
         stamp_server_id_into_meta(&mut meta, &server_id);
         assert_eq!(
-            meta.get("x.ai/local_workspace")
+            meta.get("ezer/local_workspace")
                 .and_then(|v| v.get("server_id"))
                 .and_then(|v| v.as_str()),
             Some(server_id.as_str())
@@ -5014,7 +5014,7 @@ fn new_session_registers_root_identity() {
             crate::session::persistence::STAMPS_SERVED.get(),
             "winner stamps once, superseded loader stamps zero"
         );
-        let summary_path = crate::util::grok_home::sessions_cwd_dir(&cwd.path().to_string_lossy())
+        let summary_path = crate::util::ezer_home::sessions_cwd_dir(&cwd.path().to_string_lossy())
             .join(sid.0.as_ref())
             .join("summary.json");
         let summary: crate::session::persistence::Summary =
@@ -5850,7 +5850,7 @@ fn ext_method_rewind_uses_local_dispatch_without_bridge() {
         let params = serde_json::json!({ "sessionId": "sess-local" });
         let err = agent
             .ext_method(acp::ExtRequest::new(
-                "x.ai/rewind/points",
+                "ezer/rewind/points",
                 std::sync::Arc::from(serde_json::value::to_raw_value(&params).unwrap()),
             ))
             .await
@@ -6084,12 +6084,12 @@ fn spawn_active_work_actor(
         }
     });
 }
-/// Drive `x.ai/internal/evict_sessions` through the real `ext_notification` handler path (not the internal helper).
+/// Drive `ezer/internal/evict_sessions` through the real `ext_notification` handler path (not the internal helper).
 /// This matches how the leader server signals a client disconnect.
 async fn drive_disconnect(agent: &MvpAgent, sid: &acp::SessionId) {
     drive_disconnect_many(agent, &[sid]).await;
 }
-/// Like `drive_disconnect`, but evicts several sessions in a single `x.ai/internal/evict_sessions` notification.
+/// Like `drive_disconnect`, but evicts several sessions in a single `ezer/internal/evict_sessions` notification.
 /// That is the realistic shape of a real client disconnect.
 /// It is also the path that exercises `handle_evict_sessions`' concurrent `join_all` check pass followed by the sequential act pass.
 async fn drive_disconnect_many(agent: &MvpAgent, sids: &[&acp::SessionId]) {
@@ -6099,13 +6099,13 @@ async fn drive_disconnect_many(agent: &MvpAgent, sids: &[&acp::SessionId]) {
     let params_json = serde_json::value::to_raw_value(&params).unwrap();
     agent
         .ext_notification(acp::ExtNotification::new(
-            "x.ai/internal/evict_sessions",
+            "ezer/internal/evict_sessions",
             params_json.into(),
         ))
         .await
         .expect("evict_sessions notification must be handled");
 }
-/// Drive `x.ai/session/close` through the real `ext_method` dispatch (`ext_method`, then `handlers::session::handle`, then `handle_session_close`).
+/// Drive `ezer/session/close` through the real `ext_method` dispatch (`ext_method`, then `handlers::session::handle`, then `handle_session_close`).
 /// This exercises the exact production path that finalizes the replica.
 async fn drive_close(agent: &MvpAgent, session_id: &str) -> Result<acp::ExtResponse, acp::Error> {
     use acp::Agent as _;
@@ -6113,7 +6113,7 @@ async fn drive_close(agent: &MvpAgent, session_id: &str) -> Result<acp::ExtRespo
     let params_json = serde_json::value::to_raw_value(&params).unwrap();
     agent
         .ext_method(acp::ExtRequest::new(
-            "x.ai/session/close",
+            "ezer/session/close",
             std::sync::Arc::from(params_json),
         ))
         .await
@@ -6130,7 +6130,7 @@ async fn ext_notification_forwards_each_queue_method_to_session_actor() {
     let session_id = sid.0.as_ref();
     let cases: [(&str, serde_json::Value); 7] = [
         (
-            "x.ai/queue/remove",
+            "ezer/queue/remove",
             serde_json::json!({
                 "sessionId": session_id,
                 "id": "p-remove",
@@ -6139,21 +6139,21 @@ async fn ext_notification_forwards_each_queue_method_to_session_actor() {
             }),
         ),
         (
-            "x.ai/queue/reorder",
+            "ezer/queue/reorder",
             serde_json::json!({
                 "sessionId": session_id,
                 "orderedIds": ["a", "b"],
             }),
         ),
         (
-            "x.ai/queue/clear",
+            "ezer/queue/clear",
             serde_json::json!({
                 "sessionId": session_id,
                 "clientIdentifier": "ezer-desktop",
             }),
         ),
         (
-            "x.ai/queue/edit",
+            "ezer/queue/edit",
             serde_json::json!({
                 "sessionId": session_id,
                 "id": "p-edit",
@@ -6162,7 +6162,7 @@ async fn ext_notification_forwards_each_queue_method_to_session_actor() {
             }),
         ),
         (
-            "x.ai/queue/interject",
+            "ezer/queue/interject",
             serde_json::json!({
                 "sessionId": session_id,
                 "id": "p-interject",
@@ -6172,14 +6172,14 @@ async fn ext_notification_forwards_each_queue_method_to_session_actor() {
             }),
         ),
         (
-            "x.ai/queue/hold_edit",
+            "ezer/queue/hold_edit",
             serde_json::json!({
                 "sessionId": session_id,
                 "id": "p-hold",
             }),
         ),
         (
-            "x.ai/queue/release_edit",
+            "ezer/queue/release_edit",
             serde_json::json!({
                 "sessionId": session_id,
                 "id": "p-release",
@@ -6197,7 +6197,7 @@ async fn ext_notification_forwards_each_queue_method_to_session_actor() {
         });
         match (method, cmd) {
             (
-                "x.ai/queue/remove",
+                "ezer/queue/remove",
                 SessionCommand::RemoveQueuedPrompt {
                     id,
                     expected_version,
@@ -6208,14 +6208,14 @@ async fn ext_notification_forwards_each_queue_method_to_session_actor() {
                 assert_eq!(expected_version, 3);
                 assert_eq!(owner.as_deref(), Some("ezer-tui"));
             }
-            ("x.ai/queue/reorder", SessionCommand::ReorderQueue { ordered_ids }) => {
+            ("ezer/queue/reorder", SessionCommand::ReorderQueue { ordered_ids }) => {
                 assert_eq!(ordered_ids, vec!["a", "b"]);
             }
-            ("x.ai/queue/clear", SessionCommand::ClearQueue { owner }) => {
+            ("ezer/queue/clear", SessionCommand::ClearQueue { owner }) => {
                 assert_eq!(owner.as_deref(), Some("ezer-desktop"));
             }
             (
-                "x.ai/queue/edit",
+                "ezer/queue/edit",
                 SessionCommand::EditQueuedPrompt {
                     id,
                     new_text,
@@ -6227,7 +6227,7 @@ async fn ext_notification_forwards_each_queue_method_to_session_actor() {
                 assert_eq!(editor.as_deref(), Some("ezer-vscode"));
             }
             (
-                "x.ai/queue/interject",
+                "ezer/queue/interject",
                 SessionCommand::InterjectQueuedPrompt {
                     id,
                     expected_version,
@@ -6240,10 +6240,10 @@ async fn ext_notification_forwards_each_queue_method_to_session_actor() {
                 assert_eq!(owner.as_deref(), Some("ezer-tui"));
                 assert_eq!(new_text.as_deref(), Some("now"));
             }
-            ("x.ai/queue/hold_edit", SessionCommand::HoldEdit { id }) => {
+            ("ezer/queue/hold_edit", SessionCommand::HoldEdit { id }) => {
                 assert_eq!(id, "p-hold");
             }
-            ("x.ai/queue/release_edit", SessionCommand::ReleaseEdit { id }) => {
+            ("ezer/queue/release_edit", SessionCommand::ReleaseEdit { id }) => {
                 assert_eq!(id, "p-release");
             }
             (method, _) => {
@@ -6270,11 +6270,11 @@ async fn ext_notification_queue_rejects_unknown_method_missing_id_and_unknown_se
     let session_id = sid.0.as_ref();
     let negatives: [(&str, serde_json::Value); 9] = [
         (
-            "x.ai/queue/bogus",
+            "ezer/queue/bogus",
             serde_json::json!({ "sessionId": session_id, "id": "p1" }),
         ),
         (
-            "x.ai/queue/changed",
+            "ezer/queue/changed",
             serde_json::json!({
                 "sessionId": session_id,
                 "entries": [{
@@ -6287,31 +6287,31 @@ async fn ext_notification_queue_rejects_unknown_method_missing_id_and_unknown_se
             }),
         ),
         (
-            "x.ai/queue/hold_edit",
+            "ezer/queue/hold_edit",
             serde_json::json!({ "sessionId": session_id }),
         ),
         (
-            "x.ai/queue/release_edit",
+            "ezer/queue/release_edit",
             serde_json::json!({ "sessionId": session_id }),
         ),
         (
-            "x.ai/queue/remove",
+            "ezer/queue/remove",
             serde_json::json!({ "sessionId": session_id }),
         ),
         (
-            "x.ai/queue/edit",
+            "ezer/queue/edit",
             serde_json::json!({ "sessionId": session_id, "newText": "x" }),
         ),
         (
-            "x.ai/queue/edit",
+            "ezer/queue/edit",
             serde_json::json!({ "sessionId": session_id, "id": "p-edit" }),
         ),
         (
-            "x.ai/queue/interject",
+            "ezer/queue/interject",
             serde_json::json!({ "sessionId": session_id }),
         ),
         (
-            "x.ai/queue/hold_edit",
+            "ezer/queue/hold_edit",
             serde_json::json!({ "sessionId": "no-such-session", "id": "p1" }),
         ),
     ];
@@ -6337,7 +6337,7 @@ async fn ext_notification_queue_rejects_unknown_method_missing_id_and_unknown_se
     .expect("serialize");
     agent_empty
         .ext_notification(acp::ExtNotification::new(
-            "x.ai/queue/release_edit",
+            "ezer/queue/release_edit",
             params_json.into(),
         ))
         .await
@@ -6360,7 +6360,7 @@ async fn ext_notification_queue_edit_survives_dropped_actor_mailbox() {
     let params_json = serde_json::value::to_raw_value(&params).expect("serialize queue params");
     agent
         .ext_notification(acp::ExtNotification::new(
-            "x.ai/queue/hold_edit",
+            "ezer/queue/hold_edit",
             params_json.into(),
         ))
         .await
@@ -6649,7 +6649,7 @@ fn disconnect_keeps_the_workflow_session_and_evicts_the_idle_one() {
         );
     });
 }
-/// Mixed batch in a *single* `x.ai/internal/evict_sessions` notification, the realistic disconnect shape.
+/// Mixed batch in a *single* `ezer/internal/evict_sessions` notification, the realistic disconnect shape.
 /// This is the path that exercises `handle_evict_sessions`' `join_all` two-pass (concurrent `IsBusy` checks, then sequential act).
 /// One session's actor reports busy (kept resident, `Working`, no `Shutdown`); the other is idle (unloaded, `Dormant`, `Shutdown` sent). Each must get its own outcome with no cross-contamination between the concurrent check pass and the sequential act pass.
 #[test]
@@ -6736,7 +6736,7 @@ fn session_live_state_map_is_bounded_across_cycles() {
         );
     });
 }
-/// Finalize fires on a genuine terminal close, driven through the real `x.ai/session/close` dispatch rather than the internal helper.
+/// Finalize fires on a genuine terminal close, driven through the real `ezer/session/close` dispatch rather than the internal helper.
 #[test]
 fn explicit_close_finalizes_the_replica() {
     run_local_for_bridge_test(|| async {
@@ -6869,7 +6869,7 @@ fn supervisor_reaps_panicked_resident_actor() {
 #[serial_test::serial]
 async fn storage_mode_self_corrects_to_writeback_when_settings_arrive() {
     let _env = crate::env::EnvVarGuard::remove("EZER_STORAGE_MODE");
-    let auth = ezer_login::GrokAuth {
+    let auth = ezer_login::EzerAuth {
         auth_mode: ezer_login::AuthMode::Oidc,
         oidc_issuer: Some("https://auth.x.ai".to_string()),
         key: "test-token".to_string(),
@@ -6938,7 +6938,7 @@ fn post_auth_settings_not_coalesced_by_in_flight_reapply() {
         let agent = build_minimal_agent_for_tests();
         agent.spawn_settings_reapply();
         assert!(agent.settings_reapply_in_flight.get());
-        agent.spawn_post_auth_settings(ezer_login::GrokAuth::test_default());
+        agent.spawn_post_auth_settings(ezer_login::EzerAuth::test_default());
         assert_eq!(
             agent.post_auth_settings_spawn_count.get(),
             1,
@@ -6949,7 +6949,7 @@ fn post_auth_settings_not_coalesced_by_in_flight_reapply() {
 }
 /// The tier re-check work is single-flight across every caller: back-to-back gated initializes run at most one live check.
 /// An awaited authenticate-path check skips (rather than doubles or waits out) a check already wedged on a stalled subscription endpoint. Drives the exact block `initialize` runs when `tier_allowed` is false.
-/// The full `initialize` fires once-per-process GROK_HOME cleanup work that a unit test must not run against the developer's real home.
+/// The full `initialize` fires once-per-process EZER_HOME cleanup work that a unit test must not run against the developer's real home.
 #[test]
 fn gated_reconnect_tier_recheck_is_single_flight() {
     run_local_for_bridge_test(|| async {
@@ -6979,13 +6979,13 @@ fn gated_reconnect_tier_recheck_is_single_flight() {
             allow_access: Some(false),
             ..Default::default()
         });
-        let auth = ezer_login::GrokAuth {
+        let auth = ezer_login::EzerAuth {
             key: "gated-user-key".into(),
             user_id: "user-gated".into(),
             auth_mode: ezer_login::AuthMode::Oidc,
             oidc_issuer: Some(ezer_login::XAI_OAUTH2_ISSUER.to_owned()),
             expires_at: Some(chrono::Utc::now() + chrono::Duration::hours(1)),
-            ..ezer_login::GrokAuth::test_default()
+            ..ezer_login::EzerAuth::test_default()
         };
         agent.auth_manager.hot_swap(auth.clone());
         *agent.allow_access_resolved_for.borrow_mut() = Some(auth.user_id.clone());
@@ -7003,7 +7003,7 @@ fn gated_reconnect_tier_recheck_is_single_flight() {
         );
         tokio::time::timeout(
             std::time::Duration::from_secs(2),
-            agent.enforce_grok_code_access(&auth),
+            agent.enforce_remote_code_access(&auth),
         )
         .await
         .expect("an awaited check must skip, not wait out, the wedged re-check");
@@ -7027,11 +7027,11 @@ fn gated_reconnect_tier_recheck_is_single_flight() {
 fn tier_recheck_identity_guard_accepts_enrichment_canonical_user_id() {
     run_local_for_bridge_test(|| async {
         let agent = build_minimal_agent_for_tests();
-        let auth = ezer_login::GrokAuth {
+        let auth = ezer_login::EzerAuth {
             key: "seeded-key".into(),
             user_id: "canonical-user".into(),
             expires_at: Some(chrono::Utc::now() + chrono::Duration::hours(1)),
-            ..ezer_login::GrokAuth::test_default()
+            ..ezer_login::EzerAuth::test_default()
         };
         agent.auth_manager.hot_swap(auth);
         assert!(!agent.tier_recheck_identity_changed("seeded-user", Some("canonical-user")));
@@ -7072,7 +7072,7 @@ fn gated_reconnect_recheck_lifts_gate_clearing_paywall_flash() {
                         let head = String::from_utf8_lossy(&head);
                         let response = if head.contains("/user?include=subscription") {
                             let body =
-                                r#"{"userId":"user-flash","subscriptionTier":"SuperGrokPro"}"#;
+                                r#"{"userId":"user-flash","subscriptionTier":"MaxTierPro"}"#;
                             format!(
                                 "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\
                                  Content-Length: {}\r\nConnection: close\r\n\r\n{body}",
@@ -7095,7 +7095,7 @@ fn gated_reconnect_recheck_lifts_gate_clearing_paywall_flash() {
         let temp_dir = tempfile::tempdir().unwrap();
         let auth_manager = std::sync::Arc::new(ezer_login::AuthManager::new(
             temp_dir.path(),
-            ezer_login::GrokComConfig::default(),
+            ezer_login::EzerComConfig::default(),
         ));
         let (tx, _rx) = tokio::sync::mpsc::unbounded_channel();
         let gateway = GatewaySender::new(tx);
@@ -7104,13 +7104,13 @@ fn gated_reconnect_recheck_lifts_gate_clearing_paywall_flash() {
             MvpAgent::new(gateway, &cfg, auth_manager, None, None).expect("valid test config");
         agent.cfg.borrow_mut().endpoints.cli_chat_proxy_base_url =
             Some(format!("http://{addr}/v1"));
-        let auth = ezer_login::GrokAuth {
+        let auth = ezer_login::EzerAuth {
             key: jwt_with_tier(5),
             user_id: "user-flash".into(),
             auth_mode: ezer_login::AuthMode::Oidc,
             oidc_issuer: Some(ezer_login::XAI_OAUTH2_ISSUER.to_owned()),
             expires_at: Some(chrono::Utc::now() + chrono::Duration::hours(1)),
-            ..ezer_login::GrokAuth::test_default()
+            ..ezer_login::EzerAuth::test_default()
         };
         agent.auth_manager.hot_swap(auth);
         agent.tier_allowed.set(false);
@@ -7135,7 +7135,7 @@ fn gated_reconnect_recheck_lifts_gate_clearing_paywall_flash() {
 }
 /// Agent with pre-loaded auth, a gateway receiver (to assert emitted notifications), and the proxy URL pointed at a mock `/v1/settings`.
 fn build_agent_with_auth_and_proxy(
-    auth: ezer_login::GrokAuth,
+    auth: ezer_login::EzerAuth,
     proxy_url: String,
     mode: crate::agent::config::AgentMode,
 ) -> (
@@ -7143,10 +7143,10 @@ fn build_agent_with_auth_and_proxy(
     tokio::sync::mpsc::UnboundedReceiver<xai_acp_lib::AcpClientMessage>,
 ) {
     use crate::agent::config::Config as AgentConfig;
-    use ezer_login::{AuthManager, GrokComConfig};
+    use ezer_login::{AuthManager, EzerComConfig};
     let temp_dir = tempfile::tempdir().unwrap();
     let auth_manager =
-        std::sync::Arc::new(AuthManager::new(temp_dir.path(), GrokComConfig::default()));
+        std::sync::Arc::new(AuthManager::new(temp_dir.path(), EzerComConfig::default()));
     auth_manager.hot_swap(auth);
     let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
     let gateway = GatewaySender::new(tx);
@@ -7158,14 +7158,14 @@ fn build_agent_with_auth_and_proxy(
     let agent = MvpAgent::new(gateway, &cfg, auth_manager, None, None).expect("valid test config");
     (agent, rx)
 }
-/// Drain the gateway, returning `true` if any `x.ai/settings/update` notification was emitted (and acking each so the sender doesn't warn).
+/// Drain the gateway, returning `true` if any `ezer/settings/update` notification was emitted (and acking each so the sender doesn't warn).
 fn drained_settings_update(
     rx: &mut tokio::sync::mpsc::UnboundedReceiver<xai_acp_lib::AcpClientMessage>,
 ) -> bool {
     let mut found = false;
     while let Ok(msg) = rx.try_recv() {
         if let xai_acp_lib::AcpClientMessage::ExtNotification(args) = msg {
-            if &*args.request.method == "x.ai/settings/update" {
+            if &*args.request.method == "ezer/settings/update" {
                 found = true;
             }
             let _ = args.response_tx.send(Ok(()));
@@ -7185,11 +7185,11 @@ impl Drop for RestoreOtelGate {
 #[tokio::test]
 async fn access_gate_does_not_leak_verdict_across_identities() {
     use crate::agent::config::AgentMode;
-    use ezer_login::{GrokAuth, XAI_OAUTH2_ISSUER};
-    let auth_a = GrokAuth {
+    use ezer_login::{EzerAuth, XAI_OAUTH2_ISSUER};
+    let auth_a = EzerAuth {
         oidc_issuer: Some(XAI_OAUTH2_ISSUER.to_string()),
         user_id: "user-a".into(),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     let (agent, _rx) = build_agent_with_auth_and_proxy(
         auth_a,
@@ -7204,25 +7204,25 @@ async fn access_gate_does_not_leak_verdict_across_identities() {
         });
     }
     *agent.allow_access_resolved_for.borrow_mut() = Some("user-a".to_string());
-    let auth_b = GrokAuth {
+    let auth_b = EzerAuth {
         oidc_issuer: Some(XAI_OAUTH2_ISSUER.to_string()),
         user_id: "user-b".into(),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     assert!(auth_b.is_xai_auth(), "precondition: first-party xAI auth");
-    agent.enforce_grok_code_access(&auth_b).await;
+    agent.enforce_remote_code_access(&auth_b).await;
     assert!(
         agent.tier_allowed.get(),
         "identity B must not inherit identity A's denied allow_access verdict",
     );
 }
 /// First-party xAI auth with `writeback_enabled` settings upgrades storage to Writeback.
-/// The settings arrival also emits `x.ai/settings/update` and opens the external-OTEL gate.
+/// The settings arrival also emits `ezer/settings/update` and opens the external-OTEL gate.
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 #[serial_test::serial]
 async fn post_auth_settings_xai_upgrades_writeback_emits_and_opens_gate() {
     use crate::agent::config::AgentMode;
-    use ezer_login::{GrokAuth, XAI_OAUTH2_ISSUER};
+    use ezer_login::{EzerAuth, XAI_OAUTH2_ISSUER};
     let _restore = RestoreOtelGate;
     let _storage_env = crate::env::EnvVarGuard::remove("EZER_STORAGE_MODE");
     let server = ezer_test_support::MockInferenceServer::start()
@@ -7232,9 +7232,9 @@ async fn post_auth_settings_xai_upgrades_writeback_emits_and_opens_gate() {
         "writeback_enabled": true,
         "allow_access": true,
     }));
-    let xai_auth = GrokAuth {
+    let xai_auth = EzerAuth {
         oidc_issuer: Some(XAI_OAUTH2_ISSUER.to_string()),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     assert!(xai_auth.is_xai_auth(), "precondition: first-party xAI auth");
     let (agent, mut rx) =
@@ -7258,7 +7258,7 @@ async fn post_auth_settings_xai_upgrades_writeback_emits_and_opens_gate() {
     );
     assert!(
         drained_settings_update(&mut rx),
-        "settings arrival must push x.ai/settings/update to clients"
+        "settings arrival must push ezer/settings/update to clients"
     );
 }
 /// BYOK auth must not be upgraded to `Writeback` even when the server advertises it; the push and gate still fire.
@@ -7266,7 +7266,7 @@ async fn post_auth_settings_xai_upgrades_writeback_emits_and_opens_gate() {
 #[serial_test::serial]
 async fn post_auth_settings_non_xai_keeps_local_but_still_emits() {
     use crate::agent::config::AgentMode;
-    use ezer_login::{AuthMode, GrokAuth};
+    use ezer_login::{AuthMode, EzerAuth};
     let _restore = RestoreOtelGate;
     let server = ezer_test_support::MockInferenceServer::start()
         .await
@@ -7275,9 +7275,9 @@ async fn post_auth_settings_non_xai_keeps_local_but_still_emits() {
         "writeback_enabled": true,
         "allow_access": true,
     }));
-    let api_auth = GrokAuth {
+    let api_auth = EzerAuth {
         auth_mode: AuthMode::ApiKey,
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     assert!(
         !api_auth.is_xai_auth(),
@@ -7298,21 +7298,21 @@ async fn post_auth_settings_non_xai_keeps_local_but_still_emits() {
     );
     assert!(
         drained_settings_update(&mut rx),
-        "settings arrival must push x.ai/settings/update for non-xai auth too"
+        "settings arrival must push ezer/settings/update for non-xai auth too"
     );
 }
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 #[serial_test::serial]
 async fn post_auth_settings_failure_resolves_gate_onto_local_policy() {
     use crate::agent::config::AgentMode;
-    use ezer_login::{GrokAuth, XAI_OAUTH2_ISSUER};
+    use ezer_login::{EzerAuth, XAI_OAUTH2_ISSUER};
     let _restore = RestoreOtelGate;
     let server = ezer_test_support::MockInferenceServer::start()
         .await
         .unwrap();
-    let xai_auth = GrokAuth {
+    let xai_auth = EzerAuth {
         oidc_issuer: Some(XAI_OAUTH2_ISSUER.to_string()),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     let (agent, _rx) = build_agent_with_auth_and_proxy(xai_auth, server.url(), AgentMode::Leader);
     ezer_telemetry::external::suppress_external_otel_until_settings();
@@ -7334,14 +7334,14 @@ async fn post_auth_settings_failure_resolves_gate_onto_local_policy() {
 #[serial_test::serial]
 async fn same_credential_refresh_does_not_flap_resolved_gate() {
     use crate::agent::config::AgentMode;
-    use ezer_login::{GrokAuth, XAI_OAUTH2_ISSUER};
+    use ezer_login::{EzerAuth, XAI_OAUTH2_ISSUER};
     let _restore = RestoreOtelGate;
     let server = ezer_test_support::MockInferenceServer::start()
         .await
         .unwrap();
-    let xai_auth = GrokAuth {
+    let xai_auth = EzerAuth {
         oidc_issuer: Some(XAI_OAUTH2_ISSUER.to_string()),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     let (agent, _rx) =
         build_agent_with_auth_and_proxy(xai_auth.clone(), server.url(), AgentMode::Leader);
@@ -7361,7 +7361,7 @@ async fn same_credential_refresh_does_not_flap_resolved_gate() {
 async fn settings_self_heal_refetches_after_token_rotation() {
     use crate::agent::config::AgentMode;
     use ezer_login::refresh::{RefreshOutcome, TokenRefresher};
-    use ezer_login::{GrokAuth, XAI_OAUTH2_ISSUER};
+    use ezer_login::{EzerAuth, XAI_OAUTH2_ISSUER};
     let _restore = RestoreOtelGate;
     let server = ezer_test_support::MockInferenceServer::start_with_required_auth(
         vec![ezer_test_support::MockModelEntry::new("ezer-build")],
@@ -7374,21 +7374,21 @@ async fn settings_self_heal_refetches_after_token_rotation() {
     #[async_trait::async_trait]
     impl TokenRefresher for RotatingRefresher {
         async fn refresh(&self, _r: ezer_login::manager::RefreshReason) -> RefreshOutcome {
-            RefreshOutcome::Success(Box::new(GrokAuth {
+            RefreshOutcome::Success(Box::new(EzerAuth {
                 key: "rotated-key".into(),
                 oidc_issuer: Some(XAI_OAUTH2_ISSUER.to_string()),
                 refresh_token: Some("rt".into()),
                 expires_at: Some(chrono::Utc::now() + chrono::Duration::hours(1)),
-                ..GrokAuth::test_default()
+                ..EzerAuth::test_default()
             }))
         }
     }
-    let stale = GrokAuth {
+    let stale = EzerAuth {
         key: "stale-key".into(),
         oidc_issuer: Some(XAI_OAUTH2_ISSUER.to_string()),
         refresh_token: Some("rt".into()),
         expires_at: Some(chrono::Utc::now() - chrono::Duration::hours(1)),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     let (agent, _rx) =
         build_agent_with_auth_and_proxy(stale.clone(), server.url(), AgentMode::Leader);
@@ -7411,15 +7411,15 @@ async fn settings_self_heal_refetches_after_token_rotation() {
 #[serial_test::serial]
 async fn settings_not_cached_when_identity_logs_out_during_fetch() {
     use crate::agent::config::AgentMode;
-    use ezer_login::{GrokAuth, XAI_OAUTH2_ISSUER};
+    use ezer_login::{EzerAuth, XAI_OAUTH2_ISSUER};
     let _restore = RestoreOtelGate;
     let server = ezer_test_support::MockInferenceServer::start()
         .await
         .unwrap();
     server.set_settings(serde_json::json!({ "allow_access": true }));
-    let xai_auth = GrokAuth {
+    let xai_auth = EzerAuth {
         oidc_issuer: Some(XAI_OAUTH2_ISSUER.to_string()),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     let (agent, _rx) =
         build_agent_with_auth_and_proxy(xai_auth.clone(), server.url(), AgentMode::Leader);
@@ -7478,16 +7478,16 @@ fn reload_after_terminal_removal_starts_clean() {
     });
 }
 /// Build an agent whose gateway is wired to a live receiver.
-/// A test can observe (and answer) agent-to-client reverse-requests like the dormant `x.ai/folder_trust/request` round-trip.
+/// A test can observe (and answer) agent-to-client reverse-requests like the dormant `ezer/folder_trust/request` round-trip.
 fn build_agent_with_gateway_rx() -> (
     MvpAgent,
     tokio::sync::mpsc::UnboundedReceiver<xai_acp_lib::AcpClientMessage>,
 ) {
     use crate::agent::config::Config as AgentConfig;
-    use ezer_login::{AuthManager, GrokComConfig};
+    use ezer_login::{AuthManager, EzerComConfig};
     let temp_dir = tempfile::tempdir().unwrap();
     let auth_manager =
-        std::sync::Arc::new(AuthManager::new(temp_dir.path(), GrokComConfig::default()));
+        std::sync::Arc::new(AuthManager::new(temp_dir.path(), EzerComConfig::default()));
     let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
     let gateway = GatewaySender::new(tx);
     let cfg = AgentConfig::default();
@@ -7507,8 +7507,8 @@ fn repo_with_project_mcp_server() -> tempfile::TempDir {
     tmp
 }
 fn write_project_subagent_definitions(cwd: &std::path::Path) {
-    let roles = cwd.join(".grok/roles");
-    let personas = cwd.join(".grok/personas");
+    let roles = cwd.join(".ezer/roles");
+    let personas = cwd.join(".ezer/personas");
     std::fs::create_dir_all(&roles).unwrap();
     std::fs::create_dir_all(&personas).unwrap();
     std::fs::write(roles.join("probe.toml"), "description = \"Project role\"").unwrap();
@@ -7593,7 +7593,7 @@ fn subagent_spawn_context_reloads_project_definitions_after_trust_changes() {
 fn project_roles_personas_gated_via_resolve_and_record_chain() {
     use ezer_test_support::EnvGuard;
     let home = tempfile::tempdir().unwrap();
-    let _env = EnvGuard::set("GROK_HOME", home.path());
+    let _env = EnvGuard::set("EZER_HOME", home.path());
     let _sim = EnvGuard::set(ezer_version::TEST_VERSION_ENV, "0.0-sim");
     let _flag = EnvGuard::unset("EZER_FOLDER_TRUST");
     let repo = tempfile::tempdir().unwrap();
@@ -7648,7 +7648,7 @@ fn project_roles_personas_gated_via_resolve_and_record_chain() {
         );
     });
 }
-/// Pull the next `x.ai/folder_trust/request` reverse-request off the gateway and answer it with `outcome`.
+/// Pull the next `ezer/folder_trust/request` reverse-request off the gateway and answer it with `outcome`.
 /// Returns the request's decoded params.
 async fn answer_folder_trust_request(
     gw_rx: &mut tokio::sync::mpsc::UnboundedReceiver<xai_acp_lib::AcpClientMessage>,
@@ -7661,7 +7661,7 @@ async fn answer_folder_trust_request(
     let xai_acp_lib::AcpClientMessage::ExtMethod(args) = msg else {
         panic!("expected an ext_method reverse-request, got a different message");
     };
-    assert_eq!(args.request.method.as_ref(), "x.ai/folder_trust/request");
+    assert_eq!(args.request.method.as_ref(), "ezer/folder_trust/request");
     let params: serde_json::Value = serde_json::from_str(args.request.params.get()).unwrap();
     let resp: acp::ExtResponse = acp::ExtResponse::new(std::sync::Arc::from(
         serde_json::value::to_raw_value(&serde_json::json!({ "outcome": outcome })).unwrap(),
@@ -7675,7 +7675,7 @@ fn interactive_trust_prompt_grant_reloads_project_mcp() {
     use ezer_test_support::EnvGuard;
     use ezer_workspace::trust::{TrustStore, workspace_key};
     let home = tempfile::tempdir().unwrap();
-    let _env = EnvGuard::set("GROK_HOME", home.path());
+    let _env = EnvGuard::set("EZER_HOME", home.path());
     let _sim = EnvGuard::set(ezer_version::TEST_VERSION_ENV, "0.0-sim");
     let _flag = EnvGuard::unset("EZER_FOLDER_TRUST");
     let repo = repo_with_project_mcp_server();
@@ -7756,7 +7756,7 @@ fn interactive_trust_prompt_reject_keeps_gated() {
     use ezer_test_support::EnvGuard;
     use ezer_workspace::trust::{TrustStore, workspace_key};
     let home = tempfile::tempdir().unwrap();
-    let _env = EnvGuard::set("GROK_HOME", home.path());
+    let _env = EnvGuard::set("EZER_HOME", home.path());
     let _sim = EnvGuard::set(ezer_version::TEST_VERSION_ENV, "0.0-sim");
     let _flag = EnvGuard::unset("EZER_FOLDER_TRUST");
     let repo = repo_with_project_mcp_server();
@@ -7793,7 +7793,7 @@ fn interactive_trust_prompt_reject_keeps_gated() {
 fn interactive_trust_prompt_dormant_when_feature_off() {
     use ezer_test_support::EnvGuard;
     let home = tempfile::tempdir().unwrap();
-    let _env = EnvGuard::set("GROK_HOME", home.path());
+    let _env = EnvGuard::set("EZER_HOME", home.path());
     let _sim = EnvGuard::set(ezer_version::TEST_VERSION_ENV, "0.0-sim");
     let _flag = EnvGuard::unset("EZER_FOLDER_TRUST");
     let repo = repo_with_project_mcp_server();
@@ -7823,7 +7823,7 @@ fn interactive_trust_prompt_dormant_when_feature_off() {
 fn interactive_trust_prompt_no_request_without_capability() {
     use ezer_test_support::EnvGuard;
     let home = tempfile::tempdir().unwrap();
-    let _env = EnvGuard::set("GROK_HOME", home.path());
+    let _env = EnvGuard::set("EZER_HOME", home.path());
     let _sim = EnvGuard::set(ezer_version::TEST_VERSION_ENV, "0.0-sim");
     let _flag = EnvGuard::unset("EZER_FOLDER_TRUST");
     let repo = repo_with_project_mcp_server();
@@ -7851,7 +7851,7 @@ fn interactive_trust_prompt_client_error_fails_closed() {
     use ezer_test_support::EnvGuard;
     use ezer_workspace::trust::{TrustStore, workspace_key};
     let home = tempfile::tempdir().unwrap();
-    let _env = EnvGuard::set("GROK_HOME", home.path());
+    let _env = EnvGuard::set("EZER_HOME", home.path());
     let _sim = EnvGuard::set(ezer_version::TEST_VERSION_ENV, "0.0-sim");
     let _flag = EnvGuard::unset("EZER_FOLDER_TRUST");
     let repo = repo_with_project_mcp_server();
@@ -7892,7 +7892,7 @@ fn interactive_trust_prompt_client_error_fails_closed() {
 fn interactive_trust_prompt_dedups_same_workspace() {
     use ezer_test_support::EnvGuard;
     let home = tempfile::tempdir().unwrap();
-    let _env = EnvGuard::set("GROK_HOME", home.path());
+    let _env = EnvGuard::set("EZER_HOME", home.path());
     let _sim = EnvGuard::set(ezer_version::TEST_VERSION_ENV, "0.0-sim");
     let _flag = EnvGuard::unset("EZER_FOLDER_TRUST");
     let repo = repo_with_project_mcp_server();
@@ -7966,7 +7966,7 @@ async fn drain_reload_commands(
 fn interactive_trust_prompt_reloads_all_same_workspace_sessions() {
     use ezer_test_support::EnvGuard;
     let home = tempfile::tempdir().unwrap();
-    let _env = EnvGuard::set("GROK_HOME", home.path());
+    let _env = EnvGuard::set("EZER_HOME", home.path());
     let _sim = EnvGuard::set(ezer_version::TEST_VERSION_ENV, "0.0-sim");
     let _flag = EnvGuard::unset("EZER_FOLDER_TRUST");
     let repo = repo_with_project_mcp_server();
@@ -8028,7 +8028,7 @@ fn interactive_trust_prompt_reprompts_after_untrust() {
     use ezer_test_support::EnvGuard;
     use xai_hooks_plugins_types::HooksAction;
     let home = tempfile::tempdir().unwrap();
-    let _env = EnvGuard::set("GROK_HOME", home.path());
+    let _env = EnvGuard::set("EZER_HOME", home.path());
     let _sim = EnvGuard::set(ezer_version::TEST_VERSION_ENV, "0.0-sim");
     let _flag = EnvGuard::unset("EZER_FOLDER_TRUST");
     let repo = repo_with_project_mcp_server();
@@ -8469,7 +8469,7 @@ async fn polled_settings_apply_skips_when_writer_landed_mid_fetch() {
         "the mid-fetch writer's store must win over the stale poll result"
     );
 }
-/// BYOK: leftover grok.com settings must never emit `x.ai/announcements/update`.
+/// BYOK: leftover ezer.com settings must never emit `ezer/announcements/update`.
 #[tokio::test]
 async fn emit_announcements_gate_never_pushes_xai_announcements() {
     let (agent, mut rx) = build_agent_with_gateway_rx();
@@ -8528,22 +8528,22 @@ mod direct_hub_cloud_removed {
     }
     #[test]
     fn cloud_server_id_meta_is_hard_error() {
-        let meta = serde_json::json!({ "x.ai/cloud_server_id": "srv-123" });
+        let meta = serde_json::json!({ "ezer/cloud_server_id": "srv-123" });
         let err = reject_direct_hub_cloud_meta(meta.as_object()).expect_err("must reject");
         assert_direct_hub_error(err);
     }
     #[test]
     fn cloud_server_id_null_still_present_is_hard_error() {
-        let meta = serde_json::json!({ "x.ai/cloud_server_id": null });
+        let meta = serde_json::json!({ "ezer/cloud_server_id": null });
         let err = reject_direct_hub_cloud_meta(meta.as_object()).expect_err("must reject");
         assert_direct_hub_error(err);
     }
     #[test]
     fn cloud_server_id_with_gateway_meta_still_hard_error() {
         let meta = serde_json::json!({
-            "x.ai/cloud_server_id": "srv-legacy",
+            "ezer/cloud_server_id": "srv-legacy",
             "envId": "env-1",
-            "x.ai/cloud_existing_workspace": {
+            "ezer/cloud_existing_workspace": {
                 "server_id": "ws-1",
                 "cwd": "/workspace"
             }
@@ -8567,7 +8567,7 @@ mod direct_hub_cloud_removed {
         assert!(
             reject_direct_hub_cloud_meta(
                 serde_json::json!({
-                    "x.ai/cloud_existing_workspace": {
+                    "ezer/cloud_existing_workspace": {
                         "server_id": "ws-1",
                         "cwd": "/workspace"
                     }
@@ -8616,14 +8616,14 @@ mod soft_default_settings_emit {
     #[tokio::test]
     async fn emit_settings_update_carries_permission_mode_from_cfg() {
         use crate::agent::config::Config as AgentConfig;
-        use ezer_login::{AuthManager, GrokComConfig};
+        use ezer_login::{AuthManager, EzerComConfig};
         let local = tokio::task::LocalSet::new();
         local
             .run_until(async {
                 let temp_dir = tempfile::tempdir().unwrap();
                 let auth_manager = std::sync::Arc::new(AuthManager::new(
                     temp_dir.path(),
-                    GrokComConfig::default(),
+                    EzerComConfig::default(),
                 ));
                 let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
                 let gateway = GatewaySender::new(tx);
@@ -8647,7 +8647,7 @@ mod soft_default_settings_emit {
                 let xai_acp_lib::AcpClientMessage::ExtNotification(args) = msg else {
                     panic!("expected ExtNotification, got {msg:?}");
                 };
-                assert_eq!(args.request.method.as_ref(), "x.ai/settings/update");
+                assert_eq!(args.request.method.as_ref(), "ezer/settings/update");
                 let params: serde_json::Value =
                     serde_json::from_str(args.request.params.get()).expect("parse params");
                 assert_eq!(

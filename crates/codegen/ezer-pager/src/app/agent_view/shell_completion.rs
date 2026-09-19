@@ -306,7 +306,7 @@ mod shell_suggestion_key_tests {
         );
     }
 
-    // -- always-on Tab fetch (no GROK_SUGGESTIONS) --------------------------
+    // -- always-on Tab fetch (no EZER_SUGGESTIONS) --------------------------
 
     /// Tab in bash mode with no fetched candidates fires a deterministic fetch: no env flag, no AI, and a limit sized for the dropdown.
     #[test]
@@ -468,7 +468,7 @@ mod shell_suggestion_key_tests {
         let mut agent = bash_agent("ls | gr");
         agent.prompt.suggestions.dropdown.items = vec![
             item("grep", None),
-            file_item("ls | grokfile", "grokfile", 5..7),
+            file_item("ls | ezerfile", "ezerfile", 5..7),
         ];
 
         let outcome = agent.handle_prompt_key_for_test(&key(KeyCode::Tab));

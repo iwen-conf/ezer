@@ -157,7 +157,7 @@ impl InstallRegistry {
         let content = serde_json::to_string_pretty(self).map_err(|e| InstallError::Json {
             detail: e.to_string(),
         })?;
-        if std::env::var_os("XAI_GROK_TEST_FAIL_REGISTRY_SAVE_AFTER_SERIALIZE").is_some() {
+        if std::env::var_os("EZER_TEST_FAIL_REGISTRY_SAVE_AFTER_SERIALIZE").is_some() {
             return Err(InstallError::InstallFailed {
                 detail: "test-injected registry save failure".into(),
             });
@@ -245,7 +245,7 @@ impl InstallRegistry {
             return dir;
         }
 
-        ezer_config::grok_home().join(DEFAULT_INSTALL_DIR_NAME)
+        ezer_config::ezer_home().join(DEFAULT_INSTALL_DIR_NAME)
     }
 
     /// Read `[plugins].install_dir` from the effective config (managed_config.toml merged under config.toml; user wins).

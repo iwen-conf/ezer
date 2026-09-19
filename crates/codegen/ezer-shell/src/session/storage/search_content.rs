@@ -141,7 +141,7 @@ pub(super) fn collect_all_indexable_content_single_pass(
             .and_then(|p| p.update);
         let tag = update_peek.as_ref().map(|u| u.session_update);
 
-        // Content events arrive on ACP "session/update"; control events (rewind markers) on the xAI "_x.ai/session/update" extension
+        // Content events arrive on ACP "session/update"; control events (rewind markers) on the xAI "_ezer/session/update" extension
         if !is_xai {
             match tag {
                 Some(t) if t == *USER_MESSAGE_CHUNK => {
@@ -347,7 +347,7 @@ pub(super) fn test_summary(
         head_commit: None,
         head_branch: None,
         request_id: None,
-        grok_home: None,
+        ezer_home: None,
         last_active_at: None,
         generated_title: None,
         title_is_manual: false,

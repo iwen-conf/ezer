@@ -18,7 +18,7 @@ fn session_less_modal(tab: UsageInfoTab) -> Box<UsageInfoModalState> {
             usage_visible: true,
             chat_kind: false,
             billing_redirect_url: None,
-            subscription_tier: Some("SuperGrok".to_string()),
+            subscription_tier: Some("MaxTier".to_string()),
         },
     ))
 }
@@ -167,7 +167,7 @@ fn usage_modal_renders_allowance_from_app_balance() {
 
     let content = render_with_modal(&mut state, area, Some(&balance));
     assert!(content.contains("Usage limit"), "{content}");
-    assert!(content.contains("(SuperGrok)"), "{content}");
+    assert!(content.contains("(MaxTier)"), "{content}");
     assert!(content.contains("42%"), "{content}");
     assert!(content.contains("Resets: May 29, 00:00"), "{content}");
     assert!(

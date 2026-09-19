@@ -18,7 +18,7 @@ use ezer_telemetry::external::{self, ExternalOtelRemotePolicy, IdentityAttrs};
 use ezer_test_support::{MockOtelServer, OtelMetricData, OtelSignal, OtelTemporality};
 
 const SECRET_KEY: &str = "sk-LEAKaaaaaaaaaaaaaaaa1234567890";
-const SECRET_MODEL: &str = "grok-4-sk-LEAKmodel1234567890abcd";
+const SECRET_MODEL: &str = "test-model-4-sk-LEAKmodel1234567890abcd";
 const PROMPT_MARK: &str = "promptbodymarker";
 const PARAM_MARK: &str = "parammarker";
 const LONG_CMD_MARK: &str = "longcmdmarker";
@@ -73,7 +73,7 @@ async fn external_stream_gates_on_end_to_end() {
     ezer_telemetry::log_event(ezer_telemetry::events::SessionHarness {
         session_id: "sess-gates-on".into(),
         client_identifier: Some("ezer".into()),
-        model_id: "grok-4".into(),
+        model_id: "test-model-4".into(),
         agent_name: "ezer-build-plan".into(),
         permission_mode: ezer_telemetry::enums::PermissionMode::Ask,
         mcp_server_names: vec!["internal-mcp".into()],
@@ -89,7 +89,7 @@ async fn external_stream_gates_on_end_to_end() {
     });
     ezer_telemetry::log_event(ezer_telemetry::events::PromptSubmitted {
         prompt_length: 100,
-        model_id: "grok-4".into(),
+        model_id: "test-model-4".into(),
         client_identifier: None,
         screen_mode: None,
         prompt_text: Some(format!("refactor {PROMPT_MARK} with key {SECRET_KEY} now")),
@@ -467,7 +467,7 @@ async fn external_stream_gates_on_end_to_end() {
         async {
             ezer_telemetry::log_event(ezer_telemetry::events::PromptSubmitted {
                 prompt_length: 1,
-                model_id: "grok-4".into(),
+                model_id: "test-model-4".into(),
                 client_identifier: None,
                 screen_mode: None,
                 prompt_text: Some("post-kill".into()),

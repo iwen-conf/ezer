@@ -343,7 +343,7 @@ mod max_mcp_output_bytes_tests {
         std::fs::write(sub.join(".ezer/config.toml"), "[ui]\nvim_mode = true\n").unwrap();
         assert_eq!(super::project_max_mcp_output_bytes(&sub), Some(30_000));
 
-        // No .grok file sets the key anywhere, so the walk returns None
+        // No .ezer file sets the key anywhere, so the walk returns None
         std::fs::remove_file(root.join(".ezer/config.toml")).unwrap();
         assert_eq!(super::project_max_mcp_output_bytes(&sub), None);
     }

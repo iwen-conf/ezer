@@ -77,7 +77,7 @@ pub struct LoadedPlugin {
 impl LoadedPlugin {
     /// Data directory for this plugin: `~/.ezer/plugin-data/<plugin_id>/`.
     pub fn data_dir(&self) -> PathBuf {
-        ezer_config::grok_home()
+        ezer_config::ezer_home()
             .join("plugin-data")
             .join(&self.id.0)
     }
@@ -604,8 +604,8 @@ mod tests {
             scope,
             origin: match scope {
                 PluginScope::CliOverride => PluginOrigin::CliOverride,
-                PluginScope::Project => PluginOrigin::ProjectGrok,
-                PluginScope::User => PluginOrigin::UserGrok,
+                PluginScope::Project => PluginOrigin::ProjectEzer,
+                PluginScope::User => PluginOrigin::UserEzer,
                 PluginScope::ConfigPath => PluginOrigin::ConfigPath,
             },
             trusted,
@@ -839,7 +839,7 @@ mod tests {
         let reg = PluginRegistry::from_discovered(vec![dp], &[], &[]);
         let plugin = reg.get("my-plugin").unwrap();
         let data_dir = plugin.data_dir();
-        // Should be under ~/.grok/plugin-data/<plugin_id>/
+        // Should be under ~/.ezer/plugin-data/<plugin_id>/
         let data_dir_str = data_dir.to_string_lossy();
         assert!(data_dir_str.contains("plugin-data"));
         assert!(data_dir_str.contains("user/"));

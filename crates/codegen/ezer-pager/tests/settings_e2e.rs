@@ -4024,11 +4024,11 @@ fn pr14_default_model_picker_commits_resolved_model_id() {
         available_models: vec![
             (
                 "ezer 4.5".to_string(),
-                agent_client_protocol::ModelId::new(std::sync::Arc::from("grok-4.5")),
+                agent_client_protocol::ModelId::new(std::sync::Arc::from("test-model-4.5")),
             ),
             (
                 "ezer 3".to_string(),
-                agent_client_protocol::ModelId::new(std::sync::Arc::from("grok-3")),
+                agent_client_protocol::ModelId::new(std::sync::Arc::from("test-model-3")),
             ),
         ],
         ..PagerLocalSnapshot::default()
@@ -4062,7 +4062,7 @@ fn pr14_default_model_picker_commits_resolved_model_id() {
         SettingsKeyOutcome::Action(Action::SetDefaultModel(id)) => {
             assert_eq!(
                 id.0.as_ref(),
-                "grok-4.5",
+                "test-model-4.5",
                 "committed id must match snapshot"
             );
         }
@@ -4080,7 +4080,7 @@ fn pr14_default_model_picker_row_zero_commits_clear_action() {
     let snapshot = PagerLocalSnapshot {
         available_models: vec![(
             "ezer 3".to_string(),
-            agent_client_protocol::ModelId::new(std::sync::Arc::from("grok-3")),
+            agent_client_protocol::ModelId::new(std::sync::Arc::from("test-model-3")),
         )],
         ..PagerLocalSnapshot::default()
     };
@@ -4116,7 +4116,7 @@ fn pr14_mouse_click_on_dynamic_enum_row_opens_picker() {
     let snapshot = PagerLocalSnapshot {
         available_models: vec![(
             "ezer 3".to_string(),
-            agent_client_protocol::ModelId::new(std::sync::Arc::from("grok-3")),
+            agent_client_protocol::ModelId::new(std::sync::Arc::from("test-model-3")),
         )],
         ..PagerLocalSnapshot::default()
     };

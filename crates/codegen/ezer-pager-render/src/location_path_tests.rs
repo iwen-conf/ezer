@@ -1,7 +1,7 @@
 use super::*;
 
 #[test]
-fn shorten_location_path_kerem_grok_home() {
+fn shorten_location_path_kerem_ezer_home() {
     assert_eq!(
         shorten_location_path("~/.ezer/worktrees/code-xai/dashboard-design").as_ref(),
         "~/.e/w/code-xai/dashboard-design"
@@ -150,7 +150,7 @@ fn shorten_location_path_unix_backslash_stays_in_component() {
 }
 
 #[test]
-fn shorten_location_path_does_not_eat_grok_home_lookalike() {
+fn shorten_location_path_does_not_eat_ezer_home_lookalike() {
     assert_eq!(
         shorten_location_path("$EZER_HOME_BACKUP/a/b/c").as_ref(),
         "$/a/b/c"

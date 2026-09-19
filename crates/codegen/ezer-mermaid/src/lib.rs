@@ -54,10 +54,10 @@ use std::sync::Arc;
 /// Mapped from the pager's theme by the caller; only the light/dark split is relevant to diagram rendering.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum MermaidTheme {
-    /// Light surfaces with dark text (e.g. `GrokDay`).
+    /// Light surfaces with dark text (e.g. `EzerDay`).
     #[default]
     Light,
-    /// Dark surfaces with light text (e.g. `GrokNight`, `TokyoNight`).
+    /// Dark surfaces with light text (e.g. `EzerNight`, `TokyoNight`).
     Dark,
 }
 

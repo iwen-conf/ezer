@@ -15,7 +15,7 @@ use crate::deny::{
     apply_write_deny_paths_to_capability_set, effective_deny_paths, partition_deny_entries,
 };
 use crate::hook_write_deny::profile_hook_write_deny;
-use crate::paths::grok_home;
+use crate::paths::ezer_home;
 #[cfg(all(feature = "enforce", unix))]
 use crate::paths::{DEVICE_DIRS, DEVICE_FILES};
 use crate::paths::{
@@ -117,13 +117,13 @@ impl std::str::FromStr for ProfileName {
 pub fn load_sandbox_config(workspace: &Path) -> SandboxConfig {
     let mut config = SandboxConfig::default();
 
-    // Global config: ~/.grok/sandbox.toml
-    let global_path = grok_home().join(SANDBOX_CONFIG_FILENAME);
+    // Global config: ~/.ezer/sandbox.toml
+    let global_path = ezer_home().join(SANDBOX_CONFIG_FILENAME);
     if let Some(global) = load_config_file(&global_path) {
         config = global;
     }
 
-    // Project config: <workspace>/.grok/sandbox.toml (additive only)
+    // Project config: <workspace>/.ezer/sandbox.toml (additive only)
     let project_path = workspace.join(".ezer").join(SANDBOX_CONFIG_FILENAME);
     if let Some(project) = load_config_file(&project_path) {
         merge_project_profiles(&mut config, project);
@@ -133,7 +133,7 @@ pub fn load_sandbox_config(workspace: &Path) -> SandboxConfig {
 }
 
 pub fn sandbox_profile_conflicts(workspace: &Path) -> Vec<String> {
-    let global = load_config_file(&grok_home().join(SANDBOX_CONFIG_FILENAME)).unwrap_or_default();
+    let global = load_config_file(&ezer_home().join(SANDBOX_CONFIG_FILENAME)).unwrap_or_default();
     let project = load_config_file(&workspace.join(".ezer").join(SANDBOX_CONFIG_FILENAME))
         .unwrap_or_default();
     mismatched_profile_names(&global, &project)
@@ -277,9 +277,9 @@ impl ProfileName {
         }
 
         // Read-write paths. nono/Landlock need the path to exist at apply time (it opens an O_PATH fd), but new files within a
-        // granted directory can be created freely after the sandbox is applied. Symlink children of grok_home fail closed unless
-        // the canonical dir is this home's same-named child or default ~/.grok/sessions.
-        let home = grok_home();
+        // granted directory can be created freely after the sandbox is applied. Symlink children of ezer_home fail closed unless
+        // the canonical dir is this home's same-named child or default ~/.ezer/sessions.
+        let home = ezer_home();
         for path in &profile.read_write {
             let Some(grant) = Self::read_write_grant_path(path, &home) else {
                 tracing::warn!(path = ?path, "skipping read_write grant");
@@ -482,9 +482,9 @@ impl ProfileName {
                 .filter(|p| p.exists())
                 .chain(std::iter::once(workspace.to_path_buf()))
                 // Read-only: AuthManager/config/hooks need the parent
-                // Landlock cannot carve children out of a write grant, so grok_home itself stays off read_write
+                // Landlock cannot carve children out of a write grant, so ezer_home itself stays off read_write
                 // Only sessions/ is writable; events JSONL lives there
-                .chain(std::iter::once(grok_home()))
+                .chain(std::iter::once(ezer_home()))
                 .collect();
 
                 Ok(SandboxProfile {
@@ -689,12 +689,12 @@ mod tests {
     }
 
     #[test]
-    fn strict_reads_grok_home_but_only_sessions_writable() {
+    fn strict_reads_ezer_home_but_only_sessions_writable() {
         if skip_if_host_hook_write_deny_unresolvable() {
             return;
         }
         let workspace = std::env::temp_dir();
-        let home = grok_home();
+        let home = ezer_home();
         let sessions = home.join("sessions");
 
         let cases = [
@@ -712,7 +712,7 @@ mod tests {
             let profile = resolved.unwrap_or_else(|e| panic!("{label} resolves: {e}"));
             assert!(
                 profile.read_only.iter().any(|p| p == &home),
-                "{label} read_only must include grok_home: {:?}",
+                "{label} read_only must include ezer_home: {:?}",
                 profile.read_only
             );
             // Post-apply hook write-deny opens hooks-paths and lists hooks at startup.
@@ -728,7 +728,7 @@ mod tests {
             }
             assert!(
                 !profile.read_write.iter().any(|p| p == &home),
-                "{label} read_write must not include grok_home itself: {:?}",
+                "{label} read_write must not include ezer_home itself: {:?}",
                 profile.read_write
             );
             let events = crate::paths::sandbox_events_log_path();
@@ -739,7 +739,7 @@ mod tests {
                 }
                 assert!(
                     p.starts_with(&sessions),
-                    "{label} read_write path under grok_home must be under sessions/: {p:?}"
+                    "{label} read_write path under ezer_home must be under sessions/: {p:?}"
                 );
             }
             assert!(
@@ -751,20 +751,20 @@ mod tests {
     }
 
     #[test]
-    fn workspace_and_read_only_still_include_grok_home() {
+    fn workspace_and_read_only_still_include_ezer_home() {
         if skip_if_host_hook_write_deny_unresolvable() {
             return;
         }
         let workspace = std::env::temp_dir();
         let config = SandboxConfig::default();
-        let home = grok_home();
+        let home = ezer_home();
         for name in [ProfileName::Workspace, ProfileName::ReadOnly] {
             let profile = name
                 .resolve_profile(&workspace, &config)
                 .unwrap_or_else(|e| panic!("{name} resolves: {e}"));
             assert!(
                 profile.read_write.iter().any(|p| p == &home),
-                "{name} read_write must include grok_home: {:?}",
+                "{name} read_write must include ezer_home: {:?}",
                 profile.read_write
             );
         }

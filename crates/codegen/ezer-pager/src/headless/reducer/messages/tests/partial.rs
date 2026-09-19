@@ -178,7 +178,7 @@ fn messages_partial_response_started_emits_real_id_and_input_usage() {
     let mut out = Vec::new();
     out.extend(r.reduce(StreamEvent::ResponseStarted {
         message_id: Some("msg_real".into()),
-        model: Some("grok-4".into()),
+        model: Some("test-model-4".into()),
         input_tokens: 42,
         cache_read_input_tokens: 100,
         cache_creation_input_tokens: 20,
@@ -361,7 +361,7 @@ fn messages_partial_message_start_ids_are_unique() {
 fn messages_partial_signature_only_thinking_block_emits_framing() {
     let mut r = messages(true);
     let mut out = Vec::new();
-    out.extend(r.reduce(response_started("msg_a", Some("grok-4"), 5)));
+    out.extend(r.reduce(response_started("msg_a", Some("test-model-4"), 5)));
     out.extend(r.reduce(StreamEvent::ReasoningCompleted {
         signature: Some("sig-only".into()),
     }));
@@ -438,7 +438,7 @@ fn messages_partial_per_block_signature_deltas() {
 #[test]
 fn messages_partial_empty_response_still_frames_message() {
     let mut r = messages(true);
-    r.reduce(response_started("msg_empty", Some("grok-4"), 5));
+    r.reduce(response_started("msg_empty", Some("test-model-4"), 5));
     r.reduce(StreamEvent::ResponseCompleted {
         message_id: Some("msg_empty".into()),
         stop_reason: Some("end_turn".into()),

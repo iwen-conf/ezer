@@ -202,7 +202,7 @@ impl OidcAuthProvider {
         // A common-layer crate cannot use the codegen TLS policy crate; build
         // fallibly so a broken OS certificate store surfaces as Err, not a panic.
         #[allow(clippy::disallowed_methods)]
-        // common-layer crate; the grok TLS policy helper is out of reach
+        // common-layer crate; the ezer TLS policy helper is out of reach
         let client = reqwest::Client::builder().build()?;
 
         #[derive(serde::Deserialize)]

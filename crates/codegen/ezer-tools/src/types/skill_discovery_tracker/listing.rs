@@ -133,7 +133,7 @@ impl<'a> SkillEntry<'a> {
         }
     }
 
-    // ── Budgeted XML rendering (grok build harness) ─────────────
+    // ── Budgeted XML rendering (ezer build harness) ─────────────
 
     /// Render as an `<agent_skill>` XML row with description and when_to_use
     /// truncated to their budgets. When `when_to_use` is present it follows the
@@ -260,7 +260,7 @@ impl<'a> SkillListing<'a> {
         ))
     }
 
-    // ── Budgeted XML rendering (grok build harness) ─────────────
+    // ── Budgeted XML rendering (ezer build harness) ─────────────
 
     /// Full descriptions (each capped at `MAX_LISTING_COMBINED_BYTES`). Proportionally shortened
     /// descriptions. Names-only with overflow indicator.
@@ -552,7 +552,7 @@ pub fn format_announcement_xml(
             .filter(|s| {
                 s.enabled
                     && !s.disable_model_invocation
-                    // Compat mode renders all skills verbatim; only the grok
+                    // Compat mode renders all skills verbatim; only the ezer
                     // build path drops description-less plugin skills.
                     && (verbatim || is_listable(s))
                     && announced.insert(s.dedup_key())
@@ -781,7 +781,7 @@ mod tests {
 
     #[test]
     fn verbatim_bypasses_is_listable_filter() {
-        // grok-build drops a description-less skill; compat mode renders all.
+        // ezer-build drops a description-less skill; compat mode renders all.
         let skills = [plugin_skill("noise", "derived")];
         let mut a = HashSet::new();
         assert!(
@@ -1018,7 +1018,7 @@ mod tests {
         );
     }
 
-    // ── budgeted mode: grok build harness (budgeted XML) ───────────
+    // ── budgeted mode: ezer build harness (budgeted XML) ───────────
 
     /// 200 skills must fit within the default budget.
     #[test]

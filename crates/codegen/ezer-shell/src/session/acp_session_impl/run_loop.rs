@@ -383,7 +383,7 @@ pub(super) async fn run_session(
     }
     let _workflow_watch = crate::config::watcher::ProjectDiscoveryWatcher::start(
         std::path::Path::new(session.session_info.cwd.as_str()),
-        &crate::util::grok_home::grok_home(),
+        &crate::util::ezer_home::ezer_home(),
     )
     .map(|(mut watcher, mut changes)| {
         let session = session.clone();
@@ -861,7 +861,7 @@ pub(super) async fn run_session(
                                     new_context_window = ?context_window.map(|cw| cw.get()),
                                     "OVERRIDE_MODEL: changing model name in sampling config"
                                 );
-                                // Update signals so primaryModelId and modelsUsed reflect the override, not the agent default (e.g. "grok-4.5").
+                                // Update signals so primaryModelId and modelsUsed reflect the override, not the agent default (e.g. "test-model-4.5").
                                 // set_primary_model also adds to models_used.
                                 session.signals_handle().set_primary_model(&model_name);
                                 cfg.model = model_name.clone();
@@ -1465,7 +1465,7 @@ pub(super) async fn run_session(
                                 mcp_servers.len()
                             );
 
-                            // Re-seed the session-scoped MCP output cap (repo `[mcp] max_output_bytes`) BEFORE the unchanged-diff early-exit below: this command also fires for `<cwd>/.grok/config.toml` edits, and a cap-only edit changes no server.
+                            // Re-seed the session-scoped MCP output cap (repo `[mcp] max_output_bytes`) BEFORE the unchanged-diff early-exit below: this command also fires for `<cwd>/.ezer/config.toml` edits, and a cap-only edit changes no server.
                             session.reseed_mcp_output_cap().await;
 
                             // Capture the dispatcher's event sender alongside the diff
@@ -1639,7 +1639,7 @@ pub(super) async fn run_session(
                                         tools: Vec::new(),
                                     };
                                     if let Ok(params) = serde_json::value::to_raw_value(&payload) {
-                                        notifications.forward_fire_and_forget(acp::ExtNotification::new("x.ai/mcp/tools_changed", params.into()));
+                                        notifications.forward_fire_and_forget(acp::ExtNotification::new("ezer/mcp/tools_changed", params.into()));
                                     }
                                     let _ = respond_to.send(Ok(()));
                                 });

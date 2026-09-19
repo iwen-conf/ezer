@@ -258,7 +258,7 @@ For tasks that modify files, run a subagent in an isolated git worktree with `is
 - Its changes stay isolated from the parent until you merge them.
 - The subagent's result includes the worktree path.
 
-ezer manages worktrees through the `x.ai/git/worktree/*` extension methods, including an apply operation that merges changes back into the main working directory.
+ezer manages worktrees through the `ezer/git/worktree/*` extension methods, including an apply operation that merges changes back into the main working directory.
 
 ---
 

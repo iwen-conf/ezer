@@ -1,5 +1,5 @@
 //! E2E: the settings modal's locked coding-data row, driven off the seeded auth entry through the full pipeline.
-//! The pipeline runs auth.json, shell `GrokAuth`, auth meta, `AppView::coding_data_sharing_lock()`, `PagerLocalSnapshot`, then the render:
+//! The pipeline runs auth.json, shell `EzerAuth`, auth meta, `AppView::coding_data_sharing_lock()`, `PagerLocalSnapshot`, then the render:
 //!
 //! - ZDR team (`team_blocked_reasons` = `BLOCKED_REASON_NO_LOGS`): the value column shows exactly `ZDR` (no Opt in / Opt out) and no `›` chevron.
 //!   Expanding the row shows only "Your team has Zero Data Retention."

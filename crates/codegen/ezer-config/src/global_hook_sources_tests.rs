@@ -123,7 +123,7 @@ fn ensure_creates_hooks_dir_and_empty_registry() {
     let tmp = TempDir::new().unwrap();
     let dir = tmp.path().join("ezer");
     std::fs::create_dir_all(&dir).unwrap();
-    ensure_grok_hook_slots(&dir).unwrap();
+    ensure_ezer_hook_slots(&dir).unwrap();
     let hooks = dir.join("hooks");
     let reg = dir.join("hooks-paths");
     assert!(hooks.is_dir());
@@ -141,7 +141,7 @@ fn ensure_creates_hooks_dir_and_empty_registry() {
     // Idempotent: does not truncate existing registry content
     std::fs::write(&reg, b"/abs/extra\n").unwrap();
     std::fs::write(dir.join("config.toml"), b"model = \"keep\"\n").unwrap();
-    ensure_grok_hook_slots(&dir).unwrap();
+    ensure_ezer_hook_slots(&dir).unwrap();
     assert_eq!(std::fs::read(&reg).unwrap(), b"/abs/extra\n");
     assert_eq!(
         std::fs::read(dir.join("config.toml")).unwrap(),
@@ -154,7 +154,7 @@ fn trust_boundary_sources_are_not_discovery() {
     let tmp = TempDir::new().unwrap();
     let dir = tmp.path().join("ezer");
     std::fs::create_dir_all(&dir).unwrap();
-    ensure_grok_trust_boundary_slots(&dir).unwrap();
+    ensure_ezer_trust_boundary_slots(&dir).unwrap();
     let sources = resolve_trust_boundary_sources(&dir).unwrap();
     assert_eq!(sources.len(), TRUST_BOUNDARY_FILENAMES.len());
     for name in TRUST_BOUNDARY_FILENAMES {
@@ -178,7 +178,7 @@ fn ensure_rejects_preexisting_symlink_hooks_dir() {
     let real = tmp.path().join("real-hooks");
     std::fs::create_dir_all(&real).unwrap();
     std::os::unix::fs::symlink(&real, dir.join("hooks")).unwrap();
-    let err = ensure_grok_hook_slots(&dir).unwrap_err();
+    let err = ensure_ezer_hook_slots(&dir).unwrap_err();
     assert!(matches!(
         err,
         GlobalHookSourceError::InvalidHooksDir { .. }
@@ -195,7 +195,7 @@ fn ensure_rejects_preexisting_symlink_registry() {
     let target = tmp.path().join("evil-registry");
     std::fs::write(&target, b"attacker\n").unwrap();
     std::os::unix::fs::symlink(&target, dir.join("hooks-paths")).unwrap();
-    let err = ensure_grok_hook_slots(&dir).unwrap_err();
+    let err = ensure_ezer_hook_slots(&dir).unwrap_err();
     // create_new hits EEXIST on the symlink and require_real_file rejects it, or O_NOFOLLOW stops the open; nothing writes through the symlink
     assert!(matches!(
         err,
@@ -220,7 +220,7 @@ fn ensure_trust_boundary_rejects_preexisting_symlink_persist_file() {
     };
     let persist = dir.join(persist_name);
     std::os::unix::fs::symlink(&target, &persist).unwrap();
-    let err = ensure_grok_trust_boundary_slots(&dir).unwrap_err();
+    let err = ensure_ezer_trust_boundary_slots(&dir).unwrap_err();
     // create_new hits EEXIST on the symlink and require_real_file rejects it, or O_NOFOLLOW stops the open; nothing writes through the symlink
     assert!(
         matches!(
@@ -240,7 +240,7 @@ fn ensure_rejects_directory_named_hooks_paths() {
     let tmp = TempDir::new().unwrap();
     let dir = tmp.path().join("ezer");
     std::fs::create_dir_all(dir.join("hooks-paths")).unwrap();
-    let err = ensure_grok_hook_slots(&dir).unwrap_err();
+    let err = ensure_ezer_hook_slots(&dir).unwrap_err();
     assert!(matches!(
         err,
         GlobalHookSourceError::InvalidRegistryFile { .. }
@@ -254,7 +254,7 @@ fn ensure_rejects_file_named_hooks_dir() {
     let dir = tmp.path().join("ezer");
     std::fs::create_dir_all(&dir).unwrap();
     std::fs::write(dir.join("hooks"), b"not-a-dir").unwrap();
-    let err = ensure_grok_hook_slots(&dir).unwrap_err();
+    let err = ensure_ezer_hook_slots(&dir).unwrap_err();
     assert!(matches!(err, GlobalHookSourceError::InvalidHooksDir { .. }));
 }
 

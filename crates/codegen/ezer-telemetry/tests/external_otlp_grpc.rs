@@ -49,7 +49,7 @@ fn external_stream_grpc_end_to_end() {
     ezer_telemetry::log_event(ezer_telemetry::events::SessionHarness {
         session_id: "sess-grpc-1".into(),
         client_identifier: Some("ezer".into()),
-        model_id: "grok-4".into(),
+        model_id: "test-model-4".into(),
         agent_name: "ezer-build-plan".into(),
         permission_mode: ezer_telemetry::enums::PermissionMode::Ask,
         mcp_server_names: vec![CANARY_MCP.into()],
@@ -65,7 +65,7 @@ fn external_stream_grpc_end_to_end() {
     });
     ezer_telemetry::log_event(ezer_telemetry::events::PromptSubmitted {
         prompt_length: CANARY_PROMPT.len(),
-        model_id: "grok-4".into(),
+        model_id: "test-model-4".into(),
         client_identifier: None,
         screen_mode: None,
         prompt_text: Some(CANARY_PROMPT.into()),

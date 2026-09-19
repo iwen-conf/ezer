@@ -83,7 +83,7 @@ impl acp::Client for SubagentFinishedRecorder {
     }
 
     async fn ext_notification(&self, args: acp::ExtNotification) -> acp::Result<()> {
-        if args.method.as_ref() != "x.ai/session_notification" {
+        if args.method.as_ref() != "ezer/session_notification" {
             return Ok(());
         }
         let Ok(params) = serde_json::from_str::<serde_json::Value>(args.params.get()) else {
@@ -339,10 +339,10 @@ impl Drop for RestoreProcessGlobals {
     }
 }
 
-fn set_test_env(grok_home: &std::path::Path, server_url: &str) {
+fn set_test_env(ezer_home: &std::path::Path, server_url: &str) {
     // SAFETY: the only live threads are the mock's HTTP workers, which never read env.
     unsafe {
-        std::env::set_var("GROK_HOME", grok_home);
+        std::env::set_var("EZER_HOME", ezer_home);
         std::env::set_var("EZER_CLI_CHAT_PROXY_BASE_URL", server_url);
         std::env::set_var("EZER_XAI_API_BASE_URL", server_url);
         std::env::set_var("XAI_API_KEY", "test-key-for-ci");
@@ -355,7 +355,7 @@ fn set_test_env(grok_home: &std::path::Path, server_url: &str) {
     }
 }
 
-/// Runs `body` against a mock inference server with `GROK_HOME` isolated to a
+/// Runs `body` against a mock inference server with `EZER_HOME` isolated to a
 /// temp dir. `body` gets the cwd and the mock, and opens its own connection,
 /// since each test wants a different `acp::Client`.
 pub fn run_agent_test<F, Fut>(body: F)
@@ -393,10 +393,10 @@ pub fn run_agent_test_with_models<F, Fut>(
             .block_on(ezer_test_support::MockInferenceServer::start_with_models(models))
             .expect("mock server"),
     );
-    let grok_home = tempfile::TempDir::new().expect("ezer home");
+    let ezer_home = tempfile::TempDir::new().expect("ezer home");
     let workdir = tempfile::TempDir::new().expect("workdir");
-    set_test_env(grok_home.path(), &server.url());
-    // After GROK_HOME is the temp dir, so teardown cannot OnceLock ~/.grok.
+    set_test_env(ezer_home.path(), &server.url());
+    // After EZER_HOME is the temp dir, so teardown cannot OnceLock ~/.ezer.
     let _globals = RestoreProcessGlobals::enter();
 
     let agent_rt = tokio::runtime::Builder::new_current_thread()

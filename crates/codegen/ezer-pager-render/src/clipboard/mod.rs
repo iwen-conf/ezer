@@ -130,7 +130,7 @@ struct ClipboardRouteOpts {
 fn resolve_clipboard_route_with(ctx: &TerminalContext, opts: ClipboardRouteOpts) -> ClipboardRoute {
     let is_tmux = ctx.multiplexer == MultiplexerKind::Tmux;
     // Linux always emits OSC 52. macOS/Windows only in tmux/SSH/container or when a wrap sink captures it.
-    // `GROK_CLIPBOARD_NO_OSC52` wins over every automatic path.
+    // `EZER_CLIPBOARD_NO_OSC52` wins over every automatic path.
     let osc52 = !opts.no_osc52
         && (cfg!(target_os = "linux")
             || is_tmux
@@ -477,7 +477,7 @@ pub fn default_copy_fallback_path() -> Option<std::path::PathBuf> {
             ));
         }
     }
-    ezer_config::user_grok_home().map(|grok_home| grok_home.join("last-copy.txt"))
+    ezer_config::user_ezer_home().map(|ezer_home| ezer_home.join("last-copy.txt"))
 }
 
 /// Abbreviate via [`crate::util::abbreviate_path`] so toasts stay short (`~/.ezer` or `~`).
@@ -1926,7 +1926,7 @@ mod tests {
         ];
 
         for case in cases {
-            // Pure helper with kill switch off so ambient GROK_CLIPBOARD_NO_OSC52 cannot flake CI (route() itself still reads the real env)
+            // Pure helper with kill switch off so ambient EZER_CLIPBOARD_NO_OSC52 cannot flake CI (route() itself still reads the real env)
             let route = resolve_clipboard_route_with(
                 &case.ctx,
                 ClipboardRouteOpts {
@@ -2053,7 +2053,7 @@ mod tests {
 
     #[test]
     fn clipboard_route_no_osc52_kill_switch_forces_off() {
-        // GROK_CLIPBOARD_NO_OSC52 must win over Linux/tmux/SSH automatic emit.
+        // EZER_CLIPBOARD_NO_OSC52 must win over Linux/tmux/SSH automatic emit.
         for ctx in [
             plain_terminal_ctx(),
             plain_tmux_ctx(),
@@ -2362,11 +2362,11 @@ mod tests {
     }
 
     #[test]
-    #[serial_test::serial(grok_copy_file)]
-    fn default_copy_fallback_path_respects_grok_copy_file() {
+    #[serial_test::serial(ezer_copy_file)]
+    fn default_copy_fallback_path_respects_ezer_copy_file() {
         let dir = tempfile::tempdir().expect("tempdir");
         let custom = dir.path().join("custom-copy.txt");
-        // SAFETY: test-only env mutation; serialized on the grok_copy_file key.
+        // SAFETY: test-only env mutation; serialized on the ezer_copy_file key.
         unsafe {
             std::env::set_var(EZER_COPY_FILE_ENV, &custom);
         }
@@ -2378,7 +2378,7 @@ mod tests {
     }
 
     #[test]
-    #[serial_test::serial(grok_copy_file)]
+    #[serial_test::serial(ezer_copy_file)]
     fn write_copy_fallback_uses_env_override() {
         let dir = tempfile::tempdir().expect("tempdir");
         let custom = dir.path().join("last.txt");
@@ -2396,14 +2396,14 @@ mod tests {
     /// Without `EZER_COPY_FILE`, the default is `~/.ezer/last-copy.txt`
     /// (ezer home) — short and toast-friendly, unlike macOS's temp dir.
     #[test]
-    #[serial_test::serial(grok_copy_file)]
-    fn default_copy_fallback_path_is_grok_home() {
+    #[serial_test::serial(ezer_copy_file)]
+    fn default_copy_fallback_path_is_ezer_home() {
         unsafe {
             std::env::remove_var(EZER_COPY_FILE_ENV);
         }
         let path = default_copy_fallback_path();
-        // Test envs always resolve a home (or set GROK_HOME).
-        let expected = ezer_config::user_grok_home()
+        // Test envs always resolve a home (or set EZER_HOME).
+        let expected = ezer_config::user_ezer_home()
             .expect("home resolves in tests")
             .join("last-copy.txt");
         assert_eq!(path, Some(expected));
@@ -2411,10 +2411,10 @@ mod tests {
 
     /// Toast paths collapse the home prefix to `~`.
     /// ezer-home paths go through the shared `abbreviate_path` convention.
-    /// The `GROK_HOME`-override integration test in `ezer-pager` covers that further.
+    /// The `EZER_HOME`-override integration test in `ezer-pager` covers that further.
     #[test]
     fn display_copy_path_abbreviates_home() {
-        if std::env::var_os("GROK_HOME").is_none() {
+        if std::env::var_os("EZER_HOME").is_none() {
             let home = xai_dirs::home_dir().expect("home resolves in tests");
             assert_eq!(
                 display_copy_path(&home.join(".ezer").join("last-copy.txt")),
@@ -2423,8 +2423,8 @@ mod tests {
         }
         // Non-home paths pass through untouched, including multi-byte UTF-8 components (must never slice at a non-char boundary)
         assert_eq!(
-            display_copy_path(std::path::Path::new("/tmp/grok-0/last-copy.txt")),
-            "/tmp/grok-0/last-copy.txt"
+            display_copy_path(std::path::Path::new("/tmp/ezer-0/last-copy.txt")),
+            "/tmp/ezer-0/last-copy.txt"
         );
         assert_eq!(
             display_copy_path(std::path::Path::new("/tmp/日本語/コピー.txt")),
@@ -2449,7 +2449,7 @@ mod tests {
 
     #[test]
     fn delivery_clipboard_success_carries_backup_file() {
-        let path = std::path::PathBuf::from("/tmp/grok-1/last-copy.txt");
+        let path = std::path::PathBuf::from("/tmp/ezer-1/last-copy.txt");
         match resolve_delivery(copy_result(true), Ok(path.clone())) {
             CopyDelivery::Clipboard { result, file } => {
                 assert!(result.delivery.reported_success());
@@ -2474,7 +2474,7 @@ mod tests {
     /// Clipboard `Failed` still yields `File` delivery.
     #[test]
     fn delivery_clipboard_failure_yields_file() {
-        let path = std::path::PathBuf::from("/tmp/grok-1/last-copy.txt");
+        let path = std::path::PathBuf::from("/tmp/ezer-1/last-copy.txt");
         let delivery = resolve_delivery(copy_result(false), Ok(path.clone()));
         assert!(delivery.success());
         match delivery {
@@ -2495,7 +2495,7 @@ mod tests {
 
     #[test]
     fn toast_message_names_backup_only_for_unverified_or_file_fallback() {
-        let path = std::path::PathBuf::from("/tmp/grok-1/last-copy.txt");
+        let path = std::path::PathBuf::from("/tmp/ezer-1/last-copy.txt");
 
         let confirmed = CopyDelivery::Clipboard {
             result: ClipboardFeedback::Copied.to_result(),
@@ -2516,7 +2516,7 @@ mod tests {
         };
         assert_eq!(
             unverified.toast_message(),
-            "Copy sent, saved to /tmp/grok-1/last-copy.txt"
+            "Copy sent, saved to /tmp/ezer-1/last-copy.txt"
         );
         assert_eq!(unverified.toast_ticks(), 120);
 
@@ -2532,7 +2532,7 @@ mod tests {
         let file_only = CopyDelivery::File { path };
         assert_eq!(
             file_only.toast_message(),
-            "Clipboard unreachable: wrote /tmp/grok-1/last-copy.txt"
+            "Clipboard unreachable: wrote /tmp/ezer-1/last-copy.txt"
         );
         assert_eq!(file_only.toast_ticks(), 120);
 
@@ -2547,7 +2547,7 @@ mod tests {
     /// Unverified OSC still composes as clipboard delivery (not file fallback).
     #[test]
     fn unverified_clipboard_delivery_composes_as_clipboard() {
-        let path = std::path::PathBuf::from("/tmp/grok-1/last-copy.txt");
+        let path = std::path::PathBuf::from("/tmp/ezer-1/last-copy.txt");
         let delivery = resolve_delivery(
             ClipboardFeedback::UnverifiedOscRemote.to_result(),
             Ok(path.clone()),

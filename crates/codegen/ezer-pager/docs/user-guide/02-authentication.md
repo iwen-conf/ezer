@@ -36,11 +36,11 @@ ezer --force-login
 # or: EZER_ENABLE_XAI_LOGIN=1 ezer login
 ```
 
-This optional flow opens a browser and signs in through SpaceXAI OAuth at `auth.x.ai`. It is **not** required for BYOK. Pass a flag to select a different flow:
+This optional flow opens a browser and signs in through SpaceXAI OAuth at `your IdP`. It is **not** required for BYOK. Pass a flag to select a different flow:
 
 | Flag | Description |
 |------|-------------|
-| `--oauth` | Sign in through SpaceXAI OAuth at `auth.x.ai`. This is the default, so the flag is optional. |
+| `--oauth` | Sign in through SpaceXAI OAuth at `your IdP`. This is the default, so the flag is optional. |
 | `--device-auth` (alias `--device-code`) | Sign in with the device-code flow for headless or remote environments. |
 
 To sign out, run `ezer logout`. It takes no flags and clears your cached credentials.
@@ -49,7 +49,7 @@ To sign out, run `ezer logout`. It takes no flags and clears your cached credent
 
 ## API Key
 
-For CI/CD, automation, or environments without browser access, use an API key from [console.x.ai](https://console.x.ai):
+For CI/CD, automation, or environments without browser access, use an API key from your API provider:
 
 ```bash
 export EZER_API_KEY="your-gateway-key"
@@ -326,7 +326,7 @@ which `/privacy` opens — does not change these config knobs:
 
 On team accounts, only a team admin can change coding-data sharing.
 Team admins can also enable or disable Zero Data Retention (ZDR) for their team.
-See [How to enable ZDR](https://docs.x.ai/developers/faq/security#how-to-enable-zdr).
+See [How to enable ZDR](#).
 When ZDR is on, coding-data sharing cannot be changed at all — the settings
 row shows `ZDR` in place of the value. ZDR does not turn off external OTEL
 or `user.email` — see [ZDR and this stream](24-monitoring-usage.md#zdr-and-this-stream).

@@ -23,14 +23,14 @@ use tokio::io::AsyncReadExt;
 // Marker constants
 // ============================================================================
 
-const BASH_STATE_START_MARKER: &str = "__GROK_BASH_STATE_START__";
-const BASH_STATE_END_MARKER: &str = "__GROK_BASH_STATE_END__";
-const ZSH_STATE_START_MARKER: &str = "__GROK_ZSH_STATE_START__";
-const ZSH_STATE_END_MARKER: &str = "__GROK_ZSH_STATE_END__";
+const BASH_STATE_START_MARKER: &str = "__EZER_BASH_STATE_START__";
+const BASH_STATE_END_MARKER: &str = "__EZER_BASH_STATE_END__";
+const ZSH_STATE_START_MARKER: &str = "__EZER_ZSH_STATE_START__";
+const ZSH_STATE_END_MARKER: &str = "__EZER_ZSH_STATE_END__";
 
 /// Marker emitted by the init path to separate login-shell noise (MOTD, etc.)
 /// from the actual state dump on stdout.
-const INIT_STATE_MARKER: &str = "__GROK_INIT_STATE_MARKER__";
+const INIT_STATE_MARKER: &str = "__EZER_INIT_STATE_MARKER__";
 
 /// Maximum time to wait for a shell state init (login shell + rc files).
 const INIT_TIMEOUT: Duration = Duration::from_secs(15);
@@ -47,7 +47,7 @@ pub fn shell_env_overrides() -> HashMap<String, String> {
         ("TERM".to_string(), "dumb".to_string()),
         ("NO_COLOR".to_string(), "1".to_string()),
         ("FORCE_COLOR".to_string(), "0".to_string()),
-        // Re-applied last via [`crate::util::apply_grok_agent_marker`] so request
+        // Re-applied last via [`crate::util::apply_ezer_agent_marker`] so request
         // env cannot clear it.
         (
             crate::util::EZER_AGENT_ENV.to_string(),
@@ -88,15 +88,15 @@ dump_bash_state() {
     local content="$1"
     local var_name="$2"
     if [[ -n "$content" ]]; then
-      builtin printf 'grok_snap_%s=$(command base64 -d <<'"'"'EZER_SNAP_EOF_%s'"'"'\n' "$var_name" "$var_name"
+      builtin printf 'ezer_snap_%s=$(command base64 -d <<'"'"'EZER_SNAP_EOF_%s'"'"'\n' "$var_name" "$var_name"
       command base64 <<<"$content" | command tr -d '\n'
-      builtin printf '\nGROK_SNAP_EOF_%s\n' "$var_name"
+      builtin printf '\nEZER_SNAP_EOF_%s\n' "$var_name"
       builtin printf ')\n'
-      builtin printf 'eval "$grok_snap_%s"\n' "$var_name"
+      builtin printf 'eval "$ezer_snap_%s"\n' "$var_name"
     fi
   }
 
-  _emit "__GROK_BASH_STATE_START__"
+  _emit "__EZER_BASH_STATE_START__"
 
   _emit "$PWD"
 
@@ -123,7 +123,7 @@ dump_bash_state() {
   _emit_encoded "$aliases" "ALIASES_B64"
 
   _emit "# end of bash state dump"
-  _emit "__GROK_BASH_STATE_END__"
+  _emit "__EZER_BASH_STATE_END__"
 }
 "##;
 
@@ -144,20 +144,20 @@ function dump_zsh_state() {
     local content="$1"
     local var_name="$2"
     if [[ -n "$content" ]]; then
-      builtin printf 'grok_snap_%s=$(command base64 -d <<'"'"'GROK_SNAP_EOF_%s'"'"'\n' "$var_name" "$var_name"
+      builtin printf 'ezer_snap_%s=$(command base64 -d <<'"'"'EZER_SNAP_EOF_%s'"'"'\n' "$var_name" "$var_name"
       command base64 <<<"$content" | command tr -d '\n'
-      builtin printf '\nGROK_SNAP_EOF_%s\n' "$var_name"
+      builtin printf '\nEZER_SNAP_EOF_%s\n' "$var_name"
       builtin printf ')\n'
-      builtin printf 'eval "$grok_snap_%s"\n' "$var_name"
+      builtin printf 'eval "$ezer_snap_%s"\n' "$var_name"
     fi
   }
 
-  _emit "__GROK_ZSH_STATE_START__"
+  _emit "__EZER_ZSH_STATE_START__"
 
   _emit "$PWD"
 
   local env_vars
-  env_vars=$(builtin typeset -xp 2>/dev/null | command grep -viE '_proxy=|GROK_SANDBOX|GROK_AGENT=|SUDO_ASKPASS|GROK_ASKPASS|ELECTRON_RUN_AS_NODE|SSH_AUTH_SOCK|DBUS_SESSION_BUS_ADDRESS|XDG_RUNTIME_DIR|WAYLAND_DISPLAY|GPG_TTY' || true)
+  env_vars=$(builtin typeset -xp 2>/dev/null | command grep -viE '_proxy=|EZER_SANDBOX|EZER_AGENT=|SUDO_ASKPASS|EZER_ASKPASS|ELECTRON_RUN_AS_NODE|SSH_AUTH_SOCK|DBUS_SESSION_BUS_ADDRESS|XDG_RUNTIME_DIR|WAYLAND_DISPLAY|GPG_TTY' || true)
   _emit_encoded "$env_vars" "ENV_VARS_B64"
 
   # errreturn/pipefail here are this function's own `emulate -L` options
@@ -176,7 +176,7 @@ function dump_zsh_state() {
   _emit_encoded "$aliases" "ALIASES_B64"
 
   _emit "# end of zsh state dump"
-  _emit "__GROK_ZSH_STATE_END__"
+  _emit "__EZER_ZSH_STATE_END__"
 }
 "##;
 
@@ -400,9 +400,9 @@ impl ShellState {
                  builtin export PWD=\"$(builtin pwd)\"; \
                  builtin shopt -s expand_aliases 2>/dev/null; {sudo_inject}{search_inject}\
                  builtin printf '%s' \"${{2:-}}\"; \
-                 __grok_user_cmd=\"$1\"; builtin declare +x __grok_user_cmd 2>/dev/null; builtin set --; \
-                 builtin eval \"$__grok_user_cmd\" 2>&1; }}; \
-                 COMMAND_EXIT_CODE=$?; builtin unset __grok_user_cmd 2>/dev/null; {dump_fn} >&4; builtin exit $COMMAND_EXIT_CODE"
+                 __ezer_user_cmd=\"$1\"; builtin declare +x __ezer_user_cmd 2>/dev/null; builtin set --; \
+                 builtin eval \"$__ezer_user_cmd\" 2>&1; }}; \
+                 COMMAND_EXIT_CODE=$?; builtin unset __ezer_user_cmd 2>/dev/null; {dump_fn} >&4; builtin exit $COMMAND_EXIT_CODE"
             ),
             // After snapshot restore: force nonomatch so login dumps cannot re-arm NOMATCH for
             // model globs. See the bash wrapper comment for why positional parameters are cleared
@@ -419,9 +419,9 @@ impl ShellState {
                  builtin export PWD=\"$(builtin pwd)\"; \
                  builtin setopt aliases 2>/dev/null; {sudo_inject}{search_inject}\
                  builtin printf '%s' \"${{2:-}}\"; \
-                 __grok_user_cmd=\"$1\"; builtin typeset +x __grok_user_cmd 2>/dev/null; builtin set --; \
-                 builtin eval \"$__grok_user_cmd\" 2>&1; }}; \
-                 COMMAND_EXIT_CODE=$?; builtin unset __grok_user_cmd 2>/dev/null; {dump_fn} >&4; builtin exit $COMMAND_EXIT_CODE"
+                 __ezer_user_cmd=\"$1\"; builtin typeset +x __ezer_user_cmd 2>/dev/null; builtin set --; \
+                 builtin eval \"$__ezer_user_cmd\" 2>&1; }}; \
+                 COMMAND_EXIT_CODE=$?; builtin unset __ezer_user_cmd 2>/dev/null; {dump_fn} >&4; builtin exit $COMMAND_EXIT_CODE"
             ),
         };
 
@@ -665,11 +665,11 @@ mod tests {
 
     #[test]
     fn parse_dump_valid_bash() {
-        let raw = "__GROK_BASH_STATE_START__\n\
+        let raw = "__EZER_BASH_STATE_START__\n\
                     /home/user/project\n\
                     export FOO=bar\n\
                     # end of bash state dump\n\
-                    __GROK_BASH_STATE_END__\n";
+                    __EZER_BASH_STATE_END__\n";
         let (cwd, rest) = parse_dump(ShellKind::Bash, raw).unwrap();
         assert_eq!(cwd, PathBuf::from("/home/user/project"));
         assert!(rest.contains("export FOO=bar"));
@@ -677,11 +677,11 @@ mod tests {
 
     #[test]
     fn parse_dump_valid_zsh() {
-        let raw = "__GROK_ZSH_STATE_START__\n\
+        let raw = "__EZER_ZSH_STATE_START__\n\
                     /tmp\n\
                     typeset -x FOO=bar\n\
                     # end of zsh state dump\n\
-                    __GROK_ZSH_STATE_END__\n";
+                    __EZER_ZSH_STATE_END__\n";
         let (cwd, rest) = parse_dump(ShellKind::Zsh, raw).unwrap();
         assert_eq!(cwd, PathBuf::from("/tmp"));
         assert!(rest.contains("typeset -x FOO=bar"));
@@ -689,28 +689,28 @@ mod tests {
 
     #[test]
     fn parse_dump_missing_start_marker() {
-        let raw = "/home/user\nexport FOO=bar\n__GROK_BASH_STATE_END__\n";
+        let raw = "/home/user\nexport FOO=bar\n__EZER_BASH_STATE_END__\n";
         assert!(parse_dump(ShellKind::Bash, raw).is_none());
     }
 
     #[test]
     fn parse_dump_missing_end_marker() {
-        let raw = "__GROK_BASH_STATE_START__\n/home/user\nexport FOO=bar\n";
+        let raw = "__EZER_BASH_STATE_START__\n/home/user\nexport FOO=bar\n";
         assert!(parse_dump(ShellKind::Bash, raw).is_none());
     }
 
     #[test]
     fn parse_dump_wrong_shell_markers() {
-        let raw = "__GROK_ZSH_STATE_START__\n/tmp\nstuff\n__GROK_ZSH_STATE_END__\n";
+        let raw = "__EZER_ZSH_STATE_START__\n/tmp\nstuff\n__EZER_ZSH_STATE_END__\n";
         assert!(parse_dump(ShellKind::Bash, raw).is_none());
     }
 
     #[test]
     fn parse_dump_empty_snapshot() {
-        let raw = "__GROK_BASH_STATE_START__\n\
+        let raw = "__EZER_BASH_STATE_START__\n\
                     /home/user\n\
                     # end of bash state dump\n\
-                    __GROK_BASH_STATE_END__\n";
+                    __EZER_BASH_STATE_END__\n";
         let (cwd, rest) = parse_dump(ShellKind::Bash, raw).unwrap();
         assert_eq!(cwd, PathBuf::from("/home/user"));
         assert!(rest.contains("# end of bash state dump"));
@@ -718,15 +718,15 @@ mod tests {
 
     #[test]
     fn parse_after_marker_found() {
-        let output = "Welcome to Ubuntu\nMOTD line\n__GROK_INIT_STATE_MARKER__\nactual data\n";
-        let result = parse_after_marker(output, "__GROK_INIT_STATE_MARKER__");
+        let output = "Welcome to Ubuntu\nMOTD line\n__EZER_INIT_STATE_MARKER__\nactual data\n";
+        let result = parse_after_marker(output, "__EZER_INIT_STATE_MARKER__");
         assert_eq!(result, "actual data\n");
     }
 
     #[test]
     fn parse_after_marker_not_found() {
         let output = "just some output\n";
-        let result = parse_after_marker(output, "__GROK_INIT_STATE_MARKER__");
+        let result = parse_after_marker(output, "__EZER_INIT_STATE_MARKER__");
         assert_eq!(result, output);
     }
 
@@ -772,11 +772,11 @@ mod tests {
             shell: ShellKind::Bash,
         };
 
-        let dump = "__GROK_BASH_STATE_START__\n\
+        let dump = "__EZER_BASH_STATE_START__\n\
                      /new/dir\n\
                      export X=1\n\
                      # end of bash state dump\n\
-                     __GROK_BASH_STATE_END__\n";
+                     __EZER_BASH_STATE_END__\n";
         assert!(state.update_from_dump(dump));
         assert_eq!(state.cwd, PathBuf::from("/new/dir"));
         assert!(state.snapshot.contains("export X=1"));
@@ -807,7 +807,7 @@ mod tests {
         assert!(state.cwd.is_absolute());
         // The snapshot should contain at least some env var exports
         assert!(
-            state.snapshot.contains("grok_snap_") || state.snapshot.is_empty(),
+            state.snapshot.contains("ezer_snap_") || state.snapshot.is_empty(),
             "snapshot should contain encoded blocks or be empty: {:?}",
             state
                 .snapshot
@@ -1101,7 +1101,7 @@ mod tests {
     }
 
     /// Regression test: with `allexport` active (restored from the snapshot after the model runs
-    /// `set -a`), the wrapper's `__grok_user_cmd` temp variable must not leak into child-process
+    /// `set -a`), the wrapper's `__ezer_user_cmd` temp variable must not leak into child-process
     /// environments or persist into subsequent commands via the state dump.
     #[tokio::test]
     async fn test_user_cmd_var_not_exported_under_allexport_bash() {
@@ -1116,12 +1116,12 @@ mod tests {
         let (code, _) = run_command(&mut state, "set -a").await;
         assert_eq!(code, 0);
 
-        // This command's wrapper assigns __grok_user_cmd under allexport. printenv only sees
+        // This command's wrapper assigns __ezer_user_cmd under allexport. printenv only sees
         // exported vars — it must not see the temp var (neither from this command's own assignment
         // nor re-exported from a previous command's state dump).
         let (code, stdout) = run_command(
             &mut state,
-            "printenv __grok_user_cmd >/dev/null 2>&1 && echo LEAKED_TO_ENV || echo ENV_CLEAN",
+            "printenv __ezer_user_cmd >/dev/null 2>&1 && echo LEAKED_TO_ENV || echo ENV_CLEAN",
         )
         .await;
         assert_eq!(code, 0);

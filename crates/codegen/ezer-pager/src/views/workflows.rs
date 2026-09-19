@@ -1140,7 +1140,7 @@ mod tests {
                     agent_id: "a2".into(),
                     label: "researcher-1".into(),
                     phase: Some("Research".into()),
-                    model: Some("grok-4.5".into()),
+                    model: Some("test-model-4.5".into()),
                     state: "running".into(),
                     tokens_used: 0,
                     duration_ms: 0,
@@ -1209,7 +1209,7 @@ mod tests {
         assert!(text.contains("Phases"), "{text}");
         assert!(text.contains("Research"), "{text}");
         assert!(text.contains("researcher-1"), "{text}");
-        assert!(text.contains("grok-4.5"), "{text}");
+        assert!(text.contains("test-model-4.5"), "{text}");
         assert!(text.contains("1/2 agents"), "{text}");
         assert!(text.contains("s save"), "{text}");
     }

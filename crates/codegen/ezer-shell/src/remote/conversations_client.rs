@@ -2,9 +2,9 @@ use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
 
-use ezer_login::{AuthManager, GrokAuth};
+use ezer_login::{AuthManager, EzerAuth};
 
-const GROK_WEB_URL: &str = "https://grok.com";
+const REMOTE_WEB_URL: &str = "";
 
 #[derive(Debug, Clone, Default, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -100,7 +100,7 @@ impl ConversationsClient {
                     .ok()
                     .filter(|s| !s.is_empty())
             })
-            .unwrap_or_else(|| GROK_WEB_URL.to_string());
+            .unwrap_or_else(|| REMOTE_WEB_URL.to_string());
         Self {
             http: crate::http::shared_client(),
             base_url,
@@ -108,7 +108,7 @@ impl ConversationsClient {
         }
     }
 
-    async fn require_xai_auth(&self) -> Result<GrokAuth, ConvError> {
+    async fn require_xai_auth(&self) -> Result<EzerAuth, ConvError> {
         let auth = self.auth.auth().await.map_err(|_| ConvError::NoOauth)?;
         if !auth.is_xai_auth() {
             return Err(ConvError::NoOauth);
@@ -119,13 +119,13 @@ impl ConversationsClient {
     fn apply_auth_headers(
         &self,
         builder: reqwest::RequestBuilder,
-        auth: &GrokAuth,
+        auth: &EzerAuth,
     ) -> reqwest::RequestBuilder {
         let mut builder = builder
             .header("Authorization", format!("Bearer {}", auth.key))
             .header(
                 "X-XAI-Token-Auth",
-                self.auth.grok_com_config().token_header.clone(),
+                self.auth.ezer_com_config().token_header.clone(),
             )
             .header("x-userid", &auth.user_id)
             .header("x-ezer-client-version", ezer_version::VERSION)

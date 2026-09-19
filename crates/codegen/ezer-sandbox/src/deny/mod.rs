@@ -328,22 +328,22 @@ mod tests {
                 .unwrap()
                 .as_nanos()
         ));
-        let grok = tmp.join("ezer");
-        let sessions = grok.join("sessions");
+        let ezer = tmp.join("ezer");
+        let sessions = ezer.join("sessions");
         let leaf = sessions.join("extra-hooks");
         std::fs::create_dir_all(&leaf).unwrap();
         let ws = tmp.join("ws");
         std::fs::create_dir_all(&ws).unwrap();
 
-        let roots = [grok.clone(), ws.clone()];
+        let roots = [ezer.clone(), ws.clone()];
         let pin = ancestors_within_writable_roots(&leaf, &roots);
         assert!(
             pin.iter().any(|p| p == &sessions),
-            "must pin sessions under GROK_HOME: {pin:?}"
+            "must pin sessions under EZER_HOME: {pin:?}"
         );
         assert!(
-            pin.iter().any(|p| p == &grok),
-            "must pin GROK_HOME grant root: {pin:?}"
+            pin.iter().any(|p| p == &ezer),
+            "must pin EZER_HOME grant root: {pin:?}"
         );
         assert!(
             !pin.iter().any(|p| p == &tmp),

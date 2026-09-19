@@ -45,7 +45,7 @@ fn first_run_byok_template_parses_as_responses_gateway() {
 #[serial]
 fn first_run_byok_template_enables_concurrent_subagents() {
     clear_runtime_env_vars();
-    let raw: toml::Value = toml::from_str(&xai_grok_config::default_byok_config_toml())
+    let raw: toml::Value = toml::from_str(&xai_ezer_config::default_byok_config_toml())
         .expect("first-run template must be valid TOML");
     let mut cfg = Config::new_from_toml_cfg(&raw).expect("first-run template must parse");
     cfg.resolve_runtime_fields(&RuntimeResolutionContext {
@@ -67,12 +67,12 @@ fn first_run_byok_template_enables_concurrent_subagents() {
     );
     assert_eq!(
         cfg.subagents_max_concurrent,
-        xai_grok_tools::implementations::grok_build::task::admission::DEFAULT_MAX_CONCURRENT
+        xai_ezer_tools::implementations::ezer_build::task::admission::DEFAULT_MAX_CONCURRENT
     );
 }
 
 #[test]
-fn byok_aux_prefers_active_model_over_compiled_grok_slug() {
+fn byok_aux_prefers_active_model_over_compiled_ezer_slug() {
     let primary = SamplerConfig {
         model: "deepseek-v4.1-flash".into(),
         base_url: "http://192.168.0.63:8788/v1".into(),
@@ -80,7 +80,7 @@ fn byok_aux_prefers_active_model_over_compiled_grok_slug() {
         ..Default::default()
     };
     let aux = SamplerConfig {
-        model: "grok-4.6".into(),
+        model: "test-model-4.6".into(),
         base_url: "http://192.168.0.63:8788/v1".into(),
         api_backend: ApiBackend::Responses,
         ..Default::default()
@@ -92,19 +92,19 @@ fn byok_aux_prefers_active_model_over_compiled_grok_slug() {
 #[test]
 fn official_xai_aux_keeps_compiled_session_summary_slug() {
     let primary = SamplerConfig {
-        model: "grok-4.6".into(),
-        base_url: "https://cli-chat-proxy.grok.com/v1".into(),
+        model: "test-model-4.6".into(),
+        base_url: "https://proxy.example.test/v1".into(),
         api_backend: ApiBackend::Responses,
         ..Default::default()
     };
     let aux = SamplerConfig {
-        model: "grok-4.6".into(),
-        base_url: "https://cli-chat-proxy.grok.com/v1".into(),
+        model: "test-model-4.6".into(),
+        base_url: "https://proxy.example.test/v1".into(),
         api_backend: ApiBackend::Responses,
         ..Default::default()
     };
     let chosen = prefer_active_model_for_byok_aux(aux, &primary);
-    assert_eq!(chosen.model, "grok-4.6");
+    assert_eq!(chosen.model, "test-model-4.6");
 }
 #[test]
 fn main_cli_tools_override_preserves_profile_injection_policy() {
@@ -128,7 +128,7 @@ fn auto_mode_config_parses_from_toml_and_json_equivalently() {
     let toml_src = r#"
 enabled = true
 prompt_type = "no_user_tool_prefix"
-classifier_model = "grok-4.5"
+classifier_model = "test-model-4.5"
 classify_timeout_ms = 45000
 reasoning_effort = "low"
 "#;
@@ -136,7 +136,7 @@ reasoning_effort = "low"
     let json = serde_json::json!({
         "enabled": true,
         "prompt_type": "no_user_tool_prefix",
-        "classifier_model": "grok-4.5",
+        "classifier_model": "test-model-4.5",
         "classify_timeout_ms": 45000,
         "reasoning_effort": "low"
     });
@@ -151,7 +151,7 @@ reasoning_effort = "low"
             cfg.prompt_type,
             Some(ClassifierPromptType::NoUserToolPrefix)
         );
-        assert_eq!(cfg.classifier_model.as_deref(), Some("grok-4.5"));
+        assert_eq!(cfg.classifier_model.as_deref(), Some("test-model-4.5"));
         assert_eq!(cfg.classify_timeout_ms, Some(45_000));
         assert_eq!(cfg.reasoning_effort, Some(ReasoningEffort::Low));
     }
@@ -545,7 +545,7 @@ fn finalize_image_describe_sampler_none_uses_active_session_model_not_forced_hel
     let (model, cfg) = finalize_image_describe_sampler_config(None, &active, None, Some(3));
     assert_eq!(model, "composer-session-model");
     assert_eq!(cfg.model, "composer-session-model");
-    assert_ne!(cfg.model, "grok-build");
+    assert_ne!(cfg.model, "ezer-build");
 }
 #[test]
 fn finalize_image_describe_sampler_some_stamps_session_fields() {
@@ -554,13 +554,13 @@ fn finalize_image_describe_sampler_some_stamps_session_fields() {
         ..Default::default()
     };
     let aux = SamplerConfig {
-        model: "grok-build".into(),
+        model: "ezer-build".into(),
         ..Default::default()
     };
     let (model, cfg) =
         finalize_image_describe_sampler_config(Some(aux), &active, Some("cli".into()), Some(7));
-    assert_eq!(model, "grok-build");
-    assert_eq!(cfg.model, "grok-build");
+    assert_eq!(model, "ezer-build");
+    assert_eq!(cfg.model, "ezer-build");
     assert_eq!(cfg.client_identifier.as_deref(), Some("cli"));
     assert_eq!(cfg.max_retries, Some(7));
 }
@@ -569,7 +569,7 @@ fn resolve_aux_model_honors_ezer_build_override() {
     let endpoints = EndpointsConfig::default();
     let mut catalog = IndexMap::new();
     catalog.insert(
-        "grok-build".to_string(),
+        "ezer-build".to_string(),
         test_model_entry(
             "v9m-rl-learnability-tp8",
             "https://vendor.example/v1",
@@ -579,7 +579,7 @@ fn resolve_aux_model_honors_ezer_build_override() {
         ),
     );
     let resolved = resolve_aux_model_sampling_config(
-        "grok-build",
+        "ezer-build",
         &catalog,
         &endpoints,
         None,
@@ -956,7 +956,7 @@ fn parses_model_api_key() {
     let raw_config: toml::Value = toml::from_str(
         r#"
             [model.my-custom-model]
-            model = "grok-4.5"
+            model = "test-model-4.5"
             base_url = "https://api.example.com/v1"
             context_window = 200000
             api_key = "sk-test-key-12345"
@@ -966,7 +966,7 @@ fn parses_model_api_key() {
     let cfg = Config::new_from_toml_cfg(&raw_config).expect("config should parse");
     let resolved = resolve_model_list(&cfg, None);
     let model = resolved.get("my-custom-model").expect("model should exist");
-    assert_eq!(model.info.model, "grok-4.5");
+    assert_eq!(model.info.model, "test-model-4.5");
     assert_eq!(model.info.base_url, "https://api.example.com/v1");
     assert_eq!(model.api_key, Some("sk-test-key-12345".to_string()));
 }
@@ -1103,7 +1103,7 @@ async fn resolve_credentials_serves_cached_provider_token() {
 #[tokio::test]
 async fn set_env_key_shadows_warm_provider_at_resolve_time() {
     use ezer_test_support::EnvGuard;
-    let var = "GROK_TEST_ENVKEY_SHADOW";
+    let var = "EZER_TEST_ENVKEY_SHADOW";
     let _guard = EnvGuard::set(var, "env-token");
     let mut model = test_model_entry("m", "https://litellm.example/v1", None, Some(var), None);
     let provider = ezer_login::AuthProviderRef::new(
@@ -1388,18 +1388,18 @@ fn env_keys_deser_string_or_array() {
 }
 #[test]
 fn env_keys_resolve_first_set_wins() {
-    let keys = EnvKeys::new(["GROK_TEST_ENV_KEY_PRIMARY", "GROK_TEST_ENV_KEY_FALLBACK"]);
+    let keys = EnvKeys::new(["EZER_TEST_ENV_KEY_PRIMARY", "EZER_TEST_ENV_KEY_FALLBACK"]);
     assert_eq!(keys.resolve_value_with(|_| None), None, "none set");
     assert_eq!(
         keys.resolve_value_with(
-            |n| (n == "GROK_TEST_ENV_KEY_FALLBACK").then(|| "from-fallback".into())
+            |n| (n == "EZER_TEST_ENV_KEY_FALLBACK").then(|| "from-fallback".into())
         ),
         Some("from-fallback".into())
     );
     assert_eq!(
         keys.resolve_value_with(|n| match n {
-            "GROK_TEST_ENV_KEY_PRIMARY" => Some("from-primary".into()),
-            "GROK_TEST_ENV_KEY_FALLBACK" => Some("from-fallback".into()),
+            "EZER_TEST_ENV_KEY_PRIMARY" => Some("from-primary".into()),
+            "EZER_TEST_ENV_KEY_FALLBACK" => Some("from-fallback".into()),
             _ => None,
         }),
         Some("from-primary".into()),
@@ -1407,8 +1407,8 @@ fn env_keys_resolve_first_set_wins() {
     );
     assert_eq!(
         keys.resolve_value_with(|n| match n {
-            "GROK_TEST_ENV_KEY_PRIMARY" => Some(String::new()),
-            "GROK_TEST_ENV_KEY_FALLBACK" => Some("from-fallback".into()),
+            "EZER_TEST_ENV_KEY_PRIMARY" => Some(String::new()),
+            "EZER_TEST_ENV_KEY_FALLBACK" => Some("from-fallback".into()),
             _ => None,
         }),
         Some("from-fallback".into())
@@ -1423,21 +1423,21 @@ fn env_keys_single_and_array_are_semantically_equal() {
 }
 #[test]
 fn env_keys_resolve_skips_whitespace_only_value() {
-    let keys = EnvKeys::new(["GROK_TEST_WS_PRIMARY", "GROK_TEST_WS_FALLBACK"]);
+    let keys = EnvKeys::new(["EZER_TEST_WS_PRIMARY", "EZER_TEST_WS_FALLBACK"]);
     assert_eq!(
         keys.resolve_value_with(|n| match n {
-            "GROK_TEST_WS_PRIMARY" => Some("   ".into()),
-            "GROK_TEST_WS_FALLBACK" => Some("real".into()),
+            "EZER_TEST_WS_PRIMARY" => Some("   ".into()),
+            "EZER_TEST_WS_FALLBACK" => Some("real".into()),
             _ => None,
         }),
         Some("real".into())
     );
     assert_eq!(
-        EnvKeys::single("GROK_TEST_WS_ONLY").resolve_value_with(|_| Some("   ".into())),
+        EnvKeys::single("EZER_TEST_WS_ONLY").resolve_value_with(|_| Some("   ".into())),
         None
     );
     assert_eq!(
-        EnvKeys::single("GROK_TEST_WS_PAD").resolve_value_with(|_| Some("  tok  ".into())),
+        EnvKeys::single("EZER_TEST_WS_PAD").resolve_value_with(|_| Some("  tok  ".into())),
         Some("  tok  ".into())
     );
 }
@@ -1445,7 +1445,7 @@ fn env_keys_resolve_skips_whitespace_only_value() {
 #[serial]
 fn first_own_credential_empty_api_key_falls_through_to_env_key() {
     use ezer_test_support::EnvGuard;
-    let var = "GROK_TEST_FIRST_OWN_CRED_ENV";
+    let var = "EZER_TEST_FIRST_OWN_CRED_ENV";
     let _guard = EnvGuard::set(var, "env-token");
     let env_key = EnvKeys::single(var);
     assert_eq!(
@@ -1461,8 +1461,8 @@ fn first_own_credential_empty_api_key_falls_through_to_env_key() {
 #[serial]
 fn resolve_credentials_multi_env_key_uses_lc_alias() {
     use xai_chat_state::AuthType;
-    let primary = "GROK_TEST_MULTI_ENV_PRIMARY";
-    let alias = "GROK_TEST_MULTI_ENV_LC_ALIAS";
+    let primary = "EZER_TEST_MULTI_ENV_PRIMARY";
+    let alias = "EZER_TEST_MULTI_ENV_LC_ALIAS";
     unsafe {
         std::env::remove_var(primary);
         std::env::set_var(alias, "token-via-lc-alias");
@@ -1497,8 +1497,8 @@ fn resolve_credentials_multi_env_key_uses_lc_alias() {
 fn resolve_credentials_empty_env_key_falls_through_to_session() {
     use xai_chat_state::AuthType;
     use ezer_test_support::EnvGuard;
-    let primary = "GROK_TEST_EMPTY_ENV_PRIMARY";
-    let alias = "GROK_TEST_EMPTY_ENV_LC_ALIAS";
+    let primary = "EZER_TEST_EMPTY_ENV_PRIMARY";
+    let alias = "EZER_TEST_EMPTY_ENV_LC_ALIAS";
     let _primary = EnvGuard::set(primary, "");
     let _alias = EnvGuard::set(alias, "");
     let mut model = test_model_entry("m", "https://api.x.ai/v1", None, None, None);
@@ -1515,8 +1515,8 @@ fn resolve_credentials_empty_env_key_falls_through_to_global_key() {
     use xai_chat_state::AuthType;
     use ezer_test_support::EnvGuard;
     let sentinel = "xai-global-sentinel-key";
-    let primary = "GROK_TEST_EMPTY_ENV_GLOBAL_PRIMARY";
-    let alias = "GROK_TEST_EMPTY_ENV_GLOBAL_ALIAS";
+    let primary = "EZER_TEST_EMPTY_ENV_GLOBAL_PRIMARY";
+    let alias = "EZER_TEST_EMPTY_ENV_GLOBAL_ALIAS";
     let _primary = EnvGuard::set(primary, "");
     let _alias = EnvGuard::set(alias, "");
     let _global = EnvGuard::set(XAI_API_KEY_ENV_VAR, sentinel);
@@ -1604,7 +1604,7 @@ fn resolve_credentials_env_key_byok_keeps_api_key_auth_with_session() {
 #[test]
 fn proxy_messages_models_use_bearer_auth_scheme() {
     let mut model = test_model_entry(
-        "grok-4.5",
+        "test-model-4.5",
         crate::env::PROD_CLI_CHAT_PROXY_BASE_URL,
         None,
         None,
@@ -1738,7 +1738,7 @@ fn x_api_key_auth_scheme_flows_from_config_to_sampler() {
 #[test]
 fn auth_scheme_defaults_to_bearer_when_not_set_in_config() {
     let model = test_model_entry(
-        "grok-4.5",
+        "test-model-4.5",
         "https://api.example.com/v1",
         Some("sk-openai-test"),
         None,
@@ -2066,7 +2066,7 @@ fn parses_model_api_backend_responses() {
     let raw_config: toml::Value = toml::from_str(
         r#"
             [model.my-responses-model]
-            model = "grok-4.5"
+            model = "test-model-4.5"
             base_url = "https://api.example.com/v1"
             context_window = 200000
             api_backend = "responses"
@@ -2085,7 +2085,7 @@ fn parses_model_api_backend_chat_completions() {
     let raw_config: toml::Value = toml::from_str(
         r#"
             [model.my-chat-model]
-            model = "grok-4.5"
+            model = "test-model-4.5"
             base_url = "https://api.example.com/v1"
             context_window = 200000
             api_backend = "chat_completions"
@@ -2106,7 +2106,7 @@ fn model_messages_backend_auto_defaults_supports_reasoning_effort() {
     let raw_config: toml::Value = toml::from_str(
         r#"
             [model.my-claude]
-            model = "grok-4.5"
+            model = "test-model-4.5"
             base_url = "https://messages.example.com"
             context_window = 200000
             api_backend = "messages"
@@ -2127,7 +2127,7 @@ fn model_messages_backend_respects_explicit_supports_reasoning_effort_false() {
     let raw_config: toml::Value = toml::from_str(
         r#"
             [model.my-claude]
-            model = "grok-4.5"
+            model = "test-model-4.5"
             base_url = "https://messages.example.com"
             context_window = 200000
             api_backend = "messages"
@@ -2150,7 +2150,7 @@ fn model_chat_completions_backend_does_not_auto_default_supports_reasoning_effor
     let raw_config: toml::Value = toml::from_str(
         r#"
             [model.my-openai]
-            model = "grok-4.5"
+            model = "test-model-4.5"
             base_url = "https://api.example.com/v1"
             context_window = 200000
             api_backend = "chat_completions"
@@ -2170,7 +2170,7 @@ fn model_api_backend_defaults_to_responses() {
     let raw_config: toml::Value = toml::from_str(
         r#"
             [model.my-model]
-            model = "grok-4.5"
+            model = "test-model-4.5"
             base_url = "https://api.example.com/v1"
             context_window = 200000
             "#,
@@ -2762,7 +2762,7 @@ fn allowed_models_empty_is_unrestricted() {
 #[test]
 fn invalid_glob_is_rejected_by_validation() {
     use crate::agent::remote_config::ModelGlobSet;
-    assert!(ModelGlobSet::compile(Some(["grok[".to_string()].as_slice())).is_err());
+    assert!(ModelGlobSet::compile(Some(["ezer[".to_string()].as_slice())).is_err());
     let raw: toml::Value = toml::from_str(
         r#"
             [models]
@@ -2817,7 +2817,7 @@ fn inference_idle_timeout_secs_round_trip() {
     let raw_config: toml::Value = toml::from_str(
         r#"
             [model.slow-model]
-            model = "grok-4.5"
+            model = "test-model-4.5"
             base_url = "https://api.x.ai/v1"
             context_window = 200000
             inference_idle_timeout_secs = 600
@@ -2949,7 +2949,7 @@ fn telemetry_partial_override_retains_defaults() {
     assert_eq!(cfg.telemetry.mixpanel_enabled, defaults.mixpanel_enabled);
 }
 #[test]
-fn auth_alias_maps_to_grok_com_config() {
+fn auth_alias_maps_to_ezer_com_config() {
     let raw: toml::Value = toml::from_str(
         r#"
             [auth.oidc]
@@ -2959,29 +2959,29 @@ fn auth_alias_maps_to_grok_com_config() {
     )
     .unwrap();
     let cfg = Config::new_from_toml_cfg(&raw).expect("config should parse");
-    let oidc = cfg.grok_com_config.oidc.expect("oidc should be set");
+    let oidc = cfg.ezer_com_config.oidc.expect("oidc should be set");
     assert_eq!(oidc.issuer, "https://example.okta.com");
     assert_eq!(oidc.client_id, "test-id");
 }
 #[test]
-fn grok_com_config_still_works() {
+fn ezer_com_config_still_works() {
     let raw: toml::Value = toml::from_str(
         r#"
-            [grok_com_config.oidc]
+            [ezer_com_config.oidc]
             issuer = "https://example.okta.com"
             client_id = "test-id"
             "#,
     )
     .unwrap();
     let cfg = Config::new_from_toml_cfg(&raw).expect("config should parse");
-    let oidc = cfg.grok_com_config.oidc.expect("oidc should be set");
+    let oidc = cfg.ezer_com_config.oidc.expect("oidc should be set");
     assert_eq!(oidc.issuer, "https://example.okta.com");
 }
 /// `disable_api_key_auth` parses through the `[auth]` alias, and absent means None (opt-in knob, zero impact by default).
 #[test]
 fn disable_api_key_auth_parses_from_auth_alias() {
     let absent = Config::new_from_toml_cfg(&toml::from_str("").unwrap()).unwrap();
-    assert_eq!(absent.grok_com_config.disable_api_key_auth, None);
+    assert_eq!(absent.ezer_com_config.disable_api_key_auth, None);
     let raw: toml::Value = toml::from_str(
         r#"
             [auth]
@@ -2990,14 +2990,14 @@ fn disable_api_key_auth_parses_from_auth_alias() {
     )
     .unwrap();
     let cfg = Config::new_from_toml_cfg(&raw).expect("config should parse");
-    assert_eq!(cfg.grok_com_config.disable_api_key_auth, Some(true));
+    assert_eq!(cfg.ezer_com_config.disable_api_key_auth, Some(true));
 }
-/// `login_device_flow` reaches `Config::login_device_flow` via both `[grok_com_config]` and the `[auth]` alias, without warning as unrecognized.
+/// `login_device_flow` reaches `Config::login_device_flow` via both `[ezer_com_config]` and the `[auth]` alias, without warning as unrecognized.
 #[test]
 fn login_device_flow_reads_from_config() {
     let absent = Config::new_from_toml_cfg(&toml::from_str("").unwrap()).unwrap();
     assert_eq!(absent.login_device_flow, None);
-    for section in ["grok_com_config", "auth"] {
+    for section in ["ezer_com_config", "auth"] {
         let raw: toml::Value =
             toml::from_str(&format!("[{section}]\nlogin_device_flow = true\n")).unwrap();
         let cfg = Config::new_from_toml_cfg(&raw).expect("config should parse");
@@ -3019,13 +3019,13 @@ fn login_device_flow_reads_from_config() {
 #[test]
 fn force_login_team_uuid_parses_string_and_array() {
     use ezer_login::ForceLoginTeam;
-    let _g = crate::env::EnvVarGuard::remove("GROK_FORCE_LOGIN_TEAM_ID");
+    let _g = crate::env::EnvVarGuard::remove("EZER_FORCE_LOGIN_TEAM_ID");
     assert!(
         super::force_login_team_from_requirements().is_none(),
         "clear the force_login_team_uuid pin in requirements.toml to run this test",
     );
     let absent = Config::new_from_toml_cfg(&toml::from_str("").unwrap()).unwrap();
-    assert_eq!(absent.grok_com_config.force_login_team_uuid, None);
+    assert_eq!(absent.ezer_com_config.force_login_team_uuid, None);
     let raw: toml::Value = toml::from_str(
         r#"
             [auth]
@@ -3035,19 +3035,19 @@ fn force_login_team_uuid_parses_string_and_array() {
     .unwrap();
     let cfg = Config::new_from_toml_cfg(&raw).expect("config should parse");
     assert_eq!(
-        cfg.grok_com_config.force_login_team_uuid,
+        cfg.ezer_com_config.force_login_team_uuid,
         Some(ForceLoginTeam::Single("team-abc".into())),
     );
     let raw: toml::Value = toml::from_str(
         r#"
-            [grok_com_config]
+            [ezer_com_config]
             force_login_team_uuid = ["team-a", "team-b"]
             "#,
     )
     .unwrap();
     let cfg = Config::new_from_toml_cfg(&raw).expect("config should parse");
     assert_eq!(
-        cfg.grok_com_config.force_login_team_uuid,
+        cfg.ezer_com_config.force_login_team_uuid,
         Some(ForceLoginTeam::AnyOf(vec![
             "team-a".into(),
             "team-b".into()
@@ -3062,7 +3062,7 @@ fn force_login_team_uuid_parses_string_and_array() {
     .unwrap();
     let cfg = Config::new_from_toml_cfg(&raw).expect("config should parse");
     assert_eq!(
-        cfg.grok_com_config.force_login_team_uuid,
+        cfg.ezer_com_config.force_login_team_uuid,
         Some(ForceLoginTeam::AnyOf(vec![])),
     );
 }
@@ -3071,26 +3071,26 @@ fn force_login_team_uuid_parses_string_and_array() {
 #[test]
 fn force_login_team_id_env_overrides_user_config() {
     use ezer_login::ForceLoginTeam;
-    let _guard = crate::env::EnvVarGuard::set("GROK_FORCE_LOGIN_TEAM_ID", "env-team");
+    let _guard = crate::env::EnvVarGuard::set("EZER_FORCE_LOGIN_TEAM_ID", "env-team");
     assert!(
         super::force_login_team_from_requirements().is_none(),
         "clear the force_login_team_uuid pin in requirements.toml to run this test",
     );
     let from_env = Config::new_from_toml_cfg(&toml::from_str("").unwrap()).unwrap();
     assert_eq!(
-        from_env.grok_com_config.force_login_team_uuid,
+        from_env.ezer_com_config.force_login_team_uuid,
         Some(ForceLoginTeam::Single("env-team".into())),
     );
     let raw: toml::Value = toml::from_str(
         r#"
-            [grok_com_config]
+            [ezer_com_config]
             force_login_team_uuid = "admin-team"
             "#,
     )
     .unwrap();
     let overridden = Config::new_from_toml_cfg(&raw).expect("config should parse");
     assert_eq!(
-        overridden.grok_com_config.force_login_team_uuid,
+        overridden.ezer_com_config.force_login_team_uuid,
         Some(ForceLoginTeam::Single("env-team".into())),
     );
 }
@@ -3098,21 +3098,21 @@ fn force_login_team_id_env_overrides_user_config() {
 #[test]
 fn force_login_team_id_env_unset_keeps_config_value() {
     use ezer_login::ForceLoginTeam;
-    let _guard = crate::env::EnvVarGuard::remove("GROK_FORCE_LOGIN_TEAM_ID");
+    let _guard = crate::env::EnvVarGuard::remove("EZER_FORCE_LOGIN_TEAM_ID");
     assert!(
         super::force_login_team_from_requirements().is_none(),
         "clear the force_login_team_uuid pin in requirements.toml to run this test",
     );
     let raw: toml::Value = toml::from_str(
         r#"
-            [grok_com_config]
+            [ezer_com_config]
             force_login_team_uuid = "admin-team"
             "#,
     )
     .unwrap();
     let cfg = Config::new_from_toml_cfg(&raw).expect("config should parse");
     assert_eq!(
-        cfg.grok_com_config.force_login_team_uuid,
+        cfg.ezer_com_config.force_login_team_uuid,
         Some(ForceLoginTeam::Single("admin-team".into())),
     );
 }
@@ -3120,22 +3120,22 @@ fn force_login_team_id_env_unset_keeps_config_value() {
 /// Team membership can't be verified from a bare API key, so it needs IdP login.
 #[test]
 fn force_login_team_uuid_implies_api_key_auth_disabled() {
-    use ezer_login::{ForceLoginTeam, GrokComConfig};
-    let base = GrokComConfig {
+    use ezer_login::{ForceLoginTeam, EzerComConfig};
+    let base = EzerComConfig {
         disable_api_key_auth: None,
         force_login_team_uuid: None,
-        ..GrokComConfig::default()
+        ..EzerComConfig::default()
     };
     assert!(!base.api_key_auth_disabled());
     assert!(
-        GrokComConfig {
+        EzerComConfig {
             disable_api_key_auth: Some(true),
             ..base.clone()
         }
         .api_key_auth_disabled()
     );
     assert!(
-        GrokComConfig {
+        EzerComConfig {
             force_login_team_uuid: Some(ForceLoginTeam::Single("team-x".into())),
             ..base
         }
@@ -3265,7 +3265,7 @@ fn config_models_default_is_not_overwritten_by_default_models_json() {
     let remote_settings_default = Some("remote-settings-model");
     let resolved = resolve_string_flag(
         None,
-        "GROK_DEFAULT_MODEL_TEST_NONEXISTENT",
+        "EZER_DEFAULT_MODEL_TEST_NONEXISTENT",
         config_default,
         remote_settings_default,
     );
@@ -3281,8 +3281,8 @@ fn config_models_default_is_not_overwritten_by_default_models_json() {
 fn config_models_default_custom_model_is_in_resolved_model_list() {
     let (_, models) = resolve_models_from_toml(
         r#"
-            [model.acme-grok]
-            model = "grok-4.5"
+            [model.acme-ezer]
+            model = "test-model-4.5"
             base_url = "https://inference.example.com/v1"
             context_window = 256000
             env_key = "ENTERPRISE_AUTH_TOKEN"
@@ -3290,11 +3290,11 @@ fn config_models_default_custom_model_is_in_resolved_model_list() {
         None,
     );
     assert!(
-        models.contains_key("acme-grok"),
+        models.contains_key("acme-ezer"),
         "user-defined model must be in the resolved model list"
     );
-    let model = models.get("acme-grok").unwrap();
-    assert_eq!(model.info.model, "grok-4.5");
+    let model = models.get("acme-ezer").unwrap();
+    assert_eq!(model.info.model, "test-model-4.5");
     assert_eq!(model.info.base_url, "https://inference.example.com/v1");
 }
 #[test]
@@ -3306,7 +3306,7 @@ fn e2e_default_model_with_session_routes_to_proxy() {
     let sampling = resolve_sampling(model, Some("session-token-123"));
     assert_eq!(sampling.api_key.as_deref(), Some("session-token-123"));
     assert_eq!(
-        sampling.base_url, "https://cli-chat-proxy.grok.com/v1",
+        sampling.base_url, "https://proxy.example.test/v1",
         "session auth should route to cli-chat-proxy, not api.x.ai"
     );
 }
@@ -3332,7 +3332,7 @@ fn e2e_user_config_overrides_prefetched_model() {
     let mut prefetched = IndexMap::new();
     prefetched.insert(
         dm.to_string(),
-        test_model_entry(dm, "https://cli-chat-proxy.grok.com/v1", None, None, None),
+        test_model_entry(dm, "https://proxy.example.test/v1", None, None, None),
     );
     let (_, models) = resolve_models_from_toml(
         &format!(
@@ -3420,7 +3420,7 @@ fn e2e_duplicate_model_field_both_entries_survive() {
     let (_, models) = resolve_models_from_toml(
         &format!(
             r#"
-            [model.acme-grok]
+            [model.acme-ezer]
             model = "{dm}"
             base_url = "https://inference.example.com/v1"
             context_window = 200000
@@ -3431,11 +3431,11 @@ fn e2e_duplicate_model_field_both_entries_survive() {
     );
     assert!(models.contains_key(dm), "default entry should still exist");
     assert!(
-        models.contains_key("acme-grok"),
+        models.contains_key("acme-ezer"),
         "user entry with different key should also exist"
     );
     let default = models.get(dm).unwrap();
-    let user = models.get("acme-grok").unwrap();
+    let user = models.get("acme-ezer").unwrap();
     assert_eq!(default.info.model, user.info.model, "same model field");
     assert_ne!(
         default.info.base_url, user.info.base_url,
@@ -3446,7 +3446,7 @@ fn e2e_duplicate_model_field_both_entries_survive() {
     assert_eq!(sampling.base_url, "https://inference.example.com/v1");
     let sampling = resolve_sampling(default, Some("session-key"));
     assert_eq!(sampling.api_key.as_deref(), Some("session-key"));
-    assert_eq!(sampling.base_url, "https://cli-chat-proxy.grok.com/v1",);
+    assert_eq!(sampling.base_url, "https://proxy.example.test/v1",);
 }
 #[test]
 fn e2e_enterprise_custom_endpoint_skips_xai_defaults() {
@@ -3487,17 +3487,17 @@ fn e2e_default_endpoint_still_injects_defaults() {
 fn e2e_acp_model_info_no_dedup_on_model_field() {
     let mut models = IndexMap::new();
     models.insert(
-        "default-grok".to_string(),
+        "default-ezer".to_string(),
         test_model_entry(
             crate::models::default_model(),
-            "https://cli-chat-proxy.grok.com/v1",
+            "https://proxy.example.test/v1",
             None,
             None,
             Some("https://api.x.ai/v1"),
         ),
     );
     models.insert(
-        "acme-grok".to_string(),
+        "acme-ezer".to_string(),
         test_model_entry(
             crate::models::default_model(),
             "https://inference.example.com/v1",
@@ -3513,11 +3513,11 @@ fn e2e_acp_model_info_no_dedup_on_model_field() {
         "both entries should survive in ACP model list"
     );
     assert!(
-        acp_models.contains_key(&acp::ModelId::new("default-grok")),
+        acp_models.contains_key(&acp::ModelId::new("default-ezer")),
         "default entry should be addressable by map key"
     );
     assert!(
-        acp_models.contains_key(&acp::ModelId::new("acme-grok")),
+        acp_models.contains_key(&acp::ModelId::new("acme-ezer")),
         "user entry should be addressable by map key"
     );
 }
@@ -3586,19 +3586,19 @@ fn e2e_enterprise_endpoints_only_no_model_override() {
 /// Gated behind `#[serial]`.
 fn unset_endpoint_env_vars() {
     for k in [
-        "GROK_CLI_CHAT_PROXY_BASE_URL",
-        "GROK_XAI_API_BASE_URL",
-        "GROK_FEEDBACK_BASE_URL",
-        "GROK_TRACE_UPLOAD_URL",
-        "GROK_MANAGED_CONFIG_URL",
-        "GROK_MODELS_BASE_URL",
-        "GROK_MODELS_LIST_URL",
+        "EZER_CLI_CHAT_PROXY_BASE_URL",
+        "EZER_XAI_API_BASE_URL",
+        "EZER_FEEDBACK_BASE_URL",
+        "EZER_TRACE_UPLOAD_URL",
+        "EZER_MANAGED_CONFIG_URL",
+        "EZER_MODELS_BASE_URL",
+        "EZER_MODELS_LIST_URL",
         "OTEL_EXPORTER_OTLP_ENDPOINT",
         "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT",
         "OTEL_EXPORTER_OTLP_HEADERS",
-        "GROK_INTERNAL_OTLP_TRACES_ENDPOINT",
-        "GROK_INTERNAL_OTLP_HEADERS",
-        "GROK_EXTERNAL_OTEL",
+        "EZER_INTERNAL_OTLP_TRACES_ENDPOINT",
+        "EZER_INTERNAL_OTLP_HEADERS",
+        "EZER_EXTERNAL_OTEL",
     ] {
         unsafe { std::env::remove_var(k) };
     }
@@ -4277,7 +4277,7 @@ fn worktree_auto_gc_section_parses_from_toml() {
 #[serial]
 fn resolve_doom_loop_recovery_clamps_tunables() {
     use crate::util::config::DoomLoopRecoverySettings;
-    unsafe { std::env::remove_var("GROK_DOOM_LOOP_RECOVERY") };
+    unsafe { std::env::remove_var("EZER_DOOM_LOOP_RECOVERY") };
     let cfg = Config {
         doom_loop_recovery: DoomLoopRecoverySettings {
             enabled: Some(true),
@@ -4326,8 +4326,8 @@ fn resolve_doom_loop_recovery_clamps_tunables() {
 #[test]
 #[serial]
 fn resolve_trace_upload_disabled_when_telemetry_off_despite_remote_flag() {
-    unsafe { std::env::remove_var("GROK_TELEMETRY_ENABLED") };
-    unsafe { std::env::remove_var("GROK_TELEMETRY_TRACE_UPLOAD") };
+    unsafe { std::env::remove_var("EZER_TELEMETRY_ENABLED") };
+    unsafe { std::env::remove_var("EZER_TELEMETRY_TRACE_UPLOAD") };
     let mut cfg = Config::default();
     cfg.features.telemetry = Some(TelemetryMode::Disabled);
     cfg.remote_settings = Some(crate::util::config::RemoteSettings {
@@ -4341,8 +4341,8 @@ fn resolve_trace_upload_disabled_when_telemetry_off_despite_remote_flag() {
 #[test]
 #[serial]
 fn resolve_trace_upload_explicit_config_wins_over_telemetry_off() {
-    unsafe { std::env::remove_var("GROK_TELEMETRY_ENABLED") };
-    unsafe { std::env::remove_var("GROK_TELEMETRY_TRACE_UPLOAD") };
+    unsafe { std::env::remove_var("EZER_TELEMETRY_ENABLED") };
+    unsafe { std::env::remove_var("EZER_TELEMETRY_TRACE_UPLOAD") };
     let mut cfg = Config::default();
     cfg.features.telemetry = Some(TelemetryMode::Disabled);
     cfg.telemetry.trace_upload = Some(true);
@@ -4361,8 +4361,8 @@ fn resolve_trace_upload_explicit_config_wins_over_telemetry_off() {
 #[test]
 #[serial]
 fn trace_upload_decision_debug_reports_winning_source() {
-    unsafe { std::env::remove_var("GROK_TELEMETRY_ENABLED") };
-    unsafe { std::env::remove_var("GROK_TELEMETRY_TRACE_UPLOAD") };
+    unsafe { std::env::remove_var("EZER_TELEMETRY_ENABLED") };
+    unsafe { std::env::remove_var("EZER_TELEMETRY_TRACE_UPLOAD") };
     let mut cfg = Config::default();
     cfg.features.telemetry = Some(TelemetryMode::Disabled);
     cfg.remote_settings = Some(crate::util::config::RemoteSettings {
@@ -4408,9 +4408,9 @@ fn trace_upload_decision_debug_reports_winning_source() {
 #[test]
 #[serial]
 fn resolve_trace_upload_honors_config_when_telemetry_on() {
-    unsafe { std::env::remove_var("GROK_TELEMETRY_ENABLED") };
+    unsafe { std::env::remove_var("EZER_TELEMETRY_ENABLED") };
     unsafe { std::env::remove_var("DISABLE_TELEMETRY") };
-    unsafe { std::env::remove_var("GROK_TELEMETRY_TRACE_UPLOAD") };
+    unsafe { std::env::remove_var("EZER_TELEMETRY_TRACE_UPLOAD") };
     let mut cfg = Config::default();
     cfg.features.telemetry = Some(TelemetryMode::Enabled);
     cfg.telemetry.trace_upload = Some(false);
@@ -4424,7 +4424,7 @@ fn resolve_trace_upload_honors_config_when_telemetry_on() {
 #[test]
 #[serial]
 fn resolve_goal_defaults_to_true_when_unset() {
-    unsafe { std::env::remove_var("GROK_GOAL") };
+    unsafe { std::env::remove_var("EZER_GOAL") };
     let cfg = Config::default();
     let r = cfg.resolve_goal();
     assert!(r.value, "goal should be on by default");
@@ -4433,18 +4433,18 @@ fn resolve_goal_defaults_to_true_when_unset() {
 #[test]
 #[serial]
 fn resolve_goal_env_overrides_config_without_remote_kill_switch() {
-    unsafe { std::env::set_var("GROK_GOAL", "1") };
+    unsafe { std::env::set_var("EZER_GOAL", "1") };
     let mut cfg = Config::default();
     cfg.goal.enabled = Some(false);
     let r = cfg.resolve_goal();
     assert_eq!(r.source, ConfigSource::Env);
     assert!(r.value);
-    unsafe { std::env::remove_var("GROK_GOAL") };
+    unsafe { std::env::remove_var("EZER_GOAL") };
 }
 #[test]
 #[serial]
 fn resolve_goal_remote_false_kills_local_opt_in() {
-    unsafe { std::env::set_var("GROK_GOAL", "1") };
+    unsafe { std::env::set_var("EZER_GOAL", "1") };
     let mut cfg = Config::default();
     cfg.goal.enabled = Some(true);
     cfg.remote_settings = Some(crate::util::config::RemoteSettings {
@@ -4454,12 +4454,12 @@ fn resolve_goal_remote_false_kills_local_opt_in() {
     let r = cfg.resolve_goal();
     assert_eq!(r.source, ConfigSource::Remote);
     assert!(!r.value);
-    unsafe { std::env::remove_var("GROK_GOAL") };
+    unsafe { std::env::remove_var("EZER_GOAL") };
 }
 #[test]
 #[serial]
 fn resolve_goal_remote_settings_used_when_no_local() {
-    unsafe { std::env::remove_var("GROK_GOAL") };
+    unsafe { std::env::remove_var("EZER_GOAL") };
     let cfg = Config {
         remote_settings: Some(crate::util::config::RemoteSettings {
             goal_enabled: Some(true),
@@ -4475,7 +4475,7 @@ fn resolve_goal_remote_settings_used_when_no_local() {
 #[test]
 #[serial]
 fn resolve_goal_remote_settings_kill_switch_overrides_default_on() {
-    unsafe { std::env::remove_var("GROK_GOAL") };
+    unsafe { std::env::remove_var("EZER_GOAL") };
     let cfg = Config {
         remote_settings: Some(crate::util::config::RemoteSettings {
             goal_enabled: Some(false),
@@ -4490,7 +4490,7 @@ fn resolve_goal_remote_settings_kill_switch_overrides_default_on() {
 #[test]
 #[serial]
 fn background_workflows_default_on_without_affecting_goal() {
-    unsafe { std::env::remove_var("GROK_WORKFLOWS") };
+    unsafe { std::env::remove_var("EZER_WORKFLOWS") };
     let cfg = Config::default();
     let r = cfg.resolve_workflows();
     assert!(r.value);
@@ -4500,7 +4500,7 @@ fn background_workflows_default_on_without_affecting_goal() {
 #[test]
 #[serial]
 fn resolve_workflows_remote_settings_enables() {
-    unsafe { std::env::remove_var("GROK_WORKFLOWS") };
+    unsafe { std::env::remove_var("EZER_WORKFLOWS") };
     let cfg = Config {
         remote_settings: Some(crate::util::config::RemoteSettings {
             workflows_enabled: Some(true),
@@ -4515,7 +4515,7 @@ fn resolve_workflows_remote_settings_enables() {
 #[test]
 #[serial]
 fn resolve_workflows_remote_false_kills_local_opt_in() {
-    unsafe { std::env::set_var("GROK_WORKFLOWS", "1") };
+    unsafe { std::env::set_var("EZER_WORKFLOWS", "1") };
     let mut cfg = Config::default();
     cfg.workflows.enabled = Some(true);
     cfg.remote_settings = Some(crate::util::config::RemoteSettings {
@@ -4525,12 +4525,12 @@ fn resolve_workflows_remote_false_kills_local_opt_in() {
     let r = cfg.resolve_workflows();
     assert_eq!(r.source, ConfigSource::Remote);
     assert!(!r.value);
-    unsafe { std::env::remove_var("GROK_WORKFLOWS") };
+    unsafe { std::env::remove_var("EZER_WORKFLOWS") };
 }
 #[test]
 #[serial]
 fn resolve_workflows_env_wins() {
-    unsafe { std::env::set_var("GROK_WORKFLOWS", "0") };
+    unsafe { std::env::set_var("EZER_WORKFLOWS", "0") };
     let cfg = Config::default();
     let r = cfg.resolve_workflows();
     assert_eq!(r.source, ConfigSource::Env);
@@ -4538,12 +4538,12 @@ fn resolve_workflows_env_wins() {
         !r.value,
         "env must be able to kill the default-on workflows"
     );
-    unsafe { std::env::remove_var("GROK_WORKFLOWS") };
+    unsafe { std::env::remove_var("EZER_WORKFLOWS") };
 }
 #[test]
 #[serial]
 fn resolve_image_gen_model_override_remote_settings_or_config() {
-    unsafe { std::env::remove_var("GROK_IMAGE_GEN_MODEL_OVERRIDE") };
+    unsafe { std::env::remove_var("EZER_IMAGE_GEN_MODEL_OVERRIDE") };
     let with = |config: Option<&str>, gb: Option<&str>| Config {
         features: Features {
             image_gen_model_override: config.map(String::from),
@@ -4557,19 +4557,19 @@ fn resolve_image_gen_model_override_remote_settings_or_config() {
     };
     assert_eq!(Config::default().resolve_image_gen_model_override(), None);
     assert_eq!(
-        with(None, Some("grok-imagine-image")).resolve_image_gen_model_override(),
-        Some("grok-imagine-image".to_owned())
+        with(None, Some("ezer-imagine-image")).resolve_image_gen_model_override(),
+        Some("ezer-imagine-image".to_owned())
     );
     assert_eq!(
-        with(Some("grok-imagine-image-pro"), Some("grok-imagine-image"))
+        with(Some("ezer-imagine-image-pro"), Some("ezer-imagine-image"))
             .resolve_image_gen_model_override(),
-        Some("grok-imagine-image-pro".to_owned())
+        Some("ezer-imagine-image-pro".to_owned())
     );
 }
 #[test]
 #[serial]
 fn resolve_image_edit_model_override_remote_settings_or_config() {
-    unsafe { std::env::remove_var("GROK_IMAGE_EDIT_MODEL_OVERRIDE") };
+    unsafe { std::env::remove_var("EZER_IMAGE_EDIT_MODEL_OVERRIDE") };
     let with = |config: Option<&str>, gb: Option<&str>| Config {
         features: Features {
             image_edit_model_override: config.map(String::from),
@@ -4583,17 +4583,17 @@ fn resolve_image_edit_model_override_remote_settings_or_config() {
     };
     assert_eq!(Config::default().resolve_image_edit_model_override(), None);
     assert_eq!(
-        with(None, Some("grok-imagine-image")).resolve_image_edit_model_override(),
-        Some("grok-imagine-image".to_owned())
+        with(None, Some("ezer-imagine-image")).resolve_image_edit_model_override(),
+        Some("ezer-imagine-image".to_owned())
     );
     assert_eq!(
-        with(Some("grok-imagine-image-pro"), Some("grok-imagine-image"))
+        with(Some("ezer-imagine-image-pro"), Some("ezer-imagine-image"))
             .resolve_image_edit_model_override(),
-        Some("grok-imagine-image-pro".to_owned())
+        Some("ezer-imagine-image-pro".to_owned())
     );
     let gen_only = Config {
         remote_settings: Some(crate::util::config::RemoteSettings {
-            image_gen_model_override: Some("grok-imagine-image".to_owned()),
+            image_gen_model_override: Some("ezer-imagine-image".to_owned()),
             ..Default::default()
         }),
         ..Default::default()
@@ -4603,7 +4603,7 @@ fn resolve_image_edit_model_override_remote_settings_or_config() {
 #[test]
 #[serial]
 fn imagine_tools_disabled_gates_image_edit() {
-    unsafe { std::env::remove_var("GROK_IMAGE_EDIT") };
+    unsafe { std::env::remove_var("EZER_IMAGE_EDIT") };
     let with_list = |tools: Vec<&str>| Config {
         remote_settings: Some(crate::util::config::RemoteSettings {
             imagine_tools_disabled: Some(tools.into_iter().map(String::from).collect()),
@@ -4611,18 +4611,18 @@ fn imagine_tools_disabled_gates_image_edit() {
         }),
         ..Default::default()
     };
-    unsafe { std::env::set_var("GROK_IMAGE_EDIT", "1") };
+    unsafe { std::env::set_var("EZER_IMAGE_EDIT", "1") };
     let off = with_list(vec!["image_edit"]).resolve_image_edit();
     assert!(!off.value);
     assert_eq!(off.source, ConfigSource::Remote);
-    unsafe { std::env::remove_var("GROK_IMAGE_EDIT") };
+    unsafe { std::env::remove_var("EZER_IMAGE_EDIT") };
     assert!(with_list(vec!["image_to_video"]).resolve_image_edit().value);
     assert!(Config::default().resolve_image_edit().value);
 }
 #[test]
 #[serial]
 fn resolve_image_gen_gates() {
-    unsafe { std::env::remove_var("GROK_IMAGE_GEN") };
+    unsafe { std::env::remove_var("EZER_IMAGE_GEN") };
     assert!(Config::default().resolve_image_gen().value);
     assert!(
         !Config {
@@ -4646,7 +4646,7 @@ fn resolve_image_gen_gates() {
         .resolve_image_gen()
         .value
     );
-    unsafe { std::env::set_var("GROK_IMAGE_GEN", "1") };
+    unsafe { std::env::set_var("EZER_IMAGE_GEN", "1") };
     let denied = Config {
         remote_settings: Some(crate::util::config::RemoteSettings {
             imagine_tools_disabled: Some(vec!["image_gen".into()]),
@@ -4657,12 +4657,12 @@ fn resolve_image_gen_gates() {
     .resolve_image_gen();
     assert!(!denied.value);
     assert_eq!(denied.source, ConfigSource::Remote);
-    unsafe { std::env::remove_var("GROK_IMAGE_GEN") };
+    unsafe { std::env::remove_var("EZER_IMAGE_GEN") };
 }
 #[test]
 #[serial]
 fn resolve_video_gen_gates() {
-    unsafe { std::env::remove_var("GROK_VIDEO_GEN") };
+    unsafe { std::env::remove_var("EZER_VIDEO_GEN") };
     assert!(Config::default().resolve_video_gen().value);
     assert!(
         !Config {
@@ -4701,14 +4701,14 @@ fn resolve_video_gen_gates() {
 /// Clear every env var the goal/companion resolvers read so tests start from a known baseline regardless of run order.
 fn clear_goal_envs() {
     unsafe {
-        std::env::remove_var("GROK_GOAL");
-        std::env::remove_var("GROK_GOAL_CLASSIFIER");
-        std::env::remove_var("GROK_GOAL_PLANNER");
-        std::env::remove_var("GROK_GOAL_SUMMARY");
-        std::env::remove_var("GROK_GOAL_VERIFIER_N");
-        std::env::remove_var("GROK_GOAL_CLASSIFIER_MAX");
-        std::env::remove_var("GROK_GOAL_STRATEGIST_EVERY");
-        std::env::remove_var("GROK_GOAL_REVERIFY_AFTER");
+        std::env::remove_var("EZER_GOAL");
+        std::env::remove_var("EZER_GOAL_CLASSIFIER");
+        std::env::remove_var("EZER_GOAL_PLANNER");
+        std::env::remove_var("EZER_GOAL_SUMMARY");
+        std::env::remove_var("EZER_GOAL_VERIFIER_N");
+        std::env::remove_var("EZER_GOAL_CLASSIFIER_MAX");
+        std::env::remove_var("EZER_GOAL_STRATEGIST_EVERY");
+        std::env::remove_var("EZER_GOAL_REVERIFY_AFTER");
     }
 }
 fn cfg_with_goal(goal: bool) -> Config {
@@ -4796,12 +4796,12 @@ fn resolve_goal_classifier_remote_forces_either_way() {
 #[serial]
 fn resolve_goal_classifier_env_overrides_default_and_remote() {
     clear_goal_envs();
-    unsafe { std::env::set_var("GROK_GOAL_CLASSIFIER", "0") };
+    unsafe { std::env::set_var("EZER_GOAL_CLASSIFIER", "0") };
     let r = cfg_with_goal_and_remote(true, remote_classifier(true))
         .resolve_goal_classifier_enabled(true);
     assert!(!r.value);
     assert_eq!(r.source, ConfigSource::Env);
-    unsafe { std::env::set_var("GROK_GOAL_CLASSIFIER", "1") };
+    unsafe { std::env::set_var("EZER_GOAL_CLASSIFIER", "1") };
     let r = cfg_with_goal_and_remote(false, remote_classifier(false))
         .resolve_goal_classifier_enabled(false);
     assert!(r.value);
@@ -4840,11 +4840,11 @@ fn resolve_goal_planner_remote_forces_either_way() {
 #[serial]
 fn resolve_goal_planner_env_overrides_default_and_remote() {
     clear_goal_envs();
-    unsafe { std::env::set_var("GROK_GOAL_PLANNER", "0") };
+    unsafe { std::env::set_var("EZER_GOAL_PLANNER", "0") };
     let r = cfg_with_goal_and_remote(true, remote_planner(true)).resolve_goal_planner_enabled(true);
     assert!(!r.value);
     assert_eq!(r.source, ConfigSource::Env);
-    unsafe { std::env::set_var("GROK_GOAL_PLANNER", "1") };
+    unsafe { std::env::set_var("EZER_GOAL_PLANNER", "1") };
     let r =
         cfg_with_goal_and_remote(false, remote_planner(false)).resolve_goal_planner_enabled(false);
     assert!(r.value);
@@ -4883,7 +4883,7 @@ fn resolve_goal_summary_remote_forces_either_way() {
 #[serial]
 fn resolve_goal_summary_env_overrides_default_and_remote() {
     clear_goal_envs();
-    unsafe { std::env::set_var("GROK_GOAL_SUMMARY", "0") };
+    unsafe { std::env::set_var("EZER_GOAL_SUMMARY", "0") };
     let r = cfg_with_goal_and_remote(true, remote_summary(true)).resolve_goal_summary_enabled(true);
     assert!(!r.value);
     assert_eq!(r.source, ConfigSource::Env);
@@ -4906,7 +4906,7 @@ fn resolve_goal_classifier_config_honored_when_env_unset() {
 #[serial]
 fn resolve_goal_classifier_env_beats_config() {
     clear_goal_envs();
-    unsafe { std::env::set_var("GROK_GOAL_CLASSIFIER", "0") };
+    unsafe { std::env::set_var("EZER_GOAL_CLASSIFIER", "0") };
     let r = cfg_with_goal_config(GoalConfig {
         classifier_enabled: Some(true),
         ..Default::default()
@@ -4963,7 +4963,7 @@ fn resolve_goal_planner_config_honored_when_env_unset() {
 #[serial]
 fn resolve_goal_planner_env_beats_config() {
     clear_goal_envs();
-    unsafe { std::env::set_var("GROK_GOAL_PLANNER", "0") };
+    unsafe { std::env::set_var("EZER_GOAL_PLANNER", "0") };
     let r = cfg_with_goal_config(GoalConfig {
         planner_enabled: Some(true),
         ..Default::default()
@@ -5020,7 +5020,7 @@ fn resolve_goal_summary_config_honored_when_env_unset() {
 #[serial]
 fn resolve_goal_summary_env_beats_config() {
     clear_goal_envs();
-    unsafe { std::env::set_var("GROK_GOAL_SUMMARY", "0") };
+    unsafe { std::env::set_var("EZER_GOAL_SUMMARY", "0") };
     let r = cfg_with_goal_config(GoalConfig {
         summary_enabled: Some(true),
         ..Default::default()
@@ -5089,19 +5089,19 @@ reverify_after = 6
     assert_eq!(empty.goal.classifier_enabled, None);
     assert_eq!(empty.goal.verifier_count, None);
 }
-const GOAL_USE_CURRENT_ENV: &str = "GROK_GOAL_USE_CURRENT_MODEL_ONLY";
+const GOAL_USE_CURRENT_ENV: &str = "EZER_GOAL_USE_CURRENT_MODEL_ONLY";
 fn clear_goal_model_env() {
     unsafe { std::env::remove_var(GOAL_USE_CURRENT_ENV) };
 }
 fn planner_pair() -> crate::util::config::GoalRoleModel {
     crate::util::config::GoalRoleModel {
-        model: "grok-4".to_string(),
+        model: "test-model-4".to_string(),
         agent_type: "general-purpose".to_string(),
     }
 }
 fn strategist_pair() -> crate::util::config::GoalRoleModel {
     crate::util::config::GoalRoleModel {
-        model: "grok-4.5".to_string(),
+        model: "test-model-4.5".to_string(),
         agent_type: "cursor".to_string(),
     }
 }
@@ -5317,7 +5317,7 @@ agent_type = "cursor"
 "#;
     let raw: toml::Value = toml::from_str(toml_str).unwrap();
     let cfg = Config::new_from_toml_cfg(&raw).unwrap();
-    assert_eq!(cfg.goal.planner_model.as_ref().unwrap().model, "grok-build");
+    assert_eq!(cfg.goal.planner_model.as_ref().unwrap().model, "ezer-build");
     assert_eq!(
         cfg.goal.strategist_model.as_ref().unwrap().agent_type,
         "cursor"
@@ -5325,7 +5325,7 @@ agent_type = "cursor"
     assert_eq!(cfg.goal.skeptic_models.len(), 2);
     assert_eq!(
         cfg.goal.skeptic_models.first().map(|m| m.model.as_str()),
-        Some("grok-build")
+        Some("ezer-build")
     );
     assert_eq!(
         cfg.resolve_goal_planner_model(false).source,
@@ -5369,7 +5369,7 @@ agent_type = "cursor"
     assert_eq!(cfg.goal.skeptic_models.len(), 2);
     assert_eq!(
         cfg.goal.skeptic_models.first().map(|m| m.model.as_str()),
-        Some("grok-build")
+        Some("ezer-build")
     );
     assert_eq!(
         cfg.goal.skeptic_models.get(1).map(|m| m.model.as_str()),
@@ -5405,8 +5405,8 @@ agent_type = "cursor"
     .unwrap();
     let cfg = Config::new_from_toml_cfg(&raw).expect("[goal] config must parse");
     let ezer_build = crate::util::config::GoalRoleModel {
-        model: "grok-build".into(),
-        agent_type: "grok-build-plan".into(),
+        model: "ezer-build".into(),
+        agent_type: "ezer-build-plan".into(),
     };
     let composer = crate::util::config::GoalRoleModel {
         model: "test-model-fast".into(),
@@ -5593,7 +5593,7 @@ fn config_accepts_all_known_sections() {
             management_api_key = "mgmt-key"
             gcs_service_account_key = "gcs-key"
             [models]
-            default = "grok-3"
+            default = "test-model-3"
             [ui]
             yolo = true
             theme = "dark"
@@ -5636,7 +5636,7 @@ fn config_accepts_all_known_sections() {
             [toolset.bash]
             timeout_secs = 120
             login_shell_capture = true
-            [grok_com_config]
+            [ezer_com_config]
             token_header = "test"
             [auth.oidc]
             issuer = "https://sso.corp.com"
@@ -5840,18 +5840,18 @@ fn internal_otlp_test_config() -> EndpointsConfig {
         otel_exporter_otlp_endpoint: None,
         otel_exporter_otlp_traces_endpoint: None,
         otel_exporter_otlp_headers: None,
-        grok_internal_otlp_traces_endpoint: None,
-        grok_internal_otlp_headers: None,
+        ezer_internal_otlp_traces_endpoint: None,
+        ezer_internal_otlp_headers: None,
         external_otel_master_switch: false,
         ..Default::default()
     }
 }
-/// `grok_internal_otlp_traces_endpoint` wins over the legacy `OTEL_*` fields regardless of the master switch.
+/// `ezer_internal_otlp_traces_endpoint` wins over the legacy `OTEL_*` fields regardless of the master switch.
 #[test]
-fn internal_otlp_endpoint_grok_internal_wins_regardless_of_switch() {
+fn internal_otlp_endpoint_ezer_internal_wins_regardless_of_switch() {
     for switch in [false, true] {
         let cfg = EndpointsConfig {
-            grok_internal_otlp_traces_endpoint: Some(
+            ezer_internal_otlp_traces_endpoint: Some(
                 "https://internal.example/traces/".to_string(),
             ),
             otel_exporter_otlp_traces_endpoint: Some(
@@ -5864,7 +5864,7 @@ fn internal_otlp_endpoint_grok_internal_wins_regardless_of_switch() {
         assert_eq!(
             cfg.resolve_otlp_traces_endpoint(),
             "https://internal.example/traces",
-            "switch={switch}: GROK_INTERNAL_OTLP_TRACES_ENDPOINT must win verbatim (trailing / trimmed)"
+            "switch={switch}: EZER_INTERNAL_OTLP_TRACES_ENDPOINT must win verbatim (trailing / trimmed)"
         );
     }
 }
@@ -5994,10 +5994,10 @@ fn internal_otlp_consumed_standard_vars_cases() {
                 .legacy_base_ep
                 .then(|| "https://legacy-base.example".to_string()),
             otel_exporter_otlp_headers: case.legacy_headers.then(|| "k=v".to_string()),
-            grok_internal_otlp_traces_endpoint: case
+            ezer_internal_otlp_traces_endpoint: case
                 .internal_ep
                 .then(|| "https://internal.example/traces".to_string()),
-            grok_internal_otlp_headers: case.internal_headers.then(|| "ik=iv".to_string()),
+            ezer_internal_otlp_headers: case.internal_headers.then(|| "ik=iv".to_string()),
             ..internal_otlp_test_config()
         };
         assert_eq!(
@@ -6008,12 +6008,12 @@ fn internal_otlp_consumed_standard_vars_cases() {
         );
     }
 }
-/// Headers precedence: `grok_internal_otlp_headers` wins; legacy `otel_exporter_otlp_headers` only when the master switch is unset.
+/// Headers precedence: `ezer_internal_otlp_headers` wins; legacy `otel_exporter_otlp_headers` only when the master switch is unset.
 #[test]
 fn internal_otlp_headers_precedence() {
     for switch in [false, true] {
         let cfg = EndpointsConfig {
-            grok_internal_otlp_headers: Some("x-debug=1".to_string()),
+            ezer_internal_otlp_headers: Some("x-debug=1".to_string()),
             otel_exporter_otlp_headers: Some("legacy=1".to_string()),
             external_otel_master_switch: switch,
             ..internal_otlp_test_config()
@@ -6052,7 +6052,7 @@ fn external_otel_default_off_and_double_opt_in() {
         resolve_external_otel_config_with(
             None,
             None,
-            ext_env(&[("GROK_EXTERNAL_OTEL", "1")]),
+            ext_env(&[("EZER_EXTERNAL_OTEL", "1")]),
             ext_client(),
             false,
         )
@@ -6063,7 +6063,7 @@ fn external_otel_default_off_and_double_opt_in() {
             None,
             None,
             ext_env(&[
-                ("GROK_EXTERNAL_OTEL", "1"),
+                ("EZER_EXTERNAL_OTEL", "1"),
                 ("OTEL_METRICS_EXPORTER", "otlp"),
             ]),
             ext_client(),
@@ -6113,7 +6113,7 @@ fn external_otel_file_table_layered_under_env() {
         resolve_external_otel_config_with(
             Some(&effective),
             None,
-            ext_env(&[("GROK_EXTERNAL_OTEL", "0")]),
+            ext_env(&[("EZER_EXTERNAL_OTEL", "0")]),
             ext_client(),
             false,
         )
@@ -6187,7 +6187,7 @@ fn external_otel_requirements_pin_wins_over_env() {
         resolve_external_otel_config_with(
             None,
             Some(&req),
-            ext_env(&[("GROK_EXTERNAL_OTEL", "1"), ("OTEL_LOGS_EXPORTER", "otlp"),]),
+            ext_env(&[("EZER_EXTERNAL_OTEL", "1"), ("OTEL_LOGS_EXPORTER", "otlp"),]),
             ext_client(),
             false,
         )
@@ -6206,7 +6206,7 @@ fn external_otel_requirements_pin_wins_over_env() {
         None,
         Some(&req),
         ext_env(&[
-            ("GROK_EXTERNAL_OTEL", "1"),
+            ("EZER_EXTERNAL_OTEL", "1"),
             ("OTEL_LOGS_EXPORTER", "otlp"),
             ("OTEL_LOG_USER_PROMPTS", "1"),
             ("OTEL_LOG_TOOL_DETAILS", "1"),
@@ -6681,7 +6681,7 @@ fn external_otel_carries_internal_consumed_flag() {
     let cfg = resolve_external_otel_config_with(
         None,
         None,
-        ext_env(&[("GROK_EXTERNAL_OTEL", "1"), ("OTEL_LOGS_EXPORTER", "otlp")]),
+        ext_env(&[("EZER_EXTERNAL_OTEL", "1"), ("OTEL_LOGS_EXPORTER", "otlp")]),
         ext_client(),
         true,
     )
@@ -6693,23 +6693,23 @@ fn empty_config() -> toml::Value {
 }
 fn clear_runtime_env_vars() {
     unsafe {
-        std::env::remove_var("GROK_SUBAGENTS");
         std::env::remove_var("EZER_SUBAGENTS");
-        std::env::remove_var("GROK_RESPECT_GITIGNORE");
-        std::env::remove_var("GROK_WEB_SEARCH_MODEL");
-        std::env::remove_var("GROK_SESSION_SUMMARY_MODEL");
-        std::env::remove_var("GROK_CURSOR_SKILLS_ENABLED");
-        std::env::remove_var("GROK_CURSOR_RULES_ENABLED");
-        std::env::remove_var("GROK_CURSOR_AGENTS_ENABLED");
-        std::env::remove_var("GROK_CLAUDE_SKILLS_ENABLED");
-        std::env::remove_var("GROK_CLAUDE_RULES_ENABLED");
-        std::env::remove_var("GROK_CLAUDE_AGENTS_ENABLED");
+        std::env::remove_var("EZER_SUBAGENTS");
+        std::env::remove_var("EZER_RESPECT_GITIGNORE");
+        std::env::remove_var("EZER_WEB_SEARCH_MODEL");
+        std::env::remove_var("EZER_SESSION_SUMMARY_MODEL");
+        std::env::remove_var("EZER_CURSOR_SKILLS_ENABLED");
+        std::env::remove_var("EZER_CURSOR_RULES_ENABLED");
+        std::env::remove_var("EZER_CURSOR_AGENTS_ENABLED");
+        std::env::remove_var("EZER_CLAUDE_SKILLS_ENABLED");
+        std::env::remove_var("EZER_CLAUDE_RULES_ENABLED");
+        std::env::remove_var("EZER_CLAUDE_AGENTS_ENABLED");
     }
 }
 fn clear_managed_mcp_env_vars() {
     unsafe {
-        std::env::remove_var("GROK_MANAGED_MCPS_ENABLED");
-        std::env::remove_var("GROK_MANAGED_MCP_GATEWAY_TOOLS_ENABLED");
+        std::env::remove_var("EZER_MANAGED_MCPS_ENABLED");
+        std::env::remove_var("EZER_MANAGED_MCP_GATEWAY_TOOLS_ENABLED");
     }
 }
 fn isolate_compat_env() -> Vec<EnvGuard> {
@@ -6870,7 +6870,7 @@ fn resolve_raw_compat_sessions_load_failure_fails_closed() {
 #[serial]
 fn resolve_raw_compat_sessions_load_failure_allows_env_override() {
     let _env = isolate_compat_env();
-    let _codex = EnvGuard::set("GROK_CODEX_SESSIONS_ENABLED", "true");
+    let _codex = EnvGuard::set("EZER_CODEX_SESSIONS_ENABLED", "true");
     let resolved = resolve_compat_sessions_from_raw(Err(()), None);
     assert!(!resolved.cursor.sessions);
     assert!(!resolved.claude.sessions);
@@ -6922,9 +6922,9 @@ fn remote_keys_are_one_hot_and_false_overrides_default() {
 fn resolve_compat_env_sessions_disable_independently() {
     let _env = isolate_compat_env();
     for (vendor, env_var) in [
-        (CompatVendor::Cursor, "GROK_CURSOR_SESSIONS_ENABLED"),
-        (CompatVendor::Claude, "GROK_CLAUDE_SESSIONS_ENABLED"),
-        (CompatVendor::Codex, "GROK_CODEX_SESSIONS_ENABLED"),
+        (CompatVendor::Cursor, "EZER_CURSOR_SESSIONS_ENABLED"),
+        (CompatVendor::Claude, "EZER_CLAUDE_SESSIONS_ENABLED"),
+        (CompatVendor::Codex, "EZER_CODEX_SESSIONS_ENABLED"),
     ] {
         let _disabled = EnvGuard::set(env_var, "false");
         assert_session_one_disabled(
@@ -6947,8 +6947,8 @@ fn resolve_compat_precedence_and_reserved_codex_hook() {
     assert!(!resolved.codex.hooks);
     assert!(resolved.cursor.hooks);
     assert!(resolved.claude.hooks);
-    let _session = EnvGuard::set("GROK_CURSOR_SESSIONS_ENABLED", "true");
-    let _hook = EnvGuard::set("GROK_CODEX_HOOKS_ENABLED", "true");
+    let _session = EnvGuard::set("EZER_CURSOR_SESSIONS_ENABLED", "true");
+    let _hook = EnvGuard::set("EZER_CODEX_HOOKS_ENABLED", "true");
     let resolved = resolve_compat_config(&config, Some(&remote));
     assert!(resolved.cursor.sessions);
     assert!(resolved.codex.hooks);
@@ -6957,7 +6957,7 @@ fn resolve_compat_precedence_and_reserved_codex_hook() {
 #[serial]
 fn resolve_runtime_fields_compat_asymmetric_sources() {
     let _env = isolate_compat_env();
-    let _cursor = EnvGuard::set("GROK_CURSOR_SESSIONS_ENABLED", "false");
+    let _cursor = EnvGuard::set("EZER_CURSOR_SESSIONS_ENABLED", "false");
     let raw: toml::Value =
         toml::from_str("[compat.cursor]\nsessions = true\n[compat.claude]\nsessions = false")
             .unwrap();
@@ -7141,7 +7141,7 @@ fn resolve_runtime_fields_cli_no_subagents_disables() {
 #[serial]
 fn resolve_runtime_fields_gitignore_from_env() {
     clear_runtime_env_vars();
-    unsafe { std::env::set_var("GROK_RESPECT_GITIGNORE", "0") };
+    unsafe { std::env::set_var("EZER_RESPECT_GITIGNORE", "0") };
     let raw = empty_config();
     let mut cfg = Config::new_from_toml_cfg(&raw).unwrap();
     cfg.resolve_runtime_fields(&RuntimeResolutionContext {
@@ -7272,12 +7272,12 @@ telemetry = "garbage"
 #[test]
 #[serial]
 fn is_telemetry_explicitly_disabled_sync_env_signals() {
-    unsafe { std::env::set_var("GROK_TELEMETRY_ENABLED", "0") };
+    unsafe { std::env::set_var("EZER_TELEMETRY_ENABLED", "0") };
     unsafe { std::env::remove_var("DISABLE_TELEMETRY") };
     assert!(is_telemetry_explicitly_disabled_sync());
-    unsafe { std::env::set_var("GROK_TELEMETRY_ENABLED", "1") };
+    unsafe { std::env::set_var("EZER_TELEMETRY_ENABLED", "1") };
     assert!(!is_telemetry_explicitly_disabled_sync());
-    unsafe { std::env::remove_var("GROK_TELEMETRY_ENABLED") };
+    unsafe { std::env::remove_var("EZER_TELEMETRY_ENABLED") };
     unsafe { std::env::set_var("DISABLE_TELEMETRY", "1") };
     assert!(is_telemetry_explicitly_disabled_sync());
     unsafe { std::env::remove_var("DISABLE_TELEMETRY") };
@@ -7286,8 +7286,8 @@ fn is_telemetry_explicitly_disabled_sync_env_signals() {
 #[serial]
 fn resolve_telemetry_mode_disable_env_beats_opt_in_but_not_requirements_pin() {
     let home = tempfile::tempdir().unwrap();
-    let _home = EnvGuard::set("GROK_HOME", home.path());
-    let _enable = EnvGuard::set("GROK_TELEMETRY_ENABLED", "true");
+    let _home = EnvGuard::set("EZER_HOME", home.path());
+    let _enable = EnvGuard::set("EZER_TELEMETRY_ENABLED", "true");
     let mut cfg = Config::default();
     cfg.features.telemetry = Some(TelemetryMode::Enabled);
     let _falsy = EnvGuard::set("DISABLE_TELEMETRY", "0");
@@ -7326,27 +7326,27 @@ default = "ezer-build"
 [[version_overrides]]
 minimum_version = "1.8.0"
 [version_overrides.models]
-default = "grok-4.5"
+default = "test-model-4.5"
 "#,
     )
     .unwrap();
     let v = semver::Version::parse("1.8.0").unwrap();
     ezer_config::apply_version_overrides(&mut value, &v).unwrap();
     let cfg = Config::new_from_toml_cfg(&value).unwrap();
-    assert_eq!(cfg.models.default.as_deref(), Some("grok-4.5"));
+    assert_eq!(cfg.models.default.as_deref(), Some("test-model-4.5"));
 }
-/// Reproduce the enterprise managed config bug: [model.ezer-build] sets context_window=500k for model="grok-4.5". [models].default="grok-4.5" still resolves to the bare prefetched entry (256k).
-/// Layer 3 only overrides key "ezer-build", not key "grok-4.5". After the Layer 4 slug propagation fix, both keys should have 500k.
+/// Reproduce the enterprise managed config bug: [model.ezer-build] sets context_window=500k for model="test-model-4.5". [models].default="test-model-4.5" still resolves to the bare prefetched entry (256k).
+/// Layer 3 only overrides key "ezer-build", not key "test-model-4.5". After the Layer 4 slug propagation fix, both keys should have 500k.
 #[test]
 fn slug_propagation_enterprise_managed_config_key_mismatch() {
     let default_cw = DEFAULT_CONTEXT_WINDOW;
     let raw: toml::Value = toml::from_str(
         r#"
             [models]
-            default = "grok-4.5"
+            default = "test-model-4.5"
 
-            [model.grok-build]
-            model = "grok-4.5"
+            [model.ezer-build]
+            model = "test-model-4.5"
             context_window = 500000
             base_url = "https://inference.example.com/v1"
             api_backend = "responses"
@@ -7356,26 +7356,26 @@ fn slug_propagation_enterprise_managed_config_key_mismatch() {
     let cfg = Config::new_from_toml_cfg(&raw).expect("config should parse");
     let mut prefetched = IndexMap::new();
     let mut entry = test_model_entry(
-        "grok-4.5",
+        "test-model-4.5",
         "https://inference.example.com/v1",
         None,
         None,
         None,
     );
     entry.info.context_window = NonZeroU64::new(default_cw).unwrap();
-    prefetched.insert("grok-4.5".to_owned(), entry);
+    prefetched.insert("test-model-4.5".to_owned(), entry);
     let resolved = resolve_model_list(&cfg, Some(prefetched));
     let by_key = resolved
-        .get("grok-build")
-        .expect("grok-build key must exist");
+        .get("ezer-build")
+        .expect("ezer-build key must exist");
     assert_eq!(by_key.info.context_window.get(), 500_000);
-    assert_eq!(by_key.info.model, "grok-4.5");
-    let by_latest = resolved.get("grok-4.5").expect("grok-4.5 key must exist");
+    assert_eq!(by_key.info.model, "test-model-4.5");
+    let by_latest = resolved.get("test-model-4.5").expect("test-model-4.5 key must exist");
     assert_eq!(
         by_latest.info.context_window.get(),
         500_000,
-        "BUG: prefetched 'grok-4.5' should inherit 500k from \
-         sibling 'grok-build' (same model slug), not stay at {default_cw}"
+        "BUG: prefetched 'test-model-4.5' should inherit 500k from \
+         sibling 'ezer-build' (same model slug), not stay at {default_cw}"
     );
 }
 /// Slug propagation should carry over api_backend but NOT agent_type.
@@ -7384,8 +7384,8 @@ fn slug_propagation_inherits_api_backend_but_not_agent_type() {
     let default_cw = DEFAULT_CONTEXT_WINDOW;
     let raw: toml::Value = toml::from_str(
         r#"
-            [model.grok-build]
-            model = "grok-4.5"
+            [model.ezer-build]
+            model = "test-model-4.5"
             context_window = 500000
             base_url = "https://test.example.com/v1"
             api_backend = "responses"
@@ -7395,13 +7395,13 @@ fn slug_propagation_inherits_api_backend_but_not_agent_type() {
     .unwrap();
     let cfg = Config::new_from_toml_cfg(&raw).expect("config should parse");
     let mut prefetched = IndexMap::new();
-    let mut entry = test_model_entry("grok-4.5", "https://test.example.com/v1", None, None, None);
+    let mut entry = test_model_entry("test-model-4.5", "https://test.example.com/v1", None, None, None);
     entry.info.context_window = NonZeroU64::new(default_cw).unwrap();
     entry.info.agent_type = default_agent_type();
     entry.info.api_backend = ApiBackend::default();
-    prefetched.insert("grok-4.5".to_owned(), entry);
+    prefetched.insert("test-model-4.5".to_owned(), entry);
     let resolved = resolve_model_list(&cfg, Some(prefetched));
-    let latest = resolved.get("grok-4.5").unwrap();
+    let latest = resolved.get("test-model-4.5").unwrap();
     assert_eq!(
         latest.info.agent_type,
         default_agent_type(),
@@ -7418,8 +7418,8 @@ fn slug_propagation_inherits_api_backend_but_not_agent_type() {
 fn slug_propagation_does_not_overwrite_explicit_context_window() {
     let raw: toml::Value = toml::from_str(
         r#"
-            [model.grok-build]
-            model = "grok-4.5"
+            [model.ezer-build]
+            model = "test-model-4.5"
             context_window = 500000
             base_url = "https://test.example.com/v1"
             "#,
@@ -7427,11 +7427,11 @@ fn slug_propagation_does_not_overwrite_explicit_context_window() {
     .unwrap();
     let cfg = Config::new_from_toml_cfg(&raw).expect("config should parse");
     let mut prefetched = IndexMap::new();
-    let mut entry = test_model_entry("grok-4.5", "https://test.example.com/v1", None, None, None);
+    let mut entry = test_model_entry("test-model-4.5", "https://test.example.com/v1", None, None, None);
     entry.info.context_window = NonZeroU64::new(65_536).unwrap();
-    prefetched.insert("grok-4.5".to_owned(), entry);
+    prefetched.insert("test-model-4.5".to_owned(), entry);
     let resolved = resolve_model_list(&cfg, Some(prefetched));
-    let latest = resolved.get("grok-4.5").unwrap();
+    let latest = resolved.get("test-model-4.5").unwrap();
     assert_eq!(
         latest.info.context_window.get(),
         65_536,
@@ -7850,13 +7850,13 @@ fn config_model_reasoning_efforts_parses_inline_tables_and_bare_strings() {
 fn resolve_model_list_config_reasoning_efforts_beats_remote() {
     let raw_config: toml::Value = toml::from_str(
         r#"
-            [model.grok-x]
+            [model.ezer-x]
             reasoning_efforts = ["low"]
             "#,
     )
     .unwrap();
     let cfg = Config::new_from_toml_cfg(&raw_config).expect("config should parse");
-    let mut entry = prefetch_model_entry("grok-x", 200_000, ApiBackend::default());
+    let mut entry = prefetch_model_entry("ezer-x", 200_000, ApiBackend::default());
     entry.info.reasoning_efforts = vec![ReasoningEffortOption {
         id: "high".to_string(),
         value: ReasoningEffort::High,
@@ -7865,11 +7865,11 @@ fn resolve_model_list_config_reasoning_efforts_beats_remote() {
         default: false,
     }];
     let mut prefetched = IndexMap::new();
-    prefetched.insert("grok-x".to_owned(), entry);
+    prefetched.insert("ezer-x".to_owned(), entry);
     let resolved = resolve_model_list(&cfg, Some(prefetched));
     let efforts = &resolved
-        .get("grok-x")
-        .expect("grok-x")
+        .get("ezer-x")
+        .expect("ezer-x")
         .info
         .reasoning_efforts;
     assert_eq!(efforts.len(), 1);
@@ -8027,7 +8027,7 @@ fn byok_config_overlay_visible_to_api_key_users() {
     let raw: toml::Value = toml::from_str(
         r#"
             [model.enterprise-alias]
-            model = "grok-4.5"
+            model = "test-model-4.5"
             base_url = "https://inference.company.com/v1"
             env_key = "COMPANY_TOKEN"
             "#,
@@ -8081,7 +8081,7 @@ fn plain_config_overlay_preserves_bundled_visibility() {
 #[test]
 #[serial]
 fn mcp_liveness_watchers_default_is_true() {
-    unsafe { std::env::remove_var("GROK_MCP_LIVENESS_WATCHERS") };
+    unsafe { std::env::remove_var("EZER_MCP_LIVENESS_WATCHERS") };
     let r = resolve_mcp_liveness_watchers(None, None, None, None, None);
     assert!(r.value, "default-on by spec");
     assert_eq!(r.source, ConfigSource::Default);
@@ -8089,35 +8089,35 @@ fn mcp_liveness_watchers_default_is_true() {
 #[test]
 #[serial]
 fn mcp_liveness_watchers_requirement_wins_over_everything() {
-    unsafe { std::env::set_var("GROK_MCP_LIVENESS_WATCHERS", "true") };
+    unsafe { std::env::set_var("EZER_MCP_LIVENESS_WATCHERS", "true") };
     let r =
         resolve_mcp_liveness_watchers(Some(false), Some(true), Some(true), Some(true), Some(true));
-    unsafe { std::env::remove_var("GROK_MCP_LIVENESS_WATCHERS") };
+    unsafe { std::env::remove_var("EZER_MCP_LIVENESS_WATCHERS") };
     assert!(!r.value, "requirement overrides every other layer");
     assert_eq!(r.source, ConfigSource::Requirement);
 }
 #[test]
 #[serial]
 fn mcp_liveness_watchers_cli_wins_over_env_and_below() {
-    unsafe { std::env::set_var("GROK_MCP_LIVENESS_WATCHERS", "true") };
+    unsafe { std::env::set_var("EZER_MCP_LIVENESS_WATCHERS", "true") };
     let r = resolve_mcp_liveness_watchers(None, Some(false), Some(true), Some(true), Some(true));
-    unsafe { std::env::remove_var("GROK_MCP_LIVENESS_WATCHERS") };
+    unsafe { std::env::remove_var("EZER_MCP_LIVENESS_WATCHERS") };
     assert!(!r.value);
     assert_eq!(r.source, ConfigSource::Cli);
 }
 #[test]
 #[serial]
 fn mcp_liveness_watchers_env_wins_over_config_and_below() {
-    unsafe { std::env::set_var("GROK_MCP_LIVENESS_WATCHERS", "false") };
+    unsafe { std::env::set_var("EZER_MCP_LIVENESS_WATCHERS", "false") };
     let r = resolve_mcp_liveness_watchers(None, None, Some(true), Some(true), Some(true));
-    unsafe { std::env::remove_var("GROK_MCP_LIVENESS_WATCHERS") };
+    unsafe { std::env::remove_var("EZER_MCP_LIVENESS_WATCHERS") };
     assert!(!r.value);
     assert_eq!(r.source, ConfigSource::Env);
 }
 #[test]
 #[serial]
 fn mcp_liveness_watchers_config_wins_over_managed_and_feature_flag() {
-    unsafe { std::env::remove_var("GROK_MCP_LIVENESS_WATCHERS") };
+    unsafe { std::env::remove_var("EZER_MCP_LIVENESS_WATCHERS") };
     let r = resolve_mcp_liveness_watchers(None, None, Some(false), Some(true), Some(true));
     assert!(!r.value);
     assert_eq!(r.source, ConfigSource::Config);
@@ -8125,7 +8125,7 @@ fn mcp_liveness_watchers_config_wins_over_managed_and_feature_flag() {
 #[test]
 #[serial]
 fn mcp_liveness_watchers_managed_wins_over_feature_flag() {
-    unsafe { std::env::remove_var("GROK_MCP_LIVENESS_WATCHERS") };
+    unsafe { std::env::remove_var("EZER_MCP_LIVENESS_WATCHERS") };
     let r = resolve_mcp_liveness_watchers(None, None, None, Some(false), Some(true));
     assert!(!r.value);
     assert_eq!(r.source, ConfigSource::ManagedConfig);
@@ -8133,7 +8133,7 @@ fn mcp_liveness_watchers_managed_wins_over_feature_flag() {
 #[test]
 #[serial]
 fn mcp_liveness_watchers_feature_flag_used_when_no_higher_layer() {
-    unsafe { std::env::remove_var("GROK_MCP_LIVENESS_WATCHERS") };
+    unsafe { std::env::remove_var("EZER_MCP_LIVENESS_WATCHERS") };
     let r = resolve_mcp_liveness_watchers(None, None, None, None, Some(false));
     assert!(!r.value);
     assert_eq!(r.source, ConfigSource::Remote);
@@ -8141,7 +8141,7 @@ fn mcp_liveness_watchers_feature_flag_used_when_no_higher_layer() {
 #[test]
 #[serial]
 fn mcp_auto_restart_default_is_true() {
-    unsafe { std::env::remove_var("GROK_MCP_AUTO_RESTART") };
+    unsafe { std::env::remove_var("EZER_MCP_AUTO_RESTART") };
     let r = resolve_mcp_auto_restart(None, None, None, None, None);
     assert!(r.value, "recovery is on by default");
     assert_eq!(r.source, ConfigSource::Default);
@@ -8149,7 +8149,7 @@ fn mcp_auto_restart_default_is_true() {
 #[test]
 #[serial]
 fn mcp_auto_restart_requirement_wins_over_everything() {
-    unsafe { std::env::set_var("GROK_MCP_AUTO_RESTART", "false") };
+    unsafe { std::env::set_var("EZER_MCP_AUTO_RESTART", "false") };
     let r = resolve_mcp_auto_restart(
         Some(true),
         Some(false),
@@ -8157,23 +8157,23 @@ fn mcp_auto_restart_requirement_wins_over_everything() {
         Some(false),
         Some(false),
     );
-    unsafe { std::env::remove_var("GROK_MCP_AUTO_RESTART") };
+    unsafe { std::env::remove_var("EZER_MCP_AUTO_RESTART") };
     assert!(r.value);
     assert_eq!(r.source, ConfigSource::Requirement);
 }
 #[test]
 #[serial]
 fn mcp_auto_restart_env_wins_over_config_and_below() {
-    unsafe { std::env::set_var("GROK_MCP_AUTO_RESTART", "true") };
+    unsafe { std::env::set_var("EZER_MCP_AUTO_RESTART", "true") };
     let r = resolve_mcp_auto_restart(None, None, Some(false), Some(false), Some(false));
-    unsafe { std::env::remove_var("GROK_MCP_AUTO_RESTART") };
+    unsafe { std::env::remove_var("EZER_MCP_AUTO_RESTART") };
     assert!(r.value);
     assert_eq!(r.source, ConfigSource::Env);
 }
 #[test]
 #[serial]
 fn turn_transient_retry_default_is_true() {
-    unsafe { std::env::remove_var("GROK_TURN_TRANSIENT_RETRY") };
+    unsafe { std::env::remove_var("EZER_TURN_TRANSIENT_RETRY") };
     let r = resolve_turn_transient_retry(None, None, None, None, None);
     assert!(r.value, "transient retry is on by default");
     assert_eq!(r.source, ConfigSource::Default);
@@ -8181,7 +8181,7 @@ fn turn_transient_retry_default_is_true() {
 #[test]
 #[serial]
 fn turn_transient_retry_config_kill_switch() {
-    unsafe { std::env::remove_var("GROK_TURN_TRANSIENT_RETRY") };
+    unsafe { std::env::remove_var("EZER_TURN_TRANSIENT_RETRY") };
     let r = resolve_turn_transient_retry(None, None, Some(false), None, None);
     assert!(
         !r.value,
@@ -8192,7 +8192,7 @@ fn turn_transient_retry_config_kill_switch() {
 #[test]
 #[serial]
 fn turn_transient_retry_remote_flag_disables_below_config() {
-    unsafe { std::env::remove_var("GROK_TURN_TRANSIENT_RETRY") };
+    unsafe { std::env::remove_var("EZER_TURN_TRANSIENT_RETRY") };
     let r = resolve_turn_transient_retry(None, None, None, None, Some(false));
     assert!(!r.value);
     assert_eq!(r.source, ConfigSource::Remote);
@@ -8206,16 +8206,16 @@ fn turn_transient_retry_remote_flag_disables_below_config() {
 #[test]
 #[serial]
 fn turn_transient_retry_env_wins_over_config() {
-    unsafe { std::env::set_var("GROK_TURN_TRANSIENT_RETRY", "false") };
+    unsafe { std::env::set_var("EZER_TURN_TRANSIENT_RETRY", "false") };
     let r = resolve_turn_transient_retry(None, None, Some(true), None, None);
-    unsafe { std::env::remove_var("GROK_TURN_TRANSIENT_RETRY") };
+    unsafe { std::env::remove_var("EZER_TURN_TRANSIENT_RETRY") };
     assert!(!r.value);
     assert_eq!(r.source, ConfigSource::Env);
 }
 #[test]
 #[serial]
 fn mcp_push_server_status_default_is_true() {
-    unsafe { std::env::remove_var("GROK_MCP_PUSH_SERVER_STATUS") };
+    unsafe { std::env::remove_var("EZER_MCP_PUSH_SERVER_STATUS") };
     let r = resolve_mcp_push_server_status(None, None, None, None, None);
     assert!(r.value, "default-on by spec");
     assert_eq!(r.source, ConfigSource::Default);
@@ -8223,35 +8223,35 @@ fn mcp_push_server_status_default_is_true() {
 #[test]
 #[serial]
 fn mcp_push_server_status_requirement_wins_over_everything() {
-    unsafe { std::env::set_var("GROK_MCP_PUSH_SERVER_STATUS", "true") };
+    unsafe { std::env::set_var("EZER_MCP_PUSH_SERVER_STATUS", "true") };
     let r =
         resolve_mcp_push_server_status(Some(false), Some(true), Some(true), Some(true), Some(true));
-    unsafe { std::env::remove_var("GROK_MCP_PUSH_SERVER_STATUS") };
+    unsafe { std::env::remove_var("EZER_MCP_PUSH_SERVER_STATUS") };
     assert!(!r.value, "requirement overrides every other layer");
     assert_eq!(r.source, ConfigSource::Requirement);
 }
 #[test]
 #[serial]
 fn mcp_push_server_status_cli_wins_over_env_and_below() {
-    unsafe { std::env::set_var("GROK_MCP_PUSH_SERVER_STATUS", "true") };
+    unsafe { std::env::set_var("EZER_MCP_PUSH_SERVER_STATUS", "true") };
     let r = resolve_mcp_push_server_status(None, Some(false), Some(true), Some(true), Some(true));
-    unsafe { std::env::remove_var("GROK_MCP_PUSH_SERVER_STATUS") };
+    unsafe { std::env::remove_var("EZER_MCP_PUSH_SERVER_STATUS") };
     assert!(!r.value);
     assert_eq!(r.source, ConfigSource::Cli);
 }
 #[test]
 #[serial]
 fn mcp_push_server_status_env_wins_over_config_and_below() {
-    unsafe { std::env::set_var("GROK_MCP_PUSH_SERVER_STATUS", "false") };
+    unsafe { std::env::set_var("EZER_MCP_PUSH_SERVER_STATUS", "false") };
     let r = resolve_mcp_push_server_status(None, None, Some(true), Some(true), Some(true));
-    unsafe { std::env::remove_var("GROK_MCP_PUSH_SERVER_STATUS") };
+    unsafe { std::env::remove_var("EZER_MCP_PUSH_SERVER_STATUS") };
     assert!(!r.value);
     assert_eq!(r.source, ConfigSource::Env);
 }
 #[test]
 #[serial]
 fn mcp_push_server_status_config_wins_over_managed_and_feature_flag() {
-    unsafe { std::env::remove_var("GROK_MCP_PUSH_SERVER_STATUS") };
+    unsafe { std::env::remove_var("EZER_MCP_PUSH_SERVER_STATUS") };
     let r = resolve_mcp_push_server_status(None, None, Some(false), Some(true), Some(true));
     assert!(!r.value);
     assert_eq!(r.source, ConfigSource::Config);
@@ -8259,7 +8259,7 @@ fn mcp_push_server_status_config_wins_over_managed_and_feature_flag() {
 #[test]
 #[serial]
 fn mcp_push_server_status_managed_wins_over_feature_flag() {
-    unsafe { std::env::remove_var("GROK_MCP_PUSH_SERVER_STATUS") };
+    unsafe { std::env::remove_var("EZER_MCP_PUSH_SERVER_STATUS") };
     let r = resolve_mcp_push_server_status(None, None, None, Some(false), Some(true));
     assert!(!r.value);
     assert_eq!(r.source, ConfigSource::ManagedConfig);
@@ -8267,7 +8267,7 @@ fn mcp_push_server_status_managed_wins_over_feature_flag() {
 #[test]
 #[serial]
 fn mcp_push_server_status_feature_flag_used_when_no_higher_layer() {
-    unsafe { std::env::remove_var("GROK_MCP_PUSH_SERVER_STATUS") };
+    unsafe { std::env::remove_var("EZER_MCP_PUSH_SERVER_STATUS") };
     let r = resolve_mcp_push_server_status(None, None, None, None, Some(false));
     assert!(!r.value);
     assert_eq!(r.source, ConfigSource::Remote);
@@ -8275,7 +8275,7 @@ fn mcp_push_server_status_feature_flag_used_when_no_higher_layer() {
 #[test]
 #[serial]
 fn mcp_recursive_config_watch_default_is_true() {
-    unsafe { std::env::remove_var("GROK_MCP_RECURSIVE_CONFIG_WATCH") };
+    unsafe { std::env::remove_var("EZER_MCP_RECURSIVE_CONFIG_WATCH") };
     let r = resolve_mcp_recursive_config_watch(None, None, None, None, None);
     assert!(r.value, "default-on by spec");
     assert_eq!(r.source, ConfigSource::Default);
@@ -8283,7 +8283,7 @@ fn mcp_recursive_config_watch_default_is_true() {
 #[test]
 #[serial]
 fn mcp_recursive_config_watch_requirement_wins_over_everything() {
-    unsafe { std::env::set_var("GROK_MCP_RECURSIVE_CONFIG_WATCH", "true") };
+    unsafe { std::env::set_var("EZER_MCP_RECURSIVE_CONFIG_WATCH", "true") };
     let r = resolve_mcp_recursive_config_watch(
         Some(false),
         Some(true),
@@ -8291,33 +8291,33 @@ fn mcp_recursive_config_watch_requirement_wins_over_everything() {
         Some(true),
         Some(true),
     );
-    unsafe { std::env::remove_var("GROK_MCP_RECURSIVE_CONFIG_WATCH") };
+    unsafe { std::env::remove_var("EZER_MCP_RECURSIVE_CONFIG_WATCH") };
     assert!(!r.value, "requirement overrides every other layer");
     assert_eq!(r.source, ConfigSource::Requirement);
 }
 #[test]
 #[serial]
 fn mcp_recursive_config_watch_cli_wins_over_env_and_below() {
-    unsafe { std::env::set_var("GROK_MCP_RECURSIVE_CONFIG_WATCH", "true") };
+    unsafe { std::env::set_var("EZER_MCP_RECURSIVE_CONFIG_WATCH", "true") };
     let r =
         resolve_mcp_recursive_config_watch(None, Some(false), Some(true), Some(true), Some(true));
-    unsafe { std::env::remove_var("GROK_MCP_RECURSIVE_CONFIG_WATCH") };
+    unsafe { std::env::remove_var("EZER_MCP_RECURSIVE_CONFIG_WATCH") };
     assert!(!r.value);
     assert_eq!(r.source, ConfigSource::Cli);
 }
 #[test]
 #[serial]
 fn mcp_recursive_config_watch_env_wins_over_config_and_below() {
-    unsafe { std::env::set_var("GROK_MCP_RECURSIVE_CONFIG_WATCH", "false") };
+    unsafe { std::env::set_var("EZER_MCP_RECURSIVE_CONFIG_WATCH", "false") };
     let r = resolve_mcp_recursive_config_watch(None, None, Some(true), Some(true), Some(true));
-    unsafe { std::env::remove_var("GROK_MCP_RECURSIVE_CONFIG_WATCH") };
+    unsafe { std::env::remove_var("EZER_MCP_RECURSIVE_CONFIG_WATCH") };
     assert!(!r.value);
     assert_eq!(r.source, ConfigSource::Env);
 }
 #[test]
 #[serial]
 fn mcp_recursive_config_watch_config_wins_over_managed_and_feature_flag() {
-    unsafe { std::env::remove_var("GROK_MCP_RECURSIVE_CONFIG_WATCH") };
+    unsafe { std::env::remove_var("EZER_MCP_RECURSIVE_CONFIG_WATCH") };
     let r = resolve_mcp_recursive_config_watch(None, None, Some(false), Some(true), Some(true));
     assert!(!r.value);
     assert_eq!(r.source, ConfigSource::Config);
@@ -8325,7 +8325,7 @@ fn mcp_recursive_config_watch_config_wins_over_managed_and_feature_flag() {
 #[test]
 #[serial]
 fn mcp_recursive_config_watch_managed_wins_over_feature_flag() {
-    unsafe { std::env::remove_var("GROK_MCP_RECURSIVE_CONFIG_WATCH") };
+    unsafe { std::env::remove_var("EZER_MCP_RECURSIVE_CONFIG_WATCH") };
     let r = resolve_mcp_recursive_config_watch(None, None, None, Some(false), Some(true));
     assert!(!r.value);
     assert_eq!(r.source, ConfigSource::ManagedConfig);
@@ -8333,7 +8333,7 @@ fn mcp_recursive_config_watch_managed_wins_over_feature_flag() {
 #[test]
 #[serial]
 fn mcp_recursive_config_watch_feature_flag_used_when_no_higher_layer() {
-    unsafe { std::env::remove_var("GROK_MCP_RECURSIVE_CONFIG_WATCH") };
+    unsafe { std::env::remove_var("EZER_MCP_RECURSIVE_CONFIG_WATCH") };
     let r = resolve_mcp_recursive_config_watch(None, None, None, None, Some(false));
     assert!(!r.value);
     assert_eq!(r.source, ConfigSource::Remote);
@@ -8342,7 +8342,7 @@ fn mcp_recursive_config_watch_feature_flag_used_when_no_higher_layer() {
 #[serial_test::serial(remote_sig_disarm)]
 fn remote_settings_disarm_managed_config_signatures() {
     let prod = crate::env::PROD_CLI_CHAT_PROXY_BASE_URL;
-    let _env = crate::env::EnvVarGuard::remove("GROK_CLI_CHAT_PROXY_BASE_URL");
+    let _env = crate::env::EnvVarGuard::remove("EZER_CLI_CHAT_PROXY_BASE_URL");
     ezer_config::signed_policy::apply_remote_managed_config_signature_verification(
         Some(true),
         true,
@@ -8423,7 +8423,7 @@ fn sampling_config_compresses_only_toward_the_advertising_proxy() {
         .request_compression
     };
     let proxy = crate::env::PROD_CLI_CHAT_PROXY_BASE_URL;
-    let env = crate::env::EnvVarGuard::remove("GROK_REQUEST_COMPRESSION");
+    let env = crate::env::EnvVarGuard::remove("EZER_REQUEST_COMPRESSION");
     apply_remote_settings_side_effects(
         Some(&crate::util::config::RemoteSettings {
             accept_request_encodings: vec![
@@ -8466,7 +8466,7 @@ fn remote_settings_disarm_requires_prod_proxy_when_keys_embedded() {
         managed_config_signature_verification: Some(false),
         ..Default::default()
     };
-    let env = crate::env::EnvVarGuard::remove("GROK_CLI_CHAT_PROXY_BASE_URL");
+    let env = crate::env::EnvVarGuard::remove("EZER_CLI_CHAT_PROXY_BASE_URL");
     apply_remote_settings_side_effects(Some(&settings), prod);
     assert!(
         !ezer_config::signed_policy::verification_active(),
@@ -8489,7 +8489,7 @@ fn remote_settings_disarm_requires_prod_proxy_when_keys_embedded() {
     );
 }
 #[test]
-fn a_status_line_the_parser_could_not_read_in_full_reaches_grok_inspect() {
+fn a_status_line_the_parser_could_not_read_in_full_reaches_ezer_inspect() {
     use super::super::config_model_override_parse::{ConfigWarningKind, WarningTarget};
     let raw_config: toml::Value = toml::from_str(
         r#"
@@ -8529,11 +8529,11 @@ fn a_status_line_the_parser_could_not_read_in_full_reaches_grok_inspect() {
 #[serial]
 async fn process_key_from_model_env_key() {
     use std::sync::Arc;
-    use ezer_login::{AuthManager, GrokComConfig, shared_api_key_provider};
+    use ezer_login::{AuthManager, EzerComConfig, shared_api_key_provider};
     const ENV: &str = "TEST_MODEL_ENV_KEY";
     const TOKEN: &str = "model-env-token";
     let _xai = EnvGuard::unset("XAI_API_KEY");
-    let _legacy = EnvGuard::unset("GROK_CODE_XAI_API_KEY");
+    let _legacy = EnvGuard::unset("EZER_CODE_XAI_API_KEY");
     let _tok = EnvGuard::set(ENV, TOKEN);
     let dm = ezer_models::default_model();
     let cfg = Config::new_from_toml_cfg(
@@ -8552,7 +8552,7 @@ async fn process_key_from_model_env_key() {
         .and_then(|m| m.own_credential())
         .unwrap();
     let dir = tempfile::tempdir().unwrap();
-    let mgr = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
+    let mgr = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
     assert!(mgr.current().is_none());
     mgr.set_process_static_api_key(Some(key));
     assert_eq!(

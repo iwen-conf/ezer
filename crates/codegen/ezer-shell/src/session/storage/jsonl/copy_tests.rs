@@ -1070,7 +1070,7 @@ async fn copy_session_data_with_model_override() {
 
     let options = CopySessionOptions {
         parent_session_id: Some("source-model-test".to_string()),
-        new_model_id: Some("grok-3".to_string()),
+        new_model_id: Some("test-model-3".to_string()),
         target_prompt_index: None,
         ..Default::default()
     };
@@ -1080,7 +1080,7 @@ async fn copy_session_data_with_model_override() {
         .unwrap();
 
     let loaded = adapter.load_session(&target_info).await.unwrap();
-    assert_eq!(loaded.summary.current_model_id.0.as_ref(), "grok-3");
+    assert_eq!(loaded.summary.current_model_id.0.as_ref(), "test-model-3");
     assert_eq!(
         loaded.summary.parent_session_id,
         Some("source-model-test".to_string())
@@ -1223,7 +1223,7 @@ fn worktree_target_cwd(home: &std::path::Path) -> String {
 #[serial_test::serial]
 async fn fork_with_default_kind_into_worktree_cwd_stamps_worktree_identity() {
     let home = TempDir::new().unwrap();
-    let _env = ezer_test_support::EnvGuard::set("GROK_HOME", home.path());
+    let _env = ezer_test_support::EnvGuard::set("EZER_HOME", home.path());
     let adapter = JsonlStorageAdapter::with_root(home.path().join("sessions-root"));
     let source_info = Info {
         id: acp::SessionId::new("src-plain-fork"),
@@ -1252,7 +1252,7 @@ async fn fork_with_default_kind_into_worktree_cwd_stamps_worktree_identity() {
 #[serial_test::serial]
 async fn explicit_subagent_fork_kind_wins_over_worktree_target_cwd() {
     let home = TempDir::new().unwrap();
-    let _env = ezer_test_support::EnvGuard::set("GROK_HOME", home.path());
+    let _env = ezer_test_support::EnvGuard::set("EZER_HOME", home.path());
     let adapter = JsonlStorageAdapter::with_root(home.path().join("sessions-root"));
     let source_info = Info {
         id: acp::SessionId::new("src-subagent-fork"),

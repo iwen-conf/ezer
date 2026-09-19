@@ -21,24 +21,24 @@ struct ClaudeTool {
     kind: Option<ToolKind>,
     /// ezer tool names this Claude tool maps to (empty when there is no direct
     /// ezer tool — the entry then only contributes a `kind`).
-    grok: &'static [&'static str],
+    ezer_names: &'static [&'static str],
 }
 
 /// Row that resolves an allowlist (carries a [`ToolKind`]) — the common case.
-const fn k(claude: &'static str, kind: ToolKind, grok: &'static [&'static str]) -> ClaudeTool {
+const fn k(claude: &'static str, kind: ToolKind, ezer_names: &'static [&'static str]) -> ClaudeTool {
     ClaudeTool {
         claude,
         kind: Some(kind),
-        grok,
+        ezer_names,
     }
 }
 
 /// Row that is matchable but not allowlist-resolvable (`kind: None`).
-const fn match_only(claude: &'static str, grok: &'static [&'static str]) -> ClaudeTool {
+const fn match_only(claude: &'static str, ezer_names: &'static [&'static str]) -> ClaudeTool {
     ClaudeTool {
         claude,
         kind: None,
-        grok,
+        ezer_names,
     }
 }
 
@@ -67,7 +67,7 @@ const CLAUDE_TOOLS: &[ClaudeTool] = &[
     k("TaskStop",        KillTaskAction,       &["kill_command_or_subagent", "kill_terminal_command"]),
     k("KillShell",       KillTaskAction,       &["kill_command_or_subagent", "kill_terminal_command"]),
     k("KillBash",        KillTaskAction,       &["kill_command_or_subagent", "kill_terminal_command"]),
-    k("Skill",           Read,                 &["skill"]),                           // matcher: opencode's `skill` tool; allowlist Read (grok-build reads SKILL.md)
+    k("Skill",           Read,                 &["skill"]),                           // matcher: opencode's `skill` tool; allowlist Read (ezer-build reads SKILL.md)
     k("ToolSearch",      SearchTool,           &["search_tool"]),
     match_only("Agent",         &["spawn_subagent"]),                                 // canonical; Task is the legacy alias
     match_only("Task",          &["spawn_subagent"]),
@@ -88,31 +88,31 @@ pub fn kind_for(claude: &str) -> Option<ToolKind> {
 }
 
 /// The ezer tool names a Claude matcher term fires on.
-pub fn grok_names_for(claude: &str) -> impl Iterator<Item = &'static str> {
+pub fn ezer_names_for(claude: &str) -> impl Iterator<Item = &'static str> {
     CLAUDE_TOOLS
         .iter()
         .find(|t| t.claude == claude)
-        .map(|t| t.grok)
+        .map(|t| t.ezer_names)
         .unwrap_or(&[])
         .iter()
         .copied()
 }
 
-/// The Claude names that map to `grok_name` (reverse lookup, for regex matchers).
-pub fn claude_names_for(grok_name: &str) -> impl Iterator<Item = &'static str> + '_ {
+/// The Claude names that map to `ezer_name` (reverse lookup, for regex matchers).
+pub fn claude_names_for(ezer_name: &str) -> impl Iterator<Item = &'static str> + '_ {
     CLAUDE_TOOLS
         .iter()
-        .filter(move |t| t.grok.contains(&grok_name))
+        .filter(move |t| t.ezer_names.contains(&ezer_name))
         .map(|t| t.claude)
 }
 
 /// Every distinct ezer name the table references, for the `ezer-agent` drift-check
 /// test that asserts each is a real client tool name.
-pub fn grok_names() -> impl Iterator<Item = &'static str> {
+pub fn ezer_names() -> impl Iterator<Item = &'static str> {
     let mut seen = std::collections::HashSet::new();
     CLAUDE_TOOLS
         .iter()
-        .flat_map(|t| t.grok.iter().copied())
+        .flat_map(|t| t.ezer_names.iter().copied())
         .filter(move |name| seen.insert(*name))
 }
 
@@ -131,10 +131,10 @@ mod tests {
 
     #[test]
     fn every_row_contributes() {
-        // A row with neither a kind nor a Grok name is dead weight (and signals a typo).
+        // A row with neither a kind nor a Ezer name is dead weight (and signals a typo).
         for t in CLAUDE_TOOLS {
             assert!(
-                t.kind.is_some() || !t.grok.is_empty(),
+                t.kind.is_some() || !t.ezer_names.is_empty(),
                 "dead row: {}",
                 t.claude
             );

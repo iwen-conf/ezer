@@ -4,7 +4,7 @@ use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use unicode_width::{UnicodeWidthChar, UnicodeWidthStr};
 
-pub use ezer_config::grok_home;
+pub use ezer_config::ezer_home;
 pub use ezer_tools::util::format_bytes;
 
 /// A closed stdout (`ezer du | head`) is a clean stop, not a failure.
@@ -17,17 +17,17 @@ pub fn ignore_broken_pipe(result: std::io::Result<()>) -> std::io::Result<()> {
 
 /// Path to `$EZER_HOME/pager.toml`.
 pub fn pager_toml_path() -> PathBuf {
-    grok_home().join("pager.toml")
+    ezer_home().join("pager.toml")
 }
 
 /// `~/.ezer` or `$EZER_HOME`, decided by the resolved home rather than by
 /// whether `EZER_HOME` is set in the environment.
-pub fn display_grok_home_prefix() -> String {
-    display_grok_home_prefix_for(&grok_home())
+pub fn display_ezer_home_prefix() -> String {
+    display_ezer_home_prefix_for(&ezer_home())
 }
 
-pub fn display_grok_home_prefix_for(home: &Path) -> String {
-    let default = ezer_config::default_grok_home();
+pub fn display_ezer_home_prefix_for(home: &Path) -> String {
+    let default = ezer_config::default_ezer_home();
     if home == default || home == dunce::canonicalize(&default).unwrap_or(default) {
         "~/.ezer".to_string()
     } else {
@@ -35,26 +35,26 @@ pub fn display_grok_home_prefix_for(home: &Path) -> String {
     }
 }
 
-/// User-facing path under [`grok_home()`], e.g. ``~/.ezer/config.toml``.
-pub fn display_user_grok_path(relative: impl AsRef<Path>) -> String {
-    display_user_grok_path_for(&grok_home(), relative)
+/// User-facing path under [`ezer_home()`], e.g. ``~/.ezer/config.toml``.
+pub fn display_user_ezer_path(relative: impl AsRef<Path>) -> String {
+    display_user_ezer_path_for(&ezer_home(), relative)
 }
 
-fn display_user_grok_path_for(home: &Path, relative: impl AsRef<Path>) -> String {
+fn display_user_ezer_path_for(home: &Path, relative: impl AsRef<Path>) -> String {
     let rel = relative.as_ref();
-    let prefix = display_grok_home_prefix_for(home);
+    let prefix = display_ezer_home_prefix_for(home);
     if rel.as_os_str().is_empty() {
         return prefix;
     }
     format!("{prefix}/{}", rel.display())
 }
 
-/// Abbreviate an absolute path for display: prefer [`grok_home()`], then `$HOME`.
+/// Abbreviate an absolute path for display: prefer [`ezer_home()`], then `$HOME`.
 pub fn abbreviate_path(path: &str) -> Cow<'_, str> {
     let path_buf = Path::new(path);
-    let grok = grok_home();
-    if let Ok(rest) = path_buf.strip_prefix(&grok) {
-        let prefix = display_grok_home_prefix();
+    let ezer = ezer_home();
+    if let Ok(rest) = path_buf.strip_prefix(&ezer) {
+        let prefix = display_ezer_home_prefix();
         if rest.as_os_str().is_empty() {
             return Cow::Owned(prefix);
         }
@@ -81,9 +81,9 @@ pub fn display_location_path(path: impl AsRef<Path>) -> String {
     crate::location_path::shorten_location_path(&abbreviate_path(&lossy)).into_owned()
 }
 
-/// True when `path` is under user [`grok_home()`] (not project `{cwd}/.ezer`).
-pub fn is_under_user_grok_home(path: &Path) -> bool {
-    path.starts_with(grok_home())
+/// True when `path` is under user [`ezer_home()`] (not project `{cwd}/.ezer`).
+pub fn is_under_user_ezer_home(path: &Path) -> bool {
+    path.starts_with(ezer_home())
 }
 
 /// Compact duration: `5.2s`, `32s`, `2m5s`, `1h2m`.
@@ -396,35 +396,35 @@ mod tests {
     }
 
     #[test]
-    fn display_grok_home_prefix_default_install() {
-        if std::env::var("EZER_HOME").is_ok() || std::env::var("GROK_HOME").is_ok() {
+    fn display_ezer_home_prefix_default_install() {
+        if std::env::var("EZER_HOME").is_ok() || std::env::var("EZER_HOME").is_ok() {
             return;
         }
-        assert_eq!(display_grok_home_prefix(), "~/.ezer");
+        assert_eq!(display_ezer_home_prefix(), "~/.ezer");
     }
 
     #[test]
-    fn display_user_grok_path_joins_relative() {
-        let path = display_user_grok_path(ezer_config::USER_CONFIG_FILENAME);
+    fn display_user_ezer_path_joins_relative() {
+        let path = display_user_ezer_path(ezer_config::USER_CONFIG_FILENAME);
         assert!(path.ends_with("/config.toml") || path.ends_with("\\config.toml"));
         assert!(path.contains(".ezer") || path.contains("$EZER_HOME"));
     }
 
     #[test]
-    fn display_user_grok_path_for_custom_home_uses_override_label() {
+    fn display_user_ezer_path_for_custom_home_uses_override_label() {
         let custom = std::env::temp_dir().join("ezer-home-display-regression");
         assert_eq!(
-            display_user_grok_path_for(&custom, ezer_config::USER_CONFIG_FILENAME),
+            display_user_ezer_path_for(&custom, ezer_config::USER_CONFIG_FILENAME),
             "$EZER_HOME/config.toml"
         );
         assert_eq!(
-            display_user_grok_path_for(&custom, ezer_config::SANDBOX_CONFIG_FILENAME),
+            display_user_ezer_path_for(&custom, ezer_config::SANDBOX_CONFIG_FILENAME),
             format!("$EZER_HOME/{}", ezer_config::SANDBOX_CONFIG_FILENAME)
         );
     }
 
     #[test]
-    fn abbreviate_path_uses_home_when_under_default_grok() {
+    fn abbreviate_path_uses_home_when_under_default_ezer() {
         let Some(home) = xai_dirs::home_dir() else {
             return;
         };
@@ -448,7 +448,7 @@ mod tests {
         if home.as_os_str().is_empty() {
             return;
         }
-        // Stay outside grok_home so this hits the $HOME branch, not ~/.grok.
+        // Stay outside ezer_home so this hits the $HOME branch, not ~/.ezer.
         let full = home.join("not-ezer-home").join("file.txt");
         let full_str = full.to_string_lossy();
         let abbreviated = abbreviate_path(&full_str);

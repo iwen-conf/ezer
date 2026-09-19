@@ -10,7 +10,7 @@
 use std::io;
 use std::path::{Path, PathBuf};
 
-pub(crate) const BWRAP_RUNTIME_SOCKET_DENY_ENV_VAR: &str = "__GROK_BWRAP_RUNTIME_SOCKET_DENY";
+pub(crate) const BWRAP_RUNTIME_SOCKET_DENY_ENV_VAR: &str = "__EZER_BWRAP_RUNTIME_SOCKET_DENY";
 
 /// Well-known system-wide container-runtime API sockets.
 const SYSTEM_SOCKETS: &[&str] = &[

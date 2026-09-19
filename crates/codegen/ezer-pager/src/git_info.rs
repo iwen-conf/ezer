@@ -203,7 +203,7 @@ fn compute_snapshot(cwd: &Path) -> GitSnapshot {
         .then(|| repo.commondir().parent().map(collapse_home))
         .flatten();
 
-    // Standalone grok worktrees are CoW clones (`.git` is a directory), so `path != commondir` is false; the source marker is the back-pointer
+    // Standalone ezer worktrees are CoW clones (`.git` is a directory), so `path != commondir` is false; the source marker is the back-pointer
     let mut marker_main_repo = None;
     for ancestor in cwd.ancestors() {
         let git = ancestor.join(".git");
@@ -539,7 +539,7 @@ mod tests {
     }
 
     #[test]
-    fn compute_cwd_git_info_standalone_grok_worktree() {
+    fn compute_cwd_git_info_standalone_ezer_worktree() {
         let main = crate::test_util::TempGitRepo::init("main-only");
         let clone = main.standalone_clone("wt-branch");
         assert!(
@@ -590,12 +590,12 @@ mod tests {
         assert_eq!(info.branch.as_deref(), Some("dep-branch"));
     }
 
-    #[serial_test::serial(GROK_HOME)]
+    #[serial_test::serial(EZER_HOME)]
     #[test]
     fn compute_cwd_git_info_nested_repo_does_not_inherit_db_record() {
         let home = tempfile::tempdir().unwrap();
-        // serial(GROK_HOME) orders peers; EnvVarGuard restores on drop so later `open_default()` callers do not see a deleted temp home
-        let _grok_home = crate::test_util::EnvVarGuard::set("GROK_HOME", home.path());
+        // serial(EZER_HOME) orders peers; EnvVarGuard restores on drop so later `open_default()` callers do not see a deleted temp home
+        let _ezer_home = crate::test_util::EnvVarGuard::set("EZER_HOME", home.path());
         let _ = xai_fast_worktree::db::WorktreeDb::open(home.path());
 
         let wt = crate::test_util::TempGitRepo::init("wt-branch");

@@ -54,7 +54,7 @@ npm i -g @ezer/ezer@latest
 
 ## Documentation
 
-For full documentation including configuration, MCP servers, custom models, headless mode, agent mode, and more, visit [docs.x.ai/build/overview](https://docs.x.ai/build/overview).
+For full documentation including configuration, MCP servers, custom models, headless mode, agent mode, and more, visit [docs.ezer/build/overview](https://docs.x.ai/build/overview).
 
 ## Feedback
 

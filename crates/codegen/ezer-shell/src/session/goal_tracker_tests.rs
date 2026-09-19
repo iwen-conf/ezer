@@ -1148,7 +1148,7 @@ fn serde_skip_fields_reset_on_deserialize() {
     activate_tracker(&mut t);
     t.update_live_progress(
         100,
-        vec![("grok-4".to_owned(), 60), ("grok-3".to_owned(), 40)],
+        vec![("test-model-4".to_owned(), 60), ("test-model-3".to_owned(), 40)],
         200_000,
         50,
         3,
@@ -1656,11 +1656,11 @@ fn skeptic_model_assignment_round_trips_through_serde() {
     let mut o = make_base_orchestration();
     o.skeptic_model_assignment = vec![
         crate::util::config::GoalRoleModel {
-            model: "grok-4".to_string(),
+            model: "test-model-4".to_string(),
             agent_type: "general-purpose".to_string(),
         },
         crate::util::config::GoalRoleModel {
-            model: "grok-4.5".to_string(),
+            model: "test-model-4.5".to_string(),
             agent_type: "cursor".to_string(),
         },
     ];
@@ -1704,7 +1704,7 @@ fn terminal_transitions_clear_skeptic_model_assignment() {
         activate_tracker(&mut t);
         t.snapshot_mut().unwrap().skeptic_model_assignment =
             vec![crate::util::config::GoalRoleModel {
-                model: "grok-4".to_string(),
+                model: "test-model-4".to_string(),
                 agent_type: "general-purpose".to_string(),
             }];
         let applied = match ending {

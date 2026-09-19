@@ -309,7 +309,7 @@ async fn acquire_succeeds_over_leftover_lock_file_of_dead_process() {
 
 /// Line printed to stdout once the subprocess holds the flock.
 #[cfg(unix)]
-const LOCK_HOLDER_READY: &str = "__GROK_LOCK_HOLDER_READY__";
+const LOCK_HOLDER_READY: &str = "__EZER_LOCK_HOLDER_READY__";
 
 /// Inert unless `EZER_TEST_LOCK_HOLDER` holds `"<lock_path>|<pid|dead_pid|empty>|<age_secs>"`:
 /// flocks with backdated info (or a dead recorded PID, or an empty file), prints ready, then blocks on stdin.

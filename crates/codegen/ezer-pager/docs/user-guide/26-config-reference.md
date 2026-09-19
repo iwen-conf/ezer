@@ -45,7 +45,7 @@ User-level configuration lives in `$EZER_HOME/config.toml` (default `~/.ezer/con
 
 | Key | Type / Values | Requirements | Managed | Details |
 | --- | --- | --- | --- | --- |
-| `announcements` | `array of tables` | `—` | `user` | Local/managed announcement tables only. Payloads fetched from xAI / grok.com / x.com are stripped and never shown. |
+| `announcements` | `array of tables` | `—` | `user` | Local/managed announcement tables only. Payloads fetched from xAI / ezer.com / x.com are stripped and never shown. |
 
 ### `auth`
 
@@ -96,7 +96,7 @@ User-level configuration lives in `$EZER_HOME/config.toml` (default `~/.ezer/con
 
 | Key | Type / Values | Requirements | Managed | Details |
 | --- | --- | --- | --- | --- |
-| `cli.auto_update` | `boolean` | `pin` | `user` | Check GitHub (`iwen-conf/ezer` or `$EZER_UPSTREAM_REPO`) on launch and show a one-time notice. Never hits xAI/x.ai update channels and never auto-installs. Once-flag: `~/.ezer/update-notice.json`. Also EZER_DISABLE_AUTOUPDATER to suppress. |
+| `cli.auto_update` | `boolean` | `pin` | `user` | Check GitHub (`iwen-conf/ezer` or `$EZER_UPSTREAM_REPO`) on launch and show a one-time notice. Never hits first-party update channels and never auto-installs. Once-flag: `~/.ezer/update-notice.json`. Also EZER_DISABLE_AUTOUPDATER to suppress. |
 | `cli.channel` | `stable / alpha` | `pin` | `user` | Release channel preference. |
 | `cli.grove` | `boolean` or `grove` / `grove-fuse` / `grove-nfs` / `nfs` / `all` / `copy` / `true` / `false` / `1` / `0` / `on` / `off` | `yes` | `user` | Convenience that turns **both** `ezer clone` and session / `-w` Grove on when the specific knobs are unset. Also `EZER_GROVE`. `false` / `copy` / `off` means enable-all is off (fall through); it does not force both surfaces off. `[cli] grove_worktree` and `EZER_WORKTREE_TYPE` still win for worktrees; `EZER_CLONE` still wins for clone. Remote `grove_worktree = false` still kills worktrees only. |
 | `cli.grove_worktree` | `boolean` or `grove` / `grove-fuse` / `grove-nfs` / `nfs` / `copy` / `true` / `false` / `1` / `0` / `on` / `off` | `yes` | `user` | Session / `-w` Grove vs copy. Default copy. Distinct from creation-mode `cli.worktree_type`. Also `EZER_WORKTREE_TYPE`. Layer order: request → env → local → enable-all (`EZER_GROVE` / `[cli] grove`) → remote-true; then kill last: remote `grove_worktree = false` → copy (`remote_kill`). Missing remote settings are not a kill: local/env/request/enable-all still apply. Does not enable `ezer clone`. |

@@ -1,5 +1,5 @@
-//! `x.ai/session/state` reads a session's metadata columns.
-//! `x.ai/session/import` writes them, with the transcript, to recreate a session on another host.
+//! `ezer/session/state` reads a session's metadata columns.
+//! `ezer/session/import` writes them, with the transcript, to recreate a session on another host.
 
 use std::path::{Path, PathBuf};
 
@@ -41,8 +41,8 @@ fn validate_session_uuid(session_id: &str) -> Result<(), acp::Error> {
         .map_err(|_| acp::Error::invalid_params().data("sessionId must be a UUID"))
 }
 
-/// `x.ai/session/state`: return metadata columns keyed by logical name.
-/// Errors when the session isn't found on this host; a single record's absence is an error, unlike the empty collection `x.ai/session/updates` returns.
+/// `ezer/session/state`: return metadata columns keyed by logical name.
+/// Errors when the session isn't found on this host; a single record's absence is an error, unlike the empty collection `ezer/session/updates` returns.
 pub(crate) async fn handle_state(args: &acp::ExtRequest) -> ExtResult {
     let request: StateRequest = super::parse_params(args)?;
     validate_session_uuid(&request.session_id)?;
@@ -73,7 +73,7 @@ struct ImportRequest {
     updates: Vec<Value>,
 }
 
-/// `x.ai/session/import`: recreate a session on this host from mirrored columns and transcript.
+/// `ezer/session/import`: recreate a session on this host from mirrored columns and transcript.
 /// A session that already exists locally is left unchanged.
 pub(crate) async fn handle_import(args: &acp::ExtRequest) -> ExtResult {
     let mut request: ImportRequest = super::parse_params(args)?;
@@ -105,7 +105,7 @@ pub(crate) async fn handle_import(args: &acp::ExtRequest) -> ExtResult {
             return Err(acp::Error::invalid_params().data("summary column is not a valid summary"));
         }
         // Write the `.cwd` sidecar for hash-based (long-path) dirs so the session stays recoverable by id, not just by (id, cwd)
-        crate::util::grok_home::ensure_sessions_cwd_dir(&request.cwd)
+        crate::util::ezer_home::ensure_sessions_cwd_dir(&request.cwd)
             .map_err(|e| acp::Error::internal_error().data(e.to_string()))?;
         write_import(&dir, &request.state, &request.updates, &request.session_id)
             .map_err(|e| acp::Error::internal_error().data(e.to_string()))?;
@@ -137,8 +137,8 @@ fn sanitize_summary_for_host(summary: &mut serde_json::Map<String, Value>, id: &
     }
     set_or_remove(
         summary,
-        "grok_home",
-        crate::session::persistence::grok_home_string(),
+        "ezer_home",
+        crate::session::persistence::ezer_home_string(),
     );
     set_or_remove(
         summary,
@@ -166,7 +166,7 @@ fn write_import(
     updates: &[Value],
     session_id: &str,
 ) -> std::io::Result<()> {
-    crate::util::grok_home::create_dir_all_owner_only(dir)?;
+    crate::util::ezer_home::create_dir_all_owner_only(dir)?;
 
     // Clear every file this import owns so a leftover from a failed attempt can't merge with the new snapshot; this import is authoritative
     let _ = std::fs::remove_file(dir.join(st::CHAT_HISTORY_FILE));

@@ -314,10 +314,10 @@ mod tests {
     #[test]
     fn url_sourced_entry_carries_keywords() {
         let dir = tempfile::tempdir().unwrap();
-        let grok_dir = dir.path().join(".grok-plugin");
-        std::fs::create_dir_all(&grok_dir).unwrap();
+        let ezer_dir = dir.path().join(".ezer-plugin");
+        std::fs::create_dir_all(&ezer_dir).unwrap();
         std::fs::write(
-            grok_dir.join("marketplace.json"),
+            ezer_dir.join("marketplace.json"),
             r#"{
                 "name": "kw-marketplace",
                 "plugins": [{
@@ -348,10 +348,10 @@ mod tests {
     #[test]
     fn url_sourced_entry_with_path_sets_remote_subdir() {
         let dir = tempfile::tempdir().unwrap();
-        let grok_dir = dir.path().join(".grok-plugin");
-        std::fs::create_dir_all(&grok_dir).unwrap();
+        let ezer_dir = dir.path().join(".ezer-plugin");
+        std::fs::create_dir_all(&ezer_dir).unwrap();
         std::fs::write(
-            grok_dir.join("marketplace.json"),
+            ezer_dir.join("marketplace.json"),
             r#"{
                 "name": "acme-marketplace",
                 "plugins": [{
@@ -435,14 +435,14 @@ mod tests {
     }
 
     #[test]
-    fn grok_plugin_dir_index_drives_scan_end_to_end() {
+    fn ezer_plugin_dir_index_drives_scan_end_to_end() {
         let dir = tempfile::tempdir().unwrap();
-        make_plugin(dir.path(), "grok-plugin", "1.0.0");
+        make_plugin(dir.path(), "ezer-plugin", "1.0.0");
 
-        let grok_dir = dir.path().join(".grok-plugin");
-        std::fs::create_dir_all(&grok_dir).unwrap();
+        let ezer_dir = dir.path().join(".ezer-plugin");
+        std::fs::create_dir_all(&ezer_dir).unwrap();
         std::fs::write(
-            grok_dir.join("marketplace.json"),
+            ezer_dir.join("marketplace.json"),
             r#"{
                 "name": "ezer-marketplace",
                 "plugins": [{
@@ -458,9 +458,9 @@ mod tests {
 
         let plugins = scan_marketplace(dir.path()).entries;
         assert_eq!(plugins.len(), 1);
-        assert_eq!(nth(&plugins, 0).name, "grok-plugin");
+        assert_eq!(nth(&plugins, 0).name, "ezer-plugin");
         assert_eq!(nth(&plugins, 0).category.as_deref(), Some("design"));
-        assert_eq!(nth(&plugins, 0).tags, vec!["grok"]);
+        assert_eq!(nth(&plugins, 0).tags, vec!["ezer"]);
         assert!(nth(&plugins, 0).keywords.is_empty());
     }
 
@@ -510,17 +510,17 @@ mod tests {
         assert_eq!(nth(&plugins, 0).name, "hooked");
     }
 
-    fn write_grok_file(dir: &Path, file: &str, content: &str) {
-        let grok_dir = dir.join(".grok-plugin");
-        std::fs::create_dir_all(&grok_dir).unwrap();
-        std::fs::write(grok_dir.join(file), content).unwrap();
+    fn write_ezer_file(dir: &Path, file: &str, content: &str) {
+        let ezer_dir = dir.join(".ezer-plugin");
+        std::fs::create_dir_all(&ezer_dir).unwrap();
+        std::fs::write(ezer_dir.join(file), content).unwrap();
     }
 
     #[test]
     fn catalog_attaches_components_to_indexed_local_entry() {
         let dir = tempfile::tempdir().unwrap();
         make_plugin(dir.path(), "plugin-a", "1.0.0");
-        write_grok_file(
+        write_ezer_file(
             dir.path(),
             "marketplace.json",
             r#"{
@@ -530,7 +530,7 @@ mod tests {
                 ]
             }"#,
         );
-        write_grok_file(
+        write_ezer_file(
             dir.path(),
             "plugin-index.json",
             r#"{
@@ -565,7 +565,7 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         // Manifest name "plugin-a" diverges from index name "index-name".
         make_plugin(dir.path(), "plugin-a", "1.0.0");
-        write_grok_file(
+        write_ezer_file(
             dir.path(),
             "marketplace.json",
             r#"{
@@ -575,7 +575,7 @@ mod tests {
                 ]
             }"#,
         );
-        write_grok_file(
+        write_ezer_file(
             dir.path(),
             "plugin-index.json",
             r#"{
@@ -619,12 +619,12 @@ mod tests {
     #[test]
     fn url_entry_gets_components_when_sha_matches() {
         let dir = tempfile::tempdir().unwrap();
-        write_grok_file(
+        write_ezer_file(
             dir.path(),
             "marketplace.json",
             &url_marketplace_index(r#", "sha": "61f1903bed7b322c9745f6ba67095bc006de7e63""#),
         );
-        write_grok_file(dir.path(), "plugin-index.json", URL_CATALOG);
+        write_ezer_file(dir.path(), "plugin-index.json", URL_CATALOG);
 
         let scan = scan_marketplace(dir.path());
         assert!(scan.catalog_loaded);
@@ -635,12 +635,12 @@ mod tests {
     #[test]
     fn url_entry_components_hidden_on_sha_mismatch() {
         let dir = tempfile::tempdir().unwrap();
-        write_grok_file(
+        write_ezer_file(
             dir.path(),
             "marketplace.json",
             &url_marketplace_index(r#", "sha": "0000000000000000000000000000000000000000""#),
         );
-        write_grok_file(dir.path(), "plugin-index.json", URL_CATALOG);
+        write_ezer_file(dir.path(), "plugin-index.json", URL_CATALOG);
 
         let scan = scan_marketplace(dir.path());
         assert!(scan.catalog_loaded);
@@ -650,8 +650,8 @@ mod tests {
     #[test]
     fn url_entry_without_pinned_sha_gets_no_components() {
         let dir = tempfile::tempdir().unwrap();
-        write_grok_file(dir.path(), "marketplace.json", &url_marketplace_index(""));
-        write_grok_file(dir.path(), "plugin-index.json", URL_CATALOG);
+        write_ezer_file(dir.path(), "marketplace.json", &url_marketplace_index(""));
+        write_ezer_file(dir.path(), "plugin-index.json", URL_CATALOG);
 
         let scan = scan_marketplace(dir.path());
         assert!(scan.catalog_loaded);
@@ -662,7 +662,7 @@ mod tests {
     fn malformed_catalog_degrades_to_no_components() {
         let dir = tempfile::tempdir().unwrap();
         make_plugin(dir.path(), "plugin-a", "1.0.0");
-        write_grok_file(
+        write_ezer_file(
             dir.path(),
             "marketplace.json",
             r#"{
@@ -672,7 +672,7 @@ mod tests {
                 ]
             }"#,
         );
-        write_grok_file(dir.path(), "plugin-index.json", "not json");
+        write_ezer_file(dir.path(), "plugin-index.json", "not json");
 
         let scan = scan_marketplace(dir.path());
         assert!(!scan.catalog_loaded);
@@ -684,7 +684,7 @@ mod tests {
     fn filesystem_fallback_ignores_catalog() {
         let dir = tempfile::tempdir().unwrap();
         make_plugin(dir.path(), "plugin-a", "1.0.0");
-        write_grok_file(
+        write_ezer_file(
             dir.path(),
             "plugin-index.json",
             r#"{

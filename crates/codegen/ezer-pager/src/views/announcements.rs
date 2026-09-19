@@ -1387,7 +1387,7 @@ mod tests {
             assert!(usable_cta(&a).is_none(), "scheme must be rejected: {bad}");
             assert!(promo_cta_target(&[a], &no_hidden()).is_none());
         }
-        for good in ["https://x.ai/promo", "http://x.ai/promo"] {
+        for good in ["https://x.ai/promo", "http://ezer/promo"] {
             let a = promo("p", "msg", Some(("Go", good)));
             assert!(usable_cta(&a).is_some(), "scheme must be allowed: {good}");
         }
@@ -1412,7 +1412,7 @@ mod tests {
         let mut ann = promo(
             "p",
             "New promo",
-            Some(("Get SuperGrok", "https://x.ai/ezer")),
+            Some(("Get MaxTier", "https://x.ai/ezer")),
         );
         ann.cta.as_mut().unwrap().caption = Some("or use Ctrl+O".into());
         let anns = [ann];
@@ -1421,7 +1421,7 @@ mod tests {
         let hits = render_banner(area, &mut buf, &anns, &no_hidden(), false, false, true);
 
         let row0 = buf_row(&buf, area, 0);
-        assert!(row0.starts_with("[Get SuperGrok]"), "row0={row0:?}");
+        assert!(row0.starts_with("[Get MaxTier]"), "row0={row0:?}");
         assert!(
             !row0.contains("New promo"),
             "message must not paint on the banner; row0={row0:?}"
@@ -1477,7 +1477,7 @@ mod tests {
             "p",
             "msg",
             Some((
-                "Upgrade to SuperGrok Heavy for the exclusive preview",
+                "Upgrade to highest tier for the exclusive preview",
                 "https://x.ai",
             )),
         )];

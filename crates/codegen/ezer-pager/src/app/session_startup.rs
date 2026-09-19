@@ -80,7 +80,7 @@ impl DeferredStartupActions {
             || self.open_dashboard
     }
 }
-/// Build `x.ai/session/fork` params shared by TUI effects and headless.
+/// Build `ezer/session/fork` params shared by TUI effects and headless.
 /// `new_cwd` is the write namespace for the child (parent session cwd when cross-cwd); preflight must use the same path via [`effective_fork_new_cwd`].
 pub fn fork_session_params(
     parent_session_id: &str,
@@ -117,8 +117,8 @@ pub fn fork_session_params(
 /// Mirrors in-session `/fork` reading `agent.session.is_worktree`.
 pub fn parent_session_is_worktree(session_id: &str, cwd: &Path) -> bool {
     let cwd_str = cwd.to_string_lossy();
-    let sessions_root = ezer_shell::util::grok_home::grok_home().join("sessions");
-    let encoded = ezer_shell::util::grok_home::encode_cwd_dirname(&cwd_str);
+    let sessions_root = ezer_shell::util::ezer_home::ezer_home().join("sessions");
+    let encoded = ezer_shell::util::ezer_home::encode_cwd_dirname(&cwd_str);
     let summary_path = sessions_root
         .join(encoded)
         .join(session_id)
@@ -157,7 +157,7 @@ pub fn parent_session_is_worktree(session_id: &str, cwd: &Path) -> bool {
     }
     false
 }
-/// Parse `newSessionId` from an `x.ai/session/fork` ACP response body.
+/// Parse `newSessionId` from an `ezer/session/fork` ACP response body.
 pub fn fork_response_new_session_id(resp_json: &str) -> Option<String> {
     let v: serde_json::Value = serde_json::from_str(resp_json).unwrap_or_default();
     if v.get("error").is_some_and(|e| !e.is_null()) {
@@ -639,7 +639,7 @@ pub fn probe_advertised_tool_ids() -> Option<Vec<String>> {
 }
 #[cfg(feature = "local-workspace")]
 fn local_workspace_ack_path() -> Option<std::path::PathBuf> {
-    Some(xai_dirs::resolve_grok_home()?.join("local_workspace_ack"))
+    Some(xai_dirs::resolve_ezer_home()?.join("local_workspace_ack"))
 }
 /// Conservative shape check for a chat-mode `--resume <id>` passthrough.
 /// The id skips disk and GCS resolution and flows to the gateway, but the local cwd-collision check also path-joins it.
@@ -695,7 +695,7 @@ pub enum MaterializedStartup {
         /// The target missed local id and title resolution and was deferred to the worktree resume handler.
         /// Worktree failure messages append the no-match hint only for this outcome (never inferred from shape).
         deferred_local_miss: bool,
-        /// Pre-TUI conversation-only remote restore: the follow-up `LoadSession` must send `x.ai/restore_code: false`.
+        /// Pre-TUI conversation-only remote restore: the follow-up `LoadSession` must send `ezer/restore_code: false`.
         /// Agent `[cli] restore_code` must not checkout in-place on the new local child.
         suppress_code_restore: bool,
     },
@@ -726,7 +726,7 @@ pub struct MaterializeCtx {
     pub has_worktree: bool,
     /// When true, attempt remote restore if the session is not on disk.
     pub allow_remote_restore: bool,
-    /// Process-wide flag: resume targets are grok.com conversations, not the local disk store.
+    /// Process-wide flag: resume targets are ezer.com conversations, not the local disk store.
     /// Always `false` without the optional feature; setting it anyway errors rather than silently falling back to disk.
     pub chat_mode: bool,
     /// See [`TitleResolution`]; carried from the pre-sandbox pin outcome.
@@ -808,19 +808,19 @@ async fn most_recent_session_id(
         })?;
     Ok((first.info.id.to_string(), first.display_title_opt()))
 }
-/// `AuthManager` for direct grok.com calls made outside the agent (pre-ACP `--continue` conversation listing, the GCS restore effect).
+/// `AuthManager` for direct ezer.com calls made outside the agent (pre-ACP `--continue` conversation listing, the GCS restore effect).
 /// Wires the auth-provider refresher before the first `auth()`.
 /// Without it, environments that mint credentials via `auth_provider_command` report `NoOauth`.
 pub(crate) fn pre_acp_auth_manager(
     agent_config: &ezer_shell::agent::config::Config,
 ) -> std::sync::Arc<ezer_login::AuthManager> {
     let auth = std::sync::Arc::new(ezer_login::AuthManager::new_with_proxy_base_url(
-        &ezer_shell::util::grok_home::grok_home(),
-        agent_config.grok_com_config.clone(),
+        &ezer_shell::util::ezer_home::ezer_home(),
+        agent_config.ezer_com_config.clone(),
         agent_config.endpoints.proxy_url(),
     ));
     auth.configure_refresher(
-        agent_config.grok_com_config.auth_provider_command.clone(),
+        agent_config.ezer_com_config.auth_provider_command.clone(),
         None,
     );
     auth
@@ -1158,10 +1158,10 @@ async fn restore_session_from_remote(
     use ezer_login::{AuthManager, ensure_authenticated_or_noninteractive};
     use ezer_shell::agent::session_registry_client::SessionRegistryClient;
     use ezer_shell::session::restore::{RestoreSessionOpts, restore_session_with_storage};
-    use ezer_shell::util::grok_home::grok_home;
+    use ezer_shell::util::ezer_home::ezer_home;
     let deployment_key = agent_config.endpoints.deployment_key.clone();
     ensure_authenticated_or_noninteractive(
-        &agent_config.grok_com_config,
+        &agent_config.ezer_com_config,
         agent_config.login_device_flow,
         agent_config.endpoints.proxy_url(),
         deployment_key.is_some(),
@@ -1170,8 +1170,8 @@ async fn restore_session_from_remote(
     .await
     .map_err(|e| anyhow::anyhow!("Failed to authenticate for session restore: {}", e))?;
     let auth_manager = std::sync::Arc::new(AuthManager::new_with_proxy_base_url(
-        &grok_home(),
-        agent_config.grok_com_config.clone(),
+        &ezer_home(),
+        agent_config.ezer_com_config.clone(),
         agent_config.endpoints.proxy_url(),
     ));
     let registry_client =
@@ -1422,10 +1422,10 @@ mod tests {
         assert!(git2::Repository::discover(&dir).is_err());
         assert!(parent_session_is_worktree("any-sid", &dir));
     }
-    #[serial_test::serial(GROK_HOME)]
+    #[serial_test::serial(EZER_HOME)]
     #[test]
     fn parent_session_is_worktree_summary_session_kind() {
-        let mut fx = crate::test_util::GrokHomeFixture::new();
+        let mut fx = crate::test_util::EzerHomeFixture::new();
         let repo = crate::test_util::TempGitRepo::init("main");
         let cwd = repo.path.to_string_lossy().to_string();
         fx.write_summary(
@@ -1435,10 +1435,10 @@ mod tests {
         );
         assert!(parent_session_is_worktree("sid-kind", &repo.path));
     }
-    #[serial_test::serial(GROK_HOME)]
+    #[serial_test::serial(EZER_HOME)]
     #[test]
     fn parent_session_is_worktree_summary_source_workspace_dir() {
-        let mut fx = crate::test_util::GrokHomeFixture::new();
+        let mut fx = crate::test_util::EzerHomeFixture::new();
         let repo = crate::test_util::TempGitRepo::init("main");
         let cwd = repo.path.to_string_lossy().to_string();
         fx.write_summary(
@@ -1454,10 +1454,10 @@ mod tests {
         );
         assert!(!parent_session_is_worktree("sid-src-empty", &repo.path));
     }
-    #[serial_test::serial(GROK_HOME)]
+    #[serial_test::serial(EZER_HOME)]
     #[test]
     fn parent_session_is_worktree_summary_worktree_label() {
-        let mut fx = crate::test_util::GrokHomeFixture::new();
+        let mut fx = crate::test_util::EzerHomeFixture::new();
         let repo = crate::test_util::TempGitRepo::init("main");
         let cwd = repo.path.to_string_lossy().to_string();
         fx.write_summary(
@@ -1734,10 +1734,10 @@ mod tests {
             RecentSessionSelection::Any,
         );
     }
-    #[serial_test::serial(GROK_HOME)]
+    #[serial_test::serial(EZER_HOME)]
     #[tokio::test]
     async fn continue_skips_empty_worktree_stamped_husk() {
-        let mut fx = crate::test_util::GrokHomeFixture::new();
+        let mut fx = crate::test_util::EzerHomeFixture::new();
         let cwd = fx.cwd_str();
         let real_id = "aaaaaaaa-1111-2222-3333-444444444444";
         let husk_id = "bbbbbbbb-1111-2222-3333-444444444444";
@@ -1776,10 +1776,10 @@ mod tests {
             other => panic!("expected Resume of the prior session, got {other:?}"),
         }
     }
-    #[serial_test::serial(GROK_HOME)]
+    #[serial_test::serial(EZER_HOME)]
     #[tokio::test]
     async fn continue_keeps_empty_worktree_fork() {
-        let mut fx = crate::test_util::GrokHomeFixture::new();
+        let mut fx = crate::test_util::EzerHomeFixture::new();
         let cwd = fx.cwd_str();
         let older_id = "aaaaaaaa-1111-2222-3333-444444444444";
         let fork_id = "bbbbbbbb-1111-2222-3333-444444444444";
@@ -1820,10 +1820,10 @@ mod tests {
             other => panic!("expected Resume of the empty worktree fork, got {other:?}"),
         }
     }
-    #[serial_test::serial(GROK_HOME)]
+    #[serial_test::serial(EZER_HOME)]
     #[tokio::test]
     async fn most_recent_fork_selection_follows_surface() {
-        let mut fx = crate::test_util::GrokHomeFixture::new();
+        let mut fx = crate::test_util::EzerHomeFixture::new();
         let cwd = fx.cwd_str();
         let interactive_id = "aaaaaaaa-1111-2222-3333-444444444444";
         let headless_id = "bbbbbbbb-1111-2222-3333-444444444444";
@@ -2041,10 +2041,10 @@ mod tests {
         assert!(WORKTREE_NO_RESTORE_CODE_NOTICE.contains("--restore-code"));
     }
     /// `--restore-code` without `--worktree` must fail before any in-place checkout.
-    #[serial_test::serial(GROK_HOME)]
+    #[serial_test::serial(EZER_HOME)]
     #[tokio::test]
     async fn remote_miss_restore_code_without_worktree_errors() {
-        let _fx = crate::test_util::GrokHomeFixture::new();
+        let _fx = crate::test_util::EzerHomeFixture::new();
         let err = materialize_startup_for_cwd(
             remote_miss_ctx(true, false),
             SessionStartupIntent::Resume {
@@ -2077,10 +2077,10 @@ mod tests {
         );
     }
     /// `--restore-code --worktree` stays on the existing defer path.
-    #[serial_test::serial(GROK_HOME)]
+    #[serial_test::serial(EZER_HOME)]
     #[tokio::test]
     async fn remote_miss_restore_code_with_worktree_defers() {
-        let _fx = crate::test_util::GrokHomeFixture::new();
+        let _fx = crate::test_util::EzerHomeFixture::new();
         let id = "no such remote target";
         let out = materialize_startup_for_cwd(
             remote_miss_ctx(true, true),
@@ -2109,10 +2109,10 @@ mod tests {
             other => panic!("expected Resume, got {other:?}"),
         }
     }
-    #[serial_test::serial(GROK_HOME)]
+    #[serial_test::serial(EZER_HOME)]
     #[tokio::test]
     async fn remote_miss_worktree_without_restore_code_suppresses_snapshot() {
-        let _fx = crate::test_util::GrokHomeFixture::new();
+        let _fx = crate::test_util::EzerHomeFixture::new();
         let id = "99999999-9999-4999-8999-999999999998";
         let out = materialize_startup_for_cwd(
             remote_miss_ctx(false, true),
@@ -2256,16 +2256,16 @@ mod tests {
         }
     }
     /// The chat passthrough does not bypass the cwd-collision refusal that `app/mod.rs` runs on the materialized id.
-    #[serial_test::serial(GROK_HOME)]
+    #[serial_test::serial(EZER_HOME)]
     #[tokio::test]
     async fn chat_resume_passthrough_keeps_cwd_collision_refusal() {
         let home = tempfile::tempdir().expect("home tempdir");
-        unsafe { std::env::set_var("GROK_HOME", home.path()) };
+        unsafe { std::env::set_var("EZER_HOME", home.path()) };
         let cwd = tempfile::tempdir().expect("cwd tempdir");
         let cwd_str = cwd.path().to_string_lossy().to_string();
         let id = "aaaaaaaa-1111-2222-3333-444444444444";
-        let encoded = ezer_shell::util::grok_home::encode_cwd_dirname(&cwd_str);
-        let sessions_cwd_dir = ezer_shell::util::grok_home::grok_home()
+        let encoded = ezer_shell::util::ezer_home::encode_cwd_dirname(&cwd_str);
+        let sessions_cwd_dir = ezer_shell::util::ezer_home::ezer_home()
             .join("sessions")
             .join(&encoded);
         struct RmDirOnDrop(std::path::PathBuf);
@@ -2301,7 +2301,7 @@ mod tests {
     }
     mod resume_by_title {
         use super::*;
-        use crate::test_util::GrokHomeFixture;
+        use crate::test_util::EzerHomeFixture;
         fn local_ctx() -> MaterializeCtx {
             MaterializeCtx {
                 has_worktree: false,
@@ -2335,10 +2335,10 @@ mod tests {
         async fn resume(arg: &str, cwd: &str) -> anyhow::Result<MaterializedStartup> {
             resume_with(arg, cwd, RecentSessionSelection::Interactive).await
         }
-        #[serial_test::serial(GROK_HOME)]
+        #[serial_test::serial(EZER_HOME)]
         #[tokio::test]
         async fn title_fallback_ignores_headless_matches() {
-            let mut fx = GrokHomeFixture::new();
+            let mut fx = EzerHomeFixture::new();
             let cwd_str = fx.cwd_str();
             fx.write_summary(
                 &cwd_str,
@@ -2353,10 +2353,10 @@ mod tests {
                 .expect_err("headless title must not resolve interactively");
             assert!(error.to_string().contains("does not exist"));
         }
-        #[serial_test::serial(GROK_HOME)]
+        #[serial_test::serial(EZER_HOME)]
         #[tokio::test]
         async fn headless_title_resume_keeps_headless_matches() {
-            let mut fx = GrokHomeFixture::new();
+            let mut fx = EzerHomeFixture::new();
             let cwd_str = fx.cwd_str();
             let id = "aaaaaaaa-1111-2222-3333-444444444444";
             fx.write_summary(
@@ -2378,10 +2378,10 @@ mod tests {
             }
         }
         /// Also covers letter-case insensitivity: the query case differs from the stored title.
-        #[serial_test::serial(GROK_HOME)]
+        #[serial_test::serial(EZER_HOME)]
         #[tokio::test]
         async fn title_fallback_resumes_single_match_case_insensitively() {
-            let mut fx = GrokHomeFixture::new();
+            let mut fx = EzerHomeFixture::new();
             let cwd_str = fx.cwd_str();
             let id = "bbbbbbbb-1111-2222-3333-444444444444";
             fx.write_summary(
@@ -2410,10 +2410,10 @@ mod tests {
         }
         /// Id resolution stays authoritative: when the arg is an on-disk session id, the title fallback is never consulted.
         /// That holds even though another session carries that exact title.
-        #[serial_test::serial(GROK_HOME)]
+        #[serial_test::serial(EZER_HOME)]
         #[tokio::test]
         async fn id_hit_beats_title_fallback() {
-            let mut fx = GrokHomeFixture::new();
+            let mut fx = EzerHomeFixture::new();
             let cwd_str = fx.cwd_str();
             fx.write_summary(
                 &cwd_str,
@@ -2437,10 +2437,10 @@ mod tests {
         }
         /// Provenance for the worktree failure hint: only the defer arm (a local id and title miss under `--worktree`) flags the target.
         /// A resolved local id, even a legacy non-UUID one, never does.
-        #[serial_test::serial(GROK_HOME)]
+        #[serial_test::serial(EZER_HOME)]
         #[tokio::test]
         async fn worktree_defer_flags_local_miss_and_local_hit_does_not() {
-            let mut fx = GrokHomeFixture::new();
+            let mut fx = EzerHomeFixture::new();
             let cwd_str = fx.cwd_str();
             fx.write_summary(&cwd_str, "release-notes", serde_json::json!({}));
             let worktree_ctx = MaterializeCtx {
@@ -2513,7 +2513,7 @@ mod tests {
         )
     }
     #[cfg(feature = "local-workspace")]
-    #[serial_test::serial(GROK_CHAT_LOCAL_WORKSPACE_ADVERTISED_TOOLS)]
+    #[serial_test::serial(EZER_CHAT_LOCAL_WORKSPACE_ADVERTISED_TOOLS)]
     #[test]
     fn resolve_local_workspace_attach_from_cli() {
         let _env = advertised_tools_env();
@@ -2527,8 +2527,8 @@ mod tests {
         assert_eq!(cfg.cwd.as_deref(), Some(canon.as_path()));
     }
     #[cfg(feature = "local-workspace")]
-    #[serial_test::serial(GROK_CHAT_LOCAL_WORKSPACE_ADVERTISED_TOOLS)]
-    #[serial_test::serial(GROK_CHAT_LOCAL_WORKSPACE_SERVER_ID)]
+    #[serial_test::serial(EZER_CHAT_LOCAL_WORKSPACE_ADVERTISED_TOOLS)]
+    #[serial_test::serial(EZER_CHAT_LOCAL_WORKSPACE_SERVER_ID)]
     #[test]
     fn resolve_local_workspace_empty_cli_attach_falls_back_to_env() {
         let _env = advertised_tools_env();
@@ -2544,10 +2544,10 @@ mod tests {
         assert_eq!(cfg.server_id.as_deref(), Some("srv-from-env"));
     }
     #[cfg(feature = "local-workspace")]
-    #[serial_test::serial(GROK_CHAT_LOCAL_WORKSPACE_CWD)]
-    #[serial_test::serial(GROK_CHAT_LOCAL_WORKSPACE)]
-    #[serial_test::serial(GROK_CHAT_LOCAL_WORKSPACE_MODE)]
-    #[serial_test::serial(GROK_CHAT_LOCAL_WORKSPACE_SERVER_ID)]
+    #[serial_test::serial(EZER_CHAT_LOCAL_WORKSPACE_CWD)]
+    #[serial_test::serial(EZER_CHAT_LOCAL_WORKSPACE)]
+    #[serial_test::serial(EZER_CHAT_LOCAL_WORKSPACE_MODE)]
+    #[serial_test::serial(EZER_CHAT_LOCAL_WORKSPACE_SERVER_ID)]
     #[test]
     fn resolve_local_workspace_cwd_only_is_not_a_request() {
         let tmp = tempfile::tempdir().unwrap();
@@ -2565,7 +2565,7 @@ mod tests {
         );
     }
     #[cfg(feature = "local-workspace")]
-    #[serial_test::serial(GROK_CHAT_LOCAL_WORKSPACE_ADVERTISED_TOOLS)]
+    #[serial_test::serial(EZER_CHAT_LOCAL_WORKSPACE_ADVERTISED_TOOLS)]
     #[test]
     fn resolve_local_workspace_own_from_cli() {
         let _env = advertised_tools_env();
@@ -2582,7 +2582,7 @@ mod tests {
         assert_eq!(cfg.cwd.as_deref(), Some(canon.as_path()));
     }
     #[cfg(feature = "local-workspace")]
-    #[serial_test::serial(GROK_CHAT_LOCAL_WORKSPACE_ADVERTISED_TOOLS)]
+    #[serial_test::serial(EZER_CHAT_LOCAL_WORKSPACE_ADVERTISED_TOOLS)]
     #[test]
     fn resolve_local_workspace_own_env_defaults() {
         let _env = advertised_tools_env();
@@ -2603,7 +2603,7 @@ mod tests {
         assert_eq!(cfg.cwd.as_deref(), Some(canon.as_path()));
     }
     #[cfg(feature = "local-workspace")]
-    #[serial_test::serial(GROK_CHAT_LOCAL_WORKSPACE_ADVERTISED_TOOLS)]
+    #[serial_test::serial(EZER_CHAT_LOCAL_WORKSPACE_ADVERTISED_TOOLS)]
     #[test]
     fn resolve_local_workspace_requires_chat() {
         let _env = advertised_tools_env();
@@ -2614,8 +2614,8 @@ mod tests {
         );
     }
     #[cfg(feature = "local-workspace")]
-    #[serial_test::serial(GROK_CHAT_LOCAL_WORKSPACE_ADVERTISED_TOOLS)]
-    #[serial_test::serial(GROK_CHAT_LOCAL_WORKSPACE_ALLOW_HOME)]
+    #[serial_test::serial(EZER_CHAT_LOCAL_WORKSPACE_ADVERTISED_TOOLS)]
+    #[serial_test::serial(EZER_CHAT_LOCAL_WORKSPACE_ALLOW_HOME)]
     #[serial_test::serial(HOME)]
     #[serial_test::serial(USERPROFILE)]
     #[test]
@@ -2635,7 +2635,7 @@ mod tests {
         assert!(err.to_string().contains("ALLOW_HOME"), "unexpected: {err}");
     }
     #[cfg(feature = "local-workspace")]
-    #[serial_test::serial(GROK_CHAT_LOCAL_WORKSPACE_ADVERTISED_TOOLS)]
+    #[serial_test::serial(EZER_CHAT_LOCAL_WORKSPACE_ADVERTISED_TOOLS)]
     #[test]
     fn resolve_local_workspace_refuses_uncheckable_toolset() {
         let _tools =
@@ -2649,7 +2649,7 @@ mod tests {
         );
     }
     #[cfg(feature = "local-workspace")]
-    #[serial_test::serial(GROK_CHAT_LOCAL_WORKSPACE_ADVERTISED_TOOLS)]
+    #[serial_test::serial(EZER_CHAT_LOCAL_WORKSPACE_ADVERTISED_TOOLS)]
     #[test]
     fn resolve_local_workspace_refuses_non_fs_toolset() {
         let _tools = ezer_test_support::EnvGuard::set(
@@ -2673,14 +2673,14 @@ mod tests {
         assert!(LOCAL_WORKSPACE_HITL_HINT.contains("replaces the chat sandbox"));
     }
     #[cfg(feature = "local-workspace")]
-    #[serial_test::serial(GROK_CHAT_LOCAL_WORKSPACE_ACK)]
-    #[serial_test::serial(GROK_HOME)]
+    #[serial_test::serial(EZER_CHAT_LOCAL_WORKSPACE_ACK)]
+    #[serial_test::serial(EZER_HOME)]
     #[test]
     fn local_workspace_non_tty_requires_ack() {
         let _ack = ezer_test_support::EnvGuard::unset(EZER_CHAT_LOCAL_WORKSPACE_ACK_ENV);
         let home = tempfile::tempdir().unwrap();
         let _home =
-            ezer_test_support::EnvGuard::set("GROK_HOME", home.path().to_str().unwrap());
+            ezer_test_support::EnvGuard::set("EZER_HOME", home.path().to_str().unwrap());
         let cfg = LocalWorkspaceConfig {
             mode: LocalWorkspaceMode::Attach,
             cwd: Some(std::path::PathBuf::from("/tmp/repo")),
@@ -2693,7 +2693,7 @@ mod tests {
         );
     }
     #[cfg(feature = "local-workspace")]
-    #[serial_test::serial(GROK_CHAT_LOCAL_WORKSPACE_ALLOW_HOME)]
+    #[serial_test::serial(EZER_CHAT_LOCAL_WORKSPACE_ALLOW_HOME)]
     #[test]
     fn validate_local_workspace_cwd_denies_root() {
         let _allow =

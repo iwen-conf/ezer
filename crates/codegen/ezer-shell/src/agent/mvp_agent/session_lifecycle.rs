@@ -578,7 +578,7 @@ impl MvpAgent {
             .await
             .unwrap_or(true)
     }
-    /// Counts for `x.ai/debug/agent`, including maps outside the registry.
+    /// Counts for `ezer/debug/agent`, including maps outside the registry.
     pub(crate) async fn registry_snapshot(&self) -> RegistrySnapshot {
         let subagents =
             ezer_tools::implementations::ezer_build::task::backend::ChannelBackend::new(
@@ -616,7 +616,7 @@ impl MvpAgent {
         }
     }
 }
-/// Field names are the wire contract of `x.ai/debug/agent`'s `registries` object; each maps to the same-named registry.
+/// Field names are the wire contract of `ezer/debug/agent`'s `registries` object; each maps to the same-named registry.
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub(crate) struct RegistrySnapshot {
     pub sessions: usize,

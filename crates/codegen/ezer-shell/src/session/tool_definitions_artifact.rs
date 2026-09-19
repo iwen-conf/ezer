@@ -69,7 +69,7 @@ async fn write_tool_definitions_artifact(info: Info, bytes: Vec<u8>) -> io::Resu
     .map_err(io::Error::other)?
 }
 
-// TODO: surface this through a `grok inspect --tools` reader.
+// TODO: surface this through a `ezer inspect --tools` reader.
 /// Reads the artifact back.
 ///
 /// # Errors

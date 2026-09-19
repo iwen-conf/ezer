@@ -1027,7 +1027,7 @@ impl ToolRegistryBuilder {
                 }
             }
         }
-        let concise_ns = crate::types::tool::ToolNamespace::GrokBuildConcise.to_string();
+        let concise_ns = crate::types::tool::ToolNamespace::EzerBuildConcise.to_string();
         let has_concise_tools = config.tools.iter().any(|tc| {
             self.tools
                 .get(&tc.id)
@@ -1365,7 +1365,7 @@ impl FinalizedToolset {
             .map(|t| t.metadata.clone())
     }
     /// Resolve canonical [`ToolIdentity`] (kind, namespace, presentation label) for a tool by its client-facing wire name.
-    /// Drives the first-party `x.ai/*` tool `_meta` contract (tool normalization). Returns `None` for unknown tools (e.g.
+    /// Drives the first-party `ezer/*` tool `_meta` contract (tool normalization). Returns `None` for unknown tools (e.g.
     /// uninitialized MCP, backend-only tools).
     pub fn tool_identity(&self, tool_name: &str) -> Option<crate::normalization::ToolIdentity> {
         self.tools
@@ -2366,7 +2366,7 @@ mod tests {
     async fn tool_name_for_kind_resolves_execute() {
         use crate::types::tool::ToolKind;
         let tmp = TempDir::new().unwrap();
-        let grok = ToolRegistryBuilder::new()
+        let ezer = ToolRegistryBuilder::new()
             .finalize(
                 ToolServerConfig {
                     tools: vec![
@@ -2380,11 +2380,11 @@ mod tests {
             )
             .expect("ezer toolset should finalize");
         assert_eq!(
-            grok.tool_name_for_kind(ToolKind::Execute).as_deref(),
+            ezer.tool_name_for_kind(ToolKind::Execute).as_deref(),
             Some("run_terminal_cmd")
         );
     }
-    /// `merge_tool_meta` (the harness emission path) must stamp `x.ai/tool` for a
+    /// `merge_tool_meta` (the harness emission path) must stamp `ezer/tool` for a
     /// known tool while preserving existing markers, and leave meta untouched for
     /// an unknown tool.
     #[tokio::test]

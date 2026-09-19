@@ -492,7 +492,7 @@ pub(crate) async fn drive_server_starts(
         OauthInteractivity::Interactive,
         None,
     )
-    .with_grok_agent_id_header();
+    .with_ezer_agent_id_header();
 
     let mut pending: FuturesUnordered<_> = configs
         .into_iter()

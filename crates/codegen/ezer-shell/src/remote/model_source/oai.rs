@@ -4,7 +4,7 @@ use crate::agent::remote_config::ModelFetchAuth;
 use crate::remote::client::{BackendError, FetchModelsResult, parse_remote_model_value};
 use crate::remote::model_source::ModelSource;
 use serde::Deserialize;
-use ezer_login::GrokAuth;
+use ezer_login::EzerAuth;
 use ezer_login::backend::{ActiveAuthBackend, AuthBackend};
 #[derive(Debug, Deserialize)]
 struct ModelsResponse {
@@ -27,7 +27,7 @@ impl ModelSource for OaiModelSource {
     fn cache_origin(&self) -> String {
         self.endpoint.url.clone()
     }
-    fn fetch(&self, auth: Option<&GrokAuth>) -> Result<FetchModelsResult, BackendError> {
+    fn fetch(&self, auth: Option<&EzerAuth>) -> Result<FetchModelsResult, BackendError> {
         let client = crate::http::shared_startup_blocking_client();
         tracing::info!("Fetching models from {}", self.endpoint.url);
         let mut request = client.get(&self.endpoint.url);
@@ -153,10 +153,10 @@ mod tests {
             .unwrap(),
         );
         let session = ListModelsEndpoint::from_endpoints(&cfg, ModelFetchAuth::Session);
-        assert_eq!(session.url, "https://cli-chat-proxy.grok.com/v1/models");
+        assert_eq!(session.url, "https://proxy.example.test/v1/models");
         assert_eq!(session.auth, EndpointAuth::Session);
         let deployment = ListModelsEndpoint::from_endpoints(&cfg, ModelFetchAuth::Deployment);
-        assert_eq!(deployment.url, "https://cli-chat-proxy.grok.com/v1/models");
+        assert_eq!(deployment.url, "https://proxy.example.test/v1/models");
         assert_eq!(deployment.auth, EndpointAuth::Session);
         let api = ListModelsEndpoint::from_endpoints(&cfg, ModelFetchAuth::ApiKey);
         assert_eq!(api.url, "https://inference.acme-corp.example/xai/v1/models");

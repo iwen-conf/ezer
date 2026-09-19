@@ -23,7 +23,7 @@
 //! reachable only through the login shell is still found.
 //!
 //! Inject is **always** non-empty on Unix callers: either install a shadow
-//! function (which tags itself with a `__grok_shadow_{name}` marker) or a
+//! function (which tags itself with a `__ezer_shadow_{name}` marker) or a
 //! marker-gated `unalias`+`unset -f` that drops *only* a prior harness shadow —
 //! never a user-defined `find`/`grep` function replayed from the snapshot.
 
@@ -89,15 +89,15 @@ fn build_injection(find_on: bool, grep_on: bool, tools: &ResolvedTools) -> Strin
     format!("{find}; {grep}; ")
 }
 
-/// Drop a *previously installed harness* shadow so command-word `{name}` uses the OS binary again. Gated on the `__grok_shadow_{name}` marker
+/// Drop a *previously installed harness* shadow so command-word `{name}` uses the OS binary again. Gated on the `__ezer_shadow_{name}` marker
 /// that [`shell_function`] sets, so a user-defined `{name}` function replayed from the shell snapshot is left intact — only the harness's own
 /// shadow is removed. `set -u`/`set -e` safe and idempotent (`unset -f` is bash + zsh).
 fn restore_command(name: &str) -> String {
     format!(
-        "if [ -n \"${{__grok_shadow_{name}-}}\" ]; then \
+        "if [ -n \"${{__ezer_shadow_{name}-}}\" ]; then \
            unalias {name} 2>/dev/null || true; \
            unset -f {name} 2>/dev/null || true; \
-           unset __grok_shadow_{name} 2>/dev/null || true; \
+           unset __ezer_shadow_{name} 2>/dev/null || true; \
          fi"
     )
 }
@@ -171,7 +171,7 @@ fn resolve_tool(
     resolve_tool_from(
         std::env::var_os(env_override).map(PathBuf::from),
         bundled,
-        crate::util::grok_home().join("vendor").join(bin_name),
+        crate::util::ezer_home().join("vendor").join(bin_name),
         bin_name,
     )
 }
@@ -210,7 +210,7 @@ fn bash_safe_quote(s: &str) -> String {
 
 /// Oneline `name() { … }` for `-c` inject — a *self-resolving* shadow. This keeps the fast hard-coded path for the common case while
 /// self-healing when the binary was removed (revalidation) or is only reachable through the shell's richer `PATH`. The trailing
-/// `__grok_shadow_{name}=1` marks this as a harness shadow so `restore_command` only ever removes our own function — never a user's.
+/// `__ezer_shadow_{name}=1` marks this as a harness shadow so `restore_command` only ever removes our own function — never a user's.
 fn shell_function(
     name: &str,
     bin_name: &str,
@@ -228,22 +228,22 @@ fn shell_function(
             format!("{} ", qargs.join(" "))
         }
     };
-    // `local __grok_bin` is re-resolved every call. The host hint is trusted only when it's *executable* (`[ -x ]`, not just `[ -f ]`): the
+    // `local __ezer_bin` is re-resolved every call. The host hint is trusted only when it's *executable* (`[ -x ]`, not just `[ -f ]`): the
     // resolver accepts any regular file as a hint, but `exec` needs `+x`, so a non-exec hint must fall through rather than hard-fail with no OS
-    // fallback. `|| __grok_bin=''` keeps the lookup `set -e`-safe (a failed `command -v` would otherwise abort the function under errexit).
+    // fallback. `|| __ezer_bin=''` keeps the lookup `set -e`-safe (a failed `command -v` would otherwise abort the function under errexit).
     format!(
         "unalias {name} 2>/dev/null || true; \
          {name}() {{ \
-           local __grok_bin={qpref}; \
-           [ -x \"$__grok_bin\" ] || __grok_bin=$(command -v {bin_name} 2>/dev/null) || __grok_bin=''; \
-           if [ -z \"$__grok_bin\" ]; then command {name} \"$@\"; return; fi; \
+           local __ezer_bin={qpref}; \
+           [ -x \"$__ezer_bin\" ] || __ezer_bin=$(command -v {bin_name} 2>/dev/null) || __ezer_bin=''; \
+           if [ -z \"$__ezer_bin\" ]; then command {name} \"$@\"; return; fi; \
            if [[ -z ${{ZSH_VERSION-}} ]] && (( BASH_SUBSHELL > 0 )); then \
-             exec -a {name} \"$__grok_bin\" {prepend}\"$@\"; \
+             exec -a {name} \"$__ezer_bin\" {prepend}\"$@\"; \
            else \
-             (exec -a {name} \"$__grok_bin\" {prepend}\"$@\"); \
+             (exec -a {name} \"$__ezer_bin\" {prepend}\"$@\"); \
            fi; \
          }}; \
-         __grok_shadow_{name}=1"
+         __ezer_shadow_{name}=1"
     )
 }
 
@@ -263,20 +263,20 @@ mod tests {
     fn shell_function_shape() {
         let fn_body = shell_function("find", "bfs", Some(Path::new("/tmp/bfs")), &[]);
         assert!(fn_body.contains("unalias find"));
-        // Preferred path is the fast-path hint; the shadow execs `$__grok_bin`.
-        assert!(fn_body.contains("local __grok_bin=/tmp/bfs"));
-        assert!(fn_body.contains("exec -a find \"$__grok_bin\" \"$@\""));
+        // Preferred path is the fast-path hint; the shadow execs `$__ezer_bin`.
+        assert!(fn_body.contains("local __ezer_bin=/tmp/bfs"));
+        assert!(fn_body.contains("exec -a find \"$__ezer_bin\" \"$@\""));
         // Hint is trusted only when executable (`[ -x ]`, not `[ -f ]`), so a
         // non-exec hint falls through instead of hard-failing exec.
-        assert!(fn_body.contains("[ -x \"$__grok_bin\" ]"));
-        assert!(!fn_body.contains("[ -f \"$__grok_bin\" ]"));
+        assert!(fn_body.contains("[ -x \"$__ezer_bin\" ]"));
+        assert!(!fn_body.contains("[ -f \"$__ezer_bin\" ]"));
         // Self-heal: live-PATH lookup + OS fallback.
         assert!(fn_body.contains("command -v bfs"));
         assert!(fn_body.contains("command find \"$@\""));
         assert!(fn_body.contains("BASH_SUBSHELL > 0"));
         assert!(fn_body.contains("(exec -a find"));
         // Marker so `restore_command` only removes our own shadow.
-        assert!(fn_body.contains("__grok_shadow_find=1"));
+        assert!(fn_body.contains("__ezer_shadow_find=1"));
         // set -u-safe zsh probe (a bare $ZSH_VERSION aborts bash under nounset).
         assert!(fn_body.contains("${ZSH_VERSION-}"));
         assert!(!fn_body.contains("[[ -n $ZSH_VERSION ]]"));
@@ -286,7 +286,7 @@ mod tests {
     fn shell_function_unresolved_uses_empty_hint() {
         // No host-resolved path → empty hint, relies on live-PATH `command -v`.
         let fn_body = shell_function("find", "bfs", None, &[]);
-        assert!(fn_body.contains("local __grok_bin=''"));
+        assert!(fn_body.contains("local __ezer_bin=''"));
         assert!(fn_body.contains("command -v bfs"));
         assert!(fn_body.contains("command find \"$@\""));
     }
@@ -299,8 +299,8 @@ mod tests {
             Some(Path::new("/tmp/ugrep")),
             UGREP_DEFAULT_ARGS,
         );
-        assert!(fn_body.contains("local __grok_bin=/tmp/ugrep"));
-        assert!(fn_body.contains("\"$__grok_bin\" -G --ignore-files --hidden -I"));
+        assert!(fn_body.contains("local __ezer_bin=/tmp/ugrep"));
+        assert!(fn_body.contains("\"$__ezer_bin\" -G --ignore-files --hidden -I"));
         assert!(fn_body.contains("--exclude-dir=.git"));
         assert!(fn_body.contains("command -v ugrep"));
     }
@@ -310,7 +310,7 @@ mod tests {
         assert_eq!(bash_safe_quote("/usr/bin/bfs"), "/usr/bin/bfs");
         assert_eq!(bash_safe_quote("/tmp/my bfs"), "'/tmp/my bfs'");
         let body = shell_function("find", "bfs", Some(Path::new("/tmp/evil$(id)")), &[]);
-        assert!(body.contains("local __grok_bin='/tmp/evil$(id)'"), "{body}");
+        assert!(body.contains("local __ezer_bin='/tmp/evil$(id)'"), "{body}");
         assert!(!body.contains("=/tmp/evil$(id)"));
     }
 
@@ -318,10 +318,10 @@ mod tests {
     fn restore_command_is_marker_gated() {
         let r = restore_command("find");
         // Only removes the harness shadow when our marker is set.
-        assert!(r.contains("if [ -n \"${__grok_shadow_find-}\" ]"));
+        assert!(r.contains("if [ -n \"${__ezer_shadow_find-}\" ]"));
         assert!(r.contains("unalias find"));
         assert!(r.contains("unset -f find"));
-        assert!(r.contains("unset __grok_shadow_find"));
+        assert!(r.contains("unset __ezer_shadow_find"));
     }
 
     #[test]
@@ -338,8 +338,8 @@ mod tests {
         // from a prior snapshot is dropped, but a user function is left intact.
         let inject = build_injection(false, false, &both_tools());
         assert!(inject.ends_with("; "));
-        assert!(inject.contains("if [ -n \"${__grok_shadow_find-}\" ]"));
-        assert!(inject.contains("if [ -n \"${__grok_shadow_grep-}\" ]"));
+        assert!(inject.contains("if [ -n \"${__ezer_shadow_find-}\" ]"));
+        assert!(inject.contains("if [ -n \"${__ezer_shadow_grep-}\" ]"));
         assert!(inject.contains("unset -f find"));
         assert!(inject.contains("unset -f grep"));
         assert!(!inject.contains("find()"));
@@ -352,7 +352,7 @@ mod tests {
         assert!(inject.contains("find()"));
         assert!(inject.contains("grep()"));
         assert!(inject.contains("-G --ignore-files"));
-        assert!(inject.contains("__grok_shadow_find=1"));
+        assert!(inject.contains("__ezer_shadow_find=1"));
     }
 
     #[test]
@@ -370,7 +370,7 @@ mod tests {
         assert!(inject.contains("command -v ugrep"));
         // OS fallback present; not a marker-gated restore.
         assert!(inject.contains("command find \"$@\""));
-        assert!(!inject.contains("if [ -n \"${__grok_shadow_find-}\" ]"));
+        assert!(!inject.contains("if [ -n \"${__ezer_shadow_find-}\" ]"));
     }
 
     #[test]
@@ -479,7 +479,7 @@ mod tests {
     #[cfg(all(bundle_bfs, bundle_ugrep))]
     #[test]
     fn bundled_binaries_extract_and_run() {
-        let vendor = crate::util::grok_home().join("vendor");
+        let vendor = crate::util::ezer_home().join("vendor");
         let bfs = bundled_bfs()
             .expect("bfs resolves")
             .expect("bfs should be bundled");
@@ -672,7 +672,7 @@ mod tests {
         };
         let shadow = shell_function(
             "find",
-            "grok_no_such_search_bin_xyz",
+            "ezer_no_such_search_bin_xyz",
             Some(Path::new("/nonexistent/bfs")),
             &[],
         );
@@ -719,7 +719,7 @@ mod tests {
         // Hint is the non-exec file; bin_name isn't on PATH → must reach OS find.
         let shadow = shell_function(
             "find",
-            "grok_no_such_search_bin_xyz",
+            "ezer_no_such_search_bin_xyz",
             Some(hint.as_path()),
             &[],
         );

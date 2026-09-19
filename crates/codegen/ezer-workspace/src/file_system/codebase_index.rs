@@ -11,12 +11,12 @@ use std::sync::{Arc, Weak};
 
 use xai_codebase_graph::{IndexManager, IndexManagerConfig, IndexManagerHandle};
 
-use ezer_tools::util::grok_home::grok_home;
+use ezer_tools::util::ezer_home::ezer_home;
 
 /// Cache is stored in: `~/.ezer/indexes/{url_encoded_cwd}/goto_index.bin`
 pub fn get_index_cache_path(cwd: &Path) -> PathBuf {
     let encoded = urlencoding::encode(&cwd.to_string_lossy()).into_owned();
-    grok_home()
+    ezer_home()
         .join("indexes")
         .join(encoded)
         .join("goto_index.bin")
@@ -122,10 +122,10 @@ mod tests {
         assert!(cache_path.to_string_lossy().ends_with("goto_index.bin"));
     }
 
-    // Lazy-start: `get()` is `None` until created (`x.ai/code/status` `reason: notStarted`); `get_or_create()` starts on the first eligible code-nav request.
+    // Lazy-start: `get()` is `None` until created (`ezer/code/status` `reason: notStarted`); `get_or_create()` starts on the first eligible code-nav request.
 
     /// An empty manager returns `None` for any path — the steady state before any code-nav request.
-    /// `x.ai/code/status` then reports `reason: notStarted`.
+    /// `ezer/code/status` then reports `reason: notStarted`.
     #[test]
     fn test_get_returns_none_before_any_index_created() {
         let mgr = CodebaseIndexManager::new();

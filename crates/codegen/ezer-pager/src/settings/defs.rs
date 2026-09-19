@@ -283,7 +283,7 @@ const VOICE_CAPTURE_MODE_CHOICES: &[EnumChoice] = &[
 ];
 
 // Voice STT language choices for the settings modal. Concrete codes must match `ezer_voice::STT_LANGUAGES`,
-// the official Grok STT catalog. `auto` is client-only; the voice crate resolves it to a concrete code before the
+// the official Ezer STT catalog. `auto` is client-only; the voice crate resolves it to a concrete code before the
 // STT handshake.
 const VOICE_STT_LANGUAGE_CHOICES: &[EnumChoice] = &[
     EnumChoice {
@@ -890,7 +890,7 @@ pub fn default_settings() -> Vec<SettingMeta> {
             hidden_in_minimal: false,
         },
         // SHELL-owned: `[ui].prompt_suggestions` with a process-wide cache. Default ON.
-        // The `GROK_PROMPT_SUGGESTIONS` env var overrides at runtime.
+        // The `EZER_PROMPT_SUGGESTIONS` env var overrides at runtime.
         SettingMeta {
             key: "prompt_suggestions",
             category: SettingCategory::Editor,
@@ -1386,7 +1386,7 @@ pub fn default_settings() -> Vec<SettingMeta> {
             hidden_in_minimal: false,
         },
         // SHELL-owned, persisted to `[ui].voice_stt_language`. Applied live to the next voice capture (no restart).
-        // Default English; System (`auto`) follows the process locale when it maps to a Grok STT language
+        // Default English; System (`auto`) follows the process locale when it maps to a Ezer STT language
         // The catalog is the official STT languages (see ezer_voice::STT_LANGUAGES)
         SettingMeta {
             key: "voice_stt_language",

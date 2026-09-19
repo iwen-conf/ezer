@@ -84,7 +84,7 @@ async fn writer_blocked_tty_keeps_loop_alive() {
     let binary = pager_binary().expect("resolve pager binary");
     let mut cmd = portable_pty::CommandBuilder::new(&binary);
     cmd.cwd(content.sandbox().home());
-    // Hermetic like every harness spawn: ambient vars (GROK_SCROLL_LOG, TMUX, ...) must not
+    // Hermetic like every harness spawn: ambient vars (EZER_SCROLL_LOG, TMUX, ...) must not
     // leak state outside the sandbox or shift which escape-emission path the test exercises.
     cmd.env_clear();
     for (key, value) in content.sandbox().env() {

@@ -39,7 +39,7 @@ async fn prepare(
     .expect("prepare_tool_call must not error")
 }
 #[tokio::test(flavor = "current_thread")]
-async fn plan_mode_rejects_grok_edit_outside_plan_file_despite_allow_all_permissions() {
+async fn plan_mode_rejects_ezer_edit_outside_plan_file_despite_allow_all_permissions() {
     let local = tokio::task::LocalSet::new();
     local
         .run_until(async {

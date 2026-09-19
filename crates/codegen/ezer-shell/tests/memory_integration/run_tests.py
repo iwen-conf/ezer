@@ -21,7 +21,7 @@ Usage:
     python3 crates/codegen/ezer-shell/tests/memory_integration/run_tests.py test_fts_search_quality
 
     # Skip build (use pre-built binary):
-    GROK_BINARY=/path/to/ezer-pager python3 run_tests.py --fast
+    EZER_BINARY=/path/to/ezer-pager python3 run_tests.py --fast
 """
 
 import json
@@ -181,20 +181,20 @@ class IsolatedEnv:
         os.makedirs(self.workspace)
 
         # Create .grok dirs in fake home
-        self.grok_home = os.path.join(self.fake_home, ".grok")
-        self.memory_dir = os.path.join(self.grok_home, "memory")
-        self.logs_dir = os.path.join(self.grok_home, "logs")
+        self.ezer_home = os.path.join(self.fake_home, ".grok")
+        self.memory_dir = os.path.join(self.ezer_home, "memory")
+        self.logs_dir = os.path.join(self.ezer_home, "logs")
         os.makedirs(self.memory_dir)
         os.makedirs(self.logs_dir)
 
         # Copy auth from real home
         real_auth = os.path.expanduser("~/.grok/auth.json")
         if os.path.isfile(real_auth):
-            shutil.copy2(real_auth, os.path.join(self.grok_home, "auth.json"))
+            shutil.copy2(real_auth, os.path.join(self.ezer_home, "auth.json"))
 
     def write_config(self, toml_str):
         """Write global ~/.grok/config.toml (where the agent reads config)."""
-        with open(os.path.join(self.grok_home, "config.toml"), "w") as f:
+        with open(os.path.join(self.ezer_home, "config.toml"), "w") as f:
             f.write(toml_str)
 
     def write_global_memory(self, content):
@@ -266,16 +266,16 @@ class IsolatedEnv:
         return sorted(files)
 
     def spawn_agent(self, extra_env=None):
-        binary = os.environ.get("GROK_BINARY", "grok")
+        binary = os.environ.get("EZER_BINARY", "grok")
         if not shutil.which(binary) and not os.path.isfile(binary):
             print(f"{R}grok binary not found: {binary}{N}")
             sys.exit(1)
         env = os.environ.copy()
         env["HOME"] = self.fake_home
-        env["GROK_MEMORY"] = "1"
+        env["EZER_MEMORY"] = "1"
         env["RUST_LOG"] = "warn"
         # Disable leader mode
-        env["GROK_NO_LEADER"] = "1"
+        env["EZER_NO_LEADER"] = "1"
         if extra_env:
             env.update(extra_env)
         proc = subprocess.Popen(
@@ -293,7 +293,7 @@ class IsolatedEnv:
 
 
 def _default_config() -> str:
-    embed_model = os.environ.get("GROK_MEMORY_EMBEDDING_MODEL", "").strip()
+    embed_model = os.environ.get("EZER_MEMORY_EMBEDDING_MODEL", "").strip()
     embed_model_line = f'model = "{embed_model}"\n' if embed_model else ""
     return f"""
 [memory]
@@ -919,7 +919,7 @@ def test_memory_disabled():
 enabled = false
 """)
         env.write_global_memory("# Should not be indexed\n")
-        client = env.spawn_agent(extra_env={"GROK_MEMORY": "0"})
+        client = env.spawn_agent(extra_env={"EZER_MEMORY": "0"})
         init_session(client)
         time.sleep(2)
 
@@ -949,7 +949,7 @@ def test_memory_disabled_no_config():
         # Config with no memory section at all
         env.write_config("")
         env.write_global_memory("# Should not be indexed\n")
-        client = env.spawn_agent(extra_env={"GROK_MEMORY": "0"})
+        client = env.spawn_agent(extra_env={"EZER_MEMORY": "0"})
         init_session(client)
         time.sleep(2)
 
@@ -965,22 +965,22 @@ def test_memory_disabled_no_config():
 
 
 def test_memory_enabled_env_override():
-    """GROK_MEMORY=1 env var enables memory even without config."""
-    section("13. GROK_MEMORY Env Var Override")
+    """EZER_MEMORY=1 env var enables memory even without config."""
+    section("13. EZER_MEMORY Env Var Override")
     env = IsolatedEnv()
     try:
         # Config enables memory
         env.write_config(INDEXING_ONLY_CONFIG)
         env.write_global_memory("# Env test content\n* Key value here\n")
-        client = env.spawn_agent(extra_env={"GROK_MEMORY": "1"})
+        client = env.spawn_agent(extra_env={"EZER_MEMORY": "1"})
         init_session(client)
         time.sleep(3)
 
         db = env.get_db_path()
         if db:
-            ok("index created with GROK_MEMORY=1")
+            ok("index created with EZER_MEMORY=1")
         else:
-            fail("no index despite GROK_MEMORY=1 and config enabled")
+            fail("no index despite EZER_MEMORY=1 and config enabled")
 
         client.close()
     finally:
@@ -1347,12 +1347,12 @@ def test_multiple_workspace_isolation():
         # Config is already in global ~/.grok/config.toml from env1.write_config
 
         # Start agent in workspace beta (reuse env1's fake home)
-        binary = os.environ.get("GROK_BINARY", "grok")
+        binary = os.environ.get("EZER_BINARY", "grok")
         env_vars = os.environ.copy()
         env_vars["HOME"] = env1.fake_home
-        env_vars["GROK_MEMORY"] = "1"
+        env_vars["EZER_MEMORY"] = "1"
         env_vars["RUST_LOG"] = "warn"
-        env_vars["GROK_NO_LEADER"] = "1"
+        env_vars["EZER_NO_LEADER"] = "1"
         proc2 = subprocess.Popen(
             [binary, "agent", "--no-leader", "stdio"],
             stdin=subprocess.PIPE,
@@ -2583,14 +2583,14 @@ def build_binary():
 
     binary = os.path.join(repo, "target", "release", "ezer-pager")
 
-    # Find rg for GROK_SHELL_BUNDLE_RG_PATH
+    # Find rg for EZER_SHELL_BUNDLE_RG_PATH
     rg = shutil.which("rg")
     if not rg:
         print(f"{R}rg (ripgrep) not found — required for build{N}")
         sys.exit(1)
 
     env = os.environ.copy()
-    env["GROK_SHELL_BUNDLE_RG_PATH"] = rg
+    env["EZER_SHELL_BUNDLE_RG_PATH"] = rg
 
     print(f"{B}Building ezer-pager (release + dev)...{N}")
     result = subprocess.run(
@@ -2611,12 +2611,12 @@ def main():
     print(f"{'=' * 60}{N}\n")
 
     # Build or locate binary
-    if "GROK_BINARY" in os.environ:
-        binary = os.environ["GROK_BINARY"]
-        print(f"Binary: {binary} (from $GROK_BINARY, skipping build)")
+    if "EZER_BINARY" in os.environ:
+        binary = os.environ["EZER_BINARY"]
+        print(f"Binary: {binary} (from $EZER_BINARY, skipping build)")
     else:
         binary = build_binary()
-        os.environ["GROK_BINARY"] = binary
+        os.environ["EZER_BINARY"] = binary
 
     if not os.path.isfile(binary):
         print(f"{R}Binary not found: {binary}{N}")

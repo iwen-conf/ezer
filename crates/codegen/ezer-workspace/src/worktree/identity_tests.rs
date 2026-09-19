@@ -15,7 +15,7 @@ fn locked_worktrees_fixture(temp: &tempfile::TempDir) -> WorktreesFixture {
     let home = root.join("ezer-home");
     let worktrees = home.join("worktrees");
     std::fs::create_dir_all(&worktrees).unwrap();
-    let env = LockedTestEnv::lock().set("GROK_HOME", &home);
+    let env = LockedTestEnv::lock().set("EZER_HOME", &home);
     WorktreesFixture {
         _env: env,
         root,
@@ -208,7 +208,7 @@ fn standalone_clone_behind_symlinked_worktrees_dir_reports_no_source() {
     xai_test_utils::git::git_commit_all(&standalone, "initial");
     let link_home = root.join("link-home");
     std::os::unix::fs::symlink(&real_home, &link_home).unwrap();
-    let _env = LockedTestEnv::lock().set("GROK_HOME", &link_home);
+    let _env = LockedTestEnv::lock().set("EZER_HOME", &link_home);
 
     let link_worktrees = link_home.join("worktrees");
     let link_cwd = link_worktrees.join("repo").join("standalone");

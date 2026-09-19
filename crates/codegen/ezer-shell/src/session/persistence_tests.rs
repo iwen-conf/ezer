@@ -1382,7 +1382,7 @@ async fn manual_rename_next_flush_does_not_revert_backend_title() {
 
     use crate::remote::BackendClient;
     use crate::session::export::ExportedMetadata;
-    use ezer_login::{AuthManager, GrokAuth};
+    use ezer_login::{AuthManager, EzerAuth};
     use ezer_test_support::MockInferenceServer;
 
     const OLD_TITLE: &str = "Auto first-prompt summary";
@@ -1395,11 +1395,11 @@ async fn manual_rename_next_flush_does_not_revert_backend_title() {
     let home = tempfile::tempdir().unwrap();
     let auth = Arc::new(AuthManager::new(
         home.path(),
-        ezer_login::GrokComConfig::default(),
+        ezer_login::EzerComConfig::default(),
     ));
-    auth.hot_swap(GrokAuth {
+    auth.hot_swap(EzerAuth {
         key: "writeback-test-token".into(),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     });
 
     let info = Info {
@@ -1575,7 +1575,7 @@ async fn manual_after_auto_last_flush_is_manual() {
 
     use crate::remote::BackendClient;
     use crate::session::export::ExportedMetadata;
-    use ezer_login::{AuthManager, GrokAuth};
+    use ezer_login::{AuthManager, EzerAuth};
     use ezer_test_support::MockInferenceServer;
 
     const AUTO: &str = "Auto title";
@@ -1588,11 +1588,11 @@ async fn manual_after_auto_last_flush_is_manual() {
     let home = tempfile::tempdir().unwrap();
     let auth = Arc::new(AuthManager::new(
         home.path(),
-        ezer_login::GrokComConfig::default(),
+        ezer_login::EzerComConfig::default(),
     ));
-    auth.hot_swap(GrokAuth {
+    auth.hot_swap(EzerAuth {
         key: "writeback-test-token".into(),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     });
 
     let info = Info {
@@ -1680,7 +1680,7 @@ async fn auto_after_committed_manual_emits_no_set_title() {
 
     use crate::remote::BackendClient;
     use crate::session::export::ExportedMetadata;
-    use ezer_login::{AuthManager, GrokAuth};
+    use ezer_login::{AuthManager, EzerAuth};
     use ezer_test_support::MockInferenceServer;
 
     const AUTO: &str = "Rejected auto";
@@ -1693,11 +1693,11 @@ async fn auto_after_committed_manual_emits_no_set_title() {
     let home = tempfile::tempdir().unwrap();
     let auth = Arc::new(AuthManager::new(
         home.path(),
-        ezer_login::GrokComConfig::default(),
+        ezer_login::EzerComConfig::default(),
     ));
-    auth.hot_swap(GrokAuth {
+    auth.hot_swap(EzerAuth {
         key: "writeback-test-token".into(),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     });
 
     let info = Info {
@@ -1813,7 +1813,7 @@ async fn reset_title_to_auto_then_generated_title_is_adopted() {
     use crate::session::export::ExportedMetadata;
     use crate::session::helpers::session_summary::title_fallback_from_user_text;
     use crate::session::persistence::PersistenceContentChunk;
-    use ezer_login::{AuthManager, GrokAuth};
+    use ezer_login::{AuthManager, EzerAuth};
     use ezer_test_support::MockInferenceServer;
 
     const AUTO: &str = "Auto first title";
@@ -1828,11 +1828,11 @@ async fn reset_title_to_auto_then_generated_title_is_adopted() {
     let home = tempfile::tempdir().unwrap();
     let auth = Arc::new(AuthManager::new(
         home.path(),
-        ezer_login::GrokComConfig::default(),
+        ezer_login::EzerComConfig::default(),
     ));
-    auth.hot_swap(GrokAuth {
+    auth.hot_swap(EzerAuth {
         key: "writeback-test-token".into(),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     });
 
     let info = Info {
@@ -2418,7 +2418,7 @@ mod prompt_file_tests {
             id: agent_client_protocol::SessionId::new("cwd-marker-sync"),
             cwd: long_cwd,
         };
-        let cwd_dir = crate::util::grok_home::sessions_cwd_dir_in(home.path(), &info.cwd);
+        let cwd_dir = crate::util::ezer_home::sessions_cwd_dir_in(home.path(), &info.cwd);
         let cwd_file = cwd_dir.join(".cwd");
 
         let events = std::cell::RefCell::new(Vec::new());

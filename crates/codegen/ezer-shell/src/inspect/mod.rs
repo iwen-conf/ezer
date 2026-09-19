@@ -58,7 +58,7 @@ impl std::fmt::Display for Scope {
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct InspectReport {
-    pub grok_version: String,
+    pub ezer_version: String,
     pub channel: String,
     pub cwd: String,
     pub project_root: Option<String>,
@@ -118,7 +118,7 @@ impl ManagedOnlyScope {
     fn resolve(policy: &ezer_workspace::permission::resolution::McpServerPolicy) -> Self {
         use ezer_workspace::permission::resolution::PolicySubjectOrigin;
         // Order is load-bearing: managed_only(Foreign) is true for native sources too.
-        if policy.managed_only(PolicySubjectOrigin::GrokNative) {
+        if policy.managed_only(PolicySubjectOrigin::EzerNative) {
             Self::Enforced
         } else if policy.managed_only(PolicySubjectOrigin::Foreign) {
             Self::Advisory
@@ -218,7 +218,7 @@ pub(crate) struct SkippedRule {
     pub reason: String,
 }
 
-/// Enterprise login-hardening policy resolved from `[grok_com_config]` (TOML and env).
+/// Enterprise login-hardening policy resolved from `[ezer_com_config]` (TOML and env).
 /// Shown so admins can verify the deployment loaded it.
 /// The team pin is admin policy, not a secret, so it is shown verbatim.
 #[derive(Debug, Serialize)]
@@ -483,7 +483,7 @@ async fn build_report(cwd: &Path) -> InspectReport {
     let mcp_config_problems = crate::util::config::load_mcp_server_problems_with_project(cwd);
 
     InspectReport {
-        grok_version: ezer_version::VERSION.to_string(),
+        ezer_version: ezer_version::VERSION.to_string(),
         channel: crate::util::config::channel_name_from_cache()
             .unwrap_or("unknown")
             .to_string(),
@@ -523,13 +523,13 @@ fn has_rules_directory(file_path: &str, config_dir: &str) -> bool {
 
 fn instruction_scope(
     file_path: &str,
-    grok_home: &Path,
+    ezer_home: &Path,
     vendor_homes: &[(PathBuf, bool)],
     workspace_root: &Path,
 ) -> Scope {
     if crate::util::is_user_instruction_path(
         Path::new(file_path),
-        grok_home,
+        ezer_home,
         vendor_homes,
         &[workspace_root],
     ) {
@@ -539,11 +539,11 @@ fn instruction_scope(
     }
 }
 
-fn instruction_file_type(file_path: &str, grok_home: &Path, claude_imported: bool) -> &'static str {
+fn instruction_file_type(file_path: &str, ezer_home: &Path, claude_imported: bool) -> &'static str {
     let path = Path::new(file_path);
     if path
         .parent()
-        .is_some_and(|parent| parent == grok_home.join("rules"))
+        .is_some_and(|parent| parent == ezer_home.join("rules"))
         || has_rules_directory(file_path, ".ezer")
         || has_rules_directory(file_path, ".cursor")
         || (!claude_imported && has_rules_directory(file_path, ".claude"))
@@ -569,7 +569,7 @@ async fn list_instructions(
     )
     .await;
 
-    let grok_home = crate::util::grok_home::grok_home();
+    let ezer_home = crate::util::ezer_home::ezer_home();
     let vendor_homes = xai_dirs::home_dir()
         .map(|home_dir| {
             vec![
@@ -595,8 +595,8 @@ async fn list_instructions(
                     (Scope::Global, "rules", None)
                 } else {
                     (
-                        instruction_scope(&c.file_path, &grok_home, &vendor_homes, &workspace_root),
-                        instruction_file_type(&c.file_path, &grok_home, imported),
+                        instruction_scope(&c.file_path, &ezer_home, &vendor_homes, &workspace_root),
+                        instruction_file_type(&c.file_path, &ezer_home, imported),
                         derive_vendor(&c.file_path).map(String::from),
                     )
                 };
@@ -791,16 +791,16 @@ fn permission_policy_report(
     }
 }
 
-/// Resolves the enterprise login-hardening knobs from the merged config (`[grok_com_config]`, the `[auth]` alias, and env overrides).
+/// Resolves the enterprise login-hardening knobs from the merged config (`[ezer_com_config]`, the `[auth]` alias, and env overrides).
 /// Admins use this to confirm the deployment's auth policy actually loaded.
 fn login_policy_report(config: Option<&crate::agent::config::Config>) -> LoginPolicyReport {
-    let grok_com_config = config
-        .map(|c| c.grok_com_config.clone())
+    let ezer_com_config = config
+        .map(|c| c.ezer_com_config.clone())
         .unwrap_or_default();
     LoginPolicyReport {
-        api_key_auth_disabled: grok_com_config.api_key_auth_disabled(),
-        disable_api_key_auth: grok_com_config.disable_api_key_auth,
-        force_login_team_uuid: grok_com_config.force_login_team_uuid,
+        api_key_auth_disabled: ezer_com_config.api_key_auth_disabled(),
+        disable_api_key_auth: ezer_com_config.disable_api_key_auth,
+        force_login_team_uuid: ezer_com_config.force_login_team_uuid,
     }
 }
 
@@ -1156,7 +1156,7 @@ fn list_lsp_servers(
 
     // Folder-trust gate, display-only: inspect never spawns servers
     // Mark the repo-local (project-scoped) entries a session would skip in an untrusted clone, so the listing matches the live gate
-    // `remote = None` mirrors `grok mcp doctor` (no loaded RemoteSettings in a standalone command)
+    // `remote = None` mirrors `ezer mcp doctor` (no loaded RemoteSettings in a standalone command)
     crate::agent::folder_trust::resolve_and_record(cwd, None, false);
     let project_allowed = crate::agent::folder_trust::project_scope_allowed(cwd);
 
@@ -1195,7 +1195,7 @@ fn list_config_sources(cwd: &Path) -> ConfigSources {
     }
 
     // User managed
-    if let Some(home) = crate::config::user_grok_home() {
+    if let Some(home) = crate::config::user_ezer_home() {
         let p = home.join("managed_config.toml");
         if let Some((path_s, note)) = describe_config_file(&p) {
             layers.push(ConfigLayer {
@@ -1207,7 +1207,7 @@ fn list_config_sources(cwd: &Path) -> ConfigSources {
     }
 
     // User config.toml (primary user layer; shown as (none) when absent)
-    if let Some(home) = crate::config::user_grok_home() {
+    if let Some(home) = crate::config::user_ezer_home() {
         let p = home.join("config.toml");
         if let Some((path_s, note)) = describe_config_file(&p) {
             layers.push(ConfigLayer {
@@ -1243,7 +1243,7 @@ fn list_config_sources(cwd: &Path) -> ConfigSources {
     }
 
     // Requirements: user then system (order they appear in requirements_layers)
-    if let Some(home) = crate::config::user_grok_home() {
+    if let Some(home) = crate::config::user_ezer_home() {
         let p = home.join("requirements.toml");
         if let Some((path_s, note)) = describe_requirements_file(&p) {
             layers.push(ConfigLayer {
@@ -1503,7 +1503,7 @@ fn render_harness_compatibility(report: &ExternalCompatReport) -> String {
 fn print_human(r: &InspectReport, out: &mut impl Write) -> std::io::Result<()> {
     writeln!(out)?;
     writeln!(out, "  Environment")?;
-    writeln!(out, "  {TREE} Version: {} [{}]", r.grok_version, r.channel)?;
+    writeln!(out, "  {TREE} Version: {} [{}]", r.ezer_version, r.channel)?;
     writeln!(out, "  {TREE} CWD: {}", r.cwd)?;
     if let Some(ref root) = r.project_root {
         writeln!(out, "  {TREE} Git root: {}", root)?;
@@ -2048,12 +2048,12 @@ mod tests {
     }
 
     #[test]
-    fn grok_home_nested_in_workspace_keeps_direct_surfaces_global() {
-        let grok_home = Path::new("/repo/config");
+    fn ezer_home_nested_in_workspace_keeps_direct_surfaces_global() {
+        let ezer_home = Path::new("/repo/config");
         let workspace = Path::new("/repo");
         for path in ["/repo/config/AGENTS.md", "/repo/config/rules/global.md"] {
             assert!(matches!(
-                instruction_scope(path, grok_home, &[], workspace),
+                instruction_scope(path, ezer_home, &[], workspace),
                 Scope::Global
             ));
         }
@@ -2062,7 +2062,7 @@ mod tests {
             "/repo/config/src/AGENTS.md",
         ] {
             assert!(matches!(
-                instruction_scope(path, grok_home, &[], workspace),
+                instruction_scope(path, ezer_home, &[], workspace),
                 Scope::Project
             ));
         }
@@ -2090,26 +2090,26 @@ mod tests {
     }
 
     #[test]
-    fn workspace_scope_wins_inside_grok_home() {
-        let grok_home = Path::new("/custom/ezer");
+    fn workspace_scope_wins_inside_ezer_home() {
+        let ezer_home = Path::new("/custom/ezer");
         let workspace = Path::new("/custom/ezer/worktrees/repo");
         for path in [
             "/custom/ezer/worktrees/repo/.cursor/rules/project.md",
             "/custom/ezer/worktrees/repo/src/AGENTS.md",
         ] {
             assert!(matches!(
-                instruction_scope(path, grok_home, &[], workspace),
+                instruction_scope(path, ezer_home, &[], workspace),
                 Scope::Project
             ));
         }
         assert!(matches!(
-            instruction_scope("/custom/ezer/rules/global.md", grok_home, &[], workspace,),
+            instruction_scope("/custom/ezer/rules/global.md", ezer_home, &[], workspace,),
             Scope::Global
         ));
     }
 
     #[test]
-    fn custom_grok_home_rules_are_classified_as_rules() {
+    fn custom_ezer_home_rules_are_classified_as_rules() {
         assert_eq!(
             instruction_file_type(
                 "/custom/config/rules/team.md",
@@ -2420,8 +2420,8 @@ mod tests {
     fn config_warnings_inspect_smoke() {
         let effective: toml::Value = toml::from_str(
             r#"
-            [model."grok-4.5"]
-            model = "grok-4.5"
+            [model."test-model-4.5"]
+            model = "test-model-4.5"
             env_key = "ANTHROPIC_AUTH_TOKEN"
             compactions_remaining = 1
             send_compactions_remaining = true
@@ -2443,16 +2443,16 @@ mod tests {
                 .any(|w| w.field() == Some("reasoning_effort")),
             "invalid enum should warn: {warnings:?}"
         );
-        assert!(cfg.config_models.contains_key("grok-4.5"));
+        assert!(cfg.config_models.contains_key("test-model-4.5"));
 
         let human = render_config_warnings(&warnings);
         assert!(human.contains("Config Warnings"), "{human}");
         assert!(
-            human.contains("[model.\"grok-4.5\"] send_compactions_remaining"),
+            human.contains("[model.\"test-model-4.5\"] send_compactions_remaining"),
             "{human}"
         );
         assert!(
-            human.contains("[model.\"grok-4.5\"] reasoning_effort"),
+            human.contains("[model.\"test-model-4.5\"] reasoning_effort"),
             "{human}"
         );
         // Auth-provider warnings render under their own table syntax.
@@ -2495,7 +2495,7 @@ mod tests {
         );
         assert_eq!(
             alias_warning.get("key").and_then(|v| v.as_str()),
-            Some("grok-4.5")
+            Some("test-model-4.5")
         );
         assert_eq!(
             alias_warning.get("kind").and_then(|v| v.as_str()),
@@ -2658,7 +2658,7 @@ mod tests {
             )
             .unwrap();
         };
-        // Test-unique names: discovery also reads this machine's real ~/.grok dirs.
+        // Test-unique names: discovery also reads this machine's real ~/.ezer dirs.
         let extra = tempfile::tempdir().unwrap();
         write(&extra.path().join("inspect-cfg-extra"), "inspect-cfg-extra");
         write(
@@ -2781,7 +2781,7 @@ mod tests {
 
     fn empty_report() -> InspectReport {
         InspectReport {
-            grok_version: "test".into(),
+            ezer_version: "test".into(),
             channel: "test".into(),
             cwd: "/tmp".into(),
             project_root: None,

@@ -27,7 +27,7 @@ pub fn detect_windows_shell() -> &'static WindowsShell {
     static CACHED: OnceLock<WindowsShell> = OnceLock::new();
 
     CACHED.get_or_init(|| {
-        // Explicit override via GROK_SHELL.
+        // Explicit override via EZER_SHELL.
         if let Ok(val) = std::env::var("EZER_SHELL") {
             match val.trim().to_ascii_lowercase().as_str() {
                 "pwsh" => {
@@ -301,7 +301,7 @@ fn invocation_for(shell: &WindowsShell, command: &str) -> ShellInvocation {
     }
 }
 
-// `$GROK_SHELL` override, if it names the requested kind and is runnable; `$SHELL`, if it names the requested kind and is runnable. Covers most NixOS / Homebrew / `nix-darwin` setups There the user's login shell already lives at the resolved path; `which::which(name)` walks `$PATH`. Catches NixOS profile shells in `/nix/store/...` or `/etc/profiles/per-user/<u>/bin/` when `/bin/bash` is absent; A fixed candidate list: `{/bin, /usr/bin, /usr/local/bin, /opt/homebrew/bin} × {bash,zsh}`; Hardcoded `/bin/<name>`: historical behavior, only reached when every earlier step has failed.
+// `$EZER_SHELL` override, if it names the requested kind and is runnable; `$SHELL`, if it names the requested kind and is runnable. Covers most NixOS / Homebrew / `nix-darwin` setups There the user's login shell already lives at the resolved path; `which::which(name)` walks `$PATH`. Catches NixOS profile shells in `/nix/store/...` or `/etc/profiles/per-user/<u>/bin/` when `/bin/bash` is absent; A fixed candidate list: `{/bin, /usr/bin, /usr/local/bin, /opt/homebrew/bin} × {bash,zsh}`; Hardcoded `/bin/<name>`: historical behavior, only reached when every earlier step has failed.
 // The result is cached per kind in a process-wide `OnceLock`, so the cascade is run at most once per shell kind per process
 
 /// Bash and zsh are the only kinds supported by the persistent shell-state backend (the dump scripts are bash/zsh-specific).
@@ -365,7 +365,7 @@ fn resolve_unix_shell_path(kind: UnixShellKind) -> String {
     let name = kind.name();
     let matches_kind = |p: &std::path::Path| p.file_name().and_then(|n| n.to_str()) == Some(name);
 
-    // 1) Explicit override via $GROK_SHELL.
+    // 1) Explicit override via $EZER_SHELL.
     if let Ok(s) = std::env::var("EZER_SHELL") {
         let p = std::path::PathBuf::from(&s);
         if matches_kind(&p) && is_executable(&p) {

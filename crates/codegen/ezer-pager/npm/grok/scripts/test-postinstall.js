@@ -89,9 +89,9 @@ function cleanupOldVersions(canonicalDir, currentVersionedName) {
     return versionedBinaries;
 }
 
-/** Grok bin dir resolution (mirrors postinstall.js and bin/grok-bootstrap.js). */
-function resolveGrokBinDir(env, homedir) {
-    const grokHome = env.GROK_HOME ?? path.join(homedir, '.grok');
+/** Ezer bin dir resolution (mirrors postinstall.js and bin/grok-bootstrap.js). */
+function resolveEzerBinDir(env, homedir) {
+    const grokHome = env.@@LEGACY_EZER_HOME@@ ?? path.join(homedir, '.grok');
     return path.join(grokHome, 'bin');
 }
 
@@ -695,7 +695,7 @@ test('non-grok files in bin dir are not touched by cleanup', () => {
         fs.writeFileSync(path.join(binDir, 'other-tool'), 'should-stay');
         fs.writeFileSync(path.join(binDir, 'README.md'), 'should-stay');
 
-        // Grok versions
+        // Ezer versions
         fs.writeFileSync(path.join(binDir, 'grok-0.1.138'), 'old1');
         fs.writeFileSync(path.join(binDir, 'grok-0.1.139'), 'old2');
         fs.writeFileSync(path.join(binDir, 'grok-0.1.140'), 'current');
@@ -1029,16 +1029,16 @@ test('canonical pager from non-npm install is preserved on Linux', () => {
 
 console.log('\ngrok home + brotli install tests\n');
 
-test('resolveGrokBinDir honors $GROK_HOME, else falls back to <home>/.grok/bin', () => {
+test('resolveEzerBinDir honors $@@LEGACY_EZER_HOME@@, else falls back to <home>/.grok/bin', () => {
     assert.strictEqual(
-        resolveGrokBinDir({ GROK_HOME: '/fast/local/.grok' }, '/home/alice'),
+        resolveEzerBinDir({ @@LEGACY_EZER_HOME@@: '/fast/local/.grok' }, '/home/alice'),
         path.join('/fast/local/.grok', 'bin'),
     );
     assert.strictEqual(
-        resolveGrokBinDir({}, '/home/alice'),
+        resolveEzerBinDir({}, '/home/alice'),
         path.join('/home/alice', '.grok', 'bin'),
     );
-    assert.strictEqual(resolveGrokBinDir({ GROK_HOME: '' }, '/home/alice'), path.join('', 'bin'));
+    assert.strictEqual(resolveEzerBinDir({ @@LEGACY_EZER_HOME@@: '' }, '/home/alice'), path.join('', 'bin'));
 });
 
 test('writeVendorBinary returns false (not true) when the destination cannot be written', () => {

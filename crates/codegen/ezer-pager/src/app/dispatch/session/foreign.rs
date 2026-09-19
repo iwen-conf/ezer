@@ -92,11 +92,11 @@ pub(in crate::app::dispatch) fn dispatch_fetch_session_list(app: &mut AppView) -
         app.foreign_scan_coordinator.begin_request(foreign_seq);
         None
     } else {
-        let grok_home = ezer_tools::util::grok_home::grok_home();
+        let ezer_home = ezer_tools::util::ezer_home::ezer_home();
         crate::app::foreign_sessions::scan_effect(
             &app.cwd,
             app.foreign_session_compat,
-            &grok_home,
+            &ezer_home,
             app.foreign_scan_coordinator.clone(),
             foreign_seq,
         )

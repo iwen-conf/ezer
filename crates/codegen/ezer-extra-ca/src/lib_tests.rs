@@ -177,7 +177,7 @@ fn select_bundle_precedence() {
     // Bundle wins; empty disables both; empty is treated as unset.
     assert_eq!(
         select_bundle(Some(os("/b")), Some(os("/s"))),
-        Some((ENV_GROK_EXTRA_CA_BUNDLE, p("/b")))
+        Some((ENV_EZER_EXTRA_CA_BUNDLE, p("/b")))
     );
     assert_eq!(select_bundle(Some(os("")), Some(os("/s"))), None);
     assert_eq!(
@@ -194,7 +194,7 @@ fn load_fails_open_on_read_errors() {
     // That keeps the size cap on the load path
     assert!(
         load_extra_root_ders(
-            ENV_GROK_EXTRA_CA_BUNDLE,
+            ENV_EZER_EXTRA_CA_BUNDLE,
             std::path::Path::new("/nonexistent/ezer-ca.pem"),
         )
         .is_empty()
@@ -207,5 +207,5 @@ fn load_fails_open_on_read_errors() {
         vec![b'A'; (MAX_EXTRA_CA_BUNDLE_BYTES as usize) + 1],
     )
     .unwrap();
-    assert!(load_extra_root_ders(ENV_GROK_EXTRA_CA_BUNDLE, &oversized).is_empty());
+    assert!(load_extra_root_ders(ENV_EZER_EXTRA_CA_BUNDLE, &oversized).is_empty());
 }

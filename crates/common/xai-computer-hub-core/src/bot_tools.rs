@@ -6,7 +6,7 @@
 /// Handwritten harness tool ids: every id a hub may register or Plane may
 /// allowlist. A hub registers a prefix of this list, so an id can be
 /// declared (validated, offered, reserved) before any hub implements it.
-pub const GROK_BOT_TOOL_IDS: &[&str] = &[
+pub const EZER_BOT_TOOL_IDS: &[&str] = &[
     "bot_create_agent",
     "bot_list_agents",
     "bot_send_prompt",
@@ -20,14 +20,14 @@ pub const GROK_BOT_TOOL_IDS: &[&str] = &[
 ];
 
 /// Whether `name` is a hub-synthesized ezer Bot harness tool.
-pub fn is_grok_bot_tool(name: &str) -> bool {
-    GROK_BOT_TOOL_IDS.contains(&name)
+pub fn is_ezer_bot_tool(name: &str) -> bool {
+    EZER_BOT_TOOL_IDS.contains(&name)
 }
 
-/// Bot tools a toolbox receives when `grok_bot_allowed_tools` is empty.
+/// Bot tools a toolbox receives when `ezer_bot_allowed_tools` is empty.
 /// A new id is added here only once a hub implements it; until then it
 /// needs explicit per-toolbox opt-in.
-pub const GROK_BOT_DEFAULT_TOOL_IDS: &[&str] = &[
+pub const EZER_BOT_DEFAULT_TOOL_IDS: &[&str] = &[
     "bot_create_agent",
     "bot_list_agents",
     "bot_send_prompt",
@@ -41,15 +41,15 @@ pub const GROK_BOT_DEFAULT_TOOL_IDS: &[&str] = &[
 ];
 
 /// Whether `name` is in the empty-allowlist default set.
-pub fn is_grok_bot_default_tool(name: &str) -> bool {
-    GROK_BOT_DEFAULT_TOOL_IDS.contains(&name)
+pub fn is_ezer_bot_default_tool(name: &str) -> bool {
+    EZER_BOT_DEFAULT_TOOL_IDS.contains(&name)
 }
 
 /// Model-facing descriptions, one per [`EZER_BOT_TOOL_IDS`] entry (same
 /// order). The hub registers its tools with these strings, and clients
 /// use them to advertise opted-in bot tools before the hub connection is
 /// live, so both surfaces render the same text.
-pub const GROK_BOT_TOOL_DESCRIPTIONS: &[(&str, &str)] = &[
+pub const EZER_BOT_TOOL_DESCRIPTIONS: &[(&str, &str)] = &[
     (
         "bot_create_agent",
         "Create a ezer Bot agent. It greets the user itself; send no first \
@@ -68,7 +68,7 @@ pub const GROK_BOT_TOOL_DESCRIPTIONS: &[(&str, &str)] = &[
          waits for the reply. on_busy is supersede (default), reject, or queue. \
          After a timeout or a missing notification, resume with bot_await_turn \
          and the returned handle; never re-send. Empty reply with \
-         finished:true means no text. A <grok_bot agent_id> tag is that \
+         finished:true means no text. A <ezer_bot agent_id> tag is that \
          agent's id.",
     ),
     (
@@ -111,8 +111,8 @@ pub const GROK_BOT_TOOL_DESCRIPTIONS: &[(&str, &str)] = &[
 ];
 
 /// The model-facing description for a ezer Bot tool id, if known.
-pub fn grok_bot_tool_description(name: &str) -> Option<&'static str> {
-    GROK_BOT_TOOL_DESCRIPTIONS
+pub fn ezer_bot_tool_description(name: &str) -> Option<&'static str> {
+    EZER_BOT_TOOL_DESCRIPTIONS
         .iter()
         .find(|(id, _)| *id == name)
         .map(|(_, desc)| *desc)
@@ -130,7 +130,7 @@ const SEND_AGENT_ID_DESCRIPTION: &str = "Opaque id copied exactly from \
 /// Same shape the hub advertises via `schema_for_kind`. Pre-bind synthesis
 /// uses this so constrained decoding can emit required fields (`agent_id`,
 /// `prompt`, …) instead of locking the call to `{}`.
-pub fn grok_bot_tool_arguments_schema(name: &str) -> Option<serde_json::Value> {
+pub fn ezer_bot_tool_arguments_schema(name: &str) -> Option<serde_json::Value> {
     Some(match name {
         "bot_create_agent" => serde_json::json!({
             "type": "object",
@@ -327,13 +327,13 @@ mod tests {
 
     #[test]
     fn descriptions_cover_every_id_in_order() {
-        let desc_ids: Vec<&str> = GROK_BOT_TOOL_DESCRIPTIONS
+        let desc_ids: Vec<&str> = EZER_BOT_TOOL_DESCRIPTIONS
             .iter()
             .map(|(id, _)| *id)
             .collect();
-        assert_eq!(desc_ids, GROK_BOT_TOOL_IDS);
+        assert_eq!(desc_ids, EZER_BOT_TOOL_IDS);
         assert!(
-            GROK_BOT_TOOL_DESCRIPTIONS
+            EZER_BOT_TOOL_DESCRIPTIONS
                 .iter()
                 .all(|(_, desc)| !desc.trim().is_empty())
         );
@@ -341,7 +341,7 @@ mod tests {
 
     #[test]
     fn descriptions_steer_copied_agent_ids_and_create_sparingly() {
-        let create = grok_bot_tool_description("bot_create_agent").expect("bot_create_agent");
+        let create = ezer_bot_tool_description("bot_create_agent").expect("bot_create_agent");
         for needle in [
             "Only when the user asks for a new agent",
             "bot_list_agents then bot_send_prompt",
@@ -352,7 +352,7 @@ mod tests {
                 "bot_create_agent missing {needle:?}"
             );
         }
-        let send = grok_bot_tool_arguments_schema("bot_send_prompt").expect("bot_send_prompt");
+        let send = ezer_bot_tool_arguments_schema("bot_send_prompt").expect("bot_send_prompt");
         let agent_id = send["properties"]["agent_id"]["description"]
             .as_str()
             .expect("agent_id description");
@@ -370,35 +370,35 @@ mod tests {
 
     #[test]
     fn arguments_schema_covers_every_id() {
-        for id in GROK_BOT_TOOL_IDS {
-            let schema = grok_bot_tool_arguments_schema(id)
+        for id in EZER_BOT_TOOL_IDS {
+            let schema = ezer_bot_tool_arguments_schema(id)
                 .unwrap_or_else(|| panic!("{id} must have an arguments schema"));
             assert_eq!(schema["type"], "object", "{id}");
         }
-        assert!(grok_bot_tool_arguments_schema("bot_typo").is_none());
+        assert!(ezer_bot_tool_arguments_schema("bot_typo").is_none());
     }
 
     #[test]
     fn default_tool_ids_are_a_prefix_of_shared_ids() {
-        for id in GROK_BOT_DEFAULT_TOOL_IDS {
-            assert!(is_grok_bot_tool(id), "{id} is not in EZER_BOT_TOOL_IDS");
+        for id in EZER_BOT_DEFAULT_TOOL_IDS {
+            assert!(is_ezer_bot_tool(id), "{id} is not in EZER_BOT_TOOL_IDS");
         }
         assert_eq!(
-            GROK_BOT_DEFAULT_TOOL_IDS.len(),
+            EZER_BOT_DEFAULT_TOOL_IDS.len(),
             10,
             "default set size changed; check the surface budget and every other copy of this list"
         );
         assert_eq!(
-            GROK_BOT_DEFAULT_TOOL_IDS,
-            &GROK_BOT_TOOL_IDS[..GROK_BOT_DEFAULT_TOOL_IDS.len()],
+            EZER_BOT_DEFAULT_TOOL_IDS,
+            &EZER_BOT_TOOL_IDS[..EZER_BOT_DEFAULT_TOOL_IDS.len()],
             "new ids go after the default set"
         );
     }
 
     #[test]
     fn search_agents_is_a_default_tool() {
-        assert!(is_grok_bot_default_tool("bot_search_agents"));
-        assert!(!is_grok_bot_default_tool("bot_future_tool"));
+        assert!(is_ezer_bot_default_tool("bot_search_agents"));
+        assert!(!is_ezer_bot_default_tool("bot_future_tool"));
     }
 
     /// Clients advertise this schema from the shared table before the
@@ -406,7 +406,7 @@ mod tests {
     /// hub's schema goldens.
     #[test]
     fn search_agents_schema_shape() {
-        let schema = grok_bot_tool_arguments_schema("bot_search_agents").unwrap();
+        let schema = ezer_bot_tool_arguments_schema("bot_search_agents").unwrap();
         assert_eq!(schema["additionalProperties"], false);
         assert_eq!(schema["required"], serde_json::json!(["query"]));
         let props = schema["properties"].as_object().unwrap();
@@ -432,8 +432,8 @@ mod tests {
     fn surface_bytes(id: &str) -> usize {
         serde_json::json!({
             "name": id,
-            "description": grok_bot_tool_description(id),
-            "parameters": grok_bot_tool_arguments_schema(id),
+            "description": ezer_bot_tool_description(id),
+            "parameters": ezer_bot_tool_arguments_schema(id),
         })
         .to_string()
         .len()
@@ -447,7 +447,7 @@ mod tests {
     fn surface_fits_budget() {
         const DEFAULT_SET_BUDGET: usize = 6_000;
         const OPT_IN_TOOL_BUDGET: usize = 700;
-        let default_total: usize = GROK_BOT_DEFAULT_TOOL_IDS
+        let default_total: usize = EZER_BOT_DEFAULT_TOOL_IDS
             .iter()
             .map(|id| surface_bytes(id))
             .sum();
@@ -455,7 +455,7 @@ mod tests {
             default_total <= DEFAULT_SET_BUDGET,
             "default bot tool surface is {default_total} bytes (budget {DEFAULT_SET_BUDGET}); trim before raising the budget"
         );
-        for id in &GROK_BOT_TOOL_IDS[GROK_BOT_DEFAULT_TOOL_IDS.len()..] {
+        for id in &EZER_BOT_TOOL_IDS[EZER_BOT_DEFAULT_TOOL_IDS.len()..] {
             let bytes = surface_bytes(id);
             assert!(
                 bytes <= OPT_IN_TOOL_BUDGET,

@@ -264,12 +264,12 @@ fn repos_manifest_search_dirs(start: &std::path::Path) -> Vec<std::path::PathBuf
     let rel = ezer_workspace_types::rpc::repos::REPOS_MANIFEST_RELATIVE_PATH;
     let home = xai_dirs::home_dir();
     let mut global_manifests = Vec::with_capacity(2);
-    if let Some(v) = std::env::var_os("GROK_HOME")
+    if let Some(v) = std::env::var_os("EZER_HOME")
         && !v.is_empty()
     {
         global_manifests.push(std::path::PathBuf::from(v).join("repos.json"));
     }
-    if let Some(user_home) = ezer_config::user_grok_home() {
+    if let Some(user_home) = ezer_config::user_ezer_home() {
         global_manifests.push(user_home.join("repos.json"));
     }
     let mut out = Vec::new();
@@ -1927,7 +1927,7 @@ mod tests {
             .unwrap_or_else(|e| e.into_inner());
         let home = tempfile::tempdir().unwrap();
         let _home = crate::TestEnvGuard::set("HOME", home.path());
-        let _unset_grok = crate::TestEnvGuard::unset("GROK_HOME");
+        let _unset_ezer = crate::TestEnvGuard::unset("EZER_HOME");
         let dirs = repos_manifest_search_dirs(std::path::Path::new("/workspace/app"));
         assert_eq!(
             dirs,
@@ -1943,7 +1943,7 @@ mod tests {
             .lock()
             .unwrap_or_else(|e| e.into_inner());
         let _home = crate::TestEnvGuard::unset("HOME");
-        let _unset_grok = crate::TestEnvGuard::unset("GROK_HOME");
+        let _unset_ezer = crate::TestEnvGuard::unset("EZER_HOME");
         let dirs = repos_manifest_search_dirs(std::path::Path::new("/workspace/app"));
         assert!(
             dirs.contains(&std::path::PathBuf::from("/workspace/app")),
@@ -1955,13 +1955,13 @@ mod tests {
         );
     }
     #[test]
-    fn repos_manifest_search_dirs_skips_user_global_grok_home() {
+    fn repos_manifest_search_dirs_skips_user_global_ezer_home() {
         let _lock = crate::ENV_TEST_LOCK
             .lock()
             .unwrap_or_else(|e| e.into_inner());
         let home = tempfile::tempdir().unwrap();
         let _home = crate::TestEnvGuard::set("HOME", home.path());
-        let _unset_grok = crate::TestEnvGuard::unset("GROK_HOME");
+        let _unset_ezer = crate::TestEnvGuard::unset("EZER_HOME");
         let start = home.path().join("src").join("org").join("app");
         let dirs = repos_manifest_search_dirs(&start);
         assert!(dirs.contains(&start));
@@ -1980,7 +1980,7 @@ mod tests {
             .unwrap_or_else(|e| e.into_inner());
         let home = tempfile::tempdir().unwrap();
         let _home = crate::TestEnvGuard::set("HOME", home.path());
-        let _unset_grok = crate::TestEnvGuard::unset("GROK_HOME");
+        let _unset_ezer = crate::TestEnvGuard::unset("EZER_HOME");
         let global = RepoManifest::new(vec![ProvisionedRepo {
             name: "global".into(),
             repository: "acme/global".into(),

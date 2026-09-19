@@ -120,7 +120,7 @@ impl CompactionSampler for ShellCompactionSampler {
         _prompt: &CompactionPrompt,
         _timeout: Duration,
     ) -> Result<LlmCompactionOutput, CompactionSampleError> {
-        // Append the harness-selected summarization prompt as the final user message (compat short vs structured grok-build)
+        // Append the harness-selected summarization prompt as the final user message (compat short vs structured ezer-build)
         // The shared engine's `_prompt` is ignored (see the struct doc)
         let chat_history = build_compaction_chat_history(
             turns.to_vec(),

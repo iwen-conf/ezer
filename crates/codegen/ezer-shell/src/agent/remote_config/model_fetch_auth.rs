@@ -6,7 +6,7 @@ use super::SettingsCacheManager;
 use crate::agent::auth_method::read_xai_api_key_env;
 use crate::agent::config::{self, ModelEntry};
 use crate::remote::{ModelSource, active_model_source};
-use ezer_login::{GrokAuth, GrokComConfig};
+use ezer_login::{EzerAuth, EzerComConfig};
 
 /// Credential for `/v1/models` fetching.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -65,7 +65,7 @@ impl ModelsCacheScope {
     pub(in crate::agent::remote_config) fn resolve(
         endpoints: &config::EndpointsConfig,
         fetch_auth: ModelFetchAuth,
-        auth: Option<&GrokAuth>,
+        auth: Option<&EzerAuth>,
     ) -> Self {
         let origin = active_model_source(endpoints, fetch_auth).cache_origin();
         let alpha = endpoints.alpha_test_key.as_deref();
@@ -124,7 +124,7 @@ impl ModelsCacheScope {
     /// abandon a good catalog; the identity still owns real credential changes.
     pub(in crate::agent::remote_config) fn resolve_live(
         fetch_auth: ModelFetchAuth,
-        commit_config: Option<&GrokComConfig>,
+        commit_config: Option<&EzerComConfig>,
     ) -> Self {
         let endpoints = super::resolve_startup_endpoints();
         let auth = super::resolve_disk_auth(commit_config.cloned());

@@ -372,7 +372,7 @@ pub struct HookEventEnvelope {
     pub payload: HookPayload,
 }
 
-// Additive snake_case aliases for grok's camelCase keys, which some hook clients read; the camelCase keys stay authoritative
+// Additive snake_case aliases for ezer's camelCase keys, which some hook clients read; the camelCase keys stay authoritative
 const SNAKE_CASE_ALIASES: &[(&str, &str)] = &[
     ("hookEventName", "hook_event_name"),
     ("sessionId", "session_id"),
@@ -395,7 +395,7 @@ impl HookEventEnvelope {
                     map.entry(*snake).or_insert(aliased);
                 }
             }
-            // The snake key carries Claude's PascalCase value; the camel key stays grok-native.
+            // The snake key carries Claude's PascalCase value; the camel key stays ezer-native.
             map.insert(
                 "hook_event_name".to_string(),
                 self.hook_event_name.pascal_case().into(),

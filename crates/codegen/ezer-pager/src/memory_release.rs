@@ -22,7 +22,7 @@ pub fn install_release_hook(hook: fn()) {
 /// [`request_release_after_draw`] instead.
 pub(crate) fn release_retained_memory(reason: &'static str) {
     let hook = RELEASE_HOOK.get();
-    // Skip gauge sampling entirely when tracing is off (`GROK_MEMTRACE=0` or no sink): a disabled trace must add zero syscalls to purges
+    // Skip gauge sampling entirely when tracing is off (`EZER_MEMTRACE=0` or no sink): a disabled trace must add zero syscalls to purges
     let trace = crate::memory_trace::is_active();
     let before = if trace {
         // Same gauge precedence as the trace's threshold logic: physical footprint where available (macOS), else RSS (Linux)

@@ -1,5 +1,5 @@
 //! [`AcpTestClient`] drives `ezer agent stdio` with verbatim JSON-RPC lines, backed by the same
-//! [`TestProcess`] as the typed `GrokStdioClient`.
+//! [`TestProcess`] as the typed `EzerStdioClient`.
 
 use std::path::Path;
 use std::time::Duration;

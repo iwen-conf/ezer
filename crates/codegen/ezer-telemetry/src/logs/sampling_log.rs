@@ -8,7 +8,7 @@ use tracing_subscriber::fmt::writer::BoxMakeWriter;
 use tracing_subscriber::layer::Layer;
 use tracing_subscriber::registry::LookupSpan;
 
-use ezer_config::grok_home;
+use ezer_config::ezer_home;
 
 use crate::instrumentation::{NoOpLayer, TargetFilterLayer};
 
@@ -27,7 +27,7 @@ where
         return Box::new(NoOpLayer::new());
     }
 
-    let path = grok_home().join(crate::unified_log::LOG_DIR).join(LOG_FILE);
+    let path = ezer_home().join(crate::unified_log::LOG_DIR).join(LOG_FILE);
 
     if let Some(parent) = path.parent()
         && let Err(e) = std::fs::create_dir_all(parent)

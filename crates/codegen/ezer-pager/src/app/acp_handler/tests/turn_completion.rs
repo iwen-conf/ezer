@@ -680,7 +680,7 @@
             agent.session.state = AgentState::TurnRunning;
         }
         let rate_limit_copy = "You've hit the rate limit for your plan. Upgrade your \
-                               subscription for higher limits: https://grok.com/supergrok";
+                               subscription for higher limits: https://example.test/upgrade";
         let payload = SessionNotification {
             session_id: acp::SessionId::new("sess-wake"),
             update: XaiSessionUpdate::TurnCompleted {
@@ -694,7 +694,7 @@
             meta: Some(serde_json::json!({ "isReplay": false })),
         };
         let notif = acp::ExtNotification::new(
-            "x.ai/session/update",
+            "ezer/session/update",
             std::sync::Arc::from(serde_json::value::to_raw_value(&payload).unwrap()),
         );
 
@@ -2002,7 +2002,7 @@
             meta: None,
         };
         acp::ExtNotification::new(
-            "x.ai/session/update",
+            "ezer/session/update",
             std::sync::Arc::from(serde_json::value::to_raw_value(&payload).unwrap()),
         )
     }

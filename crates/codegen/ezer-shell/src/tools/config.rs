@@ -55,7 +55,7 @@ impl BashToolConfig {
         if let Some(t) = self.timeout_secs {
             map.insert("timeout_secs".into(), t.into());
         }
-        // Production grok-build opts up to 10h by sending it explicitly (overridable via config.toml)
+        // Production ezer-build opts up to 10h by sending it explicitly (overridable via config.toml)
         let max_timeout_secs = self.max_timeout_secs.unwrap_or(PRODUCTION_MAX_TIMEOUT_SECS);
         map.insert("max_timeout_secs".into(), max_timeout_secs.into());
         if let Some(limit) = self.output_byte_limit {
@@ -196,7 +196,7 @@ impl ShellToolsetConfig {
     pub fn new(base: Option<Self>, sampling_config: Option<SamplerConfig>) -> Self {
         let default_base = SamplerConfig {
             api_key: None,
-            base_url: "https://api.x.ai/v1".to_string(),
+            base_url: String::new(),
             mtls_cert_dir: None,
             model: String::new(),
             max_completion_tokens: None,

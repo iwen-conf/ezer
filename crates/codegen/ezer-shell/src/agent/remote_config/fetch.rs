@@ -6,7 +6,7 @@ use indexmap::IndexMap;
 use super::{ModelFetchAuth, ModelsCacheManager, ModelsCacheScope};
 use crate::agent::config::{self, ModelEntry};
 use crate::remote::{FetchModelsResult, ModelSource, active_model_source};
-use ezer_login::GrokAuth;
+use ezer_login::EzerAuth;
 
 pub(crate) fn build_prefetched_map(
     models: Vec<config::ModelEntryConfig>,
@@ -31,7 +31,7 @@ pub(crate) fn build_prefetched_map(
 
 pub(crate) fn prefetch_models_blocking(
     endpoints: &config::EndpointsConfig,
-    auth: Option<&GrokAuth>,
+    auth: Option<&EzerAuth>,
     fetch_auth: ModelFetchAuth,
 ) -> Option<IndexMap<String, ModelEntry>> {
     prefetch_models_blocking_gated(
@@ -44,7 +44,7 @@ pub(crate) fn prefetch_models_blocking(
 
 fn prefetch_models_blocking_gated(
     endpoints: &config::EndpointsConfig,
-    auth: Option<&GrokAuth>,
+    auth: Option<&EzerAuth>,
     fetch_auth: ModelFetchAuth,
     remote_fetch_enabled: bool,
 ) -> Option<IndexMap<String, ModelEntry>> {
@@ -96,7 +96,7 @@ impl ModelsCacheWrite {
 
 pub(in crate::agent::remote_config) fn fetch_models_uncommitted(
     endpoints: &config::EndpointsConfig,
-    auth: Option<&GrokAuth>,
+    auth: Option<&EzerAuth>,
     fetch_auth: ModelFetchAuth,
     remote_fetch_enabled: bool,
 ) -> ModelsPrefetch {

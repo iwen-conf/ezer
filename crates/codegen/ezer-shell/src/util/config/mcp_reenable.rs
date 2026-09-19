@@ -175,26 +175,26 @@ mod tests {
     fn project_repo(toml: &str) -> tempfile::TempDir {
         let tmp = tempfile::tempdir().unwrap();
         git2::Repository::init(tmp.path()).unwrap();
-        // Pin trust so ambient GROK_CLI_VERSION cannot drop project MCP names.
+        // Pin trust so ambient EZER_CLI_VERSION cannot drop project MCP names.
         crate::agent::folder_trust::record_for_test(tmp.path(), true);
         std::fs::create_dir_all(tmp.path().join(".ezer")).unwrap();
         std::fs::write(tmp.path().join(".ezer").join("config.toml"), toml).unwrap();
         tmp
     }
 
-    /// Isolate HOME/GROK_HOME so ambient user MCP config cannot pad discovery.
+    /// Isolate HOME/EZER_HOME so ambient user MCP config cannot pad discovery.
     fn isolated_home() -> (
         tempfile::TempDir,
         ezer_test_support::EnvGuard,
         ezer_test_support::EnvGuard,
     ) {
         let home = tempfile::tempdir().unwrap();
-        let grok_home = home.path().join(".ezer");
-        std::fs::create_dir_all(&grok_home).unwrap();
-        std::fs::write(grok_home.join("config.toml"), "").unwrap();
+        let ezer_home = home.path().join(".ezer");
+        std::fs::create_dir_all(&ezer_home).unwrap();
+        std::fs::write(ezer_home.join("config.toml"), "").unwrap();
         let home_guard = ezer_test_support::EnvGuard::set("HOME", home.path());
-        let grok_guard = ezer_test_support::EnvGuard::set("GROK_HOME", &grok_home);
-        (home, home_guard, grok_guard)
+        let ezer_guard = ezer_test_support::EnvGuard::set("EZER_HOME", &ezer_home);
+        (home, home_guard, ezer_guard)
     }
 
     #[test]
@@ -217,7 +217,7 @@ mod tests {
                 DisabledStubVerdict::HideAlreadyInCatalog,
             ),
             (
-                "grok_com_notion",
+                "ezer_com_notion",
                 false,
                 &unrestricted,
                 DisabledStubVerdict::HideNoDefinition,
@@ -257,15 +257,15 @@ mod tests {
 
     #[test]
     #[serial_test::serial]
-    fn orphan_grok_com_name_is_not_a_definition() {
+    fn orphan_ezer_com_name_is_not_a_definition() {
         let (_home, _hg, _gg) = isolated_home();
         let cwd = tempfile::tempdir().unwrap();
         let compat = CompatConfig::default();
         let index = McpDefinitionIndex::build(&inputs(cwd.path(), &compat));
-        assert!(!index.contains("grok_com_slack"));
-        let disabled = HashSet::from(["grok_com_slack".into(), "totally_orphan_xyz".into()]);
+        assert!(!index.contains("remote_slack"));
+        let disabled = HashSet::from(["remote_slack".into(), "totally_orphan_xyz".into()]);
         let stubs = index.reenableable_for_list(&disabled, &HashSet::new(), &unrestricted());
-        assert!(!stubs.contains("grok_com_slack"));
+        assert!(!stubs.contains("remote_slack"));
         assert!(!stubs.contains("totally_orphan_xyz"));
     }
 

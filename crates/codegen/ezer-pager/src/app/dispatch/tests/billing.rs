@@ -339,14 +339,14 @@ fn credit_limit_translate_max_tier_retry_is_second_option() {
 
 #[test]
 fn is_max_tier_positive_match() {
-    assert!(is_max_tier(Some("supergrok_heavy")));
-    assert!(is_max_tier(Some("SuperGrok Heavy")));
-    assert!(is_max_tier(Some("SUPERGROK_HEAVY")));
+    assert!(is_max_tier(Some("max_tier")));
+    assert!(is_max_tier(Some("highest tier")));
+    assert!(is_max_tier(Some("MAX_TIER_HEAVY")));
 }
 
 #[test]
 fn is_max_tier_non_max_and_unknown() {
-    assert!(!is_max_tier(Some("supergrok")));
+    assert!(!is_max_tier(Some("upgrade")));
     assert!(!is_max_tier(Some("premium")));
     assert!(!is_max_tier(Some("free")));
     // Unknown defaults to non-max, so the Q&A is shown
@@ -355,15 +355,15 @@ fn is_max_tier_non_max_and_unknown() {
 
 #[test]
 fn is_max_tier_handles_mixed_case_and_whitespace() {
-    assert!(is_max_tier(Some("SuperGrok_Heavy")));
-    assert!(is_max_tier(Some("supergrok heavy")));
-    assert!(is_max_tier(Some("SUPERGROK HEAVY")));
+    assert!(is_max_tier(Some("MaxTier_Heavy")));
+    assert!(is_max_tier(Some("upgrade heavy")));
+    assert!(is_max_tier(Some("MAX TIER HEAVY")));
 }
 
 #[test]
 fn is_max_tier_rejects_partial_matches() {
-    assert!(!is_max_tier(Some("supergrok_heav")));
-    assert!(!is_max_tier(Some("supergrok_heavy_plus")));
+    assert!(!is_max_tier(Some("upgrade_heav")));
+    assert!(!is_max_tier(Some("max_tier_plus")));
     assert!(!is_max_tier(Some("")));
 }
 
@@ -429,7 +429,7 @@ fn upsell_non_max_qa_heading_is_spending_cap_when_payg_on() {
 }
 
 #[test]
-fn upsell_non_max_upgrade_url_is_supergrok() {
+fn upsell_non_max_upgrade_url_is_upgrade() {
     let mut app = test_app_with_agent();
     open_upsell_qa(
         &mut app,
@@ -439,7 +439,7 @@ fn upsell_non_max_upgrade_url_is_supergrok() {
         .id
         .as_deref()
         .unwrap();
-    assert!(url.contains("supergrok"), "got: {url}");
+    assert!(url.contains("upgrade"), "got: {url}");
     assert!(url.contains("referrer=ezer-build"), "got: {url}");
 }
 
@@ -808,7 +808,7 @@ fn team_auth_disables_agent_billing_surface() {
     assert!(!app.agents.get(&AgentId(0)).unwrap().billing_surface_visible);
 }
 
-#[serial_test::serial(GROK_TEST_OPEN_URL_FILE)]
+#[serial_test::serial(EZER_TEST_OPEN_URL_FILE)]
 #[test]
 fn manage_billing_gates_on_consumer_billing_surface() {
     let out = std::env::temp_dir().join(format!("ezer-manage-billing-{}.txt", std::process::id()));
@@ -818,7 +818,7 @@ fn manage_billing_gates_on_consumer_billing_surface() {
     let mut app = test_app_with_agent();
     dispatch(Action::ManageBilling, &mut app);
     let opened = std::fs::read_to_string(&out).unwrap_or_default();
-    assert!(opened.contains("grok.com/?_s=usage"), "got: {opened}");
+    assert!(opened.contains("ezer.com/?_s=usage"), "got: {opened}");
     let _ = std::fs::remove_file(&out);
 
     // Non-consumer: silent no-op (slash command never offers manage).
@@ -936,8 +936,8 @@ fn billing_fetched_updates_app_credit_balance() {
 #[test]
 fn billing_fetched_updates_subscription_tier() {
     let mut app = test_app_with_agent();
-    dispatch_billing(&mut app, None, true, Some("supergrok_heavy".into()));
-    assert_eq!(app.subscription_tier.as_deref(), Some("supergrok_heavy"));
+    dispatch_billing(&mut app, None, true, Some("max_tier".into()));
+    assert_eq!(app.subscription_tier.as_deref(), Some("max_tier"));
 }
 
 #[test]
@@ -1280,7 +1280,7 @@ fn free_usage_upsell_shows_three_options_with_exact_labels() {
         qv.local_kind,
         Some(
             crate::views::question_view::LocalQuestionKind::FreeUsageUpsell {
-                source: ezer_telemetry::events::SuperGrokUpsell::FreeUsagePaywall,
+                source: ezer_telemetry::events::UpgradeUpsell::FreeUsagePaywall,
             }
         )
     ));
@@ -1385,7 +1385,7 @@ fn free_usage_translate_local_submit_maps_options() {
     open_free_usage_upsell(agent, None);
     let mut qv = agent.question_view.take().unwrap();
     let kind = || LocalQuestionKind::FreeUsageUpsell {
-        source: ezer_telemetry::events::SuperGrokUpsell::FreeUsagePaywall,
+        source: ezer_telemetry::events::UpgradeUpsell::FreeUsagePaywall,
     };
 
     for idx in [0, 1, 2] {
@@ -1397,7 +1397,7 @@ fn free_usage_translate_local_submit_maps_options() {
     }
 }
 
-/// Submitting a tier-restricted command opens the three-option SuperGrok upsell and neither runs the command nor leaks the text to the model.
+/// Submitting a tier-restricted command opens the three-option MaxTier upsell and neither runs the command nor leaks the text to the model.
 #[test]
 fn restricted_command_submit_opens_three_option_upsell() {
     let mut app = test_app_with_agent();
@@ -1425,7 +1425,7 @@ fn restricted_command_submit_opens_three_option_upsell() {
         qv.local_kind,
         Some(
             crate::views::question_view::LocalQuestionKind::FreeUsageUpsell {
-                source: ezer_telemetry::events::SuperGrokUpsell::RestrictedCommand,
+                source: ezer_telemetry::events::UpgradeUpsell::RestrictedCommand,
             }
         )
     ));
@@ -1527,10 +1527,10 @@ fn unknown_non_restricted_command_still_passes_through() {
 /// `Action::OpenUrl` for a billing CTA must push a scrollback system message that includes the full URL when the OS browser opener cannot run.
 /// The opener failure is simulated via a broken `EZER_TEST_OPEN_URL_FILE` path.
 /// On a headless VM the opener always fails, so without this message the Upgrade and Buy-more-credits buttons do nothing visible.
-#[serial_test::serial(GROK_TEST_OPEN_URL_FILE)]
+#[serial_test::serial(EZER_TEST_OPEN_URL_FILE)]
 #[test]
 fn open_url_shows_manual_url_when_browser_unavailable() {
-    // Point `GROK_TEST_OPEN_URL_FILE` at a path whose parent dir does not exist so the write fails and `open_url` returns false (BrowserUnavailable)
+    // Point `EZER_TEST_OPEN_URL_FILE` at a path whose parent dir does not exist so the write fails and `open_url` returns false (BrowserUnavailable)
     let bad = std::env::temp_dir().join(format!(
         "ezer-open-url-missing-{}/out.txt",
         std::process::id()
@@ -1565,7 +1565,7 @@ fn open_url_shows_manual_url_when_browser_unavailable() {
 }
 
 /// A successful open (the `EZER_TEST_OPEN_URL_FILE` write succeeds) must not spam a fallback system message.
-#[serial_test::serial(GROK_TEST_OPEN_URL_FILE)]
+#[serial_test::serial(EZER_TEST_OPEN_URL_FILE)]
 #[test]
 fn open_url_does_not_show_fallback_when_opener_succeeds() {
     let url_file =
@@ -1597,7 +1597,7 @@ fn open_url_does_not_show_fallback_when_opener_succeeds() {
 
 /// Welcome has no scrollback: browser-unavailable OpenUrl must put up a single-line toast that includes the full URL.
 /// No `\n`; the welcome painter is one row. Privacy-banner Terms/Policy clicks hit this path.
-#[serial_test::serial(GROK_TEST_OPEN_URL_FILE)]
+#[serial_test::serial(EZER_TEST_OPEN_URL_FILE)]
 #[test]
 fn open_url_welcome_toasts_single_line_url_when_browser_unavailable() {
     let bad = std::env::temp_dir().join(format!(
@@ -1652,7 +1652,7 @@ fn open_url_welcome_toasts_single_line_url_when_browser_unavailable() {
 }
 
 /// Credit-limit upsell Q&A submit routes through OpenUrl; when the browser is unavailable the full option URL must land in scrollback.
-#[serial_test::serial(GROK_TEST_OPEN_URL_FILE)]
+#[serial_test::serial(EZER_TEST_OPEN_URL_FILE)]
 #[test]
 fn credit_limit_upsell_submit_shows_url_when_browser_unavailable() {
     use crate::app::agent_view::translate_local_submit_for_test;
@@ -1712,7 +1712,7 @@ fn billing_fetched_clears_usage_modal_loading() {
         &mut app,
         Some(test_bal(50.0)),
         true,
-        Some("SuperGrok".into()),
+        Some("MaxTier".into()),
     );
     let agent = test_agent(&app, AgentId(0));
     let Some(crate::views::modal::ActiveModal::UsageInfo { state }) = agent.active_modal.as_ref()
@@ -1721,7 +1721,7 @@ fn billing_fetched_clears_usage_modal_loading() {
     };
     assert!(!state.billing_loading);
     assert!(state.billing_error.is_none());
-    assert_eq!(state.ctx.subscription_tier.as_deref(), Some("SuperGrok"));
+    assert_eq!(state.ctx.subscription_tier.as_deref(), Some("MaxTier"));
     // The modal renders from the agent's cached billing mirrors.
     assert_eq!(agent.credit_balance.as_ref().unwrap().usage_pct, 50.0);
 }

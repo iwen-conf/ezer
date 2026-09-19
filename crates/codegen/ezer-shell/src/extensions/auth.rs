@@ -1,4 +1,4 @@
-//! `x.ai/auth/*` and legacy `x.ai/{get,set}ApiKey` extension handlers.
+//! `ezer/auth/*` and legacy `ezer/{get,set}ApiKey` extension handlers.
 //!
 //! These methods let the client read/write the API key via the agent and drive the OAuth login flow.
 //! The agent is the single source of truth for `auth.json`.
@@ -13,15 +13,15 @@ use crate::session::ExtMethodResult;
 #[tracing::instrument(skip_all, fields(method = %args.method))]
 pub async fn handle(agent: &MvpAgent, args: &acp::ExtRequest) -> ExtResult {
     match args.method.as_ref() {
-        "x.ai/auth/getBearerToken" => handle_get_bearer_token(agent).await,
-        "x.ai/getApiKey" => handle_get_api_key(),
-        "x.ai/setApiKey" => handle_set_api_key(args),
-        "x.ai/auth/submit_code" => handle_submit_code(agent, args),
-        "x.ai/auth/get_url" => handle_get_url(agent).await,
-        "x.ai/auth/cancel" => handle_cancel(agent, args),
-        "x.ai/auth/logout" => handle_logout(agent, args).await,
-        "x.ai/auth/info" => handle_info(agent),
-        "x.ai/auth/check_subscription" => handle_check_subscription(agent).await,
+        "ezer/auth/getBearerToken" => handle_get_bearer_token(agent).await,
+        "ezer/getApiKey" => handle_get_api_key(),
+        "ezer/setApiKey" => handle_set_api_key(args),
+        "ezer/auth/submit_code" => handle_submit_code(agent, args),
+        "ezer/auth/get_url" => handle_get_url(agent).await,
+        "ezer/auth/cancel" => handle_cancel(agent, args),
+        "ezer/auth/logout" => handle_logout(agent, args).await,
+        "ezer/auth/info" => handle_info(agent),
+        "ezer/auth/check_subscription" => handle_check_subscription(agent).await,
         _ => Err(acp::Error::method_not_found()),
     }
 }
@@ -70,21 +70,21 @@ fn handle_get_api_key() -> ExtResult {
 fn handle_set_api_key(args: &acp::ExtRequest) -> ExtResult {
     let params: serde_json::Value = parse_params(args)?;
     let key = params.get("key").and_then(|v| v.as_str());
-    let grok_home = crate::util::grok_home::grok_home();
+    let ezer_home = crate::util::ezer_home::ezer_home();
     if let Some(k) = key {
         if k.is_empty() {
-            ezer_login::clear_api_key(&grok_home)
+            ezer_login::clear_api_key(&ezer_home)
                 .map_err(|e| acp::Error::internal_error().data(e.to_string()))?;
             // SAFETY: ext_method is single-threaded per agent
             unsafe { std::env::remove_var("XAI_API_KEY") };
         } else {
-            ezer_login::store_api_key(&grok_home, k)
+            ezer_login::store_api_key(&ezer_home, k)
                 .map_err(|e| acp::Error::internal_error().data(e.to_string()))?;
             // SAFETY: ext_method is single-threaded per agent
             unsafe { std::env::set_var("XAI_API_KEY", k) };
         }
     } else {
-        ezer_login::clear_api_key(&grok_home)
+        ezer_login::clear_api_key(&ezer_home)
             .map_err(|e| acp::Error::internal_error().data(e.to_string()))?;
         // SAFETY: ext_method is single-threaded per agent
         unsafe { std::env::remove_var("XAI_API_KEY") };
@@ -208,7 +208,7 @@ fn handle_info(agent: &MvpAgent) -> ExtResult {
     let auth = agent.auth_manager.current_or_expired();
     let raw_asset_id = auth.as_ref().and_then(|a| a.profile_image_asset_id.clone());
 
-    // Return a grok-asset:// URL that the Electron renderer resolves at display time via a custom protocol handler
+    // Return a ezer-asset:// URL that the Electron renderer resolves at display time via a custom protocol handler
     // The handler proxies through cli-chat-proxy's /asset endpoint; Electron's HTTP cache handles reuse
     // Nothing here touches a disk cache or the network
     let profile_image_url = match raw_asset_id.as_deref().filter(|k| !k.is_empty()) {
@@ -238,7 +238,7 @@ fn handle_info(agent: &MvpAgent) -> ExtResult {
             .map(|a| a.team_blocked_reasons.clone())
             .unwrap_or_default(),
         // With no credential the privacy state is unknown, so report opted-out (fail closed)
-        // This matches `AuthManager::allows_data_collection` and the GrokAuth Default
+        // This matches `AuthManager::allows_data_collection` and the EzerAuth Default
         coding_data_retention_opt_out: auth
             .as_ref()
             .map(|a| a.coding_data_retention_opt_out)

@@ -1373,8 +1373,8 @@ pub(in crate::app::dispatch) fn set_auto_dark_theme(app: &mut AppView, new: Stri
         .as_deref()
         .and_then(crate::theme::canonical_name)
         .filter(|s| *s != "auto")
-        // No prior config: fall back to GrokNight (the default).
-        .unwrap_or_else(|| crate::theme::ThemeKind::GrokNight.display_name());
+        // No prior config: fall back to EzerNight (the default).
+        .unwrap_or_else(|| crate::theme::ThemeKind::EzerNight.display_name());
     let new_canonical = match crate::theme::canonical_name(&new) {
         Some(c) if c != crate::theme::ThemeKind::Auto.display_name() => c,
         _ => {
@@ -1483,7 +1483,7 @@ pub(in crate::app::dispatch) fn set_auto_light_theme(
         .as_deref()
         .and_then(crate::theme::canonical_name)
         .filter(|s| *s != "auto")
-        .unwrap_or_else(|| crate::theme::ThemeKind::GrokDay.display_name());
+        .unwrap_or_else(|| crate::theme::ThemeKind::EzerDay.display_name());
     let new_canonical = match crate::theme::canonical_name(&new) {
         Some(c) if c != crate::theme::ThemeKind::Auto.display_name() => c,
         _ => {
@@ -1582,7 +1582,7 @@ pub(in crate::app::dispatch) fn set_default_model_inner(
     }
     // Mirror the new default into the app-level model state too
     // A later `/new` or `/clear` creates a fresh session by cloning `app.models` (`dispatch_new_session_inner_with_id`)
-    // Without this mirror, that new session (and the welcome card it commits) would show the previous default until the next `x.ai/models/update` roundtrip
+    // Without this mirror, that new session (and the welcome card it commits) would show the previous default until the next `ezer/models/update` roundtrip
     if app.models.available.contains_key(id) {
         app.models.set_current(id.clone(), None);
     }

@@ -763,7 +763,7 @@ fn dispatch_cycle_mode_inner(app: &mut AppView) -> Vec<Effect> {
         return effects;
     };
 
-    // Published modes own the ring. The permission arms below are Grok-shell only.
+    // Published modes own the ring. The permission arms below are Ezer-shell only.
     if let Some((next, name)) = agent.next_published_mode() {
         let name = name.to_owned();
         // Leave is abandon; re-enter clears a leftover Abandoned intent.

@@ -6,7 +6,7 @@
   },
   {
     "category": "features",
-    "description": "Users hitting startup timeouts can now raise the connect budget with the `GROK_CONNECT_UI_TIMEOUT_SECS` environment variable.",
+    "description": "Users hitting startup timeouts can now raise the connect budget with the `EZER_CONNECT_UI_TIMEOUT_SECS` environment variable.",
     "breaking_change": false
   },
   {

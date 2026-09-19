@@ -1,6 +1,6 @@
 //! Shared DTO types for hooks/plugins ACP extensions.
 //!
-//! This crate defines the wire format for `x.ai/hooks/*` and `x.ai/plugins/*`
+//! This crate defines the wire format for `ezer/hooks/*` and `ezer/plugins/*`
 //! ACP extension methods. It is dependency-free (only `serde`) so both
 //! `ezer-shell` and `ezer-pager` can depend on it without pulling
 //! in domain logic.
@@ -35,11 +35,11 @@ pub enum PluginOrigin {
     /// CLI `--plugin-dir`.
     CliOverride,
     /// Project `.ezer/plugins/`.
-    ProjectGrok,
+    ProjectEzer,
     /// Project `.claude/plugins/`.
     ProjectClaude,
     /// `$EZER_HOME/plugins/`.
-    UserGrok,
+    UserEzer,
     /// `~/.claude/plugins/`.
     UserClaude,
     /// A compat marketplace clone.
@@ -250,7 +250,7 @@ pub struct HookInfo {
     pub removable: bool,
 }
 
-/// Response for `x.ai/hooks/list`.
+/// Response for `ezer/hooks/list`.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct HooksListResponse {
@@ -317,7 +317,7 @@ pub struct PluginInfo {
     pub conflict: Option<String>,
 }
 
-/// Response for `x.ai/plugins/list`.
+/// Response for `ezer/plugins/list`.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PluginsListResponse {
@@ -375,7 +375,7 @@ pub struct McpServerInfo {
     pub config_source: Option<String>,
 }
 
-/// Response for `x.ai/mcp/list` as consumed by the pager.
+/// Response for `ezer/mcp/list` as consumed by the pager.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct McpServersListResponse {
@@ -553,7 +553,7 @@ impl PluginComponents {
 // Action types
 // ---------------------------------------------------------------------------
 
-/// Request wrapper for `x.ai/hooks/action`.
+/// Request wrapper for `ezer/hooks/action`.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct HooksActionRequest {
@@ -592,7 +592,7 @@ pub enum HooksAction {
     },
 }
 
-/// Request wrapper for `x.ai/plugins/action`.
+/// Request wrapper for `ezer/plugins/action`.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PluginsActionRequest {
@@ -633,7 +633,7 @@ pub enum PluginsAction {
     },
 }
 
-/// Shared action response for both `x.ai/hooks/action` and `x.ai/plugins/action`.
+/// Shared action response for both `ezer/hooks/action` and `ezer/plugins/action`.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ActionOutcome {
@@ -714,7 +714,7 @@ mod tests {
             command: Some("check.sh".into()),
             url: None,
             timeout_ms: 5000,
-            source_dir: "/home/user/.grok/hooks".into(),
+            source_dir: "/home/user/.ezer/hooks".into(),
             disabled: false,
             pinned: false,
             removable: true,
@@ -733,7 +733,7 @@ mod tests {
         let plugin = PluginInfo {
             name: "test-plugin".into(),
             id: "user/abc12345/test-plugin".into(),
-            root: "/home/user/.grok/plugins/test-plugin".into(),
+            root: "/home/user/.ezer/plugins/test-plugin".into(),
             scope: PluginScope::User,
             trusted: true,
             enabled: true,
@@ -748,7 +748,7 @@ mod tests {
             mcp_server_count: 0,
             mcp_status: McpStatus::None,
             marketplace_source: None,
-            origin: Some(PluginOrigin::UserGrok),
+            origin: Some(PluginOrigin::UserEzer),
             conflict: None,
         };
         let json = serde_json::to_string(&plugin).unwrap();
@@ -765,9 +765,9 @@ mod tests {
     fn plugin_origin_serde_roundtrip_all_variants() {
         for origin in [
             PluginOrigin::CliOverride,
-            PluginOrigin::ProjectGrok,
+            PluginOrigin::ProjectEzer,
             PluginOrigin::ProjectClaude,
-            PluginOrigin::UserGrok,
+            PluginOrigin::UserEzer,
             PluginOrigin::UserClaude,
             PluginOrigin::ClaudeMarketplace {
                 marketplace: "mp".into(),
@@ -1084,10 +1084,10 @@ mod tests {
 }
 
 // ---------------------------------------------------------------------------
-// Marketplace types (wire format for x.ai/marketplace/* ACP endpoints)
+// Marketplace types (wire format for ezer/marketplace/* ACP endpoints)
 // ---------------------------------------------------------------------------
 
-/// Response for `x.ai/marketplace/list`.
+/// Response for `ezer/marketplace/list`.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MarketplaceListResponse {
@@ -1160,7 +1160,7 @@ pub struct MarketplacePluginEntry {
     pub remote_subdir: Option<String>,
 }
 
-/// Request wrapper for `x.ai/marketplace/action`.
+/// Request wrapper for `ezer/marketplace/action`.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MarketplaceActionRequest {

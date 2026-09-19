@@ -192,7 +192,7 @@ async fn bash_task_completed_injects_bash_task_completed_source() {
 }
 
 /// While a goal loop is active, a completed background bash task must NOT fire the synthetic auto-wake prompt. An async "task completed" wake mid-goal derails a weak model.
-/// It must also NOT be marked reserved (so the `TaskCompletionReminder` is free to drain it). The pager's `x.ai/task_completed` notification still fires.
+/// It must also NOT be marked reserved (so the `TaskCompletionReminder` is free to drain it). The pager's `ezer/task_completed` notification still fires.
 #[tokio::test]
 async fn bash_task_completed_suppresses_auto_wake_during_goal_loop() {
     let (config, mut gateway_rx, _persistence_rx, mut cmd_rx) = make_test_config_full();
@@ -237,14 +237,14 @@ async fn bash_task_completed_suppresses_auto_wake_during_goal_loop() {
     let mut found_ext = false;
     while let Ok(msg) = gateway_rx.try_recv() {
         if let xai_acp_lib::AcpClientMessage::ExtNotification(args) = msg
-            && args.request.method.as_ref() == "x.ai/task_completed"
+            && args.request.method.as_ref() == "ezer/task_completed"
         {
             found_ext = true;
         }
     }
     assert!(
         found_ext,
-        "x.ai/task_completed ExtNotification must still be sent for UI"
+        "ezer/task_completed ExtNotification must still be sent for UI"
     );
 }
 
@@ -289,7 +289,7 @@ fn task_completed_will_wake(
 ) -> Option<bool> {
     while let Ok(msg) = gateway_rx.try_recv() {
         if let xai_acp_lib::AcpClientMessage::ExtNotification(args) = msg
-            && args.request.method.as_ref() == "x.ai/task_completed"
+            && args.request.method.as_ref() == "ezer/task_completed"
         {
             let v: serde_json::Value = serde_json::from_str(args.request.params.get()).ok()?;
             return v
@@ -392,7 +392,7 @@ async fn task_completed_notification_stamps_will_wake() {
     }
     assert!(
         persisted,
-        "declined admission must still persist x.ai/task_completed"
+        "declined admission must still persist ezer/task_completed"
     );
 }
 
@@ -860,12 +860,12 @@ async fn scheduled_task_created_is_persisted() {
             ));
             let meta = notif.meta.as_ref().expect("scheduler metadata");
             assert_eq!(
-                meta.get("x.ai/schedulerGeneration")
+                meta.get("ezer/schedulerGeneration")
                     .and_then(|v| v.as_str()),
                 Some("generation-a")
             );
             assert_eq!(
-                meta.get("x.ai/schedulerRevision").and_then(|v| v.as_u64()),
+                meta.get("ezer/schedulerRevision").and_then(|v| v.as_u64()),
                 Some(1)
             );
             assert!(
@@ -1030,12 +1030,12 @@ async fn scheduled_task_removed_is_persisted() {
             );
             let meta = notif.meta.as_ref().expect("scheduler metadata");
             assert_eq!(
-                meta.get("x.ai/schedulerGeneration")
+                meta.get("ezer/schedulerGeneration")
                     .and_then(|v| v.as_str()),
                 Some("generation-a")
             );
             assert_eq!(
-                meta.get("x.ai/schedulerRevision").and_then(|v| v.as_u64()),
+                meta.get("ezer/schedulerRevision").and_then(|v| v.as_u64()),
                 Some(2)
             );
         }
@@ -1065,7 +1065,7 @@ async fn acknowledged_scheduler_removal_appends_before_ack_and_broadcast() {
             notification
                 .meta
                 .as_ref()
-                .and_then(|m| m.get("x.ai/schedulerRevision"))
+                .and_then(|m| m.get("ezer/schedulerRevision"))
                 .and_then(|v| v.as_u64()),
             Some(17)
         );
@@ -1168,7 +1168,7 @@ async fn task_backgrounded_requests_background_tasks_snapshot() {
     let mut found_incremental = false;
     while let Ok(msg) = gateway_rx.try_recv() {
         if let xai_acp_lib::AcpClientMessage::ExtNotification(args) = msg
-            && args.request.method.as_ref() == "x.ai/task_backgrounded"
+            && args.request.method.as_ref() == "ezer/task_backgrounded"
         {
             found_incremental = true;
         }
@@ -1203,7 +1203,7 @@ async fn task_completed_requests_background_tasks_snapshot() {
     let mut found_incremental = false;
     while let Ok(msg) = gateway_rx.try_recv() {
         if let xai_acp_lib::AcpClientMessage::ExtNotification(args) = msg
-            && args.request.method.as_ref() == "x.ai/task_completed"
+            && args.request.method.as_ref() == "ezer/task_completed"
         {
             found_incremental = true;
         }
@@ -1363,14 +1363,14 @@ async fn scheduled_task_fired_is_not_persisted() {
     assert_eq!(
         value
             .get("_meta")
-            .and_then(|m| m.get("x.ai/schedulerGeneration"))
+            .and_then(|m| m.get("ezer/schedulerGeneration"))
             .and_then(|v| v.as_str()),
         Some("generation-a")
     );
     assert_eq!(
         value
             .get("_meta")
-            .and_then(|m| m.get("x.ai/schedulerRevision"))
+            .and_then(|m| m.get("ezer/schedulerRevision"))
             .and_then(|v| v.as_u64()),
         Some(3)
     );
@@ -1405,7 +1405,7 @@ async fn cross_session_monitor_event_is_dropped() {
         if let xai_acp_lib::AcpClientMessage::ExtNotification(args) = msg {
             assert_ne!(
                 args.request.method.as_ref(),
-                "x.ai/monitor_event",
+                "ezer/monitor_event",
                 "cross-session monitor event must not be forwarded to the pager"
             );
         }
@@ -1482,18 +1482,18 @@ async fn block_waited_task_skips_auto_wake_prompt() {
         "block_waited completion should not send Prompt or InjectNotification"
     );
 
-    // The x.ai/task_completed ExtNotification for UI updates must still be sent.
+    // The ezer/task_completed ExtNotification for UI updates must still be sent.
     let mut found_ext = false;
     while let Ok(msg) = gateway_rx.try_recv() {
         if let xai_acp_lib::AcpClientMessage::ExtNotification(args) = msg
-            && args.request.method.as_ref() == "x.ai/task_completed"
+            && args.request.method.as_ref() == "ezer/task_completed"
         {
             found_ext = true;
         }
     }
     assert!(
         found_ext,
-        "x.ai/task_completed ExtNotification must still be sent for UI"
+        "ezer/task_completed ExtNotification must still be sent for UI"
     );
 }
 
@@ -1810,7 +1810,7 @@ async fn plan_mode_exited_does_not_arm_exit_reminder_by_default() {
 
     let notification =
         ToolNotification::PlanModeExited(ezer_tools::notification::types::PlanModeExited {
-            tool_call_id: "tc-exit-grok".into(),
+            tool_call_id: "tc-exit-ezer".into(),
             plan_content: Some("- step 1".into()),
             plan_file_path: "/tmp/test-session/plan.md".into(),
         });
@@ -2061,12 +2061,12 @@ async fn task_completed_notification_is_frame_bounded() {
     let mut params = None;
     while let Ok(msg) = gateway_rx.try_recv() {
         if let xai_acp_lib::AcpClientMessage::ExtNotification(args) = msg
-            && args.request.method.as_ref() == "x.ai/task_completed"
+            && args.request.method.as_ref() == "ezer/task_completed"
         {
             params = Some(args.request.params.get().to_string());
         }
     }
-    let params = params.expect("expected an x.ai/task_completed notification");
+    let params = params.expect("expected an ezer/task_completed notification");
     assert!(
         params.len() <= task_completed_frame::FRAME_MAX_BYTES,
         "params is {} bytes",
