@@ -1333,7 +1333,7 @@ Each feature section below documents its own config. This section covers the gen
 
 ```toml
 [cli]
-auto_update = true                     # one-time notice on launch; never auto-install
+auto_update = true                     # one-time GitHub notice on launch; never auto-install; never xAI banners
 
 [models]
 default = "workbuddy"                   # model used for new sessions

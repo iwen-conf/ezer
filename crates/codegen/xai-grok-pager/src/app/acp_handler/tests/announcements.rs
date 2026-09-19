@@ -34,7 +34,8 @@
     }
 
     /// The watermark lasts one connection: the event loop resets it to 0 on leader reconnect.
-    /// A re-elected shell's fresh (possibly lower) gen sequence then applies, and a second copy of the seed broadcast stays a no-op.
+    /// A re-elected shell's fresh (possibly lower) gen sequence then applies, but xAI remote
+    /// payloads are ignored so leftover grok.com credentials cannot reintroduce banners.
     #[test]
     fn announcements_update_applies_after_reconnect_watermark_reset() {
         let mut app = make_app_with_agent("sess-ann");
@@ -52,8 +53,8 @@
         assert!(
             app.active_announcements
                 .iter()
-                .any(|a| a.id.as_deref() == Some("fresh")),
-            "pushed announcement must land"
+                .all(|a| a.id.as_deref() != Some("fresh")),
+            "BYOK: xAI-pushed announcements must not land"
         );
 
         // The per-client seed broadcast can deliver the same gen twice.
@@ -65,8 +66,8 @@
         assert_eq!(app.announcements_last_gen, 1);
     }
 
-    /// A push prunes hidden ids whose announcement is gone and schedules a persist so the on-disk set cannot grow unboundedly. Driven through the
-    /// layer-injected seam so the developer's real `~/.ezer` cannot leak in.
+    /// Remote xAI lists are ignored, so a push with only remote ids prunes hidden keys
+    /// that no longer match a local/managed announcement.
     #[test]
     fn announcements_update_prunes_stale_hidden_ids_and_persists() {
         let mut app = make_app_with_agent("sess-ann");
@@ -84,9 +85,11 @@
         );
 
         assert_eq!(app.announcements_last_gen, 1);
-        let expected: std::collections::BTreeSet<String> =
-            ["live".to_string()].into_iter().collect();
-        assert_eq!(app.hidden_announcement_ids, expected);
+        assert!(
+            app.hidden_announcement_ids.is_empty(),
+            "remote-only ids must not keep hide keys alive"
+        );
+        let expected: std::collections::BTreeSet<String> = Default::default();
         assert!(
             app.pending_effects.iter().any(|e| matches!(
                 e,
@@ -95,17 +98,16 @@
             "prune must persist the shrunken set, got {:?}",
             app.pending_effects
         );
-        assert_eq!(
-            shown_banner_id(&app),
-            None,
-            "surviving hidden id still hides its banner"
+        assert_eq!(shown_banner_id(&app), None);
+        assert!(
+            app.active_announcements.is_empty(),
+            "BYOK: remote xAI announcements must not become active"
         );
     }
 
-    /// A pushed critical with a NEW id must re-show the banner even though an older critical was hidden (the whole point of per-ID hide). Driven
-    /// through the layer-injected seam (no real `~/.ezer` reads).
+    /// A pushed xAI critical must never re-show a banner, even with a new id.
     #[test]
-    fn announcements_update_new_critical_id_rearms_hidden_banner() {
+    fn announcements_update_ignores_remote_xai_payload() {
         let mut app = make_app_with_agent("sess-ann");
         apply_announcements_update(
             &mut app,
@@ -115,8 +117,8 @@
             None,
             None,
         );
-        app.hidden_announcement_ids.insert("outage-a".to_string());
         assert_eq!(shown_banner_id(&app), None);
+        assert!(app.active_announcements.is_empty());
 
         apply_announcements_update(
             &mut app,
@@ -129,16 +131,16 @@
 
         assert_eq!(app.announcements_last_gen, 2);
         assert_eq!(
-            shown_banner_id(&app).as_deref(),
-            Some("outage-b"),
-            "new critical id must re-show the banner"
+            shown_banner_id(&app),
+            None,
+            "BYOK: xAI announcement payloads must not rearm banners"
         );
-        // The stale hide key was pruned with the list replacement.
-        assert!(app.hidden_announcement_ids.is_empty());
+        assert!(app.active_announcements.is_empty());
     }
 
     /// A push must not drop config-layer announcements, and prune must not erase their persisted hide keys.
     /// Config layers re-resolve every launch, so a dropped key would re-show a critical the user already hid.
+    /// Remote xAI lists are ignored even when they arrive on the same push.
     #[test]
     fn announcements_update_remerges_config_layers_and_keeps_their_hide_keys() {
         let mut app = make_app_with_agent("sess-ann");
@@ -171,8 +173,8 @@
             .collect();
         assert_eq!(
             ids,
-            ["live", "cfg-crit"],
-            "config-layer announcement must survive the push (remote > user order)"
+            ["cfg-crit"],
+            "config-layer announcement must survive; xAI remote list must not merge in"
         );
         assert!(
             app.hidden_announcement_ids.contains("cfg-crit"),
@@ -186,14 +188,14 @@
             app.pending_effects
         );
         assert_eq!(
-            shown_banner_id(&app).as_deref(),
-            Some("live"),
-            "pushed critical shows; the hidden config-layer one stays skipped"
+            shown_banner_id(&app),
+            None,
+            "hidden config-layer announcement stays skipped; remote xAI banner must not show"
         );
     }
 
-    /// A mid-session push must open the `/announcements` gate on already-live subagent child views, not just top-level agents. Driven through the
-    /// layer-injected seam (no real `~/.ezer` reads).
+    /// A mid-session push of local/managed announcements must open the `/announcements` gate
+    /// on already-live subagent child views, not just top-level agents. Remote xAI lists do not.
     #[test]
     fn announcements_update_fans_slash_gate_to_live_subagent_views() {
         let mut app = make_app_with_parent_and_child("parent-sess", "child-sess");
@@ -216,15 +218,46 @@
 
         let agent = test_agent(&app, AgentId(0));
         assert!(
+            !agent.prompt.slash_controller.has_session_announcements(),
+            "remote-only xAI push must not open the parent gate"
+        );
+        assert!(
+            !test_subagent(agent, "child-sess")
+                .prompt
+                .slash_controller
+                .has_session_announcements(),
+            "remote-only xAI push must not open the child gate"
+        );
+
+        let user_cfg: toml::Value = toml::from_str(
+            r#"
+            [[announcements]]
+            id = "cfg-outage"
+            title = "Local outage"
+            message = "from user config"
+            severity = "critical"
+            "#,
+        )
+        .unwrap();
+        apply_announcements_update(
+            &mut app,
+            2,
+            &[critical_announcement("outage-a")],
+            None,
+            Some(&user_cfg),
+            None,
+        );
+
+        let agent = test_agent(&app, AgentId(0));
+        assert!(
             agent.prompt.slash_controller.has_session_announcements(),
-            "parent gate open"
+            "parent gate open from local config-layer announcement"
         );
         assert!(
             test_subagent(agent, "child-sess")
                 .prompt
                 .slash_controller
                 .has_session_announcements(),
-            "live child view gate open"
+            "live child view gate open from local config-layer announcement"
         );
     }
-

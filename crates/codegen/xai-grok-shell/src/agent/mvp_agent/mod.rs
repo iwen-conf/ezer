@@ -593,6 +593,8 @@ fn announcements_push_payload(
 }
 /// Override with `EZER_ANNOUNCEMENTS_REFRESH_INTERVAL_SECS`.
 /// Clamped to at least 1s: `tokio::time::interval` panics on a zero period.
+/// Unused while BYOK disables the xAI announcements refresh loop.
+#[allow(dead_code)]
 fn announcements_refresh_interval() -> std::time::Duration {
     if let Ok(s) = std::env::var("EZER_ANNOUNCEMENTS_REFRESH_INTERVAL_SECS")
         && let Ok(secs) = s.parse::<u64>()
@@ -1873,9 +1875,10 @@ impl MvpAgent {
                 privacy_banner_reshow_days: rs
                     .and_then(|s| s.privacy_banner_reshow_days),
                 session_picker_grouped: rs.and_then(|s| s.session_picker_grouped),
-                tips: rs.and_then(|s| s.tips.clone()),
+                // BYOK: never forward xAI marketing tips or announcement banners to the TUI.
+                tips: None,
                 slash_command_tags: rs.and_then(|s| s.slash_command_tags.clone()),
-                announcements: rs.and_then(|s| s.announcements.clone()),
+                announcements: None,
                 campaigns: rs.map(|s| s.campaigns.clone()),
                 gate_message: rs.and_then(|s| s.gate_message.clone()),
                 gate_url: rs.and_then(|s| s.gate_url.clone()),
