@@ -571,15 +571,13 @@ struct PendingUpdateNotice {
     latest_version: String,
 }
 
-/// Version-check only. Never downloads, installs, or persists `auto_update=true`.
+/// Version-check only against this fork's GitHub releases. Never downloads,
+/// installs, or talks to xAI / x.ai / grok.com update channels.
 ///
 /// Returns `Some` the first time we see this `latest` version (or after a
 /// failed once-flag write). Subsequent launches for the same version return
 /// `None`. `cli.auto_update = false` skips the check entirely.
-async fn take_unnotified_update(update_config: &UpdateConfig) -> Option<PendingUpdateNotice> {
-    let installer = get_installer().await?;
-    heal_managed_install(installer).await;
-
+async fn take_unnotified_update(_update_config: &UpdateConfig) -> Option<PendingUpdateNotice> {
     if is_version_cache_fresh().await {
         return None;
     }
@@ -591,22 +589,10 @@ async fn take_unnotified_update(update_config: &UpdateConfig) -> Option<PendingU
     }
 
     let current_version = get_installed_grok_version();
-    let policy = config::VersionPolicy::resolve();
-    let target_version = match fetch_update_plan(installer, update_config, &policy).await {
-        Ok(UpdatePlan::Install { target, .. }) => target,
-        Ok(UpdatePlan::Skip { .. } | UpdatePlan::Unavailable { .. }) | Err(_) => return None,
-    };
+    let target_version = crate::notice::fetch_ezer_upstream_version().await?;
 
-    if !needs_update(
-        &current_version,
-        &target_version,
-        &update_config.channel,
-        installer_allows_downgrade(installer),
-    )
-    .unwrap_or(false)
-    {
-        let stable_ptr = try_fetch_stable_pointer().await;
-        write_version_cache(&target_version, stable_ptr.as_deref()).await;
+    if !needs_update(&current_version, &target_version, "stable", false).unwrap_or(false) {
+        write_version_cache(&target_version, None).await;
         return None;
     }
 
@@ -623,8 +609,7 @@ async fn take_unnotified_update(update_config: &UpdateConfig) -> Option<PendingU
 
     // Cache after claiming so we do not refetch every launch; the once-flag
     // already suppresses a repeat notice if the TTL expires.
-    let stable_ptr = try_fetch_stable_pointer().await;
-    write_version_cache(&target_version, stable_ptr.as_deref()).await;
+    write_version_cache(&target_version, None).await;
 
     Some(PendingUpdateNotice {
         current_version,
