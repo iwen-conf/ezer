@@ -6,7 +6,7 @@
 use agent_client_protocol as acp;
 use serde::{Deserialize, Serialize};
 
-use super::{ExtResult, to_raw_response};
+use super::{to_raw_response, ExtResult};
 use crate::agent::MvpAgent;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -183,7 +183,7 @@ async fn handle_get_billing(agent: &MvpAgent) -> ExtResult {
     let auth = super::auth_gate::require_xai_auth(
         &agent.auth_manager,
         "Authentication required to fetch billing data",
-        "Billing data requires auth with grok.com. Run `ezer login` to authenticate.",
+        "Billing data requires a signed-in session. BYOK users can ignore this; optional login: `ezer login`.",
     )?;
 
     let proxy_base = agent.cli_chat_proxy_base_url();
@@ -273,7 +273,7 @@ async fn handle_get_auto_topup_rule(agent: &MvpAgent) -> ExtResult {
     let auth = super::auth_gate::require_xai_auth(
         &agent.auth_manager,
         "Authentication required to fetch auto top-up rule",
-        "Auto top-up data requires auth with grok.com. Run `ezer login` to authenticate.",
+        "Auto top-up data requires a signed-in session. BYOK users can ignore this; optional login: `ezer login`.",
     )?;
 
     let proxy_base = agent.cli_chat_proxy_base_url();
