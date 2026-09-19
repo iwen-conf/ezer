@@ -76,6 +76,14 @@ models_base_url = "{base}"
 [models]
 default = "{key}"
 session_summary = "{key}"
+
+# Subagents (spawn_subagent) are on for BYOK — no xAI login required.
+# The parent may launch several children in one turn; they run concurrently
+# up to max_concurrent (also EZER_MAX_CONCURRENT_SUBAGENTS).
+[subagents]
+enabled = true
+max_concurrent = 32
+limit_behavior = "queue"
 "#,
         base = DEFAULT_GATEWAY_BASE_URL,
         key = DEFAULT_GATEWAY_MODEL_KEY,
@@ -174,6 +182,10 @@ mod tests {
         assert!(toml.contains("hy3"));
         assert!(!toml.contains("auth.x.ai"));
         assert!(!toml.contains("cli-chat-proxy"));
+        assert!(toml.contains("[subagents]"));
+        assert!(toml.contains("enabled = true"));
+        assert!(toml.contains("max_concurrent = 32"));
+        assert!(toml.contains("limit_behavior = \"queue\""));
     }
 
     #[test]

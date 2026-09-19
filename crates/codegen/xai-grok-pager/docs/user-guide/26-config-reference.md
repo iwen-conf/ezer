@@ -489,11 +489,13 @@ User-level configuration lives in `$EZER_HOME/config.toml` (default `~/.ezer/con
 
 | Key | Type / Values | Requirements | Managed | Details |
 | --- | --- | --- | --- | --- |
-| `subagents.enabled` | `boolean` | `pin` | `user` | Subagent / task tool master switch. Also EZER_SUBAGENTS. |
-| `subagents.limit_behavior` | `queue / fail` | `yes` | `user` | What to do when the concurrent subagent cap is hit. |
-| `subagents.max_concurrent` | `integer` | `yes` | `user` | Max concurrent subagents. |
-| `subagents.max_depth` | `integer` | `yes` | `user` | Max nested subagent depth (clamped ≥1). |
-| `subagents.models.<name>` | `string` | `yes` | `user` | Per-subagent model id override. |
+| `subagents.enabled` | `boolean` | `pin` | `user` | Subagent / task tool master switch. Default on (BYOK included). Also EZER_SUBAGENTS. `--no-subagents` force-disables. A limits-only `[subagents]` table does not disable. |
+| `subagents.limit_behavior` | `queue / fail` | `yes` | `user` | What to do when the concurrent subagent cap is hit. Also EZER_SUBAGENT_LIMIT_BEHAVIOR. |
+| `subagents.max_concurrent` | `integer` | `yes` | `user` | Max concurrent subagents (default 32). Also EZER_MAX_CONCURRENT_SUBAGENTS. |
+| `subagents.max_depth` | `integer` | `yes` | `user` | Max nested subagent depth (clamped ≥1). Also EZER_SUBAGENTS_MAX_DEPTH. |
+| `subagents.sampling_limit` | `integer` | `yes` | `user` | In-flight child sampling calls. Defaults to max_concurrent. Also EZER_SUBAGENT_SAMPLING_LIMIT. |
+| `subagents.workflow_max_concurrent` | `integer` | `yes` | `user` | Live workflow `agent()` / `parallel()` children. Also EZER_WORKFLOW_MAX_CONCURRENT_AGENTS. |
+| `subagents.models.<name>` | `string` | `yes` | `user` | Per-subagent model id override (catalog key; BYOK keys such as `workbuddy` are valid). |
 | `subagents.toggle.<name>` | `boolean` | `yes` | `user` | Enable or disable an individual subagent type. Omitted agents default on. |
 
 ### `telemetry`

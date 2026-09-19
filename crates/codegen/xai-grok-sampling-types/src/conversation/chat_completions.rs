@@ -291,6 +291,7 @@ impl From<ConversationRequest> for ChatCompletionRequest {
             user: None,
             tools,
             tool_choice,
+            parallel_tool_calls: (!tools_is_empty).then_some(true),
             search_parameters: None,
             response_format,
             reasoning_effort: req.reasoning_effort,

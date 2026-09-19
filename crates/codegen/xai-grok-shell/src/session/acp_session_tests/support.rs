@@ -85,6 +85,10 @@ pub(crate) async fn test_grok_build_agent_with_todo() -> xai_grok_agent::Agent {
     test_agent_with_tools(vec![ToolConfig::for_tool::<TodoWriteTool>()]).await
 }
 #[cfg(test)]
+pub(crate) async fn test_ezer_build_agent_with_todo() -> xai_grok_agent::Agent {
+    test_grok_build_agent_with_todo().await
+}
+#[cfg(test)]
 pub(crate) async fn test_agent_with_active_message_tool() -> xai_grok_agent::Agent {
     use xai_grok_tools::implementations::grok_build::send_subagent_message::SendSubagentMessageTool;
     use xai_grok_tools::implementations::grok_build::todo::TodoWriteTool;

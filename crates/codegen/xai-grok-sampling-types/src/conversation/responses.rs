@@ -93,6 +93,11 @@ impl From<&ConversationRequest> for rs::CreateResponse {
     fn from(req: &ConversationRequest) -> Self {
         let input = build_responses_input(req);
         let tools = build_responses_tools(req);
+        // Explicit `true` so BYOK / custom Responses gateways that default this
+        // field to false still allow the model to emit several spawn_subagent
+        // (and other) tool calls in one turn. Omit the field when no tools are
+        // advertised so empty-tool requests stay byte-identical.
+        let parallel_tool_calls = (!tools.is_empty()).then_some(true);
 
         let tool_choice = req.tool_choice.as_ref().map(|tc| match tc {
             ConversationToolChoice::Auto => rs::ToolChoiceParam::Mode(rs::ToolChoiceOptions::Auto),
@@ -130,7 +135,7 @@ impl From<&ConversationRequest> for rs::CreateResponse {
             max_tool_calls: None,
             metadata: None,
             model: req.model.clone(),
-            parallel_tool_calls: None,
+            parallel_tool_calls,
             previous_response_id: None,
             prompt: None,
             prompt_cache_key: req

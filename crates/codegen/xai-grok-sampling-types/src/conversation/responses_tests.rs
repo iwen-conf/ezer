@@ -20,6 +20,27 @@ fn test_conversation_request_to_responses_api() {
         panic!("Expected Items input");
     };
     assert_eq!(items.len(), 2);
+    assert_eq!(
+        responses_req.parallel_tool_calls, None,
+        "omit parallel_tool_calls when the request advertises no tools"
+    );
+}
+
+#[test]
+fn responses_request_enables_parallel_tool_calls_when_tools_present() {
+    let req = ConversationRequest::from_items(vec![ConversationItem::user("delegate")])
+        .with_tools(vec![ToolSpec {
+            name: "spawn_subagent".to_string(),
+            description: Some("Launch a child session".to_string()),
+            parameters: serde_json::json!({"type": "object"}),
+        }]);
+
+    let responses_req: rs::CreateResponse = (&req).into();
+    assert_eq!(
+        responses_req.parallel_tool_calls,
+        Some(true),
+        "BYOK Responses must ask the model for concurrent tool/subagent calls"
+    );
 }
 
 #[test]

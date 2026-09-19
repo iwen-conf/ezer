@@ -186,6 +186,41 @@ export EZER_HOME="$HOME/.ezer"   # default
 
 Project-local config is read from `.ezer/config.toml` in the workspace, then `~/.ezer/config.toml`.
 
+### Subagents (parallel / concurrent)
+
+The main agent can spawn child sessions (`spawn_subagent`) to handle sub-problems.
+This is **on by default** for BYOK / custom Responses — no xAI OAuth and no
+`--subagents` flag. Children inherit the parent catalog model (for example
+`workbuddy`) unless `[subagents.models]` pins a key. Several children may run
+at once (the host queues extras).
+
+```toml
+# ~/.ezer/config.toml  (also seeded on first run)
+[subagents]
+enabled = true
+max_concurrent = 32                   # live children; also EZER_MAX_CONCURRENT_SUBAGENTS
+limit_behavior = "queue"              # queue | fail when the cap is hit (EZER_SUBAGENT_LIMIT_BEHAVIOR)
+# sampling_limit = 32                 # in-flight child sampling calls (EZER_SUBAGENT_SAMPLING_LIMIT)
+# max_depth = 1                       # nesting; 1 = parent-only spawns (EZER_SUBAGENTS_MAX_DEPTH)
+
+[subagents.models]
+explore = "workbuddy"                 # optional per-type catalog pin
+```
+
+| Knob | Default | Disable / override |
+|------|---------|--------------------|
+| Master switch | on | `EZER_SUBAGENTS=0`, `[subagents] enabled = false`, or `ezer --no-subagents` |
+| Max concurrent children | 32 | `[subagents] max_concurrent` / `EZER_MAX_CONCURRENT_SUBAGENTS` |
+| Over-cap behavior | queue | `[subagents] limit_behavior = "fail"` |
+| Child worker threads | 2–4 | `EZER_SUBAGENT_WORKER_THREADS` |
+| Workflow live children | 32 | `[subagents] workflow_max_concurrent` / `EZER_WORKFLOW_MAX_CONCURRENT_AGENTS` |
+
+Responses (and Chat Completions) requests that advertise tools set
+`parallel_tool_calls: true` so the model can emit several `spawn_subagent`
+calls in one turn. The coordinator then runs those children concurrently.
+
+See [Subagents and Personas](crates/codegen/xai-grok-pager/docs/user-guide/16-subagents.md).
+
 ## Documentation
 
 The user guide ships with the pager crate:

@@ -42,6 +42,36 @@ fn first_run_byok_template_parses_as_responses_gateway() {
 }
 
 #[test]
+#[serial]
+fn first_run_byok_template_enables_concurrent_subagents() {
+    clear_runtime_env_vars();
+    let raw: toml::Value = toml::from_str(&xai_grok_config::default_byok_config_toml())
+        .expect("first-run template must be valid TOML");
+    let mut cfg = Config::new_from_toml_cfg(&raw).expect("first-run template must parse");
+    cfg.resolve_runtime_fields(&RuntimeResolutionContext {
+        raw_config: &raw,
+        remote_settings: None,
+        is_headless: false,
+        cli_subagents: None,
+        cli_web_search_model: None,
+        cli_session_summary_model: None,
+        memory_enabled_override: None,
+        disable_web_search: false,
+        todo_gate: false,
+        laziness_debug_log: None,
+        storage_mode: None,
+    });
+    assert!(
+        cfg.subagents_enabled,
+        "BYOK first-run config must keep spawn_subagent available without xAI auth"
+    );
+    assert_eq!(
+        cfg.subagents_max_concurrent,
+        xai_grok_tools::implementations::grok_build::task::admission::DEFAULT_MAX_CONCURRENT
+    );
+}
+
+#[test]
 fn byok_aux_prefers_active_model_over_compiled_grok_slug() {
     let primary = SamplerConfig {
         model: "deepseek-v4.1-flash".into(),
@@ -6664,6 +6694,7 @@ fn empty_config() -> toml::Value {
 fn clear_runtime_env_vars() {
     unsafe {
         std::env::remove_var("GROK_SUBAGENTS");
+        std::env::remove_var("EZER_SUBAGENTS");
         std::env::remove_var("GROK_RESPECT_GITIGNORE");
         std::env::remove_var("GROK_WEB_SEARCH_MODEL");
         std::env::remove_var("GROK_SESSION_SUMMARY_MODEL");
@@ -7081,6 +7112,30 @@ fn resolve_runtime_fields_cli_subagents_override() {
         storage_mode: None,
     });
     assert!(cfg.subagents_enabled);
+}
+#[test]
+#[serial]
+fn resolve_runtime_fields_cli_no_subagents_disables() {
+    clear_runtime_env_vars();
+    let raw: toml::Value = toml::from_str("[subagents]\nenabled = true").unwrap();
+    let mut cfg = Config::new_from_toml_cfg(&raw).unwrap();
+    cfg.resolve_runtime_fields(&RuntimeResolutionContext {
+        raw_config: &raw,
+        remote_settings: None,
+        is_headless: false,
+        cli_subagents: Some(false),
+        cli_web_search_model: None,
+        cli_session_summary_model: None,
+        memory_enabled_override: None,
+        disable_web_search: false,
+        todo_gate: false,
+        laziness_debug_log: None,
+        storage_mode: None,
+    });
+    assert!(
+        !cfg.subagents_enabled,
+        "--no-subagents must disable the task tool"
+    );
 }
 #[test]
 #[serial]
