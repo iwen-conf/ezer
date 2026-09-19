@@ -1,6 +1,6 @@
 # Configuration
 
-Grok reads settings from config files, environment variables, and CLI flags. This page covers the common options. The field list for `config.toml`, `managed_config.toml`, and `requirements.toml` is [26-config-reference.md](26-config-reference.md) (extracted to `~/.grok/docs/user-guide/` on launch).
+Grok reads settings from config files, environment variables, and CLI flags. This page covers the common options. The field list for `config.toml`, `managed_config.toml`, and `requirements.toml` is [26-config-reference.md](26-config-reference.md) (extracted to `~/.ezer/docs/user-guide/` on launch).
 
 ---
 
@@ -12,7 +12,7 @@ Settings resolve highest-priority first:
 2. **Environment variables** (e.g. `XAI_API_KEY`, `GROK_MEMORY`)
 3. **`requirements.toml` / MDM** (org-enforced; clamps every config layer below, including the overlay)
 4. **`GROK_CONFIG` / `GROK_CONFIG_PATH` overlay** (above `config.toml` and managed, below `requirements.toml` / MDM)
-5. **config.toml** (`~/.grok/config.toml`)
+5. **config.toml** (`~/.ezer/config.toml`)
 6. **`managed_config.toml`** (org-deployed defaults; below `config.toml`)
 7. **Built-in defaults**
 
@@ -37,7 +37,7 @@ GROK_CONFIG='{"models": {"default_reasoning_effort": "high"}}' grok agent stdio
 
 ## config.toml (main configuration)
 
-Location: `~/.grok/config.toml`. If the file is missing, Grok uses its built-in defaults, so you only need to set the values you want to override.
+Location: `~/.ezer/config.toml` (`EZER_HOME` override). If the file is missing on a real first run, ezer writes a BYOK Responses starter. You only need to set the values you want to override.
 
 ### General settings
 

@@ -1230,7 +1230,8 @@ pub(crate) async fn run(
     app.shell_feedback_trace_offer = connection.feedback_trace_offer;
     app.auth_methods = connection.auth_methods.clone();
     let force_login = args.force_login && !connection.auth_methods.is_empty();
-    let needs_interactive_login = connection.needs_login || force_login;
+    // Never auto-open grok.com / xAI OAuth on startup. `--force-login` remains explicit.
+    let needs_interactive_login = force_login;
     if needs_interactive_login {
         app.welcome_prompt_focused = false;
         if connection.needs_login {

@@ -1,6 +1,6 @@
 # Getting Started
 
-Grok Build is a terminal-based AI coding assistant from SpaceXAI. It runs as a TUI (Terminal User Interface) that understands your codebase, executes shell commands, edits files, searches the web, and manages tasks.
+**ezer** is a terminal-based AI coding assistant (a standalone Grok Build fork). It runs as a TUI that understands your codebase, executes shell commands, edits files, searches the web, and manages tasks — using your own OpenAI-compatible gateway. No xAI / grok.com account is required.
 
 You can use it interactively as a full-screen TUI, run it headlessly for scripting and CI/CD, or integrate it into editors via the Agent Client Protocol (ACP).
 
@@ -32,18 +32,12 @@ Install a specific version:
 $env:GROK_VERSION="0.1.42"; irm https://x.ai/cli/install.ps1 | iex
 ```
 
-The PowerShell installer automatically adds `%USERPROFILE%\.grok\bin` to your User PATH. Alternatively, install via [Git for Windows](https://gitforwindows.org/) (Git Bash) or MSYS2 using the bash script above. WSL users get the Linux binary automatically.
+Build from this tree (`cargo build -p xai-grok-pager-bin --release`) and put `target/release/ezer` on your `PATH`. Config and sessions live under `%USERPROFILE%\.ezer` / `~/.ezer` (`EZER_HOME` override).
 
 Verify the installation:
 
 ```bash
-grok --version
-```
-
-Update to the latest version at any time:
-
-```bash
-grok update
+ezer --version
 ```
 
 To fetch a repository through Grove (NFS on macOS, FUSE on Linux), enable
@@ -65,19 +59,17 @@ and [Configuration reference](26-config-reference.md).
 
 ## First Launch
 
-Start Grok by running:
+Start ezer by running:
 
 ```bash
-grok
+ezer
 ```
 
-On first launch, Grok opens your browser to authenticate with grok.com. After you sign in, Grok stores your credentials in `~/.grok/auth.json`, where they persist across sessions. Grok refreshes your credentials automatically and prompts you to sign in again when they can no longer be renewed.
-
-If you prefer API key authentication (e.g., for CI/CD or environments without a browser), set the `XAI_API_KEY` environment variable instead:
+On first launch ezer writes `~/.ezer/config.toml` with a BYOK Responses example pointed at `http://192.168.0.63:8788/v1`. Put your gateway key in that file (`api_key`) or in `EZER_API_KEY`. There is no grok.com login wall.
 
 ```bash
-export XAI_API_KEY="xai-..."
-grok
+export EZER_API_KEY="your-gateway-key"
+ezer
 ```
 
 See [Authentication](02-authentication.md) for the full set of auth options including OIDC, external auth providers, and device code flow.

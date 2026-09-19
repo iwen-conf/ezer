@@ -1,12 +1,29 @@
 # Custom Models
 
-Grok connects to custom model endpoints for alternative providers, self-hosted models, and overriding built-in settings. This guide explains how to select models, configure endpoints, and integrate third-party providers.
+ezer connects to custom OpenAI-compatible endpoints. The default and primary wire protocol for BYOK models is **OpenAI Responses** (`POST /v1/responses`). Chat Completions remains available as a secondary backend.
 
 ---
 
-## Default Models
+## Default (BYOK-first)
 
-By default, Grok uses models hosted by SpaceXAI, and new sessions start with `grok-4.5`. Default models require no configuration. Authenticate with `grok login` or an API key, then start a session.
+First-run `~/.ezer/config.toml` points at a local Responses gateway. Example:
+
+```toml
+[endpoints]
+models_base_url = "http://192.168.0.63:8788/v1"
+
+[models]
+default = "workbuddy"
+
+[model.workbuddy]
+model = "deepseek-v4.1-flash"
+base_url = "http://192.168.0.63:8788/v1"
+api_backend = "responses"
+context_window = 200000
+env_key = ["EZER_API_KEY", "XAI_API_KEY"]
+```
+
+`ezer models` lists the catalog (built-in entries plus `GET {base}/v1/models` when `models_base_url` is set). Model ids such as `deepseek-v4.1-flash`, `hy4-preview-f`, and `hy3` are treated as opaque slugs.
 
 List all available models:
 
@@ -69,13 +86,13 @@ default = "grok-4.5"
 
 Grok supports three API backends. Set `api_backend` in your `[model.*]` config to choose which protocol the model uses:
 
-| Value | API | Default |
-|-------|-----|---------|
-| `"chat_completions"` | OpenAI Chat Completions (`/v1/chat/completions`) | Yes |
-| `"responses"` | OpenAI Responses (`/v1/responses`) | |
+| Value | API | Default for new `[model.*]` |
+|-------|-----|-----------------------------|
+| `"responses"` | OpenAI Responses (`/v1/responses`) | Yes |
+| `"chat_completions"` | OpenAI Chat Completions (`/v1/chat/completions`) | |
 | `"messages"` | Anthropic Messages (`/v1/messages`) | |
 
-When you omit `api_backend`, Grok uses `chat_completions`.
+When you omit `api_backend` on a new custom model, ezer uses `responses`.
 
 To send provider-specific authentication or version headers -- for example, Anthropic's `x-api-key` -- use the `extra_headers` field described below. Grok sends those headers verbatim with every request to the endpoint.
 

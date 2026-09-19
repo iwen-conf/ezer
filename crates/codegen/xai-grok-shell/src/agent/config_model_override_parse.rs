@@ -726,6 +726,7 @@ mod tests {
             auth_provider: Some("corp-gateway".into()),
             model_provider: Some("gateway".into()),
             api_base_url: Some("https://api.example.com".into()),
+            auth_scheme: None,
             max_completion_tokens: Some(1024),
             temperature: Some(0.5),
             top_p: Some(0.9),

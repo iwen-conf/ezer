@@ -1,6 +1,28 @@
 use super::*;
 use serial_test::serial;
 use xai_grok_test_support::EnvGuard;
+
+#[test]
+fn first_run_byok_template_parses_as_responses_gateway() {
+    let raw: toml::Value = toml::from_str(&xai_grok_config::default_byok_config_toml())
+        .expect("first-run template must be valid TOML");
+    let cfg = Config::new_from_toml_cfg(&raw).expect("first-run template must parse");
+    assert!(cfg.endpoints.has_custom_endpoint());
+    assert_eq!(
+        cfg.endpoints.models_base_url.as_deref(),
+        Some(xai_grok_config::DEFAULT_GATEWAY_BASE_URL)
+    );
+    let resolved = resolve_model_list(&cfg, None);
+    let model = resolved
+        .get(xai_grok_config::DEFAULT_GATEWAY_MODEL_KEY)
+        .expect("starter model");
+    assert_eq!(model.info.api_backend, ApiBackend::Responses);
+    assert_eq!(
+        model.info.base_url,
+        xai_grok_config::DEFAULT_GATEWAY_BASE_URL
+    );
+    assert_eq!(model.info.model, xai_grok_config::DEFAULT_GATEWAY_MODEL_ID);
+}
 #[test]
 fn main_cli_tools_override_preserves_profile_injection_policy() {
     let overrides = CliAgentOverrides {
@@ -2061,7 +2083,7 @@ fn model_chat_completions_backend_does_not_auto_default_supports_reasoning_effor
     );
 }
 #[test]
-fn model_api_backend_defaults_to_chat_completions() {
+fn model_api_backend_defaults_to_responses() {
     let raw_config: toml::Value = toml::from_str(
         r#"
             [model.my-model]
@@ -2074,7 +2096,7 @@ fn model_api_backend_defaults_to_chat_completions() {
     let cfg = Config::new_from_toml_cfg(&raw_config).expect("config should parse");
     let resolved = resolve_model_list(&cfg, None);
     let model = resolved.get("my-model").expect("model should exist");
-    assert_eq!(model.info.api_backend, ApiBackend::ChatCompletions);
+    assert_eq!(model.info.api_backend, ApiBackend::Responses);
 }
 #[test]
 fn sampling_config_uses_model_api_backend() {

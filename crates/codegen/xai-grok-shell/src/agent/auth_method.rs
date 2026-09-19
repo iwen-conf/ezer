@@ -210,6 +210,15 @@ fn build_unpinned(
     }
 }
 
+/// Opt-in xAI / grok.com browser login. Off by default so ezer never blocks on SpaceXAI OAuth.
+fn xai_login_enabled() -> bool {
+    matches!(
+        xai_grok_env::env_bool("EZER_ENABLE_XAI_LOGIN")
+            .or_else(|| xai_grok_env::env_bool("GROK_ENABLE_XAI_LOGIN")),
+        Some(true)
+    )
+}
+
 fn push_interactive_login(
     methods: &mut Vec<acp::AuthMethod>,
     has_enterprise_oidc: bool,
@@ -224,7 +233,10 @@ fn push_interactive_login(
         let issuer = enterprise_oidc_issuer
             .expect("enterprise_oidc_issuer is required when has_enterprise_oidc is true");
         methods.push(oidc_auth_method(issuer, login_label));
-    } else {
+        return;
+    }
+    // grok.com OAuth is optional and never the default first-run path.
+    if has_auth_provider_command || xai_login_enabled() {
         methods.push(grok_com_auth_method(login_label, has_auth_provider_command));
     }
 }
@@ -299,9 +311,10 @@ pub(crate) fn session_token_auth_gate(
 }
 
 pub const AUTH_ERROR_SESSION_EXPIRED: &str =
-    "Session expired. Run `grok login` to re-authenticate.";
+    "Session expired. Set EZER_API_KEY or add api_key to ~/.ezer/config.toml.";
 
-pub const AUTH_ERROR_API_KEY: &str = "Authentication failed. Run `grok login`, set XAI_API_KEY, or add api_key to ~/.grok/config.toml.";
+pub const AUTH_ERROR_API_KEY: &str =
+    "Authentication failed. Set EZER_API_KEY / XAI_API_KEY, or add api_key to ~/.ezer/config.toml.";
 
 /// Next ACP method id when `cached_token` cannot proceed (missing / expired / legacy WebLogin), or `None` when fallthrough is forbidden.
 /// Unpinned: prefer non-interactive `xai.api_key` when advertiseable, else interactive `grok.com`. Pinned `oidc`: **no** fallthrough to api_key; return `None` so the caller fails auth.
@@ -347,7 +360,7 @@ pub(crate) fn cached_token_auth_method() -> acp::AuthMethod {
             acp::AuthMethodId::new(CACHED_TOKEN_AUTH_METHOD_ID),
             "cached_token".to_string(),
         )
-        .description(Some("Cached token from ~/.grok/auth.json".to_string())),
+        .description(Some("Cached token from ~/.ezer/auth.json".to_string())),
     )
 }
 
@@ -582,15 +595,20 @@ mod tests {
         );
     }
 
-    /// Brand-new user (no API key, no cached token): only `grok.com` is advertised, and the pager will (correctly) show the login screen.
-    /// `default_auth_method_id` is None so the pager falls back to the advertised login method.
+    /// Brand-new user (no API key, no cached token): grok.com OAuth is not advertised.
+    /// ezer launches without a login wall; configure BYOK in `~/.ezer/config.toml`.
     #[test]
-    fn fresh_user_only_advertises_grok_com_and_requires_login() {
+    fn fresh_user_does_not_require_xai_login() {
         let built = build_auth_methods(default_inputs());
 
-        assert_eq!(first_kind(&built.methods), Some(AuthMethodKind::GrokCom));
+        assert!(built.methods.is_empty());
         assert!(built.default_auth_method_id.is_none());
-        assert_eq!(built.methods.len(), 1);
+        assert!(
+            !built
+                .methods
+                .iter()
+                .any(|m| AuthMethodKind::from_id(m.id()).needs_interactive_login())
+        );
     }
 
     /// Enterprise OIDC replaces `grok.com` (mutually exclusive).

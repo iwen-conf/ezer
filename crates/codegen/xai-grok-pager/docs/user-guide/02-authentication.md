@@ -1,18 +1,23 @@
 # Authentication
 
-Grok supports several authentication methods, including interactive browser login, enterprise single sign-on (SSO), and headless CI/CD runners.
+ezer is **BYOK-first**. The default path is an API key in `~/.ezer/config.toml` (or `EZER_API_KEY` / `XAI_API_KEY`) sent to your OpenAI-compatible gateway. Interactive xAI / grok.com browser login is optional and never required at startup.
 
 ---
 
-## Browser Login (Default)
-
-On first launch, Grok opens your browser to authenticate with grok.com:
+## API key (default)
 
 ```bash
-grok
+export EZER_API_KEY="your-gateway-key"
+ezer
 ```
 
-Grok stores credentials in `~/.grok/auth.json` and reuses them across sessions. Grok refreshes access tokens automatically in the background. When a token can't be refreshed, Grok prompts you to sign in again. Credentials without a server-provided expiry fall back to a 30-day lifetime.
+Or set `api_key` / `env_key` on a `[model.*]` entry. Requests send `Authorization: Bearer <key>` plus `x-api-key` and `api-key`.
+
+---
+
+## Optional browser login (xAI / grok.com)
+
+Disabled unless you set `EZER_ENABLE_XAI_LOGIN=1` or run `ezer --force-login`. When enabled, credentials are stored in `~/.ezer/auth.json`.
 
 ### Credential storage
 

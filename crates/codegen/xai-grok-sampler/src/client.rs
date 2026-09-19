@@ -89,6 +89,45 @@ impl GrokRequestHeaders<'_> {
     }
 }
 
+/// Apply the API key using the configured scheme, and always also send
+/// `x-api-key` / `api-key` so OpenAI-compat gateways (WorkBuddy2API-Hub, etc.)
+/// accept the same credential.
+fn apply_api_key_headers(headers: &mut HeaderMap, api_key: &str, scheme: AuthScheme) -> Result<()> {
+    match scheme {
+        AuthScheme::XApiKey => {
+            let header_value = HeaderValue::from_str(api_key).map_err(|_| {
+                tracing::debug!(
+                    api_key = %api_key,
+                    "Invalid api_key: cannot be converted to a valid HTTP header"
+                );
+                SamplingError::auth_unknown(
+                    "Invalid api_key: cannot be converted to a valid HTTP header",
+                )
+            })?;
+            headers.insert(HeaderName::from_static("x-api-key"), header_value.clone());
+            headers.insert(HeaderName::from_static("api-key"), header_value);
+        }
+        AuthScheme::Bearer => {
+            let bearer = format!("Bearer {api_key}");
+            let header_value = HeaderValue::from_str(&bearer).map_err(|_| {
+                tracing::debug!(
+                    api_key = %api_key,
+                    "Invalid api_key: cannot be converted to a valid HTTP Authorization header"
+                );
+                SamplingError::auth_unknown(
+                    "Invalid api_key: cannot be converted to a valid HTTP Authorization header",
+                )
+            })?;
+            headers.insert(AUTHORIZATION, header_value);
+            if let Ok(raw) = HeaderValue::from_str(api_key) {
+                headers.insert(HeaderName::from_static("x-api-key"), raw.clone());
+                headers.insert(HeaderName::from_static("api-key"), raw);
+            }
+        }
+    }
+    Ok(())
+}
+
 /// Deserialize a Responses SSE event, stripping unknown tools and rewriting terminal `total_tokens` from `context_details`.
 pub(crate) fn deserialize_response_event(data: &str) -> Result<rs::ResponseStreamEvent> {
     let mut event = match serde_json::from_str::<rs::ResponseStreamEvent>(data) {
@@ -511,33 +550,7 @@ impl SamplingClient {
         let mut headers = HeaderMap::new();
         headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
         if let Some(ref api_key) = config.api_key {
-            match config.auth_scheme {
-                AuthScheme::XApiKey => {
-                    let header_value = HeaderValue::from_str(api_key).map_err(|_| {
-                        tracing::debug!(
-                            api_key = %api_key,
-                            "Invalid api_key: cannot be converted to a valid HTTP header"
-                        );
-                        SamplingError::auth_unknown(
-                            "Invalid api_key: cannot be converted to a valid HTTP header",
-                        )
-                    })?;
-                    headers.insert(HeaderName::from_static("x-api-key"), header_value);
-                }
-                AuthScheme::Bearer => {
-                    let bearer = format!("Bearer {}", api_key);
-                    let header_value = HeaderValue::from_str(&bearer).map_err(|_| {
-                        tracing::debug!(
-                            api_key = %api_key,
-                            "Invalid api_key: cannot be converted to a valid HTTP Authorization header"
-                        );
-                        SamplingError::auth_unknown(
-                            "Invalid api_key: cannot be converted to a valid HTTP Authorization header",
-                        )
-                    })?;
-                    headers.insert(AUTHORIZATION, header_value);
-                }
-            }
+            apply_api_key_headers(&mut headers, api_key, config.auth_scheme)?;
         }
 
         // Apply all extra headers verbatim
@@ -699,19 +712,9 @@ impl SamplingClient {
             // Sole auth source: without a live bearer, send no credential rather than a stale seed key.
             headers.remove(AUTHORIZATION);
             headers.remove(HeaderName::from_static("x-api-key"));
+            headers.remove(HeaderName::from_static("api-key"));
             if let Some(fresh) = resolver.current_bearer() {
-                match self.defaults.auth_scheme {
-                    AuthScheme::XApiKey => {
-                        if let Ok(v) = HeaderValue::from_str(&fresh) {
-                            headers.insert(HeaderName::from_static("x-api-key"), v);
-                        }
-                    }
-                    AuthScheme::Bearer => {
-                        if let Ok(v) = HeaderValue::from_str(&format!("Bearer {fresh}")) {
-                            headers.insert(AUTHORIZATION, v);
-                        }
-                    }
-                }
+                let _ = apply_api_key_headers(&mut headers, &fresh, self.defaults.auth_scheme);
             }
         }
         {
@@ -2872,20 +2875,34 @@ mod tests {
     }
 
     #[test]
-    fn messages_plus_bearer_uses_authorization_and_not_x_api_key() {
+    fn bearer_also_sends_gateway_api_key_aliases() {
         let cfg = SamplerConfig {
             api_key: Some("bearer-key-abc123".to_string()),
-            api_backend: ApiBackend::Messages,
+            api_backend: ApiBackend::Responses,
             auth_scheme: AuthScheme::Bearer,
             ..minimal_config()
         };
         let client = SamplingClient::new(cfg).expect("client should build");
-        assert!(client.default_headers.get(AUTHORIZATION).is_some());
-        assert!(
+        assert_eq!(
+            client
+                .default_headers
+                .get(AUTHORIZATION)
+                .and_then(|v| v.to_str().ok()),
+            Some("Bearer bearer-key-abc123")
+        );
+        assert_eq!(
             client
                 .default_headers
                 .get(HeaderName::from_static("x-api-key"))
-                .is_none()
+                .and_then(|v| v.to_str().ok()),
+            Some("bearer-key-abc123")
+        );
+        assert_eq!(
+            client
+                .default_headers
+                .get(HeaderName::from_static("api-key"))
+                .and_then(|v| v.to_str().ok()),
+            Some("bearer-key-abc123")
         );
     }
 
@@ -3158,7 +3175,20 @@ mod tests {
             .get(AUTHORIZATION)
             .and_then(|v| v.to_str().ok());
         assert_eq!(auth, Some("Bearer fresh-bearer"));
-        assert!(request.headers().get("x-api-key").is_none());
+        assert_eq!(
+            request
+                .headers()
+                .get("x-api-key")
+                .and_then(|v| v.to_str().ok()),
+            Some("fresh-bearer")
+        );
+        assert_eq!(
+            request
+                .headers()
+                .get("api-key")
+                .and_then(|v| v.to_str().ok()),
+            Some("fresh-bearer")
+        );
     }
 
     /// Regression: `api_key` seeds `default_headers` with `Authorization: Bearer ...`.

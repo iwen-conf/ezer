@@ -1,109 +1,114 @@
 <div align="center">
 
-<h1>
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://media.x.ai/v1/website/spacexai-symbol-white-transparent-0c31957f.png">
-    <source media="(prefers-color-scheme: light)" srcset="https://media.x.ai/v1/website/spacexai-symbol-black-transparent-6435cf42.png">
-    <img alt="SpaceXAI logo" src="https://media.x.ai/v1/website/spacexai-symbol-black-transparent-6435cf42.png" width="96">
-  </picture>
-  <br>
-  Grok Build (<code>grok</code>)
-</h1>
+<h1>ezer</h1>
 
-**Grok Build** is SpaceXAI's terminal-based AI coding agent. It runs as a
-full-screen TUI that understands your codebase, edits files, executes shell
-commands, searches the web, and manages long-running tasks — interactively,
-headlessly for scripting/CI, or embedded in editors via the Agent Client
-Protocol (ACP).
+**ezer** is a standalone terminal AI coding agent, forked from Grok Build.
+It keeps the TUI, agent orchestration, tools, sessions, skills, headless mode,
+and ACP — without requiring an xAI / grok.com account.
 
-[Installing the released binary](#installing-the-released-binary) ·
 [Building from source](#building-from-source) ·
+[Configuration](#configuration) ·
 [Documentation](#documentation) ·
 [Repository layout](#repository-layout) ·
-[Development](#development) ·
-[Contributing](#contributing) ·
 [License](#license)
-
-![Grok Build TUI](https://media.x.ai/v1/website/universe-tui-screenshot-6f7a0837.png)
-
-**Learn more about Grok Build at [x.ai/cli](https://x.ai/cli)**
-
-This repository contains the Rust source for the `grok` CLI/TUI and its agent
-runtime. It is synced periodically from the SpaceXAI monorepo.
-
-A small `SOURCE_REV` file at the root records the full monorepo commit SHA
-for the version of the code present in this tree.
 
 </div>
 
 ---
 
-## Installing the released binary
+## What changed from Grok Build
 
-Prebuilt binaries are published for macOS, Linux, and Windows:
+- Config home is **`~/.ezer/`** (`EZER_HOME` override). ezer does **not** default-read or write `~/.grok`.
+- First launch is **BYOK-first**: OpenAI-compatible Responses API, no browser login wall.
+- Default wire protocol for custom models is **`POST /v1/responses`** (Chat Completions remains available).
+- The CLI binary is **`ezer`**.
 
-```sh
-curl -fsSL https://x.ai/cli/install.sh | bash   # macOS / Linux / Git Bash
-irm https://x.ai/cli/install.ps1 | iex          # Windows PowerShell
-grok --version
-```
-
-See the [changelog](https://x.ai/build/changelog) for the latest fixes,
-features, and improvements in each release.
+Optional xAI / grok.com OAuth still exists behind `EZER_ENABLE_XAI_LOGIN=1` (or `ezer login --force-login`) and never blocks startup.
 
 ## Building from source
 
 Requirements:
 
-- **Rust** — the toolchain is pinned by [`rust-toolchain.toml`](rust-toolchain.toml);
-  `rustup` installs it automatically on first build.
-- **[DotSlash](https://dotslash-cli.com)** — required so hermetic tools under
-  [`bin/`](bin/) (notably [`bin/protoc`](bin/protoc)) can download and run.
-  Install it and ensure `dotslash` is on your `PATH` **before** building:
-
-  ```sh
-  cargo install dotslash
-  # or: prebuilt packages — https://dotslash-cli.com/docs/installation/
-  /usr/bin/env dotslash --help   # sanity check
-  ```
-
-- **protoc** — proto codegen resolves [`bin/protoc`](bin/protoc) via DotSlash,
-  or falls back to a `protoc` on `PATH` / `$PROTOC`.
-- macOS and Linux are supported build hosts; Windows builds are best-effort
-  and not currently tested from this tree.
+- **Rust** — pinned by [`rust-toolchain.toml`](rust-toolchain.toml); `rustup` installs it on first build.
+- **[DotSlash](https://dotslash-cli.com)** — hermetic tools under [`bin/`](bin/) (notably [`bin/protoc`](bin/protoc)).
+- **protoc** — via DotSlash, `$PATH`, or `$PROTOC`.
 
 ```sh
-cargo run -p xai-grok-pager-bin              # build + launch the TUI
-cargo build -p xai-grok-pager-bin --release  # release binary: target/release/xai-grok-pager
+cargo run -p xai-grok-pager-bin              # build + launch the TUI (`ezer`)
+cargo build -p xai-grok-pager-bin --release  # release binary: target/release/ezer
 cargo check -p xai-grok-pager-bin            # fast validation
 ```
 
-The binary artifact is named `xai-grok-pager`; official installs ship it as
-`grok`. On first launch it opens your browser to authenticate — see the
-[authentication guide](crates/codegen/xai-grok-pager/docs/user-guide/02-authentication.md).
+The package is still `xai-grok-pager-bin`; the default binary name is `ezer`.
+
+## Configuration
+
+On first launch (when `$EZER_HOME` is unset or points at an empty home), ezer writes a starter `~/.ezer/config.toml`. Edit the API key and model id for your gateway.
+
+### WorkBuddy2API-Hub / OpenAI Responses gateway
+
+This is the supported default for a local OpenAI-compatible hub:
+
+```toml
+# ~/.ezer/config.toml
+[auth]
+preferred_method = "api_key"
+
+[endpoints]
+models_base_url = "http://192.168.0.63:8788/v1"
+
+[models]
+default = "workbuddy"
+
+[model.workbuddy]
+model = "deepseek-v4.1-flash"   # or hy4-preview-f / hy3 — whatever /v1/models lists
+name = "WorkBuddy gateway"
+base_url = "http://192.168.0.63:8788/v1"
+api_backend = "responses"
+context_window = 200000
+env_key = ["EZER_API_KEY", "XAI_API_KEY"]
+# api_key = "your-gateway-key"
+```
+
+```sh
+export EZER_API_KEY="your-gateway-key"
+ezer
+```
+
+**Auth headers:** every API-key request sends `Authorization: Bearer <key>` and also `x-api-key` / `api-key` (the gateway accepts any of these).
+
+**Wire protocol:** default `api_backend = "responses"` → `POST /v1/responses` with streaming SSE (input items, function tools, reasoning fields). Set `api_backend = "chat_completions"` for the secondary Chat Completions path. Empty `finish_reason` on Chat Completions streams is treated as unset.
+
+**Home override:**
+
+```sh
+export EZER_HOME="$HOME/.ezer"   # default
+# $GROK_HOME is a deprecated alias and is not the default path
+```
+
+Project-local config is read from `.ezer/config.toml` first, then `.grok/config.toml`.
 
 ## Documentation
-
-Full online documentation is available at
-[docs.x.ai/build/overview](https://docs.x.ai/build/overview).
 
 The user guide ships with the pager crate:
 [`crates/codegen/xai-grok-pager/docs/user-guide/`](crates/codegen/xai-grok-pager/docs/user-guide/)
 — getting started, keyboard shortcuts, slash commands, configuration, theming,
 MCP servers, skills, plugins, hooks, headless mode, sandboxing, and more.
 
+Start with [custom models](crates/codegen/xai-grok-pager/docs/user-guide/11-custom-models.md) and [authentication](crates/codegen/xai-grok-pager/docs/user-guide/02-authentication.md).
+
 ## Repository layout
 
 | Path | Contents |
 |------|----------|
-| `crates/codegen/xai-grok-pager-bin` | Composition-root package; builds the `xai-grok-pager` binary |
+| `crates/codegen/xai-grok-pager-bin` | Composition-root package; builds the `ezer` binary |
 | `crates/codegen/xai-grok-pager` | The TUI: scrollback, prompt, modals, rendering |
 | `crates/codegen/xai-grok-shell` | Agent runtime + leader/stdio/headless entry points |
 | `crates/codegen/xai-grok-tools` | Tool implementations (terminal, file edit, search, ...) |
 | `crates/codegen/xai-grok-workspace` | Host filesystem, VCS, execution, checkpoints |
 | `crates/codegen/...` | The rest of the CLI crate closure (config, MCP, markdown, sandbox, ...) |
 | `crates/common/`, `crates/build/`, `prod/mc/` | Small shared leaf crates pulled in by the closure |
-| `third_party/` | Vendored upstream source (Mermaid diagram stack) — see below |
+| `third_party/` | Vendored upstream source (Mermaid diagram stack) |
 
 > [!IMPORTANT]
 > The root `Cargo.toml` (workspace members, dependency versions, lints,
@@ -119,22 +124,13 @@ cargo clippy -p <crate>       # lint config: clippy.toml at the repo root
 cargo fmt --all               # rustfmt.toml at the repo root
 ```
 
-## Contributing
-
-> [!NOTE]
-> External contributions are not accepted. See [`CONTRIBUTING.md`](CONTRIBUTING.md).
-
 ## License
 
 First-party code in this repository is licensed under the **Apache License,
 Version 2.0** — see [`LICENSE`](LICENSE).
 
-Third-party and vendored code remains under its original licenses. See:
+This tree is a fork of SpaceXAI Grok Build. Third-party and vendored code remains under its original licenses. See:
 
-- [`THIRD-PARTY-NOTICES`](THIRD-PARTY-NOTICES) — crates.io / git dependencies,
-  bundled UI themes, and **in-tree source ports** (including openai/codex and
-  sst/opencode tool implementations)
+- [`THIRD-PARTY-NOTICES`](THIRD-PARTY-NOTICES)
 - [`crates/codegen/xai-grok-tools/THIRD_PARTY_NOTICES.md`](crates/codegen/xai-grok-tools/THIRD_PARTY_NOTICES.md)
-  — crate-local notice for the codex and opencode ports (license texts +
-  Apache §4(b) change notice)
-- [`third_party/NOTICE`](third_party/NOTICE) — vendored Mermaid-stack index
+- [`third_party/NOTICE`](third_party/NOTICE)

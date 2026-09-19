@@ -463,7 +463,11 @@ pub struct ChatCompletionResponse {
 pub struct ChatChoice {
     pub index: u32,
     pub message: ChatResponseMessage,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "crate::serde_helpers::empty_or_invalid_as_none"
+    )]
     pub finish_reason: Option<FinishReason>,
 }
 
@@ -579,7 +583,11 @@ pub struct ChatCompletionChunk {
 pub struct ChatChunkChoice {
     pub index: u32,
     pub delta: ChatChunkDelta,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "crate::serde_helpers::empty_or_invalid_as_none"
+    )]
     pub finish_reason: Option<FinishReason>,
 }
 
@@ -1604,5 +1612,24 @@ mod tests {
         let inner: &dyn TraceContext = &*cloned_trace;
         let downcast = inner.as_any().downcast_ref::<TestTrace>().unwrap();
         assert_eq!(downcast.0, "trace-data");
+    }
+
+    #[test]
+    fn empty_finish_reason_deserializes_as_none() {
+        let json = r#"{
+            "index": 0,
+            "delta": {"content": "hi"},
+            "finish_reason": ""
+        }"#;
+        let choice: ChatChunkChoice = serde_json::from_str(json).expect("empty finish_reason");
+        assert!(choice.finish_reason.is_none());
+
+        let json = r#"{
+            "index": 0,
+            "message": {"role": "assistant", "content": "hi"},
+            "finish_reason": ""
+        }"#;
+        let choice: ChatChoice = serde_json::from_str(json).expect("empty finish_reason");
+        assert!(choice.finish_reason.is_none());
     }
 }

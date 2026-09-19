@@ -672,7 +672,7 @@ pub(crate) fn parse_remote_model_value(
             "messages" => Some(crate::sampling::ApiBackend::Messages),
             _ => None,
         })
-        .unwrap_or_default();
+        .unwrap_or(crate::sampling::ApiBackend::Responses);
     Some(crate::agent::config::ModelEntryConfig {
         id,
         model,
