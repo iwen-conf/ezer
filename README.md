@@ -154,19 +154,14 @@ In the Responses SSE loop, after `json.loads` of each `data:` payload:
 
 ```python
 # Keep call_id; fill item_id when the upstream omitted it.
-# Prefer the function_call item's id (fc_…) if you already have it.
+# Optional: if you already tracked the function_call item id (fc_…) from
+# response.output_item.added, prefer that over call_id.
 FC_ARG_TYPES = (
     "response.function_call_arguments.delta",
     "response.function_call_arguments.done",
 )
-if payload.get("type") in FC_ARG_TYPES:
-    item_id = payload.get("item_id")
-    if not item_id:
-        payload["item_id"] = (
-            payload.get("call_id")
-            or function_call_item_id  # if you tracked output_item.added
-            or ""
-        )
+if payload.get("type") in FC_ARG_TYPES and not payload.get("item_id"):
+    payload["item_id"] = payload.get("call_id") or ""
 ```
 
 Also keep `item.id` and `item.call_id` on `response.output_item.added` / `.done` function_call items (those already look fine in the fixture).
