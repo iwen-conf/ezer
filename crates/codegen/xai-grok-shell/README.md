@@ -236,7 +236,7 @@ The command runs through the platform shell — `sh -c` on macOS/Linux, `cmd /C`
 
 > **Windows:** write the path as a TOML *literal* string (single quotes) so backslashes survive: `auth_provider_command = 'C:\corp\ezer-auth.exe'`. Inside a double-quoted TOML string `\t`, `\n`, `\r`, `\b` and `\f` are escape sequences, so `"C:\temp\auth.exe"` parses into a path containing a tab character and the provider fails to start — after which ezer falls back to browser login as if the setting were ignored.
 
-When `auth_provider_label` is set, the TUI welcome screen shows **"Login with Acme Corp"** instead of "Login with grok.com". In headless mode (`ezer -p`), the label has no effect — stderr from your binary is printed directly to the terminal.
+When `auth_provider_label` is set, the TUI welcome screen shows **"Login with Acme Corp"** instead of the default login label. In headless mode (`ezer -p`), the label has no effect — stderr from your binary is printed directly to the terminal.
 
 > **Enterprise setup:** For a complete enterprise `config.toml` combining external auth, corporate proxy, and telemetry settings, see [Enterprise Deployment](#enterprise-deployment) in the Configuration section.
 

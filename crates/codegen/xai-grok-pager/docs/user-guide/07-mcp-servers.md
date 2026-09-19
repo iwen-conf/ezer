@@ -78,7 +78,7 @@ rmcp OAuth client and keep its own behavior (no default `User-Agent`). A valid
 `User-Agent` entry in the server's `headers` overrides the default; an invalid
 configured `User-Agent` value is dropped by header parsing (with a warning), so such a
 server still receives the default. Exception: Figma MCP servers (server name `figma`,
-legacy managed name `grok_com_figma`, or a `figma.com` host — all case-insensitive)
+legacy managed Figma name, or a `figma.com` host — all case-insensitive)
 send the bare token `ezer-cli` with no version unless the config supplies its own
 `User-Agent`.
 
@@ -191,7 +191,7 @@ MCP tools are namespaced with the server name to avoid collisions. The catalog k
 
 ### What ezer admits
 
-ezer admits a listed tool into the session catalog when all of these hold (`xai-grok-mcp` `qualify_mcp_tool_name`):
+ezer admits a listed tool into the session catalog when all of these hold (MCP tool-name qualifier):
 
 | Part | Rule |
 | --- | --- |

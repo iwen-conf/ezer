@@ -57,13 +57,13 @@ Typical clients: IDE extensions (Zed, Neovim, Emacs), custom tools, and ACP SDKs
 Agent options apply to every transport (`stdio`, `serve`, `headless`, `leader`). They go after `agent` and before the mode name. Mode-specific flags go after the mode (for example `serve --bind`).
 
 ```bash
-ezer agent --always-approve --model grok-4.6 stdio
+ezer agent --always-approve --model workbuddy stdio
 ezer agent --always-approve serve --bind 127.0.0.1:2419 --secret <token>
 ```
 
 | Flag | Description |
 | ---- | ----------- |
-| `-m, --model <MODEL>` | Model ID (for example `grok-4.6`). |
+| `-m, --model <MODEL>` | Model ID (for example `workbuddy`). |
 | `--always-approve` | Run without interactive tool-permission prompts. Alias: `--yolo`. |
 | `--reauth` | Authenticate before the agent starts. |
 | `--agent-profile <PATH>` | Load an agent profile from a file. |
@@ -248,7 +248,7 @@ Official SDK libraries are available for multiple languages:
 import { spawn, ChildProcess } from "child_process";
 import * as readline from "readline";
 
-class GrokACPChat {
+class EzerACPChat {
   private proc!: ChildProcess;
   private sessionId!: string;
   private rl!: readline.Interface;
@@ -313,7 +313,7 @@ class GrokACPChat {
 }
 
 // Usage
-const client = await new GrokACPChat(".").init();
+const client = await new EzerACPChat(".").init();
 
 for await (const update of client.streamPrompt("List the files in this project")) {
   switch (update.sessionUpdate) {

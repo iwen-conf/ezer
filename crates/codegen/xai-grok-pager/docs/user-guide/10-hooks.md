@@ -70,7 +70,7 @@ Hooks are discovered from several places (all are merged):
 | Project | `<project>/.claude/settings.json` (and `settings.local.json`) | Requires trust | Claude compatibility (configurable) |
 | Project | `<project>/.cursor/hooks.json` | Requires trust | Cursor compatibility (configurable) |
 | Config | `~/.ezer/config.toml` | Always | Your hooks alongside the rest of your config |
-| Config | `managed_config.toml` (`$GROK_HOME` and `/etc/ezer`) | Always | Organization-distributed hooks (server-synced and on-device) |
+| Config | `managed_config.toml` (`$EZER_HOME` and `/etc/ezer`) | Always | Organization-distributed hooks (server-synced and on-device) |
 | Config | `requirements.toml` (user and system) | Always | Organization-distributed hooks in the requirements layer |
 | Plugin | Bundled inside installed plugins | Per-plugin | Shared team hooks |
 
@@ -199,7 +199,7 @@ Hooks can also live directly in your ezer config, so a team can distribute them 
 | File | Tier | Who sets it |
 |------|------|-------------|
 | `~/.ezer/config.toml` | User | You |
-| `managed_config.toml` (`$GROK_HOME`, `/etc/ezer`) | Managed / system | Your organization |
+| `managed_config.toml` (`$EZER_HOME`, `/etc/ezer`) | Managed / system | Your organization |
 | `requirements.toml` (user and system) | Requirements | Your organization |
 
 The TOML is structurally identical to the JSON hook object, so an existing hook transliterates directly:

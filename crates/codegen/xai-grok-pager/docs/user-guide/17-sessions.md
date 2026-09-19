@@ -15,7 +15,7 @@ A session is a persistent conversation with full history. It includes:
 - Token usage and turn counts
 - Subagent sessions (when enabled)
 
-Sessions are identified by a unique session ID (a UUIDv7 when ezer generates it; a client may supply its own ID with `-s`) and stored on disk under `~/.ezer/sessions/`. Set `GROK_HOME` to override the base directory; when it is unset, ezer uses `~/.ezer`.
+Sessions are identified by a unique session ID (a UUIDv7 when ezer generates it; a client may supply its own ID with `-s`) and stored on disk under `~/.ezer/sessions/`. Set `EZER_HOME` to override the base directory; when it is unset, ezer uses `~/.ezer`.
 
 ---
 
@@ -188,7 +188,7 @@ This shows:
 
 - Session title (when set)
 - Shell version
-- Auth method (OAuth vs API key; API-key sessions also suggest `ezer login` for SuperGrok)
+- Auth method (OAuth vs API key; API-key sessions also suggest `ezer login` for a paid plan)
 - Session ID
 - Working directory
 - Model (with a model hash for coding models)
@@ -249,7 +249,7 @@ await connection.request("session/load", {
 await connection.request("session/set_config_option", {
   sessionId,
   configId: "model",
-  value: { value: "grok-4.6" },
+  value: { value: "workbuddy" },
 });
 ```
 

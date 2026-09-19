@@ -51,13 +51,13 @@ ezer -p "Hello" -m workbuddy
 In the TUI, switch models during a session:
 
 ```
-/model grok-4.6
+/model workbuddy
 ```
 
 Or use the alias:
 
 ```
-/m grok-4.6
+/m workbuddy
 ```
 
 ### Model Picker (Ctrl+M)
@@ -70,8 +70,8 @@ Enterprise hosts can pin the **selectable** set — not only the default — in 
 
 ```toml
 [models]
-default = "grok-4.5"
-allowed_models = ["grok-4.5", "grok-4*"]
+default = "workbuddy"
+allowed_models = ["workbuddy", "workbuddy*"]
 ```
 
 A fleet pin matches the **model id** (not a user-chosen catalog key), so a local `[model.<name>]` entry cannot widen the set. User-config `allowed_models` still matches catalog key or model id. Omit the key to leave user config standing. An empty array is unrestricted. A present-but-unreadable pin fail-closes (nothing selectable). A default or `-m` value outside the pinned set is rejected once the model catalog is fetched — contact your administrator; the list is not user-editable.
@@ -82,7 +82,7 @@ Set a persistent default in `~/.ezer/config.toml`:
 
 ```toml
 [models]
-default = "grok-4.5"
+default = "workbuddy"
 ```
 
 ---
@@ -210,11 +210,11 @@ You can override specific fields of built-in models without redefining everythin
 
 ```toml
 # Override only the API key for a default model
-[model.grok-4.6]
+[model.workbuddy]
 api_key = "my-api-key"
 
 # Override temperature and add a custom API key
-[model.grok-4.6]
+[model.workbuddy]
 temperature = 0.5
 api_key = "sk-custom"
 ```
@@ -283,8 +283,8 @@ Bedrock's OpenAI-compatible gateway rejects `reasoning.summary`, so set `reasoni
 command = "aws-bedrock-token"   # prints a Bedrock API key on stdout (e.g. via aws-bedrock-token-generator)
 token_ttl_secs = 3600
 
-[model."bedrock-grok-4.6"]
-model = "xai.grok-4.6"
+[model."bedrock-workbuddy"]
+model = "workbuddy"
 base_url = "https://bedrock-mantle.us-west-2.api.aws/openai/v1"
 name = "ezer 4.6 (Bedrock)"
 api_backend = "responses"
@@ -357,7 +357,7 @@ ezer
 models_base_url = "https://api.acme.com/v1"
 
 # Override only the API key for a specific model
-[model.grok-4.6]
+[model.workbuddy]
 api_key = "my-api-key"
 ```
 
@@ -375,13 +375,13 @@ The `web_search` tool uses a separate model. Configure it with:
 
 ```toml
 [models]
-web_search = "grok-4.5"
+web_search = "workbuddy"
 ```
 
 Or via environment variable:
 
 ```bash
-export EZER_WEB_SEARCH_MODEL="grok-4.5"
+export EZER_WEB_SEARCH_MODEL="workbuddy"
 ```
 
 If you point web search at a custom model, you also need a `[model.*]` entry so ezer can reach it. Server-side ("backend") web search runs only when the model sets `supports_backend_search = true` (and the build enables backend search); it does not depend on `api_backend`:
@@ -433,7 +433,7 @@ auth_token_ttl = 3600
 default = "company-ezer"
 
 [model.company-ezer]
-model = "grok-4.6"
+model = "workbuddy"
 base_url = "https://ezer-proxy.acme.com/"
 name = "ezer 4.6 (Proxy)"
 context_window = 128000

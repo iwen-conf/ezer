@@ -17,19 +17,19 @@ Choose `managed_config.toml` for defaults you want people to be able to adjust, 
 ezer also reads these layers, later rows winning except where a requirements pin or the Managed column says otherwise.
 
 1. Compiled defaults.
-2. `/etc/ezer/managed_config.toml`, then `$GROK_HOME/managed_config.toml` (fleet defaults; console-synced).
-3. `$GROK_HOME/config.toml` (your settings; `/settings` writes here). Default `$GROK_HOME` is `~/.ezer`.
+2. `/etc/ezer/managed_config.toml`, then `$EZER_HOME/managed_config.toml` (fleet defaults; console-synced).
+3. `$EZER_HOME/config.toml` (your settings; `/settings` writes here). Default `$EZER_HOME` is `~/.ezer`.
 4. Project `.ezer/config.toml`: only `[mcp_servers]`, `[plugins]`, `[permission]`, and `[mcp] max_output_bytes`.
 5. `EZER_CONFIG` (inline JSON) or `EZER_CONFIG_PATH` (JSON or TOML file). Allowlisted keys only.
-6. `$GROK_HOME/requirements.toml`, then `/etc/ezer/requirements.toml`, then macOS MDM `ai.x.ezer`. Admin layer. Keys marked `pin` in the table cannot be overridden; keys marked `yes` are also valid in this file.
-7. `GROK_*` environment variables.
+6. `$EZER_HOME/requirements.toml`, then `/etc/ezer/requirements.toml`, then macOS MDM `ai.x.ezer`. Admin layer. Keys marked `pin` in the table cannot be overridden; keys marked `yes` are also valid in this file.
+7. `EZER_*` environment variables.
 8. CLI flags such as `--model`, `--sandbox`, `--yolo`.
 
 Run `ezer inspect` or `ezer inspect --json` to see which files and values won.
 
 ## config.toml
 
-User-level configuration lives in `$GROK_HOME/config.toml` (default `~/.ezer/config.toml`; Windows `%USERPROFILE%\.ezer\config.toml`). Project-scoped overrides live in `.ezer/config.toml` and only contribute `[mcp_servers]`, `[plugins]`, `[permission]`, and `[mcp] max_output_bytes`.
+User-level configuration lives in `$EZER_HOME/config.toml` (default `~/.ezer/config.toml`; Windows `%USERPROFILE%\.ezer\config.toml`). Project-scoped overrides live in `.ezer/config.toml` and only contribute `[mcp_servers]`, `[plugins]`, `[permission]`, and `[mcp] max_output_bytes`.
 
 **Requirements** marks whether the same key can be set in `requirements.toml`: `pin` cannot be overridden (including env and CLI where the resolver honors the pin); `yes` is accepted in that file; `—` is not read from `requirements.toml`. **Managed** marks whether a fleet `managed_config.toml` value stands (`fleet`) or the user's file wins (`user`).
 
@@ -51,28 +51,28 @@ User-level configuration lives in `$GROK_HOME/config.toml` (default `~/.ezer/con
 
 | Key | Type / Values | Requirements | Managed | Details |
 | --- | --- | --- | --- | --- |
-| `auth` | `table` | `yes` | `user` | Alias of `[grok_com_config]`; every `grok_com_config.*` key also works as `auth.*`. |
-| `auth.auth_provider_command` | `string` | `yes` | `user` | External auth binary; stdout is the token. Also EZER_AUTH_PROVIDER_COMMAND; also valid as `grok_com_config.auth_provider_command`. |
-| `auth.auth_provider_label` | `string` | `yes` | `user` | Login button label for an external auth provider. Also EZER_AUTH_PROVIDER_LABEL; also valid as `grok_com_config.auth_provider_label`. |
-| `auth.auth_token_ttl` | `number` | `yes` | `user` | Token TTL in seconds for providers that return a bare token. Also EZER_AUTH_TOKEN_TTL; also valid as `grok_com_config.auth_token_ttl`. |
-| `auth.disable_api_key_auth` | `boolean` | `pin` | `user` | Refuse API-key auth so only the deployment IdP can log in. Also EZER_DISABLE_API_KEY_AUTH; also valid as `grok_com_config.disable_api_key_auth`. |
-| `auth.force_login_team_uuid` | `string / string[]` | `pin` | `user` | Require login to this team UUID, or any of an array; empty array fails closed. Also EZER_FORCE_LOGIN_TEAM_ID; also valid as `grok_com_config.force_login_team_uuid`. |
-| `auth.grok_ws_origin` | `string` | `yes` | `user` | Websocket origin for grok.com. Also EZER_WS_ORIGIN; also valid as `grok_com_config.grok_ws_origin`. |
-| `auth.grok_ws_url` | `string` | `yes` | `user` | Relay websocket URL. Also EZER_WS_URL; also valid as `grok_com_config.grok_ws_url`. |
-| `auth.oauth2` | `table` | `yes` | `user` | OAuth2 provider used when enterprise OIDC is unset; also valid as `grok_com_config.oauth2`. |
-| `auth.oauth2.client_id` | `string` | `yes` | `user` | OAuth2 client id. Also EZER_OAUTH2_CLIENT_ID; also valid as `grok_com_config.oauth2.client_id`. |
-| `auth.oauth2.issuer` | `string` | `yes` | `user` | OAuth2 issuer URL. Also EZER_OAUTH2_ISSUER; also valid as `grok_com_config.oauth2.issuer`. |
-| `auth.oauth2.principal_id` | `string` | `yes` | `user` | Required principal id when `principal_type` is set. Also EZER_OAUTH2_PRINCIPAL_ID; also valid as `grok_com_config.oauth2.principal_id`. |
-| `auth.oauth2.principal_type` | `string` | `yes` | `user` | Token principal type, such as Team. Also EZER_OAUTH2_PRINCIPAL_TYPE; also valid as `grok_com_config.oauth2.principal_type`. |
-| `auth.oauth2.referrer` | `string` | `yes` | `user` | Referrer for OAuth usage attribution. Also EZER_OAUTH2_REFERRER; also valid as `grok_com_config.oauth2.referrer`. |
-| `auth.oauth2.scopes` | `string[]` | `yes` | `user` | OAuth2 scopes. Also EZER_OAUTH2_SCOPES; also valid as `grok_com_config.oauth2.scopes`. |
-| `auth.oidc` | `table` | `yes` | `user` | Customer OIDC identity-provider settings; also valid as `grok_com_config.oidc`. |
-| `auth.oidc.audience` | `string` | `yes` | `user` | Optional OIDC audience. Also EZER_OIDC_AUDIENCE; also valid as `grok_com_config.oidc.audience`. |
-| `auth.oidc.client_id` | `string` | `yes` | `user` | OIDC client id. Also EZER_OIDC_CLIENT_ID; also valid as `grok_com_config.oidc.client_id`. |
-| `auth.oidc.issuer` | `string` | `yes` | `user` | OIDC issuer URL. Also EZER_OIDC_ISSUER; also valid as `grok_com_config.oidc.issuer`. |
-| `auth.oidc.scopes` | `string[]` | `yes` | `user` | OIDC scopes. Also EZER_OIDC_SCOPES; also valid as `grok_com_config.oidc.scopes`. |
-| `auth.preferred_method` | `api_key / oidc` | `yes` | `user` | Pin automatic auth to one method with no fallthrough; also valid as `grok_com_config.preferred_method`. |
-| `auth.token_header` | `string` | `yes` | `user` | Header name that carries the CLI auth token; default `xai-grok-cli`; also valid as `grok_com_config.token_header`. |
+| `auth` | `table` | `yes` | `user` | Browser / OIDC / external-provider auth settings. |
+| `auth.auth_provider_command` | `string` | `yes` | `user` | External auth binary; stdout is the token. Also EZER_AUTH_PROVIDER_COMMAND. |
+| `auth.auth_provider_label` | `string` | `yes` | `user` | Login button label for an external auth provider. Also EZER_AUTH_PROVIDER_LABEL. |
+| `auth.auth_token_ttl` | `number` | `yes` | `user` | Token TTL in seconds for providers that return a bare token. Also EZER_AUTH_TOKEN_TTL. |
+| `auth.disable_api_key_auth` | `boolean` | `pin` | `user` | Refuse API-key auth so only the deployment IdP can log in. Also EZER_DISABLE_API_KEY_AUTH. |
+| `auth.force_login_team_uuid` | `string / string[]` | `pin` | `user` | Require login to this team UUID, or any of an array; empty array fails closed. Also EZER_FORCE_LOGIN_TEAM_ID. |
+| `auth.ws_origin` | `string` | `yes` | `user` | Optional websocket origin for an xAI relay. Also EZER_WS_ORIGIN. |
+| `auth.ws_url` | `string` | `yes` | `user` | Optional relay websocket URL. Also EZER_WS_URL. |
+| `auth.oauth2` | `table` | `yes` | `user` | OAuth2 provider used when enterprise OIDC is unset. |
+| `auth.oauth2.client_id` | `string` | `yes` | `user` | OAuth2 client id. Also EZER_OAUTH2_CLIENT_ID. |
+| `auth.oauth2.issuer` | `string` | `yes` | `user` | OAuth2 issuer URL. Also EZER_OAUTH2_ISSUER. |
+| `auth.oauth2.principal_id` | `string` | `yes` | `user` | Required principal id when `principal_type` is set. Also EZER_OAUTH2_PRINCIPAL_ID. |
+| `auth.oauth2.principal_type` | `string` | `yes` | `user` | Token principal type, such as Team. Also EZER_OAUTH2_PRINCIPAL_TYPE. |
+| `auth.oauth2.referrer` | `string` | `yes` | `user` | Referrer for OAuth usage attribution. Also EZER_OAUTH2_REFERRER. |
+| `auth.oauth2.scopes` | `string[]` | `yes` | `user` | OAuth2 scopes. Also EZER_OAUTH2_SCOPES. |
+| `auth.oidc` | `table` | `yes` | `user` | Customer OIDC identity-provider settings. |
+| `auth.oidc.audience` | `string` | `yes` | `user` | Optional OIDC audience. Also EZER_OIDC_AUDIENCE. |
+| `auth.oidc.client_id` | `string` | `yes` | `user` | OIDC client id. Also EZER_OIDC_CLIENT_ID. |
+| `auth.oidc.issuer` | `string` | `yes` | `user` | OIDC issuer URL. Also EZER_OIDC_ISSUER. |
+| `auth.oidc.scopes` | `string[]` | `yes` | `user` | OIDC scopes. Also EZER_OIDC_SCOPES. |
+| `auth.preferred_method` | `api_key / oidc` | `yes` | `user` | Pin automatic auth to one method with no fallthrough. |
+| `auth.token_header` | `string` | `yes` | `user` | Header name that carries the CLI auth token. |
 
 ### `auth_provider`
 
@@ -147,7 +147,7 @@ User-level configuration lives in `$GROK_HOME/config.toml` (default `~/.ezer/con
 
 | Key | Type / Values | Requirements | Managed | Details |
 | --- | --- | --- | --- | --- |
-| `diagnostics.crash_handler` | `boolean` | `yes` | `user` | Write a panic report under `$GROK_HOME/crash/`. Also EZER_CRASH_HANDLER. |
+| `diagnostics.crash_handler` | `boolean` | `yes` | `user` | Write a panic report under `$EZER_HOME/crash/`. Also EZER_CRASH_HANDLER. |
 
 ### `disable_web_search`
 
@@ -250,33 +250,6 @@ User-level configuration lives in `$GROK_HOME/config.toml` (default `~/.ezer/con
 | Key | Type / Values | Requirements | Managed | Details |
 | --- | --- | --- | --- | --- |
 | `goal.enabled` | `boolean` | `yes` | `user` | Enable `/goal`. |
-
-### `grok_com_config`
-
-| Key | Type / Values | Requirements | Managed | Details |
-| --- | --- | --- | --- | --- |
-| `grok_com_config` | `table` | `yes` | `user` | Grok.com websocket and OAuth/OIDC settings. `[auth]` is an alias. |
-| `grok_com_config.auth_provider_command` | `string` | `yes` | `user` | External auth binary; stdout is the token. Also EZER_AUTH_PROVIDER_COMMAND. |
-| `grok_com_config.auth_provider_label` | `string` | `yes` | `user` | Login button label for an external auth provider. Also EZER_AUTH_PROVIDER_LABEL. |
-| `grok_com_config.auth_token_ttl` | `number` | `yes` | `user` | Token TTL in seconds for providers that return a bare token. Also EZER_AUTH_TOKEN_TTL. |
-| `grok_com_config.disable_api_key_auth` | `boolean` | `pin` | `user` | Refuse API-key auth so only the deployment IdP can log in. Also EZER_DISABLE_API_KEY_AUTH. |
-| `grok_com_config.force_login_team_uuid` | `string / string[]` | `pin` | `user` | Require login to this team UUID, or any of an array; empty array fails closed. Also EZER_FORCE_LOGIN_TEAM_ID. |
-| `grok_com_config.grok_ws_origin` | `string` | `yes` | `user` | Websocket origin for grok.com. Also EZER_WS_ORIGIN. |
-| `grok_com_config.grok_ws_url` | `string` | `yes` | `user` | Relay websocket URL. Also EZER_WS_URL. |
-| `grok_com_config.oauth2` | `table` | `yes` | `user` | OAuth2 provider used when enterprise OIDC is unset. |
-| `grok_com_config.oauth2.client_id` | `string` | `yes` | `user` | OAuth2 client id. Also EZER_OAUTH2_CLIENT_ID. |
-| `grok_com_config.oauth2.issuer` | `string` | `yes` | `user` | OAuth2 issuer URL. Also EZER_OAUTH2_ISSUER. |
-| `grok_com_config.oauth2.principal_id` | `string` | `yes` | `user` | Required principal id when `principal_type` is set. Also EZER_OAUTH2_PRINCIPAL_ID. |
-| `grok_com_config.oauth2.principal_type` | `string` | `yes` | `user` | Token principal type, such as Team. Also EZER_OAUTH2_PRINCIPAL_TYPE. |
-| `grok_com_config.oauth2.referrer` | `string` | `yes` | `user` | Referrer for OAuth usage attribution. Also EZER_OAUTH2_REFERRER. |
-| `grok_com_config.oauth2.scopes` | `string[]` | `yes` | `user` | OAuth2 scopes. Also EZER_OAUTH2_SCOPES. |
-| `grok_com_config.oidc` | `table` | `yes` | `user` | Customer OIDC identity-provider settings. |
-| `grok_com_config.oidc.audience` | `string` | `yes` | `user` | Optional OIDC audience. Also EZER_OIDC_AUDIENCE. |
-| `grok_com_config.oidc.client_id` | `string` | `yes` | `user` | OIDC client id. Also EZER_OIDC_CLIENT_ID. |
-| `grok_com_config.oidc.issuer` | `string` | `yes` | `user` | OIDC issuer URL. Also EZER_OIDC_ISSUER. |
-| `grok_com_config.oidc.scopes` | `string[]` | `yes` | `user` | OIDC scopes. Also EZER_OIDC_SCOPES. |
-| `grok_com_config.preferred_method` | `api_key / oidc` | `yes` | `user` | Pin automatic auth to one method with no fallthrough. |
-| `grok_com_config.token_header` | `string` | `yes` | `user` | Header name that carries the CLI auth token; default `xai-grok-cli`. |
 
 ### `harness`
 
@@ -672,13 +645,13 @@ One exception to that rule:
 | --- | --- |
 | `features.remote_fetch` | The managed value wins over the developer's. |
 
-ezer reads `/etc/ezer/managed_config.toml` first, then `$GROK_HOME/managed_config.toml`, which the console keeps in sync. Values in the second replace values in the first.
+ezer reads `/etc/ezer/managed_config.toml` first, then `$EZER_HOME/managed_config.toml`, which the console keeps in sync. Values in the second replace values in the first.
 
 The **Managed** column on the tables above is the per-key answer: `fleet` means the fleet value stands, `user` means the user's file wins, `—` means this file is ignored.
 
 ## requirements.toml
 
-`requirements.toml` is an admin-enforced file. Locations: `$GROK_HOME/requirements.toml` (signed cache) then `/etc/ezer/requirements.toml`, then macOS MDM `ai.x.ezer`. The **Requirements** column on the `config.toml` tables lists every `config.toml` key this file accepts (`pin` or `yes`). Omitted keys stay unconstrained.
+`requirements.toml` is an admin-enforced file. Locations: `$EZER_HOME/requirements.toml` (signed cache) then `/etc/ezer/requirements.toml`, then macOS MDM `ai.x.ezer`. The **Requirements** column on the `config.toml` tables lists every `config.toml` key this file accepts (`pin` or `yes`). Omitted keys stay unconstrained.
 
 These keys exist only in `requirements.toml`:
 

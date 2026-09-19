@@ -22,7 +22,7 @@ Within the config-file tier, the layers merge lowest-to-highest: `managed_config
 
 ### Injecting config with `EZER_CONFIG`
 
-A harness or ACP client that launches `ezer agent stdio` can inject settings without writing a `config.toml` or relocating `$GROK_HOME`:
+A harness or ACP client that launches `ezer agent stdio` can inject settings without writing a `config.toml` or relocating `$EZER_HOME`:
 
 - **`EZER_CONFIG`**: an inline JSON object overlay.
 - **`EZER_CONFIG_PATH`**: an *additional* file overlay (not a replacement for `config.toml`), a JSON or TOML file read by its extension (`.json` → JSON, else TOML). `EZER_CONFIG` wins if both are set. An empty `EZER_CONFIG` is treated as unset, and a malformed one logs a warning and falls through to `EZER_CONFIG_PATH`.
@@ -46,11 +46,11 @@ Location: `~/.ezer/config.toml` (`EZER_HOME` override). If the file is missing o
 auto_update = true                     # check for updates on launch
 
 [models]
-default = "grok-4.5"                   # model used for new sessions
-web_search = "grok-4.5"                # model used by the web_search tool
+default = "workbuddy"                   # model used for new sessions
+web_search = "workbuddy"                # model used by the web_search tool
 # Optional picker allowlist (globs on catalog key or model id). Empty = unrestricted.
 # A signed policy pin replaces this list (model id only) and cannot be widened from here.
-# allowed_models = ["grok-4.5", "grok-4*"]
+# allowed_models = ["workbuddy", "workbuddy*"]
 
 # Defaults applied to every model; a per-model [model.<id>] value always wins.
 # See "Custom Models" for the per-model overrides and full details.
@@ -242,7 +242,7 @@ auth_provider_command = "/usr/local/bin/my-auth-provider"
 auth_provider_label = "Acme Corp"
 auth_token_ttl = 3600
 
-[grok_com_config.oidc]
+[auth.oidc]
 issuer = "https://acme.okta.com"
 client_id = "0oa1b2c3d4e5f6g7h8i9"
 # scopes = ["openid", "profile", "email", "offline_access", "api:access"]
@@ -274,7 +274,7 @@ Credential resolution: `api_key` > `env_key` > signed-in session token > `XAI_AP
 To override a built-in model, use its name as the section key and set only the fields you need:
 
 ```toml
-[model.grok-4.6]
+[model.workbuddy]
 api_key = "my-api-key"
 ```
 
@@ -351,7 +351,7 @@ explore = true                        # enable/disable specific types
 plan = false
 
 [subagents.models]
-explore = "grok-4.6"               # route to different models
+explore = "workbuddy"               # route to different models
 ```
 
 To pin the model a subagent uses, set its entry under `[subagents.models]`.
@@ -641,7 +641,7 @@ auth_token_ttl = 3600
 default = "company-ezer"
 
 [model.company-ezer]
-model = "grok-4.6"
+model = "workbuddy"
 base_url = "https://ezer-proxy.acme.com/"
 name = "ezer 4.6 (Proxy)"
 context_window = 128000
@@ -801,7 +801,7 @@ The key ones. See the README for the complete list.
 
 | Variable | Description |
 |----------|-------------|
-| `GROK_HOME` | Override config directory (default: `~/.ezer`) |
+| `EZER_HOME` | Override config directory (default: `~/.ezer`) |
 | `EZER_RESPECT_GITIGNORE` | Force gitignore filtering on (`1`) or off (`0`); overrides `[tools] respect_gitignore` |
 
 ### Telemetry

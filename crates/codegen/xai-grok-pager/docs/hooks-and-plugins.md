@@ -160,5 +160,5 @@ While an action is in progress, the modal shows "Processing..." and blocks input
 
 - [Creating Custom Hooks](custom-hooks.md) — step-by-step guide to writing your own hooks and scripts
 - [Hooks user guide](user-guide/10-hooks.md) — events, matchers, trust model
-- [Hook Examples](../../../xai-grok-hooks/examples/README.md) — ready-to-use sample hooks
+- Hook examples — ready-to-use sample hooks
 - [Plugins user guide](user-guide/09-plugins.md) — install, trust, and marketplace

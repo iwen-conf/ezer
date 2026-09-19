@@ -1,6 +1,6 @@
 # Authentication
 
-ezer is **BYOK-first**. The default path is an API key in `~/.ezer/config.toml` (or `EZER_API_KEY` / `XAI_API_KEY`) sent to your OpenAI-compatible gateway. Interactive xAI / grok.com browser login is optional and never required at startup.
+ezer is **BYOK-first**. The default path is an API key in `~/.ezer/config.toml` (or `EZER_API_KEY` / `XAI_API_KEY`) sent to your OpenAI-compatible gateway. Interactive xAI browser login is optional and never required at startup.
 
 ---
 
@@ -15,7 +15,7 @@ Or set `api_key` / `env_key` on a `[model.*]` entry. Requests send `Authorizatio
 
 ---
 
-## Optional browser login (xAI / grok.com)
+## Optional browser login (xAI)
 
 Disabled unless you set `EZER_ENABLE_XAI_LOGIN=1` or run `ezer --force-login`. When enabled, credentials are stored in `~/.ezer/auth.json`.
 
@@ -56,13 +56,13 @@ export EZER_API_KEY="your-gateway-key"
 ezer
 ```
 
-ezer uses the API key as the default BYOK path. Optional grok.com session tokens, if present, still take precedence for xAI routes. To clear them, run `ezer logout` or delete `~/.ezer/auth.json`.
+ezer uses the API key as the default BYOK path. Optional xAI session tokens, if present, still take precedence for xAI routes. To clear them, run `ezer logout` or delete `~/.ezer/auth.json`.
 
 ---
 
 ## OIDC (Customer SSO)
 
-Authenticate developers through your own Identity Provider (IdP) -- such as Okta, Azure AD, or Auth0 -- instead of grok.com.
+Authenticate developers through your own Identity Provider (IdP) -- such as Okta, Azure AD, or Auth0 -- instead of the optional xAI login.
 
 ### 1. Register a public client in your IdP
 
@@ -76,7 +76,7 @@ Via config file:
 
 ```toml
 # ~/.ezer/config.toml
-[grok_com_config.oidc]
+[auth.oidc]
 issuer = "https://acme.okta.com"
 client_id = "0oa1b2c3d4e5f6g7h8i9"
 ```
@@ -299,7 +299,7 @@ ezer resolves credentials for each request in this order, highest to lowest:
 When more than one login flow is configured, ezer populates the session token from the first available source, highest to lowest:
 
 1. **External auth provider** (`auth_provider_command`)
-2. **Enterprise OIDC** -- when OIDC is configured, through `[grok_com_config.oidc]` in `config.toml` or the `EZER_OIDC_ISSUER` and `EZER_OIDC_CLIENT_ID` environment variables
+2. **Enterprise OIDC** -- when OIDC is configured, through `[auth.oidc]` in `config.toml` or the `EZER_OIDC_ISSUER` and `EZER_OIDC_CLIENT_ID` environment variables
 3. **SpaceXAI OAuth2 browser login** -- the default
 
 During a session, the active method handles all mid-session refreshes.

@@ -1,6 +1,6 @@
 # Getting Started
 
-**ezer** is a terminal-based AI coding assistant (a standalone ezer fork). It runs as a TUI that understands your codebase, executes shell commands, edits files, searches the web, and manages tasks — using your own OpenAI-compatible gateway. No xAI / grok.com account is required.
+**ezer** is a terminal-based AI coding assistant (a standalone ezer fork). It runs as a TUI that understands your codebase, executes shell commands, edits files, searches the web, and manages tasks — using your own OpenAI-compatible gateway. No xAI account is required.
 
 You can use it interactively as a full-screen TUI, run it headlessly for scripting and CI/CD, or integrate it into editors via the Agent Client Protocol (ACP).
 
@@ -49,7 +49,7 @@ Start ezer by running:
 ezer
 ```
 
-On first launch ezer writes `~/.ezer/config.toml` with a BYOK Responses example pointed at `http://192.168.0.63:8788/v1`. Put your gateway key in that file (`api_key`) or in `EZER_API_KEY`. There is no grok.com login wall.
+On first launch ezer writes `~/.ezer/config.toml` with a BYOK Responses example pointed at `http://192.168.0.63:8788/v1`. Put your gateway key in that file (`api_key`) or in `EZER_API_KEY`. There is no browser login wall.
 
 ```bash
 export EZER_API_KEY="your-gateway-key"

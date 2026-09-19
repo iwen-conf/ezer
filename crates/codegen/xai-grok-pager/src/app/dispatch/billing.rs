@@ -232,7 +232,7 @@ fn open_supergrok_upsell(
             "free-usage-upsell",
         ),
         UpsellReason::RestrictedCommand => (
-            "Unlock all features with SuperGrok.",
+            "Unlock all features.",
             SuperGrokUpsell::RestrictedCommand,
             "restricted-command-upsell",
         ),
@@ -246,19 +246,19 @@ fn open_supergrok_upsell(
     // /supergrok lists all plans; every upgrade option lands there.
     let options = vec![
         QuestionOption {
-            label: "Upgrade to SuperGrok".into(),
+            label: "Upgrade".into(),
             description: "For everyday coding and productivity tasks".into(),
             preview: None,
             id: Some(UPSELL_URL_UPGRADE.into()),
         },
         QuestionOption {
-            label: "Upgrade to SuperGrok Plus".into(),
+            label: "Upgrade Plus".into(),
             description: "Significantly higher usage and rate limits".into(),
             preview: None,
             id: Some(UPSELL_URL_UPGRADE.into()),
         },
         QuestionOption {
-            label: "Upgrade to SuperGrok Heavy".into(),
+            label: "Upgrade Heavy".into(),
             description: "Get the most out of ezer. Highest usage limits.".into(),
             preview: None,
             id: Some(UPSELL_URL_UPGRADE.into()),

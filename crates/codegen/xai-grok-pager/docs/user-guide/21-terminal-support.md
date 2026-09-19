@@ -155,7 +155,7 @@ When an SSH session is not using `ezer wrap`, ezer shows the one-time tip
 “Run `/doctor` for details and fixes.” The tip stops appearing after the session
 is launched through wrap. Turn it off with `/settings` → **Show contextual
 hints** → **SSH wrap**, or set `ssh_wrap = false` under
-`[ui.contextual_hints]` in `$GROK_HOME/config.toml`. This setting does not hide
+`[ui.contextual_hints]` in `$EZER_HOME/config.toml`. This setting does not hide
 the Doctor recommendation.
 
 For repeated SSH use, Doctor offers `ezer doctor fix ssh-wrap`. It also shows
