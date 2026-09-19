@@ -110,18 +110,77 @@ EZER_HOME="$HOME/.ezer" ezer --version
 EZER_HOME="$HOME/.ezer" ezer -p "Reply with the word pong only."
 ```
 
-### Gateway wire notes (for WorkBuddy / `wb_proxy.py`)
+### Gateway wire notes (for WorkBuddy / `wb_proxy.py` on the LAN host)
 
-Observed / handled on the ezer client (do **not** require a live 63 test from CI):
+The cloud agent cannot SSH to `192.168.0.63`. Patch the hub there if you want stock OpenAI Responses. ezer still ships a **defensive client inject** so a missing `item_id` does not drop the tool-call stream.
 
-| Quirk | Client behavior |
-| --- | --- |
-| `response.function_call_arguments.delta` / `.done` omits `item_id`, sends `call_id` | Inject `item_id` from `call_id` (or `""`) before async-openai deserialize |
-| Empty `finish_reason` on some Chat Completions streams | Treat as unset |
-| Rich `/v1/models` (`id` only, dotted slugs) | Parse `id` as the wire model; default `api_backend = responses` |
-| Session title using compiled `grok-4.6` | Use the active BYOK model (avoids 402 on free models) |
+#### Mismatch that breaks typed Responses clients
 
-If you patch the hub on the LAN host, emitting `item_id` on function-call SSE (equal to `call_id` is fine) matches stock OpenAI Responses.
+async-openai requires `item_id: String` on:
+
+- `response.function_call_arguments.delta`
+- `response.function_call_arguments.done`
+
+WorkBuddy2API-Hub often emits `call_id` only. Raw event (this is what the ezer mock fixture replays):
+
+```json
+{
+  "type": "response.function_call_arguments.delta",
+  "sequence_number": 2,
+  "call_id": "call_wb_1",
+  "output_index": 0,
+  "delta": "{\"path\":\"README.md\"}"
+}
+```
+
+Stock OpenAI Responses includes `item_id` (the function-call item id, e.g. `fc_…`). Copying `call_id` is enough for ezer:
+
+```json
+{
+  "type": "response.function_call_arguments.delta",
+  "sequence_number": 2,
+  "item_id": "call_wb_1",
+  "call_id": "call_wb_1",
+  "output_index": 0,
+  "delta": "{\"path\":\"README.md\"}"
+}
+```
+
+Same for `.done` (`arguments` + optional `name` instead of `delta`).
+
+#### Suggested `wb_proxy.py` SSE rewrite (LAN host only)
+
+In the Responses SSE loop, after `json.loads` of each `data:` payload:
+
+```python
+# Keep call_id; fill item_id when the upstream omitted it.
+# Prefer the function_call item's id (fc_…) if you already have it.
+FC_ARG_TYPES = (
+    "response.function_call_arguments.delta",
+    "response.function_call_arguments.done",
+)
+if payload.get("type") in FC_ARG_TYPES:
+    item_id = payload.get("item_id")
+    if not item_id:
+        payload["item_id"] = (
+            payload.get("call_id")
+            or function_call_item_id  # if you tracked output_item.added
+            or ""
+        )
+```
+
+Also keep `item.id` and `item.call_id` on `response.output_item.added` / `.done` function_call items (those already look fine in the fixture).
+
+ezer client inject (do not remove): `xai_grok_sampler::client::inject_item_id_from_call_id` copies `call_id` → `item_id` when `item_id` is missing, null, or `""`. Tests: `deserialize_function_call_arguments_*` and `tests/workbuddy_responses.rs`.
+
+#### Other observed quirks
+
+| Quirk | Client behavior | Optional gateway patch |
+| --- | --- | --- |
+| `function_call_arguments.*` omits `item_id`, sends `call_id` | Inject `item_id` from `call_id` (or `""`) | Emit `item_id` as above |
+| Empty `finish_reason` on some Chat Completions streams | Treat as unset | Prefer Responses; or omit empty `finish_reason` |
+| Rich `/v1/models` (`id` only, dotted slugs) | Parse `id` as the wire model; default `api_backend = responses` | Keep `id` as the wire slug (`deepseek-v4.1-flash`, `hy4-preview-f`, `hy3`) |
+| Session title using compiled `grok-4.6` | Use the active BYOK model (avoids 402 on free models) | n/a (client-only) |
 
 **Home override:**
 

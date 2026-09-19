@@ -28,6 +28,8 @@ env_key = ["EZER_API_KEY", "XAI_API_KEY"]
 
 `ezer models` lists the catalog (built-in entries plus `GET {base}/v1/models` when `models_base_url` is set). Model ids such as `deepseek-v4.1-flash`, `hy4-preview-f`, and `hy3` are treated as opaque slugs.
 
+WorkBuddy-style gateways that omit `item_id` on `response.function_call_arguments.delta` / `.done` still work: ezer copies `call_id` into `item_id` before deserialize. To match stock OpenAI on the hub itself, see the `wb_proxy.py` notes in the repository README (do not SSH to the LAN host from CI).
+
 List all available models:
 
 ```bash
