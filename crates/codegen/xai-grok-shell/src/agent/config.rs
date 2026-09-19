@@ -491,8 +491,10 @@ impl Default for EndpointsConfig {
             xai_api_base_url: std::env::var("GROK_XAI_API_BASE_URL")
                 .unwrap_or_else(|_| XAI_API_BASE_URL_DEFAULT.to_owned()),
             alpha_test_key: None,
-            models_base_url: env_string("GROK_MODELS_BASE_URL"),
-            models_list_url: env_string("GROK_MODELS_LIST_URL"),
+            models_base_url: env_string("EZER_MODELS_BASE_URL")
+                .or_else(|| env_string("GROK_MODELS_BASE_URL")),
+            models_list_url: env_string("EZER_MODELS_LIST_URL")
+                .or_else(|| env_string("GROK_MODELS_LIST_URL")),
             feedback_base_url: env_string("GROK_FEEDBACK_BASE_URL"),
             trace_upload_url: env_string("GROK_TRACE_UPLOAD_URL"),
             trace_upload_bucket: env_string("GROK_TRACE_UPLOAD_BUCKET"),
@@ -3699,7 +3701,7 @@ pub struct ModelEntryConfig {
     /// If not set, falls back to XAI_API_KEY.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub env_key: Option<EnvKeys>,
-    /// Values: "chat_completions" (default), "responses"
+    /// Values: "responses" (default for new custom models), "chat_completions", "messages"
     #[serde(default)]
     pub api_backend: ApiBackend,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -3861,6 +3863,7 @@ pub struct ConfigModelOverride {
     pub auth_provider: Option<String>,
     pub model_provider: Option<String>,
     pub api_base_url: Option<String>,
+    pub auth_scheme: Option<AuthScheme>,
     pub max_completion_tokens: Option<u32>,
     pub temperature: Option<f32>,
     pub top_p: Option<f32>,
@@ -3905,6 +3908,7 @@ impl ConfigModelOverride {
         base: Option<ModelEntry>,
         endpoints: &EndpointsConfig,
     ) -> ModelEntry {
+        let had_base = base.is_some();
         let mut entry = base.unwrap_or_else(|| ModelEntry::fallback(key, endpoints));
         if let Some(ref v) = self.model {
             entry.info.model = v.clone();
@@ -3938,6 +3942,12 @@ impl ConfigModelOverride {
         }
         if let Some(ref v) = self.api_backend {
             entry.info.api_backend = v.clone();
+        } else if !had_base {
+            // BYOK / custom models default to OpenAI Responses.
+            entry.info.api_backend = ApiBackend::Responses;
+        }
+        if let Some(scheme) = self.auth_scheme {
+            entry.info.auth_scheme = scheme;
         }
         if !self.extra_headers.is_empty() {
             entry.info.extra_headers = self.extra_headers.clone();
@@ -4919,6 +4929,35 @@ pub(crate) fn resolve_aux_model_sampling_config(
     );
     None
 }
+
+/// Compiled xAI catalog slugs (`grok-4.6`, …) 402 on free BYOK gateways.
+/// Session title / image-describe / similar aux calls should use the active model instead.
+pub(crate) fn is_compiled_xai_catalog_slug(model: &str) -> bool {
+    model.starts_with("grok-")
+}
+
+/// Prefer the active session sampler when an aux resolve would send a compiled
+/// xAI catalog slug at a custom / BYOK gateway.
+pub(crate) fn prefer_active_model_for_byok_aux(
+    resolved: SamplerConfig,
+    primary: &SamplerConfig,
+) -> SamplerConfig {
+    let primary_is_custom = !crate::util::is_trusted_xai_https_url(&primary.base_url)
+        && !crate::util::is_trusted_cli_chat_proxy_url(&primary.base_url);
+    if primary_is_custom
+        && is_compiled_xai_catalog_slug(&resolved.model)
+        && resolved.model != primary.model
+    {
+        tracing::info!(
+            aux_model = %resolved.model,
+            active_model = %primary.model,
+            "using active BYOK model for aux call instead of compiled xAI catalog slug"
+        );
+        return primary.clone();
+    }
+    resolved
+}
+
 /// Stamp the session-local identity, attribution, bearer resolver, and retries from the active session onto a routed aux `SamplerConfig`. A helper model then keeps the session's auth/attribution.
 /// Shared by image-describe and the auto-mode classifier so the two can't drift. The resolver gate is host-based, stricter than `session_token_auth_gate`.
 /// A session-token deployment on a custom `models_base_url` loses aux-sampler refresh, rather than risk the session bearer on a third-party endpoint.
@@ -4953,6 +4992,8 @@ pub(crate) fn finalize_image_describe_sampler_config(
                 client_identifier,
                 max_retries,
             );
+            let describe_cfg =
+                prefer_active_model_for_byok_aux(describe_cfg, active_session_config);
             let model = describe_cfg.model.clone();
             (model, describe_cfg)
         }

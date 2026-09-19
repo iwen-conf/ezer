@@ -635,7 +635,8 @@ async fn eager_auth_or_login_fallback(
     Option<serde_json::Value>,
 ) {
     if auth_methods.is_empty() {
-        return (true, None, None, AuthStartMode::Pending, None);
+        // BYOK-first: missing credentials must not open an xAI login wall.
+        return (false, None, None, AuthStartMode::Pending, None);
     }
     if needs_login {
         return (

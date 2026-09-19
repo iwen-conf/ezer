@@ -207,9 +207,9 @@ if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9._]+)?$ ]]; then
 fi
 
 if [ -n "$AUTH_SOURCE" ]; then
-    echo "Installing Grok $version ($platform, $AUTH_SOURCE)..." >&2
+    echo "Installing ezer $version ($platform, $AUTH_SOURCE)..." >&2
 else
-    echo "Installing Grok $version ($platform)..." >&2
+    echo "Installing ezer $version ($platform)..." >&2
 fi
 
 binary_path="$DOWNLOAD_DIR/grok-$platform"
@@ -219,7 +219,7 @@ if [ "$os" = "windows" ]; then
     binary_path="${binary_path}.exe"
 fi
 
-echo "  Downloading grok ${version}..." >&2
+echo "  Downloading ezer ${version}..." >&2
 if [ "$os" = "windows" ]; then
     if ! download_file_parallel "${artifact_base}.exe" "$binary_path"; then
         if ! download_file_parallel "$artifact_base" "$binary_path"; then
@@ -245,7 +245,7 @@ fi
 if [ "$os" = "windows" ]; then
     # Symlinks require Developer Mode on Windows; copy instead.
     # If the exe is locked by a running process, rename it aside then retry.
-    for bin_name in grok.exe agent.exe; do
+    for bin_name in ezer.exe grok.exe agent.exe; do
         rm -f "$BIN_DIR/$bin_name.old" 2>/dev/null || true  # stale backup from prior update
         if ! cp -f "$binary_path" "$BIN_DIR/$bin_name" 2>/dev/null; then
             mv -f "$BIN_DIR/$bin_name" "$BIN_DIR/$bin_name.old" 2>/dev/null || true
@@ -257,12 +257,13 @@ if [ "$os" = "windows" ]; then
             fi
         fi
     done
-    echo "  Binary installed to $BIN_DIR/grok.exe and $BIN_DIR/agent.exe." >&2
+    echo "  Binary installed to $BIN_DIR/ezer.exe (compat: grok.exe) and $BIN_DIR/agent.exe." >&2
 else
     chmod +x "$binary_path"
+    ln -sf "$binary_path" "$BIN_DIR/ezer"
     ln -sf "$binary_path" "$BIN_DIR/grok"
     ln -sf "$binary_path" "$BIN_DIR/agent"
-    echo "  Binary linked to $BIN_DIR/grok and $BIN_DIR/agent." >&2
+    echo "  Binary linked to $BIN_DIR/ezer (compat: grok) and $BIN_DIR/agent." >&2
 fi
 
 # Generate shell completions (best-effort)
@@ -344,9 +345,9 @@ if [ -n "$GROK_DEPLOYMENT_KEY" ]; then
 fi
 
 if [ "$os" = "windows" ]; then
-    echo "Grok $version installed to $BIN_DIR/grok.exe" >&2
+    echo "ezer $version installed to $BIN_DIR/ezer.exe" >&2
 else
-    echo "Grok $version installed to $BIN_DIR/grok" >&2
+    echo "ezer $version installed to $BIN_DIR/ezer" >&2
 fi
 
 # --- Ensure grok is on PATH ---
@@ -361,10 +362,11 @@ SYMLINK_CREATED=""
 if [ "$os" != "windows" ] && ! path_has_dir "$BIN_DIR"; then
     for candidate in "$HOME/.local/bin" "/usr/local/bin"; do
         if path_has_dir "$candidate" && [ -d "$candidate" ] && [ -w "$candidate" ]; then
+            ln -sf "$BIN_DIR/ezer" "$candidate/ezer"
             ln -sf "$BIN_DIR/grok" "$candidate/grok"
             ln -sf "$BIN_DIR/agent" "$candidate/agent"
             SYMLINK_CREATED="$candidate"
-            echo "  Symlinked $candidate/grok -> $BIN_DIR/grok" >&2
+            echo "  Symlinked $candidate/ezer -> $BIN_DIR/ezer" >&2
             echo "  Symlinked $candidate/agent -> $BIN_DIR/agent" >&2
             break
         fi
@@ -446,14 +448,14 @@ fi
 
 echo "" >&2
 if path_has_dir "$BIN_DIR" || [ -n "$SYMLINK_CREATED" ]; then
-    echo "Run 'grok' or 'agent' to get started!" >&2
+    echo "Run 'ezer' (or 'agent') to get started!" >&2
 elif [ -n "$config_file" ]; then
-    echo "Restart your terminal, then run 'grok' or 'agent' to get started!" >&2
+    echo "Restart your terminal, then run 'ezer' to get started!" >&2
 else
-    echo "Add $BIN_DIR to your PATH, then run 'grok' or 'agent' to get started:" >&2
-    echo '  export PATH="$HOME/.grok/bin:$PATH"' >&2
+    echo "Add $BIN_DIR to your PATH, then run 'ezer' to get started:" >&2
+    echo '  export PATH="$HOME/.ezer/bin:$PATH"' >&2
 fi
 
 if [ "$os" = "windows" ]; then
-    echo "To use grok from cmd.exe or PowerShell, add %USERPROFILE%\\.grok\\bin to your PATH." >&2
+    echo "To use ezer from cmd.exe or PowerShell, add %USERPROFILE%\\.ezer\\bin to your PATH." >&2
 fi

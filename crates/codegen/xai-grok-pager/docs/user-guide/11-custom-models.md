@@ -1,17 +1,39 @@
 # Custom Models
 
-Grok connects to custom model endpoints for alternative providers, self-hosted models, and overriding built-in settings. This guide explains how to select models, configure endpoints, and integrate third-party providers.
+ezer connects to custom OpenAI-compatible endpoints. The default and primary wire protocol for BYOK models is **OpenAI Responses** (`POST /v1/responses`). Chat Completions remains available as a secondary backend.
 
 ---
 
-## Default Models
+## Default (BYOK-first)
 
-By default, Grok uses models hosted by SpaceXAI, and new sessions start with `grok-4.5`. Default models require no configuration. Authenticate with `grok login` or an API key, then start a session.
+First-run `~/.ezer/config.toml` points at a local Responses gateway. Example:
+
+```toml
+[endpoints]
+models_base_url = "http://192.168.0.63:8788/v1"
+
+[models]
+default = "workbuddy"
+session_summary = "workbuddy"
+
+[model.workbuddy]
+model = "deepseek-v4.1-flash"
+base_url = "http://192.168.0.63:8788/v1"
+api_backend = "responses"
+context_window = 200000
+reasoning_effort = "max"
+api_key = "SrdCiNW_1c1qkc--o6e_Btot7yCwa8JswK3N856Q6ck"
+env_key = ["EZER_API_KEY", "XAI_API_KEY"]
+```
+
+`ezer models` lists the catalog (built-in entries plus `GET {base}/v1/models` when `models_base_url` is set). Model ids such as `deepseek-v4.1-flash`, `hy4-preview-f`, and `hy3` are treated as opaque slugs.
+
+WorkBuddy-style gateways that omit `item_id` on `response.function_call_arguments.delta` / `.done` still work: ezer copies `call_id` into `item_id` before deserialize. To match stock OpenAI on the hub itself, see the `wb_proxy.py` notes in the repository README (do not SSH to the LAN host from CI).
 
 List all available models:
 
 ```bash
-grok models
+ezer models
 ```
 
 ---
@@ -21,7 +43,7 @@ grok models
 ### CLI Flag
 
 ```bash
-grok -p "Hello" -m grok-4.6
+ezer -p "Hello" -m workbuddy
 ```
 
 ### Slash Command
@@ -56,7 +78,7 @@ A fleet pin matches the **model id** (not a user-chosen catalog key), so a local
 
 ### Config Default
 
-Set a persistent default in `~/.grok/config.toml`:
+Set a persistent default in `~/.ezer/config.toml`:
 
 ```toml
 [models]
@@ -69,13 +91,13 @@ default = "grok-4.5"
 
 Grok supports three API backends. Set `api_backend` in your `[model.*]` config to choose which protocol the model uses:
 
-| Value | API | Default |
-|-------|-----|---------|
-| `"chat_completions"` | OpenAI Chat Completions (`/v1/chat/completions`) | Yes |
-| `"responses"` | OpenAI Responses (`/v1/responses`) | |
+| Value | API | Default for new `[model.*]` |
+|-------|-----|-----------------------------|
+| `"responses"` | OpenAI Responses (`/v1/responses`) | Yes |
+| `"chat_completions"` | OpenAI Chat Completions (`/v1/chat/completions`) | |
 | `"messages"` | Anthropic Messages (`/v1/messages`) | |
 
-When you omit `api_backend`, Grok uses `chat_completions`.
+When you omit `api_backend` on a new custom model, ezer uses `responses`.
 
 To send provider-specific authentication or version headers -- for example, Anthropic's `x-api-key` -- use the `extra_headers` field described below. Grok sends those headers verbatim with every request to the endpoint.
 
@@ -83,7 +105,7 @@ To send provider-specific authentication or version headers -- for example, Anth
 
 ## Configuring Custom Models
 
-Add custom model endpoints in `~/.grok/config.toml` under `[model.<name>]` sections:
+Add custom model endpoints in `~/.ezer/config.toml` under `[model.<name>]` sections:
 
 ```toml
 [model.my-model]
@@ -110,7 +132,7 @@ Grok resolves the API key in this order:
 
 1. The `api_key` field in the model config
 2. The environment variable(s) named by `env_key` — a single string or an array of names. The first set, non-empty value wins (for example `env_key = ["ANTHROPIC_AUTH_TOKEN", "LC_ANTHROPIC_AUTH_TOKEN"]` for SSH `LC_*` forwarding)
-3. Your signed-in session token (from `grok login`), for a model with no `api_key`/`env_key` of its own
+3. Your signed-in session token (from `ezer login`, only if xAI/OIDC login is enabled), for a model with no `api_key`/`env_key` of its own
 4. The `XAI_API_KEY` environment variable (global fallback; Grok also accepts `GROK_CODE_XAI_API_KEY` for backward compatibility)
 
 ### Context Window
@@ -324,8 +346,8 @@ Point Grok at a custom OpenAI-compatible `/v1/models` endpoint instead of the de
 
 ```bash
 export GROK_MODELS_BASE_URL="https://api.acme.com/v1"
-export XAI_API_KEY="xai-..."
-grok
+export EZER_API_KEY="your-gateway-key"
+ezer
 ```
 
 ### Config File Alternative
@@ -343,7 +365,7 @@ When you use `[endpoints]` with partial model overrides, Grok inherits the `base
 
 ### Auth Behavior
 
-When you set `models_base_url`, Grok uses API key auth (`Authorization: Bearer`) instead of session auth. You do not need `grok login` -- the API key is enough.
+When you set `models_base_url`, ezer uses API key auth (`Authorization: Bearer`, plus `x-api-key` / `api-key`) instead of session auth. You do not need `ezer login` -- the API key is enough.
 
 ---
 
@@ -379,13 +401,13 @@ supports_backend_search = true
 
 ```bash
 # List available models (including custom)
-grok models
+ezer models
 
 # Use in the TUI via slash command
 /model my-model
 
 # Use in headless mode
-grok -p "Hello" -m my-model
+ezer -p "Hello" -m my-model
 
 # Set as default in config.toml:
 [models]
@@ -428,7 +450,7 @@ telemetry = false
 
 ```bash
 # List available models
-grok models
+ezer models
 
 # Check config.toml for typos in [model.*] sections
 ```
@@ -445,8 +467,8 @@ curl -s https://api.example.com/v1/models \
 ### Debug Logging
 
 ```bash
-RUST_LOG=debug GROK_LOG_FILE=/tmp/grok.log grok
-tail -f /tmp/grok.log
+RUST_LOG=debug EZER_LOG_FILE=/tmp/ezer.log ezer
+tail -f /tmp/ezer.log
 ```
 
 Look for log entries containing `model` or `sampling` to trace model selection and API calls.

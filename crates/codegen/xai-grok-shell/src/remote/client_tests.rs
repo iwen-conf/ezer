@@ -308,6 +308,32 @@ fn parse_openai_format_uses_id_field() {
     assert_eq!(result.base_url, "https://api.x.ai/v1");
     assert_eq!(result.name.as_deref(), Some("grok-3"));
 }
+
+/// WorkBuddy2API-Hub `/v1/models` is a rich OpenAI list: `id` only, dotted slugs, extra fields.
+#[test]
+fn parse_workbuddy_openai_models_list_ids() {
+    for id in [
+        "deepseek-v4.1-flash",
+        "deepseek-v4.1-flash-low",
+        "hy4-preview-f",
+        "hy3",
+    ] {
+        let value = serde_json::json!({
+            "id": id,
+            "object": "model",
+            "created": 0,
+            "owned_by": "workbuddy",
+            "permission": [],
+            "root": id,
+            "parent": null
+        });
+        let result = parse_remote_model_value(&value, "http://192.168.0.63:8788/v1")
+            .unwrap_or_else(|| panic!("must parse WorkBuddy model {id}"));
+        assert_eq!(result.model, id);
+        assert_eq!(result.api_backend, crate::sampling::ApiBackend::Responses);
+        assert_eq!(result.base_url, "http://192.168.0.63:8788/v1");
+    }
+}
 #[test]
 fn parse_model_field_takes_priority_over_id() {
     let value = serde_json::json!({

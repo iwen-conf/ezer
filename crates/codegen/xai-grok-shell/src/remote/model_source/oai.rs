@@ -40,10 +40,13 @@ impl ModelSource for OaiModelSource {
                     })
                     .map_err(|_| {
                         BackendError::Auth(
-                            "No API key for custom models endpoint. Set XAI_API_KEY.".into(),
+                            "No API key for custom models endpoint. Set EZER_API_KEY or XAI_API_KEY.".into(),
                         )
                     })?;
-                request = request.header("Authorization", format!("Bearer {}", api_key));
+                request = request
+                    .header("Authorization", format!("Bearer {}", api_key))
+                    .header("x-api-key", &api_key)
+                    .header("api-key", &api_key);
             }
             EndpointAuth::Session => {
                 let auth = auth

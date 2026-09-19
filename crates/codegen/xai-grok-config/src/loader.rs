@@ -83,9 +83,12 @@ pub fn load_config_file(path: &Path) -> std::io::Result<toml::Value> {
 }
 
 pub fn load_from_disk() -> std::io::Result<toml::Value> {
-    // Live `$GROK_HOME`: `user_grok_home()` / `grok_home()` are OnceLock and miss
-    // EnvGuard/tests (same reason user `config.toml` persist resolves live). A
+    // Live `$EZER_HOME` / `$GROK_HOME`: `user_grok_home()` / `grok_home()` are OnceLock
+    // and miss EnvGuard/tests (same reason user `config.toml` persist resolves live). A
     // stale cache would read a different file than the last settings write.
+    if let Some(home) = resolve_grok_home() {
+        crate::first_run::ensure_first_run_config(&home);
+    }
     load_user_config_layer(resolve_grok_home().as_deref(), USER_CONFIG_FILENAME)
 }
 

@@ -54,10 +54,19 @@ fn is_user_grok_config_file(config_path: &Path) -> bool {
     canonical_config == canonical_user
 }
 
-/// Find `.grok/config.toml` from `cwd` up to the git repo root, repo-root (lowest) to cwd (highest), matching skills and AGENTS.md discovery.
-/// No repo: only `cwd/.grok/config.toml`. Excludes user-global config so `cwd == $HOME` is not a project overlay.
+/// Find `.ezer/config.toml` (preferred) or `.grok/config.toml` from `cwd` up to the git repo root.
+/// No repo: only `cwd/.ezer/config.toml` / `cwd/.grok/config.toml`. Excludes user-global config so `cwd == $HOME` is not a project overlay.
 pub fn find_project_configs(cwd: &Path) -> Vec<PathBuf> {
     find_project_configs_in(&RepoDirChain::resolve(cwd).dirs)
+}
+
+fn project_config_path(dir: &Path) -> PathBuf {
+    let ezer = dir.join(".ezer").join("config.toml");
+    if ezer.is_file() {
+        ezer
+    } else {
+        dir.join(".grok").join("config.toml")
+    }
 }
 
 /// [`find_project_configs`] over a precomputed [`RepoDirChain`], repo-root-first.
@@ -67,7 +76,7 @@ pub(crate) fn find_project_configs_in(chain_dirs: &[PathBuf]) -> Vec<PathBuf> {
     chain_dirs
         .iter()
         .rev()
-        .map(|dir| dir.join(".grok").join("config.toml"))
+        .map(|dir| project_config_path(dir))
         .filter(|config_path| config_path.is_file() && !is_user_grok_config_file(config_path))
         .collect()
 }

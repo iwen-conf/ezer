@@ -1570,9 +1570,9 @@ fn resolve_exe_for_spawn() -> Result<std::path::PathBuf, ConnectionError> {
 fn resolve_binary_with_home(grok_home: &Path) -> Result<std::path::PathBuf, ConnectionError> {
     resolve_binary_impl(grok_home, std::env::current_exe().ok())
 }
-/// Binary file name for the managed grok install (`grok` / `grok.exe`).
+/// Binary file name for the managed ezer install (`ezer` / `ezer.exe`).
 fn managed_grok_bin_name() -> &'static str {
-    if cfg!(windows) { "grok.exe" } else { "grok" }
+    if cfg!(windows) { "ezer.exe" } else { "ezer" }
 }
 /// Core leader-binary resolution with the current-exe path injected, for testability.
 fn resolve_binary_impl(
@@ -2534,9 +2534,9 @@ mod tests {
         let temp = TempDir::new().unwrap();
         let bin_dir = temp.path().join("bin");
         std::fs::create_dir_all(&bin_dir).unwrap();
-        let new_target = bin_dir.join("grok-v2");
+        let new_target = bin_dir.join("ezer-v2");
         std::fs::write(&new_target, "new-binary").unwrap();
-        let managed = bin_dir.join("grok");
+        let managed = bin_dir.join(managed_grok_bin_name());
         std::os::unix::fs::symlink(&new_target, &managed).unwrap();
         let stale_target = bin_dir.join("grok-v1");
         std::fs::write(&stale_target, "old-binary").unwrap();

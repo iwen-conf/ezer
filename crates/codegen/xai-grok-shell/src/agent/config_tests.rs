@@ -1,6 +1,81 @@
 use super::*;
 use serial_test::serial;
 use xai_grok_test_support::EnvGuard;
+
+#[test]
+fn first_run_byok_template_parses_as_responses_gateway() {
+    let raw: toml::Value = toml::from_str(&xai_grok_config::default_byok_config_toml())
+        .expect("first-run template must be valid TOML");
+    let cfg = Config::new_from_toml_cfg(&raw).expect("first-run template must parse");
+    assert!(cfg.endpoints.has_custom_endpoint());
+    assert_eq!(
+        cfg.endpoints.models_base_url.as_deref(),
+        Some(xai_grok_config::DEFAULT_GATEWAY_BASE_URL)
+    );
+    let resolved = resolve_model_list(&cfg, None);
+    let model = resolved
+        .get(xai_grok_config::DEFAULT_GATEWAY_MODEL_KEY)
+        .expect("starter model");
+    assert_eq!(model.info.api_backend, ApiBackend::Responses);
+    assert_eq!(
+        model.info.base_url,
+        xai_grok_config::DEFAULT_GATEWAY_BASE_URL
+    );
+    assert_eq!(model.info.model, xai_grok_config::DEFAULT_GATEWAY_MODEL_ID);
+    assert_eq!(
+        model.info.reasoning_effort,
+        Some(ReasoningEffort::Max)
+    );
+    assert_eq!(
+        model.api_key.as_deref(),
+        Some(xai_grok_config::DEFAULT_GATEWAY_API_KEY)
+    );
+    assert_eq!(
+        cfg.session_summary_model.as_deref(),
+        Some(xai_grok_config::DEFAULT_GATEWAY_MODEL_KEY)
+    );
+    for id in xai_grok_config::DEFAULT_GATEWAY_OPTIONAL_MODELS {
+        let extra = resolved.get(*id).unwrap_or_else(|| panic!("optional model {id}"));
+        assert_eq!(extra.info.model, *id);
+        assert_eq!(extra.info.api_backend, ApiBackend::Responses);
+    }
+}
+
+#[test]
+fn byok_aux_prefers_active_model_over_compiled_grok_slug() {
+    let primary = SamplerConfig {
+        model: "deepseek-v4.1-flash".into(),
+        base_url: "http://192.168.0.63:8788/v1".into(),
+        api_backend: ApiBackend::Responses,
+        ..Default::default()
+    };
+    let aux = SamplerConfig {
+        model: "grok-4.6".into(),
+        base_url: "http://192.168.0.63:8788/v1".into(),
+        api_backend: ApiBackend::Responses,
+        ..Default::default()
+    };
+    let chosen = prefer_active_model_for_byok_aux(aux, &primary);
+    assert_eq!(chosen.model, "deepseek-v4.1-flash");
+}
+
+#[test]
+fn official_xai_aux_keeps_compiled_session_summary_slug() {
+    let primary = SamplerConfig {
+        model: "grok-4.6".into(),
+        base_url: "https://cli-chat-proxy.grok.com/v1".into(),
+        api_backend: ApiBackend::Responses,
+        ..Default::default()
+    };
+    let aux = SamplerConfig {
+        model: "grok-4.6".into(),
+        base_url: "https://cli-chat-proxy.grok.com/v1".into(),
+        api_backend: ApiBackend::Responses,
+        ..Default::default()
+    };
+    let chosen = prefer_active_model_for_byok_aux(aux, &primary);
+    assert_eq!(chosen.model, "grok-4.6");
+}
 #[test]
 fn main_cli_tools_override_preserves_profile_injection_policy() {
     let overrides = CliAgentOverrides {
@@ -2061,7 +2136,7 @@ fn model_chat_completions_backend_does_not_auto_default_supports_reasoning_effor
     );
 }
 #[test]
-fn model_api_backend_defaults_to_chat_completions() {
+fn model_api_backend_defaults_to_responses() {
     let raw_config: toml::Value = toml::from_str(
         r#"
             [model.my-model]
@@ -2074,7 +2149,7 @@ fn model_api_backend_defaults_to_chat_completions() {
     let cfg = Config::new_from_toml_cfg(&raw_config).expect("config should parse");
     let resolved = resolve_model_list(&cfg, None);
     let model = resolved.get("my-model").expect("model should exist");
-    assert_eq!(model.info.api_backend, ApiBackend::ChatCompletions);
+    assert_eq!(model.info.api_backend, ApiBackend::Responses);
 }
 #[test]
 fn sampling_config_uses_model_api_backend() {
