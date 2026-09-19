@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 // Resolves the grok binary and runs it, in order of preference:
-//   1. $@@LEGACY_EZER_HOME@@/bin/grok, the versioned symlink postinstall.js installs
+//   1. $EZER_HOME/bin/grok, the versioned symlink postinstall.js installs
 //   2. bootstrap it from the per-platform @xai-official/grok-<platform>
-//      package, decompressing the compressed binary into $@@LEGACY_EZER_HOME@@/bin
+//      package, decompressing the compressed binary into $EZER_HOME/bin
 //   3. decompress in place under node_modules (no resolvable version, or
 //      an unwritable home)
 //
@@ -17,14 +17,14 @@ const pkgName = '@xai-official/grok';
 const IS_WINDOWS = process.platform === 'win32';
 const EXE = IS_WINDOWS ? '.exe' : '';
 const BIN_NAME = `grok${EXE}`;
-// $@@LEGACY_EZER_HOME@@/bin (else ~/.grok/bin), matching the Rust ezer_home():
+// $EZER_HOME/bin (else ~/.ezer/bin), matching the Rust ezer_home():
 // a symlinked $HOME resolves the same way.
 function defaultEzerHome() {
     const home = os.homedir();
-    try { return path.join(fs.realpathSync(home), '.grok'); } catch { return path.join(home, '.grok'); }
+    try { return path.join(fs.realpathSync(home), '.ezer'); } catch { return path.join(home, '.ezer'); }
 }
-const @@LEGACY_EZER_HOME@@ = process.env.@@LEGACY_EZER_HOME@@ ?? defaultEzerHome();
-const CANONICAL_DIR = path.join(@@LEGACY_EZER_HOME@@, 'bin');
+const EZER_HOME = process.env.EZER_HOME ?? defaultEzerHome();
+const CANONICAL_DIR = path.join(EZER_HOME, 'bin');
 const CANONICAL_PATH = path.join(CANONICAL_DIR, BIN_NAME);
 
 function readLocalVersion() {

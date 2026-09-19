@@ -1,5 +1,5 @@
 //! Home-directory resolution generally: USERPROFILE-first `home_dir`, plus
-//! ezer-home (`$EZER_HOME`, deprecated `$EZER_HOME`, or `<home>/.ezer`).
+//! ezer-home (`$EZER_HOME` or `<home>/.ezer`).
 //! Shared by `ezer-config` and `xai-fast-worktree`.
 //!
 //! Which function to call:
@@ -19,10 +19,8 @@ use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
 
-/// Primary env override for the user config home (`~/.ezer`).
+/// Env override for the user config home (`~/.ezer`).
 pub const EZER_HOME_ENV: &str = "EZER_HOME";
-/// Deprecated alias for [`EZER_HOME_ENV`]. Honored when `EZER_HOME` is unset.
-pub const LEGACY_HOME_ENV: &str = "GROK_HOME"; // one-release fallback; writes use EZER_HOME
 /// Default directory name under `$HOME`.
 pub const DEFAULT_DOT_DIR: &str = ".ezer";
 
@@ -31,7 +29,7 @@ pub const DEFAULT_DOT_DIR: &str = ".ezer";
 /// environment at the asking site.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum EzerHomeSource {
-    /// A non-empty `$EZER_HOME` or deprecated `$EZER_HOME` override.
+    /// A non-empty `$EZER_HOME` override.
     EnvOverride,
     /// `<home>/.ezer` derived from the home directory.
     HomeDefault,
@@ -53,26 +51,20 @@ fn ezer_home_in(home: &Path) -> PathBuf {
         .join(DEFAULT_DOT_DIR)
 }
 
-/// First non-empty of `$EZER_HOME`, then deprecated `$GROK_HOME` (one-release fallback).
-fn home_env_override(
-    ezer_home_env: Option<&OsStr>,
-    legacy_home_env: Option<&OsStr>,
-) -> Option<PathBuf> {
+/// Non-empty `$EZER_HOME`.
+fn home_env_override(ezer_home_env: Option<&OsStr>) -> Option<PathBuf> {
     ezer_home_env
         .filter(|env| !env.is_empty())
-        .or_else(|| legacy_home_env.filter(|env| !env.is_empty()))
         .map(PathBuf::from)
 }
 
-/// `$EZER_HOME` / `$GROK_HOME` verbatim when non-empty, else `<home>/.ezer`.
+/// `$EZER_HOME` verbatim when non-empty, else `<home>/.ezer`.
 /// Used as-is (not canonicalized) so literal prefix checks and symlink guards still see original components.
-/// Never falls back to `~/.ezer`.
 fn resolve_ezer_home_from(
     ezer_home_env: Option<&OsStr>,
-    legacy_home_env: Option<&OsStr>,
     os_home: Option<&Path>,
 ) -> Option<(PathBuf, EzerHomeSource)> {
-    if let Some(env) = home_env_override(ezer_home_env, legacy_home_env) {
+    if let Some(env) = home_env_override(ezer_home_env) {
         return Some((env, EzerHomeSource::EnvOverride));
     }
     os_home.map(|home| (ezer_home_in(home), EzerHomeSource::HomeDefault))
@@ -87,12 +79,11 @@ pub fn resolve_ezer_home() -> Option<PathBuf> {
 pub fn resolve_ezer_home_with_source() -> Option<(PathBuf, EzerHomeSource)> {
     resolve_ezer_home_from(
         std::env::var_os(EZER_HOME_ENV).as_deref(),
-        std::env::var_os(LEGACY_HOME_ENV).as_deref(),
         home_dir().as_deref(),
     )
 }
 
-/// The default `<home>/.ezer`, used when `$EZER_HOME` / `$EZER_HOME` are unset.
+/// The default `<home>/.ezer`, used when `$EZER_HOME` is unset.
 pub fn default_ezer_home() -> PathBuf {
     ezer_home_in(&home_dir().unwrap_or_else(|| PathBuf::from(".")))
 }
@@ -125,11 +116,8 @@ mod tests {
 
     #[test]
     fn ezer_env_wins_over_os_home() {
-        let resolved = resolve_ezer_home_from(
-            Some(OsStr::new("/custom/ezer")),
-            Some(OsStr::new("/legacy/ezer")),
-            Some(Path::new("/home/u")),
-        );
+        let resolved =
+            resolve_ezer_home_from(Some(OsStr::new("/custom/ezer")), Some(Path::new("/home/u")));
         assert_eq!(
             resolved,
             Some((PathBuf::from("/custom/ezer"), EzerHomeSource::EnvOverride))
@@ -137,15 +125,14 @@ mod tests {
     }
 
     #[test]
-    fn ezer_home_env_is_deprecated_override_only() {
-        let resolved = resolve_ezer_home_from(
-            None,
-            Some(OsStr::new("/legacy/ezer")),
-            Some(Path::new("/home/u")),
-        );
+    fn unset_ezer_home_uses_dot_ezer_under_os_home() {
+        let resolved = resolve_ezer_home_from(None, Some(Path::new("/home/u")));
         assert_eq!(
             resolved,
-            Some((PathBuf::from("/legacy/ezer"), EzerHomeSource::EnvOverride))
+            Some((
+                ezer_home_in(Path::new("/home/u")),
+                EzerHomeSource::HomeDefault
+            ))
         );
     }
 
@@ -154,7 +141,7 @@ mod tests {
         // A real, existing dir whose canonical form differs (macOS symlinks
         // `/var` -> `/private/var`): the env value must come back unchanged.
         let tmp = tempfile::tempdir().unwrap();
-        let resolved = resolve_ezer_home_from(Some(tmp.path().as_os_str()), None, None);
+        let resolved = resolve_ezer_home_from(Some(tmp.path().as_os_str()), None);
         assert_eq!(
             resolved,
             Some((tmp.path().to_path_buf(), EzerHomeSource::EnvOverride))
@@ -164,11 +151,7 @@ mod tests {
     #[test]
     fn empty_env_falls_through_to_os_home() {
         let tmp = tempfile::tempdir().unwrap();
-        let resolved = resolve_ezer_home_from(
-            Some(&OsString::new()),
-            Some(&OsString::new()),
-            Some(tmp.path()),
-        );
+        let resolved = resolve_ezer_home_from(Some(&OsString::new()), Some(tmp.path()));
         assert_eq!(
             resolved,
             Some((
@@ -187,6 +170,6 @@ mod tests {
 
     #[test]
     fn none_when_nothing_resolves() {
-        assert_eq!(resolve_ezer_home_from(None, None, None), None);
+        assert_eq!(resolve_ezer_home_from(None, None), None);
     }
 }

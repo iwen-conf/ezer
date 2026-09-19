@@ -1,9 +1,10 @@
 //! First-run BYOK `config.toml` for standalone ezer.
 //!
-//! Written only when the user home has no `config.toml` yet and this is not a
-//! `$EZER_HOME`-only test override. The template is OpenAI Responses-first and
-//! points at the WorkBuddy2API-Hub style gateway. Auto-upgrade is off; updates
-//! are a one-shot notice from the non-xAI `gh-release` upstream.
+//! Written only when the user home has no `config.toml` yet and
+//! `EZER_SKIP_DEFAULT_CONFIG` is not set. The template is OpenAI
+//! Responses-first and points at the WorkBuddy2API-Hub style gateway.
+//! Auto-upgrade is off; updates are a one-shot notice from the non-xAI
+//! `gh-release` upstream.
 
 use std::fmt::Write as _;
 use std::path::Path;
@@ -115,19 +116,9 @@ limit_behavior = "queue"
 
 /// Whether this process should seed a missing `config.toml`.
 ///
-/// Tests and legacy `$EZER_HOME` overrides must not receive a surprise write.
-/// A real first run (no env, or `$EZER_HOME`) does.
+/// Tests set `EZER_SKIP_DEFAULT_CONFIG` to skip the write.
 pub fn should_write_first_run_config() -> bool {
-    if ezer_env::env_bool("EZER_SKIP_DEFAULT_CONFIG") == Some(true) {
-        return false;
-    }
-    let ezer = std::env::var_os(xai_dirs::EZER_HOME_ENV)
-        .filter(|v| !v.is_empty())
-        .is_some();
-    let legacy_home = std::env::var_os(xai_dirs::EZER_HOME_ENV)
-        .filter(|v| !v.is_empty())
-        .is_some();
-    ezer || !legacy_home
+    ezer_env::env_bool("EZER_SKIP_DEFAULT_CONFIG") != Some(true)
 }
 
 /// Create `{home}/config.toml` from [`default_byok_config_toml`] when missing.
@@ -197,8 +188,6 @@ mod tests {
     fn writes_once_when_missing() {
         let tmp = TempDir::new().unwrap();
         unsafe {
-            std::env::set_var(xai_dirs::EZER_HOME_ENV, tmp.path());
-            std::env::remove_var(xai_dirs::EZER_HOME_ENV);
             std::env::remove_var("EZER_SKIP_DEFAULT_CONFIG");
         }
         assert!(ensure_first_run_config(tmp.path()));
@@ -206,8 +195,5 @@ mod tests {
         let body = std::fs::read_to_string(tmp.path().join("config.toml")).unwrap();
         assert!(body.contains("api_backend = \"responses\""));
         assert!(body.contains(DEFAULT_GATEWAY_API_KEY));
-        unsafe {
-            std::env::remove_var(xai_dirs::EZER_HOME_ENV);
-        }
     }
 }

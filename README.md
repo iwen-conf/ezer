@@ -261,7 +261,6 @@ not embed `grok.com` hosts. These leftovers are intentional:
 
 | Kind | Location | Why left |
 |------|----------|----------|
-| `$GROK_HOME` read fallback | `crates/codegen/xai-dirs/src/lib.rs` (`LEGACY_HOME_ENV`) | One-release read of old env; writes use `$EZER_HOME` / `~/.ezer` |
 | `*.x.ai` host match | `ezer-shell-base` `is_xai_api_url` / `is_trusted_xai_https_url` | Security: refuse first-party session tokens on non-xAI hosts |
 | Opt-in OAuth issuer / accounts origins | `ezer-login` `XAI_OAUTH2_ISSUER`, `PROD_ACCOUNTS_APP_ORIGINS`, `LEGACY_AUTH_SCOPE` | Dead unless `EZER_ENABLE_XAI_LOGIN=1`; needed to recognize old `auth.json` scopes and first-party issuers |
 | Historical `xai-*` crate dirs | `xai-dirs`, `xai-crash-handler`, `xai-acp-lib`, … | `file!()` paths contain `xai-` but not `x.ai` / `grok` |

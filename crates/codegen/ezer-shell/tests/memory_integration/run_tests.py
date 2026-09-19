@@ -166,9 +166,9 @@ class IsolatedEnv:
     """Creates a fully isolated grok environment with custom $HOME.
 
     The agent subprocess gets a fake $HOME with:
-      ~/.grok/auth.json   (copied from real home)
-      ~/.grok/memory/     (pre-populated by tests)
-      ~/.grok/logs/       (memory.log appears here)
+      ~/.ezer/auth.json   (copied from real home)
+      ~/.ezer/memory/     (pre-populated by tests)
+      ~/.ezer/logs/       (memory.log appears here)
 
     And a workspace directory used as cwd when spawning the agent.
     """
@@ -180,20 +180,20 @@ class IsolatedEnv:
         os.makedirs(self.fake_home)
         os.makedirs(self.workspace)
 
-        # Create .grok dirs in fake home
-        self.ezer_home = os.path.join(self.fake_home, ".grok")
+        # Create .ezer dirs in fake home
+        self.ezer_home = os.path.join(self.fake_home, ".ezer")
         self.memory_dir = os.path.join(self.ezer_home, "memory")
         self.logs_dir = os.path.join(self.ezer_home, "logs")
         os.makedirs(self.memory_dir)
         os.makedirs(self.logs_dir)
 
         # Copy auth from real home
-        real_auth = os.path.expanduser("~/.grok/auth.json")
+        real_auth = os.path.expanduser("~/.ezer/auth.json")
         if os.path.isfile(real_auth):
             shutil.copy2(real_auth, os.path.join(self.ezer_home, "auth.json"))
 
     def write_config(self, toml_str):
-        """Write global ~/.grok/config.toml (where the agent reads config)."""
+        """Write global ~/.ezer/config.toml (where the agent reads config)."""
         with open(os.path.join(self.ezer_home, "config.toml"), "w") as f:
             f.write(toml_str)
 
@@ -1344,7 +1344,7 @@ def test_multiple_workspace_isolation():
         beta_workspace = os.path.join(env1.root, "workspace", "project-beta")
         os.makedirs(beta_workspace, exist_ok=True)
 
-        # Config is already in global ~/.grok/config.toml from env1.write_config
+        # Config is already in global ~/.ezer/config.toml from env1.write_config
 
         # Start agent in workspace beta (reuse env1's fake home)
         binary = os.environ.get("EZER_BINARY", "grok")

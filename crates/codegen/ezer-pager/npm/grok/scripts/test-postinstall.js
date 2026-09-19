@@ -91,8 +91,8 @@ function cleanupOldVersions(canonicalDir, currentVersionedName) {
 
 /** Ezer bin dir resolution (mirrors postinstall.js and bin/grok-bootstrap.js). */
 function resolveEzerBinDir(env, homedir) {
-    const grokHome = env.@@LEGACY_EZER_HOME@@ ?? path.join(homedir, '.grok');
-    return path.join(grokHome, 'bin');
+    const ezerHome = env.EZER_HOME ?? path.join(homedir, '.ezer');
+    return path.join(ezerHome, 'bin');
 }
 
 /** Write the shipped binary to destPath (mirrors writeVendorBinary). */
@@ -1029,16 +1029,16 @@ test('canonical pager from non-npm install is preserved on Linux', () => {
 
 console.log('\ngrok home + brotli install tests\n');
 
-test('resolveEzerBinDir honors $@@LEGACY_EZER_HOME@@, else falls back to <home>/.grok/bin', () => {
+test('resolveEzerBinDir honors $EZER_HOME, else falls back to <home>/.ezer/bin', () => {
     assert.strictEqual(
-        resolveEzerBinDir({ @@LEGACY_EZER_HOME@@: '/fast/local/.grok' }, '/home/alice'),
-        path.join('/fast/local/.grok', 'bin'),
+        resolveEzerBinDir({ EZER_HOME: '/fast/local/.ezer' }, '/home/alice'),
+        path.join('/fast/local/.ezer', 'bin'),
     );
     assert.strictEqual(
         resolveEzerBinDir({}, '/home/alice'),
-        path.join('/home/alice', '.grok', 'bin'),
+        path.join('/home/alice', '.ezer', 'bin'),
     );
-    assert.strictEqual(resolveEzerBinDir({ @@LEGACY_EZER_HOME@@: '' }, '/home/alice'), path.join('', 'bin'));
+    assert.strictEqual(resolveEzerBinDir({ EZER_HOME: '' }, '/home/alice'), path.join('', 'bin'));
 });
 
 test('writeVendorBinary returns false (not true) when the destination cannot be written', () => {
@@ -1067,7 +1067,7 @@ test('decompresses brotli into the canonical dir without duplicating into node_m
         const brotliPath = path.join(vendorBin, 'grok.br');
         fs.writeFileSync(brotliPath, zlib.brotliCompressSync(Buffer.from('native-binary-bytes')));
 
-        const binDir = path.join(dir, '.grok', 'bin');
+        const binDir = path.join(dir, '.ezer', 'bin');
         const result = installBinaryFromBrotli(brotliPath, '0.1.220', binDir);
 
         assert.ok(fs.lstatSync(result.canonicalPath).isSymbolicLink());
