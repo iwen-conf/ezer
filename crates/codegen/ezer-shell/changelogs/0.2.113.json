@@ -11,7 +11,7 @@
   },
   {
     "category": "fixes",
-    "description": "**Invalid MCP server entries** in config.toml no longer prevent Grok from starting; problems are shown in `grok inspect`.",
+    "description": "**Invalid MCP server entries** in config.toml no longer prevent Ezer from starting; problems are shown in `grok inspect`.",
     "breaking_change": false
   },
   {
@@ -86,7 +86,7 @@
   },
   {
     "category": "features",
-    "description": "**Added support for the new SuperGrok Plus subscription tier** in authentication and feature gating.",
+    "description": "**Added support for the new SuperEzer Plus subscription tier** in authentication and feature gating.",
     "breaking_change": false
   },
   {

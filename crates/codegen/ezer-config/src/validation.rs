@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 
 use crate::env_bool;
 use crate::loader::{apply_version_overrides_with_registered, load_toml_file};
-use crate::paths::{system_config_dir, user_grok_home};
+use crate::paths::{system_config_dir, user_ezer_home};
 use crate::version_overrides::{VersionOverrideError, apply_version_overrides};
 
 use prod_mc_cli_chat_proxy_types::FAIL_CLOSED_KEY;
@@ -54,7 +54,7 @@ pub struct RequirementsLayer {
     pub value: toml::Value,
     pub source: RequirementsSource,
     /// `true` means the root-owned system layer.
-    /// Security decisions must trust this flag, not re-derive it from the source, which is `GROK_HOME`-influenced and could carry `..`.
+    /// Security decisions must trust this flag, not re-derive it from the source, which is `EZER_HOME`-influenced and could carry `..`.
     pub is_system: bool,
 }
 
@@ -62,7 +62,7 @@ pub struct RequirementsLayer {
 /// Use when you need per-layer source attribution; otherwise use [`load_merged_requirements`].
 pub fn requirements_layers() -> Vec<RequirementsLayer> {
     let mut out = Vec::new();
-    if let Some(user_path) = user_grok_home().map(|g| g.join("requirements.toml"))
+    if let Some(user_path) = user_ezer_home().map(|g| g.join("requirements.toml"))
         && let Some(value) = load_requirements_layer(&user_path)
     {
         out.push(RequirementsLayer {
@@ -106,7 +106,7 @@ pub fn load_merged_requirements() -> Option<toml::Value> {
 }
 
 pub(crate) fn load_requirements() -> Option<toml::Value> {
-    load_user_requirements(user_grok_home().as_deref())
+    load_user_requirements(user_ezer_home().as_deref())
 }
 
 /// User requirements layer from `<home>/requirements.toml`, or `None` with no resolvable user home (rather than reading a cwd-relative `.ezer`).
@@ -208,7 +208,7 @@ fn validate_requirements_value(
 /// Validates all requirements layers (user and system files, and macOS MDM).
 /// Call once at startup from the binary's `main()`; exit on `Err`.
 pub fn validate_requirements() -> Result<(), RequirementsError> {
-    validate_user_requirements(user_grok_home().as_deref())?;
+    validate_user_requirements(user_ezer_home().as_deref())?;
     if let Some(dir) = system_config_dir() {
         validate_requirements_layer(&dir.join("requirements.toml"))?;
     }
@@ -292,7 +292,7 @@ minimum_version = "not-a-version"
     fn validate_requirements_layer_ok_without_fail_closed() {
         use std::io::Write;
 
-        let dir = std::env::temp_dir().join(format!("grok-vo-soft2-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("ezer-vo-soft2-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         let path = dir.join("requirements.toml");
         let mut f = std::fs::File::create(&path).unwrap();

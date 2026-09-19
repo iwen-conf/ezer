@@ -666,7 +666,7 @@ pub async fn get_worktree_info(cwd: &Path) -> Option<(bool, Option<String>)> {
         let mut marker_main = None;
         for ancestor in cwd.ancestors() {
             let git = ancestor.join(".git");
-            if let Ok(contents) = std::fs::read_to_string(git.join("grok-worktree-source"))
+            if let Ok(contents) = std::fs::read_to_string(git.join("ezer-worktree-source"))
                 && let trimmed = contents.trim()
                 && !trimmed.is_empty()
             {
@@ -1005,7 +1005,7 @@ fn collect_diff_stats(
     }
     DiffStatsResult { stats, paths }
 }
-/// Payload for the `x.ai/git_head_changed` ACP extension notification.
+/// Payload for the `ezer/git_head_changed` ACP extension notification.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GitHeadChanged {
@@ -2420,7 +2420,7 @@ async fn pop_checkout_auto_stash(
 /// Decide whether a `--restore-code` HEAD checkout is safe to run against `supplied_cwd`. `--depth=1` is only added when the repo is already shallow.
 /// That is only acceptable in two situations: 1.
 pub fn restore_code_checkout_allowed(supplied_cwd: &Path, persisted_cwd: Option<&str>) -> bool {
-    let worktrees_dir = ezer_tools::util::grok_home::grok_home().join("worktrees");
+    let worktrees_dir = ezer_tools::util::ezer_home::ezer_home().join("worktrees");
     restore_code_checkout_allowed_in(supplied_cwd, persisted_cwd, &worktrees_dir)
 }
 /// Pure core of [`restore_code_checkout_allowed`] with the worktrees root
@@ -2439,7 +2439,7 @@ fn restore_code_checkout_allowed_in(
         .unwrap_or(false)
 }
 /// Env var backing the `workspace_rewind_git` flag. See [`git_rewind_enabled`].
-const REWIND_GIT_ENV: &str = "GROK_WORKSPACE_REWIND_GIT";
+const REWIND_GIT_ENV: &str = "EZER_WORKSPACE_REWIND_GIT";
 /// Whether the git rewind domain (capture and soft restore) is enabled.
 /// Default OFF: git is the only domain that moves `HEAD`, so it is gated behind `workspace_rewind_git`.
 pub fn git_rewind_enabled() -> bool {
@@ -2878,7 +2878,7 @@ async fn git_cli_raw_mut(cwd: &Path, args: &[&str]) -> Result<(bool, String)> {
 /// Marker line guarding the default-exclude seed.
 /// Environments may pre-seed the same block at provision time under this marker; whichever side seeds first wins and the other becomes a no-op.
 const DEFAULT_EXCLUDES_MARKER: &str = "ezer default excludes";
-const LEGACY_EXCLUDES_MARKER: &str = "grok default excludes";
+const LEGACY_EXCLUDES_MARKER: &str = "ezer default excludes";
 /// Local-only default excludes so `stage_all` can't sweep in dependency trees, build output, or env files.
 /// Lives in `.git/info/exclude`, which never enters the repo's history. `git add -f` still overrides.
 const DEFAULT_EXCLUDES_BLOCK: &str = "\

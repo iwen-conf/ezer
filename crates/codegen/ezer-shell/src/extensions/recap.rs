@@ -1,4 +1,4 @@
-//! `x.ai/recap` extension handler.
+//! `ezer/recap` extension handler.
 //!
 //! Triggers generation of a session recap (a short "where was I" summary of the session so far) via [`SessionCommand::Recap`].
 //! This is fire-and-forget: the handler returns as soon as the command is queued rather than blocking on the model call.
@@ -26,7 +26,7 @@ pub async fn handle(agent: &MvpAgent, args: &acp::ExtRequest) -> ExtResult {
     let req: RecapRequest = parse_params(args)?;
     tracing::info!(auto = req.auto, "handling /recap request");
 
-    // Feature gate: the remote setting, the `[features] session_recap` config.toml key, or the `GROK_SESSION_RECAP` env var (default ON)
+    // Feature gate: the remote setting, the `[features] session_recap` config.toml key, or the `EZER_SESSION_RECAP` env var (default ON)
     // Gates both the manual `/recap` and the automatic recap
     if !agent.cfg.borrow().is_session_recap_enabled() {
         tracing::debug!("session recap disabled by config/feature flag; ignoring request");

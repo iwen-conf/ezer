@@ -1,4 +1,4 @@
-//! Tests for [`super`] (the grok.com relay connection loop).
+//! Tests for [`super`] (the ezer.com relay connection loop).
 //! Extracted from `relay.rs` so the implementation reads top-to-bottom; wired in via `#[path = "relay_tests.rs"] mod tests;`.
 use super::*;
 use serde_json::json;
@@ -291,62 +291,62 @@ async fn test_ws_session_cancel_stops_session() {
         }
     );
 }
-/// Helper to create a test GrokAuth with the given key.
-fn test_auth(key: &str) -> GrokAuth {
-    GrokAuth {
+/// Helper to create a test EzerAuth with the given key.
+fn test_auth(key: &str) -> EzerAuth {
+    EzerAuth {
         key: key.to_string(),
         refresh_token: Some("rt".to_string()),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     }
 }
 #[test]
 fn for_session_builds_only_for_xai_issuer() {
     use ezer_login::XAI_OAUTH2_ISSUER;
-    let cfg = GrokComConfig::default();
-    let builds = |a: &GrokAuth| RelayConfig::for_session(a, &cfg, None, None).is_some();
-    let xai = GrokAuth {
+    let cfg = EzerComConfig::default();
+    let builds = |a: &EzerAuth| RelayConfig::for_session(a, &cfg, None, None).is_some();
+    let xai = EzerAuth {
         auth_mode: AuthMode::Oidc,
         oidc_issuer: Some(XAI_OAUTH2_ISSUER.to_string()),
         ..test_auth("xai-bearer")
     };
     assert!(xai.is_xai_auth(), "precondition: is_xai_auth");
     assert!(builds(&xai));
-    let external_xai = GrokAuth {
+    let external_xai = EzerAuth {
         auth_mode: AuthMode::External,
         oidc_issuer: Some(XAI_OAUTH2_ISSUER.to_string()),
         ..test_auth("ext-bearer")
     };
     assert!(external_xai.is_xai_auth(), "precondition: is_xai_auth");
     assert!(builds(&external_xai));
-    assert!(!builds(&GrokAuth {
+    assert!(!builds(&EzerAuth {
         key: String::new(),
         ..xai.clone()
     }));
-    assert!(!builds(&GrokAuth {
+    assert!(!builds(&EzerAuth {
         auth_mode: AuthMode::ApiKey,
         ..test_auth("k")
     }));
-    assert!(!builds(&GrokAuth {
+    assert!(!builds(&EzerAuth {
         auth_mode: AuthMode::External,
         ..test_auth("k")
     }));
-    assert!(!builds(&GrokAuth {
+    assert!(!builds(&EzerAuth {
         auth_mode: AuthMode::WebLogin,
         ..test_auth("k")
     }));
-    assert!(!builds(&GrokAuth {
+    assert!(!builds(&EzerAuth {
         auth_mode: AuthMode::Oidc,
         oidc_issuer: Some("https://login.acme-corp.example/oauth2".to_string()),
         ..test_auth("k")
     }));
-    assert!(!builds(&GrokAuth {
+    assert!(!builds(&EzerAuth {
         auth_mode: AuthMode::External,
         oidc_issuer: Some("https://login.acme-corp.example/oauth2".to_string()),
         ..test_auth("k")
     }));
 }
-/// Helper: write a GrokAuth to disk under the given scope.
-fn write_test_auth_to_disk(dir: &std::path::Path, scope: &str, auth: &GrokAuth) {
+/// Helper: write a EzerAuth to disk under the given scope.
+fn write_test_auth_to_disk(dir: &std::path::Path, scope: &str, auth: &EzerAuth) {
     let path = dir.join("auth.json");
     let mut map = ezer_login::read_auth_json(&path).unwrap_or_default();
     map.insert(scope.to_owned(), auth.clone());
@@ -368,23 +368,23 @@ async fn auth_recovery_refreshes_and_heals_missing_auth_json() {
     impl TokenRefresher for CountingRefresher {
         async fn refresh(&self, _reason: ezer_login::manager::RefreshReason) -> RefreshOutcome {
             self.calls.fetch_add(1, Ordering::SeqCst);
-            RefreshOutcome::Success(Box::new(GrokAuth {
+            RefreshOutcome::Success(Box::new(EzerAuth {
                 key: "fresh-from-authority".into(),
                 auth_mode: AuthMode::Oidc,
                 oidc_issuer: Some(XAI_OAUTH2_ISSUER.to_string()),
                 refresh_token: Some("rt-rotated".into()),
                 expires_at: Some(chrono::Utc::now() + chrono::Duration::hours(1)),
-                ..GrokAuth::test_default()
+                ..EzerAuth::test_default()
             }))
         }
     }
     let dir = tempfile::tempdir().unwrap();
-    let cfg = ezer_login::GrokComConfig::default();
+    let cfg = ezer_login::EzerComConfig::default();
     let scope = cfg.auth_scope();
     let am = Arc::new(
         AuthManager::new(dir.path(), cfg.clone()).with_proxy_base_url("http://127.0.0.1:1"),
     );
-    let expired_session = GrokAuth {
+    let expired_session = EzerAuth {
         auth_mode: AuthMode::Oidc,
         oidc_issuer: Some(XAI_OAUTH2_ISSUER.to_string()),
         refresh_token: Some("rt-valid-unconsumed".into()),
@@ -428,9 +428,9 @@ async fn attempt_auth_recovery_same_key_backs_off_without_cancel() {
         }
     }
     let dir = tempfile::tempdir().unwrap();
-    let cfg = ezer_login::GrokComConfig::default();
+    let cfg = ezer_login::EzerComConfig::default();
     let am = Arc::new(AuthManager::new(dir.path(), cfg.clone()));
-    let fresh_session = GrokAuth {
+    let fresh_session = EzerAuth {
         auth_mode: AuthMode::Oidc,
         oidc_issuer: Some(XAI_OAUTH2_ISSUER.to_string()),
         refresh_token: Some("rt-valid".into()),
@@ -481,7 +481,7 @@ async fn test_auth_refresh_via_auth_manager_on_auth_error() {
         }
     });
     let dir = tempfile::tempdir().unwrap();
-    let cfg = ezer_login::GrokComConfig::default();
+    let cfg = ezer_login::EzerComConfig::default();
     let scope = cfg.auth_scope();
     let am = Arc::new(AuthManager::new(dir.path(), cfg));
     am.hot_swap(test_auth("old-key"));
@@ -534,7 +534,7 @@ async fn test_auth_refresh_failure_continues_with_backoff() {
         }
     });
     let dir = tempfile::tempdir().unwrap();
-    let cfg = ezer_login::GrokComConfig::default();
+    let cfg = ezer_login::EzerComConfig::default();
     let scope = cfg.auth_scope();
     let am = Arc::new(AuthManager::new(dir.path(), cfg));
     am.hot_swap(test_auth("old-key"));
@@ -576,7 +576,7 @@ async fn non_sticky_verdict_keeps_reconnecting_with_growing_backoff() {
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
     let addr = listener.local_addr().unwrap();
     let dir = tempfile::tempdir().unwrap();
-    let cfg = ezer_login::GrokComConfig::default();
+    let cfg = ezer_login::EzerComConfig::default();
     let scope = cfg.auth_scope();
     let am = Arc::new(AuthManager::new(dir.path(), cfg));
     am.hot_swap(test_auth("old-key"));
@@ -699,7 +699,7 @@ fn relay_initialize_gains_user_message_echo_capability() {
         "jsonrpc": "2.0", "id": 7, "method": "initialize",
         "params": {
             "protocolVersion": 1,
-            "clientCapabilities": { "_meta": { "x.ai/fs_notify": true } }
+            "clientCapabilities": { "_meta": { "ezer/fs_notify": true } }
         }
     });
     assert!(declare_relay_client_capabilities(&mut frame));
@@ -707,10 +707,10 @@ fn relay_initialize_gains_user_message_echo_capability() {
         .pointer("/params/clientCapabilities/_meta")
         .expect("_meta present");
     assert_eq!(
-        meta.get("x.ai/userMessageEcho"),
+        meta.get("ezer/userMessageEcho"),
         Some(&serde_json::json!(true))
     );
-    assert_eq!(meta.get("x.ai/fs_notify"), Some(&serde_json::json!(true)));
+    assert_eq!(meta.get("ezer/fs_notify"), Some(&serde_json::json!(true)));
     assert_eq!(frame.get("id"), Some(&serde_json::json!(7)));
 }
 #[test]
@@ -729,7 +729,7 @@ fn relay_initialize_without_capabilities_block_gets_one() {
 fn relay_explicit_user_message_echo_is_respected() {
     let mut frame = serde_json::json!({
         "jsonrpc": "2.0", "id": 1, "method": "initialize",
-        "params": { "clientCapabilities": { "_meta": { "x.ai/userMessageEcho": false } } }
+        "params": { "clientCapabilities": { "_meta": { "ezer/userMessageEcho": false } } }
     });
     assert!(!declare_relay_client_capabilities(&mut frame));
     assert_eq!(

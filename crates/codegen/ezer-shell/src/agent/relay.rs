@@ -1,6 +1,6 @@
 //! WebSocket relay connection management.
 //!
-//! This module provides a shared `RelayConnection` that handles the WebSocket connection to the grok.com relay server with automatic reconnection.
+//! This module provides a shared `RelayConnection` that handles the WebSocket connection to the ezer.com relay server with automatic reconnection.
 //! It is used by both `run_headless` and `run_leader` modes.
 use super::proxy;
 use crate::{teprintln, tprintln};
@@ -14,7 +14,7 @@ use tokio_tungstenite::{
 };
 use tokio_util::sync::CancellationToken;
 use tracing::{debug, info, warn};
-use ezer_login::{GrokAuth, GrokComConfig};
+use ezer_login::{EzerAuth, EzerComConfig};
 const KEEPALIVE_INTERVAL_SECS: u64 = 15;
 /// Read-side liveness deadline. The write half pings every `KEEPALIVE_INTERVAL_SECS`, and a healthy peer answers each ping with a pong. A live connection thus delivers an inbound frame at least that often.
 /// If *nothing* arrives for this long the connection is treated as dead and the session is torn down so the reconnect loop can take over.
@@ -56,23 +56,23 @@ impl ReconnectBackoff {
 /// JSON-RPC auth error code
 const AUTH_ERROR_CODE: i64 = -32000;
 use ezer_login::AuthManager;
-/// Config for the grok.com WebSocket relay.
+/// Config for the ezer.com WebSocket relay.
 /// Fields are private so the only constructor is [`RelayConfig::for_session`]: "no relay without a session bearer" is a compile-time guarantee.
 #[derive(Clone)]
 pub struct RelayConfig {
     ws_url: String,
     ws_origin: String,
     token_header: String,
-    auth: GrokAuth,
+    auth: EzerAuth,
     auth_manager: Option<Arc<AuthManager>>,
 }
 impl RelayConfig {
-    /// Session gate: builds only for a grok.com first-party session (`is_xai_auth`: x.ai-issuer OIDC or external credential) with a non-empty bearer.
+    /// Session gate: builds only for a ezer.com first-party session (`is_xai_auth`: x.ai-issuer OIDC or external credential) with a non-empty bearer.
     /// BYOK/ApiKey, non-x.ai issuers (enterprise OIDC, third-party external providers), and deprecated WebLogin get `None`.
     /// With relay off, the leader still serves clients over IPC.
     pub(crate) fn for_session(
-        session: &GrokAuth,
-        ctx: &GrokComConfig,
+        session: &EzerAuth,
+        ctx: &EzerComConfig,
         alpha_test_key: Option<String>,
         auth_manager: Option<Arc<AuthManager>>,
     ) -> Option<Self> {
@@ -81,8 +81,8 @@ impl RelayConfig {
         }
         let _ = alpha_test_key;
         Some(Self {
-            ws_url: ctx.grok_ws_url.clone(),
-            ws_origin: ctx.grok_ws_origin.clone(),
+            ws_url: ctx.ezer_ws_url.clone(),
+            ws_origin: ctx.ezer_ws_origin.clone(),
             token_header: ctx.token_header.clone(),
             auth: session.clone(),
             auth_manager,
@@ -92,7 +92,7 @@ impl RelayConfig {
 /// Callback type for first connection event.
 pub(crate) type FirstConnectCallback = Box<dyn FnOnce() + Send + 'static>;
 /// Handle to a running relay connection.
-/// The relay maintains a persistent WebSocket connection to grok.com with automatic reconnection on disconnection.
+/// The relay maintains a persistent WebSocket connection to ezer.com with automatic reconnection on disconnection.
 pub struct RelayHandle {
     /// Cancel token to stop the relay connection loop
     cancel: CancellationToken,
@@ -693,7 +693,7 @@ where
 /// The relay is the durable server-side store for every session on this
 /// connection and persists `user_message_chunk` solely from the agent's
 /// notifications — it never re-derives the prompt from `session/prompt`. Since
-/// the live echo became opt-in (`x.ai/userMessageEcho`), a relay whose
+/// the live echo became opt-in (`ezer/userMessageEcho`), a relay whose
 /// `initialize` omits the flag silently loses every user prompt from stored
 /// history. Declaring it here, where the relay's frames enter the agent, makes
 /// persistence independent of the relay build; an explicit value from the relay

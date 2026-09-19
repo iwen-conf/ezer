@@ -20,7 +20,7 @@ use tokio::io::AsyncReadExt;
 
 pub use ezer_config::shell::UnixShellKind;
 
-const INIT_MARKER: &str = "__GROK_STATIC_SHELL_MARKER__";
+const INIT_MARKER: &str = "__EZER_STATIC_SHELL_MARKER__";
 const INIT_TIMEOUT: Duration = Duration::from_secs(15);
 
 /// A fixed snapshot of rc-defined functions and aliases, captured once.
@@ -139,8 +139,8 @@ impl StaticShellSnapshot {
                  builtin eval -- \"$snap\"; \
                  builtin export EZER_AGENT=1; \
                  builtin export PWD=\"$(builtin pwd)\"; {sudo_inject}{search_inject}\
-                 __grok_user_cmd=\"$1\"; builtin declare +x __grok_user_cmd 2>/dev/null; builtin set --; \
-                 builtin eval \"$__grok_user_cmd\" 2>&1"
+                 __ezer_user_cmd=\"$1\"; builtin declare +x __ezer_user_cmd 2>/dev/null; builtin set --; \
+                 builtin eval \"$__ezer_user_cmd\" 2>&1"
             ),
             UnixShellKind::Zsh => format!(
                 "snap=$(command cat <&3); \
@@ -149,8 +149,8 @@ impl StaticShellSnapshot {
                  builtin export EZER_AGENT=1; \
                  builtin export PWD=\"$(builtin pwd)\"; \
                  builtin setopt aliases 2>/dev/null; {sudo_inject}{search_inject}\
-                 __grok_user_cmd=\"$1\"; builtin typeset +x __grok_user_cmd 2>/dev/null; builtin set --; \
-                 builtin eval \"$__grok_user_cmd\" 2>&1"
+                 __ezer_user_cmd=\"$1\"; builtin typeset +x __ezer_user_cmd 2>/dev/null; builtin set --; \
+                 builtin eval \"$__ezer_user_cmd\" 2>&1"
             ),
         };
 
@@ -278,8 +278,8 @@ mod tests {
             return;
         }
         let output = run_static(
-            "alias grok_alias_probe='echo ALIAS_OK'\ngrok_fn_probe() { echo FN_OK; }\n",
-            "grok_alias_probe && grok_fn_probe",
+            "alias ezer_alias_probe='echo ALIAS_OK'\nezer_fn_probe() { echo FN_OK; }\n",
+            "ezer_alias_probe && ezer_fn_probe",
         )
         .await;
         assert!(output.status.success(), "command failed: {output:?}");

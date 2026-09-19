@@ -475,7 +475,7 @@ pub fn run_burst(
 pub struct SweepEnv {
     pub mock_rt: tokio::runtime::Runtime,
     pub deadline: Duration,
-    _grok_home: TempDir,
+    _ezer_home: TempDir,
 }
 
 /// SAFETY: call before any agent threads exist; mock workers never read env.
@@ -493,9 +493,9 @@ pub fn sweep_env_init() -> SweepEnv {
         .enable_all()
         .build()
         .expect("mock runtime");
-    let grok_home = TempDir::new().expect("ezer home");
+    let ezer_home = TempDir::new().expect("ezer home");
     unsafe {
-        std::env::set_var("GROK_HOME", grok_home.path());
+        std::env::set_var("EZER_HOME", ezer_home.path());
         std::env::set_var("XAI_API_KEY", "test-key-for-ci");
         std::env::set_var("EZER_TELEMETRY_ENABLED", "false");
         std::env::set_var("EZER_FEEDBACK_ENABLED", "false");
@@ -504,7 +504,7 @@ pub fn sweep_env_init() -> SweepEnv {
     SweepEnv {
         mock_rt,
         deadline: Duration::from_secs(env_usize("EZER_SWEEP_DEADLINE_S", 240) as u64),
-        _grok_home: grok_home,
+        _ezer_home: ezer_home,
     }
 }
 

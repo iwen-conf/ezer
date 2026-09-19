@@ -30,7 +30,7 @@ fn every_field_survives_a_round_trip_through_the_shared_fixture() {
         prompt_id: Some("97135ed2-71a5-4581-b959-3341bbd03e5f".into()),
         transcript_path: Some("/home/user/sessions/019fa651/updates.jsonl".into()),
         model: StatusLineModel {
-            id: Some("grok-4.5".into()),
+            id: Some("test-model-4.5".into()),
             display_name: Some("ezer 4.5".into()),
         },
         workspace: StatusLineWorkspace {

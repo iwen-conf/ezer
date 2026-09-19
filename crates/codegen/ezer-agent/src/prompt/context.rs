@@ -462,9 +462,9 @@ mod tests {
     #[test]
     fn test_placeholders_system_prompt_label_override() {
         let mut ctx = test_context();
-        ctx.system_prompt_label = "Grok Internal".into();
+        ctx.system_prompt_label = "Ezer Internal".into();
         let p = ctx.placeholders();
-        assert_eq!(jp(&p, "/system_prompt_label"), "Grok Internal");
+        assert_eq!(jp(&p, "/system_prompt_label"), "Ezer Internal");
     }
     #[test]
     fn test_missing_system_prompt_label_deserializes_to_default() {

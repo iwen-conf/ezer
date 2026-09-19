@@ -459,7 +459,7 @@ mod tests {
                 content: "Verify UI.".into(),
             },
             RuleEntry {
-                path: "/home/dev/.grok/AGENTS.md".into(),
+                path: "/home/dev/.ezer/AGENTS.md".into(),
                 content: "User prefs.".into(),
             },
         ];

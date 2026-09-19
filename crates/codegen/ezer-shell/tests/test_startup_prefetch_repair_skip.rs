@@ -11,7 +11,7 @@ fn getter_does_not_fetch_while_policy_repair_is_pending() {
         let server = common::start_seeded_mock(home.path()).await;
         // A team principal with no serving managed policy: repair is pending,
         // so the getter must return ineligible without egress.
-        let scope = ezer_login::GrokComConfig::default().auth_scope();
+        let scope = ezer_login::EzerComConfig::default().auth_scope();
         let auth = serde_json::json!({
             scope: {
                 "key": "team-session-token",

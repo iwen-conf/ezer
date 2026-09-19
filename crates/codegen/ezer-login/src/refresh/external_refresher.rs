@@ -192,7 +192,7 @@ impl TokenRefresher for ExternalBinaryRefresher {
                 *self.ladder.lock() = StrikeLadder::default();
                 RefreshOutcome::success(auth)
             }
-            // A timeout is the contract's interactive-required signal (conforming providers decline a headless `GROK_AUTH_EXPIRED=1` run fast; only one waiting on a human outlives the budget), so it stays a single-strike permanent verdict whatever the ladder says.
+            // A timeout is the contract's interactive-required signal (conforming providers decline a headless `EZER_AUTH_EXPIRED=1` run fast; only one waiting on a human outlives the budget), so it stays a single-strike permanent verdict whatever the ladder says.
             Err(ExternalRefreshError::TimedOut) => {
                 ezer_telemetry::unified_log::warn(
                     "auth: external binary refresh timed out",
@@ -212,16 +212,16 @@ impl TokenRefresher for ExternalBinaryRefresher {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::GrokAuth;
+    use crate::EzerAuth;
     use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 
     /// Runner that yields scripted results in order, then `Failed`.
     struct FakeRunner {
-        results: std::sync::Mutex<Vec<Result<GrokAuth, ExternalRefreshError>>>,
+        results: std::sync::Mutex<Vec<Result<EzerAuth, ExternalRefreshError>>>,
         calls: AtomicU32,
     }
     impl FakeRunner {
-        fn new(results: Vec<Result<GrokAuth, ExternalRefreshError>>) -> Self {
+        fn new(results: Vec<Result<EzerAuth, ExternalRefreshError>>) -> Self {
             Self {
                 results: std::sync::Mutex::new(results),
                 calls: AtomicU32::new(0),
@@ -236,7 +236,7 @@ mod tests {
         async fn run_external_command(
             &self,
             _command: &str,
-        ) -> Result<GrokAuth, ExternalRefreshError> {
+        ) -> Result<EzerAuth, ExternalRefreshError> {
             self.calls.fetch_add(1, Ordering::SeqCst);
             let mut results = self.results.lock().unwrap();
             if results.is_empty() {
@@ -248,21 +248,21 @@ mod tests {
 
     /// Snapshot with a settable cached credential and send-horizon state.
     struct FakeSnapshot {
-        cached: parking_lot::Mutex<Option<GrokAuth>>,
+        cached: parking_lot::Mutex<Option<EzerAuth>>,
         sendable: AtomicBool,
     }
     impl FakeSnapshot {
         /// A cached credential still inside the buffer but sendable: the common proactive-refresh situation.
         fn sendable(key: &str) -> Arc<Self> {
             Arc::new(Self {
-                cached: parking_lot::Mutex::new(Some(GrokAuth {
+                cached: parking_lot::Mutex::new(Some(EzerAuth {
                     key: key.into(),
-                    ..GrokAuth::test_default()
+                    ..EzerAuth::test_default()
                 })),
                 sendable: AtomicBool::new(true),
             })
         }
-        fn set_cached(&self, auth: Option<GrokAuth>) {
+        fn set_cached(&self, auth: Option<EzerAuth>) {
             *self.cached.lock() = auth;
         }
         fn set_sendable(&self, sendable: bool) {
@@ -270,13 +270,13 @@ mod tests {
         }
     }
     impl AuthSnapshot for FakeSnapshot {
-        fn current(&self) -> Option<GrokAuth> {
+        fn current(&self) -> Option<EzerAuth> {
             None
         }
-        fn expired_auth(&self) -> Option<GrokAuth> {
+        fn expired_auth(&self) -> Option<EzerAuth> {
             self.cached.lock().clone()
         }
-        fn read_disk_auth(&self) -> Option<GrokAuth> {
+        fn read_disk_auth(&self) -> Option<EzerAuth> {
             None
         }
         fn is_expired(&self) -> bool {
@@ -294,14 +294,14 @@ mod tests {
         ExternalBinaryRefresher::new(runner.clone(), snapshot.clone(), "auth-binary".into())
     }
 
-    fn failed() -> Result<GrokAuth, ExternalRefreshError> {
+    fn failed() -> Result<EzerAuth, ExternalRefreshError> {
         Err(ExternalRefreshError::Failed("mint blip".into()))
     }
 
-    fn fresh(key: &str) -> Result<GrokAuth, ExternalRefreshError> {
-        Ok(GrokAuth {
+    fn fresh(key: &str) -> Result<EzerAuth, ExternalRefreshError> {
+        Ok(EzerAuth {
             key: key.into(),
-            ..GrokAuth::test_default()
+            ..EzerAuth::test_default()
         })
     }
 
@@ -492,9 +492,9 @@ mod tests {
         );
 
         // Another process installs a new credential; this refresher sees it on its next call.
-        let new_cred = GrokAuth {
+        let new_cred = EzerAuth {
             key: "new".into(),
-            ..GrokAuth::test_default()
+            ..EzerAuth::test_default()
         };
         snapshot.set_cached(Some(new_cred.clone()));
         match refresher.refresh(RefreshReason::PreRequest).await {
@@ -538,11 +538,11 @@ mod tests {
         );
 
         // Same key, later expiry and mint time: a different issuance.
-        let reissued = GrokAuth {
+        let reissued = EzerAuth {
             key: "same-bearer".into(),
             create_time: chrono::Utc::now(),
             expires_at: Some(chrono::Utc::now() + chrono::Duration::minutes(15)),
-            ..GrokAuth::test_default()
+            ..EzerAuth::test_default()
         };
         snapshot.set_cached(Some(reissued.clone()));
         match refresher.refresh(RefreshReason::PreRequest).await {

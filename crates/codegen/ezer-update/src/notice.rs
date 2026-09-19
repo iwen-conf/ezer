@@ -5,7 +5,7 @@
 //! startup does not repeat the same notice every launch.
 //!
 //! Version checks use this fork's GitHub releases (`iwen-conf/ezer`, or
-//! `$EZER_UPSTREAM_REPO`). They never query xAI / grok.com / x.ai channels.
+//! `$EZER_UPSTREAM_REPO`). They never query xAI / ezer.com / x.ai channels.
 
 use std::path::{Path, PathBuf};
 use std::time::Duration;
@@ -93,7 +93,7 @@ pub fn ezer_upstream_repo() -> String {
         .unwrap_or_else(|| DEFAULT_EZER_UPSTREAM_REPO.to_string())
 }
 
-/// `owner/repo` that is not an xAI / grok.com / X channel.
+/// `owner/repo` that is not an xAI / ezer.com / X channel.
 pub fn is_allowed_upstream_repo(repo: &str) -> bool {
     let repo = repo.trim();
     if repo.is_empty() || !repo.contains('/') || repo.contains("://") {
@@ -102,7 +102,7 @@ pub fn is_allowed_upstream_repo(repo: &str) -> bool {
     let lower = repo.to_ascii_lowercase();
     if lower.contains("x.ai")
         || lower.contains("xai")
-        || lower.contains("grok")
+        || lower.contains("ezer")
         || lower.contains("twitter")
         || lower.split('/').next() == Some("x")
     {
@@ -207,8 +207,8 @@ mod tests {
     #[test]
     fn xai_bound_repos_are_rejected() {
         assert!(!is_allowed_upstream_repo("xai-org-shared/ezer-build"));
-        assert!(!is_allowed_upstream_repo("xai-org/grok"));
-        assert!(!is_allowed_upstream_repo("foo/grok-cli"));
+        assert!(!is_allowed_upstream_repo("xai-org/ezer"));
+        assert!(!is_allowed_upstream_repo("foo/ezer-cli"));
         assert!(!is_allowed_upstream_repo("https://x.ai/cli"));
         assert!(!is_allowed_upstream_repo(""));
         assert!(!is_allowed_upstream_repo("nopath"));

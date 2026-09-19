@@ -8,10 +8,10 @@ use super::common::*;
 const GATE_MSG: &str = "ZZSUBGATEMSG";
 
 /// A tier in the shell's `QUALIFYING_TIERS` list.
-const PAID_TIER: &str = "SuperGrokPro";
+const PAID_TIER: &str = "MaxTierPro";
 
 /// Display name delivered via `/settings` `subscription_tier_display`.
-const PAID_TIER_DISPLAY: &str = "SuperGrok Pro";
+const PAID_TIER_DISPLAY: &str = "MaxTier Pro";
 
 /// Count of live subscription checks the client made against the mock (`GET /v1/user?include=subscription`).
 /// Plain `/v1/user` enrichment fetches are deliberately excluded.
@@ -133,10 +133,10 @@ fn pump_until(
 /// The qualifying-tier JWT refresh then hits `localhost:22255`: instant connection-refused instead
 /// of a real network call to auth.x.ai.
 fn seed_fake_oauth_local_issuer(content: &ContentController, user: &str) {
-    let grok_home = content.home().join(".ezer");
-    std::fs::create_dir_all(&grok_home).expect("create temp .ezer");
+    let ezer_home = content.home().join(".ezer");
+    std::fs::create_dir_all(&ezer_home).expect("create temp .ezer");
     std::fs::write(
-        grok_home.join("auth.json"),
+        ezer_home.join("auth.json"),
         format!(
             r#"{{
   "http://localhost:22255::b1a00492-073a-47ea-816f-4c329264a828": {{
@@ -208,7 +208,7 @@ fn spawn_subscription_session(
 async fn subscription_watch_polls_free_tier_then_goes_dormant_after_upgrade() {
     // Start free-targeted (no paid-only model); swap after upgrade.
     // OIDC mock is started only after free-phase polling so early refresh still connection-refuses (keeps the free watch path hermetic)
-    let content = ContentController::start_with_models(vec![MockModel::new("grok-3")])
+    let content = ContentController::start_with_models(vec![MockModel::new("test-model-3")])
         .await
         .expect("start content");
     content.set_response(format!("{MOCK_RESPONSE_SENTINEL} watch cadence."));
@@ -239,7 +239,7 @@ async fn subscription_watch_polls_free_tier_then_goes_dormant_after_upgrade() {
         "subscription_tier_display": PAID_TIER_DISPLAY,
     }));
     content.server().set_models(vec![
-        MockModel::new("grok-3"),
+        MockModel::new("test-model-3"),
         MockModel::new(PAID_ONLY_MODEL),
     ]);
     let models_before = models_count(&content);
@@ -301,7 +301,7 @@ async fn startup_gate_shows_paywall_for_free_user_after_live_check() {
     content.server().set_settings(json!({
         "allow_access": false,
         "gate_message": GATE_MSG,
-        "gate_url": "https://grok.com/supergrok?referrer=ezer-build",
+        "gate_url": "https://example.test/upgrade",
         "gate_label": "Subscribe",
     }));
 

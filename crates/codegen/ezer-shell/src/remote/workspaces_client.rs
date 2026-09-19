@@ -4,7 +4,7 @@ use serde::Deserialize;
 
 use ezer_login::AuthManager;
 
-const GROK_WEB_URL: &str = "https://grok.com";
+const REMOTE_WEB_URL: &str = "";
 
 #[derive(Debug, Clone, Default, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -67,7 +67,7 @@ impl WorkspacesClient {
             "EZER_CONVERSATIONS_BASE_URL",
             "EZER_CODE_WEB_URL",
         ])
-        .unwrap_or_else(|| GROK_WEB_URL.to_string());
+        .unwrap_or_else(|| REMOTE_WEB_URL.to_string());
         Self {
             http: crate::http::shared_client(),
             base_url,
@@ -100,7 +100,7 @@ impl WorkspacesClient {
             .header("Authorization", format!("Bearer {}", auth.key))
             .header(
                 "X-XAI-Token-Auth",
-                self.auth.grok_com_config().token_header.clone(),
+                self.auth.ezer_com_config().token_header.clone(),
             )
             .header("x-userid", &auth.user_id)
             .header("x-ezer-client-version", ezer_version::VERSION)

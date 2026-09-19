@@ -4,7 +4,7 @@
 //! On a qualifying tier it does a best-effort JWT refresh and returns an `UnblockResult`.
 //! The agent then re-fetches settings and lifts the gate itself.
 //!
-//! The pager drives the polling via `x.ai/auth/check_subscription`.
+//! The pager drives the polling via `ezer/auth/check_subscription`.
 //! The callers are the 5s paywall chain, the free-tier watch, the refocus check, and the gate deferral that verifies before showing the paywall.
 //! See the pager's `app::subscription` module.
 use std::sync::Arc;
@@ -33,7 +33,7 @@ pub(crate) struct UnblockResult {
 async fn fetch_user_info(
     http_client: &reqwest::Client,
     url: &str,
-    auth: &ezer_login::GrokAuth,
+    auth: &ezer_login::EzerAuth,
     auth_manager: &AuthManager,
     alpha_test_key: Option<&str>,
 ) -> Result<UserInfo, &'static str> {
@@ -43,7 +43,7 @@ async fn fetch_user_info(
         .header("Authorization", format!("Bearer {}", auth.key))
         .header(
             "X-XAI-Token-Auth",
-            auth_manager.grok_com_config().token_header.as_str(),
+            auth_manager.ezer_com_config().token_header.as_str(),
         )
         .header("x-ezer-client-version", ezer_version::VERSION)
         .header(
@@ -60,7 +60,7 @@ async fn fetch_user_info(
         Err(_) => Err("transport"),
     }
 }
-/// Called by the pager every 5s while the paywall is shown (`x.ai/auth/check_subscription`).
+/// Called by the pager every 5s while the paywall is shown (`ezer/auth/check_subscription`).
 /// Queries `/user?include=subscription` for the live tier.
 /// On a qualifying tier it does a best-effort JWT refresh and returns `Some(UnblockResult)`.
 #[tracing::instrument(name = "auth.paywall_check", skip_all, fields(user_id = %user_id))]
@@ -171,10 +171,10 @@ mod tests {
     #[test]
     fn all_paid_tiers_qualify() {
         for tier in &[
-            "SuperGrokPro",
-            "SuperGrokPlus",
-            "GrokPro",
-            "SuperGrokLite",
+            "MaxTierPro",
+            "MaxTierPlus",
+            "EzerPro",
+            "MaxTierLite",
             "XPremiumPlus",
             "XPremium",
             "XBasic",

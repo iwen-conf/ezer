@@ -95,15 +95,15 @@ pub struct EntryGetResult {
 }
 pub async fn handle(agent: &MvpAgent, args: &acp::ExtRequest) -> ExtResult {
     match args.method.as_ref() {
-        "x.ai/bundle/sync" => {
+        "ezer/bundle/sync" => {
             let req: BundleSyncRequest = parse_params(args)?;
             to_ext_response(sync_bundle(agent, req).await)
         }
-        "x.ai/bundle/status" => {
+        "ezer/bundle/status" => {
             let _req: BundleStatusRequest = parse_params(args)?;
             to_ext_response(status_bundle())
         }
-        "x.ai/bundle/entry/get" => {
+        "ezer/bundle/entry/get" => {
             let req: EntryGetRequest = parse_params(args)?;
             to_ext_response(get_entry(&req.kind, &req.name))
         }
@@ -440,8 +440,8 @@ mod tests {
             .insert("review".to_string(), "# Review skill\n".to_string());
         bundle
     }
-    fn test_auth() -> ezer_login::GrokAuth {
-        ezer_login::GrokAuth {
+    fn test_auth() -> ezer_login::EzerAuth {
+        ezer_login::EzerAuth {
             key: "token".to_string(),
             auth_mode: ezer_login::AuthMode::Oidc,
             create_time: chrono::Utc::now(),
@@ -461,7 +461,7 @@ mod tests {
             user_blocked_reason: None,
             team_blocked_reasons: vec![],
             coding_data_retention_opt_out: false,
-            has_grok_code_access: None,
+            has_remote_code_access: None,
             refresh_token: None,
             expires_at: Some(chrono::Utc::now() + chrono::Duration::hours(1)),
             oidc_issuer: None,
@@ -471,7 +471,7 @@ mod tests {
     fn test_auth_manager() -> Arc<ezer_login::AuthManager> {
         let dir = tempfile::tempdir().unwrap();
         let mgr =
-            ezer_login::AuthManager::new(dir.path(), ezer_login::GrokComConfig::default());
+            ezer_login::AuthManager::new(dir.path(), ezer_login::EzerComConfig::default());
         mgr.hot_swap(test_auth());
         std::mem::forget(dir);
         Arc::new(mgr)

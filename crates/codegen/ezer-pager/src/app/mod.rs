@@ -671,20 +671,20 @@ pub async fn run(
     let startup_start = std::time::Instant::now();
     let raw_config = ezer_shell::config::load_effective_config()
         .map_err(|e| anyhow::anyhow!("Failed to load config: {e}"))?;
-    let (grok_com_config, proxy_base_url) =
+    let (ezer_com_config, proxy_base_url) =
         match ezer_shell::agent::config::Config::new_from_toml_cfg(&raw_config) {
-            Ok(c) => (c.grok_com_config, c.endpoints.proxy_url()),
+            Ok(c) => (c.ezer_com_config, c.endpoints.proxy_url()),
             Err(e) => {
                 tracing::warn!(error = %e, "failed to parse config for auth refresh, using defaults");
                 (
-                    ezer_login::GrokComConfig::default(),
+                    ezer_login::EzerComConfig::default(),
                     ezer_shell::agent::config::EndpointsConfig::default().proxy_url(),
                 )
             }
         };
     if let ezer_login::PreTuiLoginOutcome::SignedIn(auth) =
         ezer_login::maybe_run_pre_tui_external_login(
-            &grok_com_config,
+            &ezer_com_config,
             proxy_base_url.clone(),
             args.force_login,
             io::stdin().is_terminal(),
@@ -697,13 +697,13 @@ pub async fn run(
     xai_tty_utils::redirect_native_stderr();
     let refreshed_auth = tokio::time::timeout(
         ezer_shell::http::STARTUP_AUTH_REFRESH_TIMEOUT,
-        ezer_login::try_ensure_fresh_auth(&grok_com_config, proxy_base_url),
+        ezer_login::try_ensure_fresh_auth(&ezer_com_config, proxy_base_url),
     )
     .await
     .unwrap_or(None);
     let settings_query = ezer_shell::agent::remote_config::settings_get::SettingsQuery::resolve(
         refreshed_auth,
-        Some(grok_com_config.clone()),
+        Some(ezer_com_config.clone()),
     );
     let had_prefetch =
         ezer_shell::agent::remote_config::settings_get::is_eligible(&settings_query);
@@ -736,7 +736,7 @@ pub async fn run(
         let settings = ezer_shell::agent::remote_config::settings_get::consume_wait(
             wait,
             warmed_auth.as_ref(),
-            &grok_com_config,
+            &ezer_com_config,
         );
         ezer_telemetry::startup::record_prefetch_wait(prefetch_wait_started.elapsed());
         settings

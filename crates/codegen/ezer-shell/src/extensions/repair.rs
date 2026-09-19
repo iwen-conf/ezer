@@ -1,4 +1,4 @@
-//! `x.ai/session/repair`: out-of-band recovery for sessions whose corrupted tool-call history 400s every request.
+//! `ezer/session/repair`: out-of-band recovery for sessions whose corrupted tool-call history 400s every request.
 //!
 //! A `ToolResult` whose owning `tool_call` is missing makes every request 400 with "unexpected `tool_use_id` found in `tool_result` blocks".
 //! The usual cause is a torn or merged `chat_history.jsonl` line skipped on load.
@@ -28,7 +28,7 @@ struct RepairSessionRequest {
     dry_run: bool,
 }
 
-/// Response payload for `x.ai/session/repair`.
+/// Response payload for `ezer/session/repair`.
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct RepairSessionResponse {
@@ -62,7 +62,7 @@ impl RepairSessionResponse {
 #[tracing::instrument(skip_all, fields(method = %args.method))]
 pub async fn handle(agent: &MvpAgent, args: &acp::ExtRequest) -> ExtResult {
     match args.method.as_ref() {
-        "x.ai/session/repair" => handle_session_repair(agent, args).await,
+        "ezer/session/repair" => handle_session_repair(agent, args).await,
         _ => Err(acp::Error::method_not_found()),
     }
 }
@@ -91,7 +91,7 @@ async fn handle_session_repair(agent: &MvpAgent, args: &acp::ExtRequest) -> ExtR
 
     // The session is not resident, so repair `chat_history.jsonl` in place on disk
     repair_on_disk(
-        &crate::util::grok_home::grok_home(),
+        &crate::util::ezer_home::ezer_home(),
         &req.session_id,
         req.dry_run,
     )
@@ -100,18 +100,18 @@ async fn handle_session_repair(agent: &MvpAgent, args: &acp::ExtRequest) -> ExtR
 
 /// Repair a non-resident session's history on disk.
 /// Loads via the resume path's corruption-tolerant reader (legacy upgrades apply), repairs, and writes back atomically.
-/// `grok_root` is injectable for tests.
-async fn repair_on_disk(grok_root: &std::path::Path, session_id: &str, dry_run: bool) -> ExtResult {
+/// `ezer_root` is injectable for tests.
+async fn repair_on_disk(ezer_root: &std::path::Path, session_id: &str, dry_run: bool) -> ExtResult {
     let summary = crate::session::persistence::find_summary_by_session_id_in_root(
         session_id,
-        &grok_root.join("sessions"),
+        &ezer_root.join("sessions"),
     )
     .ok_or_else(|| {
         acp::Error::resource_not_found(Some(format!("session not found: {session_id}")))
     })?;
     let info = summary.info.clone();
 
-    let storage = JsonlStorageAdapter::with_root(grok_root.to_path_buf());
+    let storage = JsonlStorageAdapter::with_root(ezer_root.to_path_buf());
     let mut chat_history = storage
         .load_session_without_updates(&info)
         .await

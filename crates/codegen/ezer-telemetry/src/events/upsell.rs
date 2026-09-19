@@ -4,7 +4,7 @@ use serde::Serialize;
 
 #[derive(Debug, Serialize, Clone, Copy, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
-pub enum SuperGrokUpsell {
+pub enum UpgradeUpsell {
     WelcomeScreen,
     RateLimitError,
     /// Free-usage-exhausted paywall modal (free-tier 429 with the `subscription:free-usage-exhausted` well-known error code).
@@ -14,20 +14,20 @@ pub enum SuperGrokUpsell {
 }
 
 #[derive(Serialize)]
-pub struct SuperGrokUpsellShown {
-    pub source: SuperGrokUpsell,
+pub struct UpgradeUpsellShown {
+    pub source: UpgradeUpsell,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub auth_method: Option<String>,
 }
 
 #[derive(Serialize)]
-pub struct SuperGrokUpsellClicked {
-    pub source: SuperGrokUpsell,
+pub struct UpgradeUpsellClicked {
+    pub source: UpgradeUpsell,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub auth_method: Option<String>,
 }
 
-/// Modeled on [`SuperGrokUpsell`]; lets the funnel attribute the click to the welcome hero vs the in-session header vs
+/// Modeled on [`UpgradeUpsell`]; lets the funnel attribute the click to the welcome hero vs the in-session header vs
 /// the banner vs the dashboard. Also distinguishes keyboard (`Ctrl+O`) activations from pointer/OSC 8 ones. Ord/Eq exist
 /// so the pager can track which (announcement, surface) pairs already showed the CTA.
 #[derive(Debug, Serialize, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
@@ -107,8 +107,8 @@ pub struct CreditLimitUpsellClicked {
     pub choice: CreditLimitChoice,
 }
 
-/// Emitted when a previously access-gated user re-authenticates and the gate is lifted, i.e. they subscribed (externally on grok.com) and came back.
-/// This is the actual conversion signal for SuperGrok Heavy subscriptions attributed to ezer.
+/// Emitted when a previously access-gated user re-authenticates and the gate is lifted, i.e. they subscribed (externally on ezer.com) and came back.
+/// This is the actual conversion signal for highest tier subscriptions attributed to ezer.
 /// The user saw the gate in ezer, went and paid, then returned with access.
 #[derive(Serialize)]
 pub struct SubscriptionActivated {

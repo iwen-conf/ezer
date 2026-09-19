@@ -1,4 +1,4 @@
-//! grok.com chat-product model catalog: caches `/rest/modes` and maps modes to the `SessionModelState` returned by `load_chat_session`
+//! ezer.com chat-product model catalog: caches `/rest/modes` and maps modes to the `SessionModelState` returned by `load_chat_session`
 //! (the chat analogue of [`crate::agent::remote_config::ModelsManager`]).
 //! These "modes" populate the desktop MODEL picker, not the ACP session plan-modes in `LoadSessionResponse.modes`.
 use crate::remote::chat_models_client::{
@@ -51,7 +51,7 @@ impl ChatModesManager {
             }),
         }
     }
-    /// The active grok.com identity, or `None` when unauthenticated.
+    /// The active ezer.com identity, or `None` when unauthenticated.
     /// Modes are per-identity (tier/ACL), so every cache key and store is gated on it.
     fn current_user_id(&self) -> Option<String> {
         self.inner.auth.current_or_expired().map(|a| a.user_id)
@@ -159,7 +159,7 @@ impl ChatModesManager {
 fn empty_state() -> acp::SessionModelState {
     acp::SessionModelState::new(acp::ModelId::from(String::new()), Vec::new())
 }
-/// Maps grok.com modes to `SessionModelState`: keeps only `available` modes and stashes `badgeText`/`iconHint`/`tags` in `_meta`.
+/// Maps ezer.com modes to `SessionModelState`: keeps only `available` modes and stashes `badgeText`/`iconHint`/`tags` in `_meta`.
 /// Reconciles `current_model_id` (default, else first available, else empty, never out-of-set).
 pub(crate) fn modes_to_model_state(resp: &ListModesResponse) -> acp::SessionModelState {
     let available_models: Vec<acp::ModelInfo> = resp
@@ -310,7 +310,7 @@ mod tests {
     }
     #[test]
     fn name_falls_back_to_id_when_title_blank() {
-        let mut m = available("grok-4.5", "");
+        let mut m = available("test-model-4.5", "");
         m.title = "   ".to_owned();
         let resp = ListModesResponse {
             modes: vec![m],
@@ -319,7 +319,7 @@ mod tests {
         let state = modes_to_model_state(&resp);
         assert_eq!(
             state.available_models.first().map(|m| m.name.as_str()),
-            Some("grok-4.5")
+            Some("test-model-4.5")
         );
     }
 }

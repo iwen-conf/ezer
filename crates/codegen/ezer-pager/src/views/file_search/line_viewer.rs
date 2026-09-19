@@ -1851,7 +1851,7 @@ mod tests {
         assert_eq!(band, theme.accent_plan);
         assert_eq!(fg, Some(Color::Black), "forced readable fg on the band");
 
-        let theme = Theme::groknight();
+        let theme = Theme::ezernight();
         let (band, fg) = commenting_band(&theme);
         assert_ne!(band, theme.accent_plan, "subtle tint, not the raw accent");
         assert_eq!(fg, None, "RGB rows keep their own fgs");
@@ -1874,7 +1874,7 @@ mod tests {
             }
         }
 
-        let theme = Theme::groknight();
+        let theme = Theme::ezernight();
         let spans = build_shortcut_button('a', "approve", true, &theme);
         for span in &spans {
             assert!(!span.style.add_modifier.contains(Modifier::REVERSED));

@@ -49,7 +49,7 @@ struct Fixture {
     _root: TempDir,
     project: PathBuf,
     claude: PathBuf,
-    grok_home: PathBuf,
+    ezer_home: PathBuf,
 }
 
 /// Project with a real skill and a fat `.claude/worktrees` tree.
@@ -64,14 +64,14 @@ fn build_fixture(worktree_dirs: usize) -> Fixture {
     let worktrees = claude.join("worktrees").join("wt1");
     make_nested_dirs(&worktrees, worktree_dirs);
 
-    let grok_home = root.path().join("ezer-home");
-    fs::create_dir_all(&grok_home).unwrap();
+    let ezer_home = root.path().join("ezer-home");
+    fs::create_dir_all(&ezer_home).unwrap();
 
     Fixture {
         _root: root,
         project,
         claude,
-        grok_home,
+        ezer_home,
     }
 }
 
@@ -79,7 +79,7 @@ fn start_scoped(fixture: &Fixture) -> SkillsFileWatcher {
     let dirs = vec![fixture.claude.clone()];
     let (watcher, _rx) = SkillsFileWatcher::start_with_dirs(
         &dirs,
-        &fixture.grok_home,
+        &fixture.ezer_home,
         Some(fixture.project.as_path()),
     )
     .expect("scoped skills watcher should start");

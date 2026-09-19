@@ -5,13 +5,13 @@ use super::*;
 use crate::extensions::code_nav::CodeNavEligibility;
 
 impl MvpAgent {
-    /// Parse the `x.ai/codeNavigation.enabled` capability from an initialize request.
+    /// Parse the `ezer/codeNavigation.enabled` capability from an initialize request.
     /// Returns `false` if the field is absent or not `true`.
     pub(crate) fn parse_code_nav_capability(init: &acp::InitializeRequest) -> bool {
         init.client_capabilities
             .meta
             .as_ref()
-            .and_then(|m| m.get("x.ai/codeNavigation"))
+            .and_then(|m| m.get("ezer/codeNavigation"))
             .and_then(|v| v.get("enabled"))
             .and_then(|v| v.as_bool())
             .unwrap_or(false)
@@ -46,7 +46,7 @@ impl MvpAgent {
         use crate::agent::config::CodebaseIndexingSetting;
 
         // Gate 1: client type
-        if !matches!(client_type, ClientType::GrokWeb) {
+        if !matches!(client_type, ClientType::EzerWeb) {
             tracing::info!(
                 client_type = ?client_type,
                 gate = "client_type",
@@ -61,7 +61,7 @@ impl MvpAgent {
             tracing::info!(
                 gate = "capability",
                 skip_reason = "capability_not_advertised",
-                "code-nav eligibility check: skipping (x.ai/codeNavigation.enabled not advertised)"
+                "code-nav eligibility check: skipping (ezer/codeNavigation.enabled not advertised)"
             );
             return Err(CodeNavEligibility::CapabilityNotAdvertised);
         }
@@ -121,7 +121,7 @@ impl MvpAgent {
             Some(sid) => sid,
             // No session_id: per-client capability cannot be determined without a session
             // Reject with SessionRequired rather than fall back to shared global state
-            // Callers must provide sessionId for x.ai/code/* requests
+            // Callers must provide sessionId for ezer/code/* requests
             None => return Err(CodeNavEligibility::SessionRequired),
         };
 

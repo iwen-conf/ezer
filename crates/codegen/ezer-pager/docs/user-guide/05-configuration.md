@@ -598,7 +598,7 @@ process env (destination lock). `managed_config.toml` does not. There is no
 ### Version pinning
 
 Default runtime never auto-installs and never shows prompts fetched from xAI /
-grok.com / x.com (changelog CDN, inbox announcements, marketing tips). The
+ezer.com / x.com (changelog CDN, inbox announcements, marketing tips). The
 one-shot "update available" notice is GitHub (`iwen-conf/ezer` or
 `$EZER_UPSTREAM_REPO`) only.
 

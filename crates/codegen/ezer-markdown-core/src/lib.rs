@@ -278,7 +278,7 @@ pub fn analyze(text: &str) -> MarkdownAnalysis {
     let mut parsed_spans: Vec<Range<usize>> = Vec::new();
 
     // The u32 element counters can't overflow: model output is bounded by its token limit, far below `u32::MAX`
-    // `offset_events` attaches byte ranges and demotes single-tilde strike, so counts match what Grok Build renders
+    // `offset_events` attaches byte ranges and demotes single-tilde strike, so counts match what Ezer Build renders
     for (event, range) in offset_events(text) {
         // Structural-issue bookkeeping, tracked alongside the element counting below.
         match &event {

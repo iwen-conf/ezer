@@ -1,5 +1,5 @@
 //! Provides lazily-initialized `Syntect` instances for code highlighting.
-//! Dark themes (GrokNight, TokyoNight) share `ezer-night.tmTheme`; GrokDay uses `ezer-day.tmTheme` with deepened colors for light backgrounds.
+//! Dark themes (EzerNight, TokyoNight) share `ezer-night.tmTheme`; EzerDay uses `ezer-day.tmTheme` with deepened colors for light backgrounds.
 //!
 //! ## Terminal-native palette (minimal lock + `terminal` theme)
 //!
@@ -19,9 +19,9 @@ use ratatui::text::Span;
 
 use crate::theme::ThemeKind;
 
-static SYNTECT_GROKNIGHT: OnceLock<Syntect> = OnceLock::new();
+static SYNTECT_EZERNIGHT: OnceLock<Syntect> = OnceLock::new();
 static SYNTECT_TOKYONIGHT: OnceLock<Syntect> = OnceLock::new();
-static SYNTECT_GROKDAY: OnceLock<Syntect> = OnceLock::new();
+static SYNTECT_EZERDAY: OnceLock<Syntect> = OnceLock::new();
 
 /// Convert syntect style to ratatui foreground-only style, quantized for terminal color support (or polarity-safe under the terminal-native lock).
 pub fn syntect_to_ratatui_fg(style: syntect::highlighting::Style) -> Style {
@@ -114,21 +114,21 @@ pub fn highlight_line(
     vec![Span::styled(text.to_string(), fallback)]
 }
 
-/// Terminal-native lock reports nominal `GrokNight`, so this returns the night theme.
+/// Terminal-native lock reports nominal `EzerNight`, so this returns the night theme.
 /// Colors are remapped later; do not load a day theme from OS/terminal polarity.
 pub fn get_syntect() -> &'static Syntect {
     match crate::theme::Theme::current_kind() {
-        ThemeKind::GrokNight
+        ThemeKind::EzerNight
         | ThemeKind::RosePineMoon
         | ThemeKind::OscuraMidnight
         // Terminal remaps every token in `syntect_rgb_to_fg`, so the
         // source palette only has to be a full one — polarity is irrelevant.
         | ThemeKind::Terminal
-        | ThemeKind::Auto => SYNTECT_GROKNIGHT
+        | ThemeKind::Auto => SYNTECT_EZERNIGHT
             .get_or_init(|| Syntect::new(include_bytes!("../assets/ezer-night.tmTheme"))),
         ThemeKind::TokyoNight => SYNTECT_TOKYONIGHT
             .get_or_init(|| Syntect::new(include_bytes!("../assets/tokyo-night.tmTheme"))),
-        ThemeKind::GrokDay => SYNTECT_GROKDAY
+        ThemeKind::EzerDay => SYNTECT_EZERDAY
             .get_or_init(|| Syntect::new(include_bytes!("../assets/ezer-day.tmTheme"))),
     }
 }

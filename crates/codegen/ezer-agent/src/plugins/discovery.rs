@@ -65,11 +65,11 @@ pub enum PluginOrigin {
     /// CLI `--plugin-dir`.
     CliOverride,
     /// Project `.ezer/plugins/`.
-    ProjectGrok,
+    ProjectEzer,
     /// Project `.claude/plugins/`.
     ProjectClaude,
     /// `$EZER_HOME/plugins/`.
-    UserGrok,
+    UserEzer,
     /// `~/.claude/plugins/`.
     UserClaude,
     /// A compat marketplace clone (project `extraKnownMarketplaces` or user `known_marketplaces.json`).
@@ -196,11 +196,11 @@ impl DiscoveryConfig {
 
 /// User plugin directories in priority order: `$EZER_HOME/plugins` then `~/.claude/plugins`.
 /// Plugins are intentionally not discovered from legacy `~/.ezer/plugins`.
-/// Trust, persisted data, and install paths all resolve under `grok_home()`, so a legacy scan would be half-initialized.
-fn user_plugin_dirs(home: Option<&Path>, grok: Option<&Path>) -> Vec<(PathBuf, PluginOrigin)> {
+/// Trust, persisted data, and install paths all resolve under `ezer_home()`, so a legacy scan would be half-initialized.
+fn user_plugin_dirs(home: Option<&Path>, ezer: Option<&Path>) -> Vec<(PathBuf, PluginOrigin)> {
     let mut dirs = Vec::new();
-    if let Some(g) = grok {
-        dirs.push((g.join("plugins"), PluginOrigin::UserGrok));
+    if let Some(g) = ezer {
+        dirs.push((g.join("plugins"), PluginOrigin::UserEzer));
     }
     if let Some(h) = home {
         dirs.push((h.join(".claude").join("plugins"), PluginOrigin::UserClaude));
@@ -217,7 +217,7 @@ fn project_plugins_dir_origin(plugins_dir: &Path) -> PluginOrigin {
     if is_claude {
         PluginOrigin::ProjectClaude
     } else {
-        PluginOrigin::ProjectGrok
+        PluginOrigin::ProjectEzer
     }
 }
 
@@ -268,7 +268,7 @@ pub fn discover_plugins(
         }
     }
 
-    // 2-3. Project plugins (.grok/plugins/, .claude/plugins/).
+    // 2-3. Project plugins (.ezer/plugins/, .claude/plugins/).
     // Scan the same dirs the folder-trust gate detects, via the shared `project_plugin_dirs` walk, so discovery and gating can never drift
     if let Some(cwd) = cwd {
         let (project_dirs, git_root) = project_plugin_dirs(Some(cwd));
@@ -306,10 +306,10 @@ pub fn discover_plugins(
         }
     }
 
-    // 4-5. User plugins: $EZER_HOME/plugins, legacy ~/.grok/plugins, ~/.claude/plugins.
-    // Gate the grok plugins dir on user_grok_home() so a project's .grok/plugins is never scanned as user-global when no home resolves
-    let grok = ezer_config::user_grok_home();
-    let plugin_dirs = user_plugin_dirs(xai_dirs::home_dir().as_deref(), grok.as_deref());
+    // 4-5. User plugins: $EZER_HOME/plugins, legacy ~/.ezer/plugins, ~/.claude/plugins.
+    // Gate the ezer plugins dir on user_ezer_home() so a project's .ezer/plugins is never scanned as user-global when no home resolves
+    let ezer = ezer_config::user_ezer_home();
+    let plugin_dirs = user_plugin_dirs(xai_dirs::home_dir().as_deref(), ezer.as_deref());
     for (plugins_dir, origin) in plugin_dirs {
         if plugins_dir.is_dir() {
             scan_plugin_dir(
@@ -863,11 +863,11 @@ mod tests {
     }
 
     #[test]
-    fn user_plugin_dirs_are_grok_and_claude_only_no_legacy() {
+    fn user_plugin_dirs_are_ezer_and_claude_only_no_legacy() {
         let home = Path::new("/home/u");
-        let ezer = Path::new("/custom/grokhome");
+        let ezer = Path::new("/custom/ezerhome");
         let dirs = user_plugin_dirs(Some(home), Some(ezer));
-        assert!(dirs.contains(&(ezer.join("plugins"), PluginOrigin::UserGrok)));
+        assert!(dirs.contains(&(ezer.join("plugins"), PluginOrigin::UserEzer)));
         assert!(dirs.contains(&(
             home.join(".claude").join("plugins"),
             PluginOrigin::UserClaude
@@ -881,7 +881,7 @@ mod tests {
     }
 
     #[test]
-    fn user_plugin_dirs_empty_without_home_or_grok() {
+    fn user_plugin_dirs_empty_without_home_or_ezer() {
         assert!(user_plugin_dirs(None, None).is_empty());
     }
 
@@ -914,10 +914,10 @@ mod tests {
     }
 
     #[test]
-    fn project_plugins_dir_origin_distinguishes_grok_and_claude() {
+    fn project_plugins_dir_origin_distinguishes_ezer_and_claude() {
         assert_eq!(
             project_plugins_dir_origin(Path::new("/repo/.ezer/plugins")),
-            PluginOrigin::ProjectGrok
+            PluginOrigin::ProjectEzer
         );
         assert_eq!(
             project_plugins_dir_origin(Path::new("/repo/.claude/plugins")),
@@ -930,18 +930,18 @@ mod tests {
         let tmp = tempfile::tempdir().unwrap();
 
         // Create ~/.ezer/plugins/ structure
-        let grok_plugins = tmp.path().join(".ezer").join("plugins");
-        std::fs::create_dir_all(&grok_plugins).unwrap();
-        make_manifest_plugin(&grok_plugins, "user-tool");
+        let ezer_plugins = tmp.path().join(".ezer").join("plugins");
+        std::fs::create_dir_all(&ezer_plugins).unwrap();
+        make_manifest_plugin(&ezer_plugins, "user-tool");
 
         // Override home dir by directly scanning
         let trust = TrustStore::load_from(tmp.path().join("trust"));
         let mut seen = HashSet::new();
         let mut candidates = Vec::new();
         scan_plugin_dir(
-            &grok_plugins,
+            &ezer_plugins,
             PluginScope::User,
-            PluginOrigin::UserGrok,
+            PluginOrigin::UserEzer,
             &trust,
             false,
             &mut seen,
@@ -968,7 +968,7 @@ mod tests {
         scan_plugin_dir(
             &plugins_dir,
             PluginScope::User,
-            PluginOrigin::UserGrok,
+            PluginOrigin::UserEzer,
             &trust,
             false,
             &mut seen,
@@ -1342,7 +1342,7 @@ mod tests {
         collect_plugin(
             &user_plugin,
             PluginScope::User,
-            PluginOrigin::UserGrok,
+            PluginOrigin::UserEzer,
             &trust,
             false,
             &mut seen,
@@ -1362,7 +1362,7 @@ mod tests {
     fn plugin_id_format() {
         let id = PluginId::new(
             PluginScope::User,
-            Path::new("/home/user/.grok/plugins/my-plugin"),
+            Path::new("/home/user/.ezer/plugins/my-plugin"),
             "my-plugin",
         );
         assert!(id.0.starts_with("user/"));
@@ -1403,7 +1403,7 @@ mod tests {
         collect_plugin(
             &empty_dir,
             PluginScope::User,
-            PluginOrigin::UserGrok,
+            PluginOrigin::UserEzer,
             &trust,
             false,
             &mut seen,
@@ -1426,7 +1426,7 @@ mod tests {
         collect_plugin(
             &plugin_dir,
             PluginScope::Project,
-            PluginOrigin::ProjectGrok,
+            PluginOrigin::ProjectEzer,
             &trust,
             false,
             &mut seen,
@@ -1449,7 +1449,7 @@ mod tests {
         collect_plugin(
             &plugin_dir,
             PluginScope::Project,
-            PluginOrigin::ProjectGrok,
+            PluginOrigin::ProjectEzer,
             &trust,
             true,
             &mut seen,
@@ -1479,7 +1479,7 @@ mod tests {
                 PluginScope::CliOverride,
                 PluginOrigin::CliOverride,
             ),
-            (&user_dir, PluginScope::User, PluginOrigin::UserGrok),
+            (&user_dir, PluginScope::User, PluginOrigin::UserEzer),
             (
                 &config_dir,
                 PluginScope::ConfigPath,
@@ -1510,7 +1510,7 @@ mod tests {
         // The plugin is trusted iff the folder-trust verdict (project_trusted) allows it
         // The plugin is found by name so any user-scoped plugins on the test host are irrelevant
         let tmp = tempfile::tempdir().unwrap();
-        let plugin_dir = tmp.path().join(".grok").join("plugins").join("proj-mcp");
+        let plugin_dir = tmp.path().join(".ezer").join("plugins").join("proj-mcp");
         std::fs::create_dir_all(&plugin_dir).unwrap();
         std::fs::write(plugin_dir.join("plugin.json"), r#"{"name": "proj-mcp"}"#).unwrap();
         std::fs::write(plugin_dir.join(".mcp.json"), r#"{"mcpServers":{}}"#).unwrap();
@@ -1525,7 +1525,7 @@ mod tests {
             .find(|p| p.manifest.name == "proj-mcp")
             .expect("project plugin discovered");
         assert_eq!(p.scope, PluginScope::Project);
-        assert_eq!(p.origin, PluginOrigin::ProjectGrok);
+        assert_eq!(p.origin, PluginOrigin::ProjectEzer);
         assert!(!p.trusted, "untrusted folder must block the project plugin");
 
         // Trusted folder: the same plugin is allowed.

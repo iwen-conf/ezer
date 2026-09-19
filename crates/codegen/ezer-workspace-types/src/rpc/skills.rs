@@ -188,7 +188,7 @@ mod tests {
             "plugin_root": "/root/.ezer/plugins/infra-plugin",
             "plugin_data": "/root/.ezer/plugin-data/infra-plugin",
             "allowed_tools": ["bash"],
-            "model": "grok-4",
+            "model": "test-model-4",
             "effort": "high",
             "user_invocable": true,
             "disable_model_invocation": false,

@@ -9,7 +9,7 @@ use crate::inference_request::{InferenceEndpoint, InferenceRequest};
 use crate::model_reply::ModelReply;
 use crate::tools::{PickedToolCall, Tool};
 
-pub(super) const GROK_BUILD_TOOLS: [&str; 2] = ["read_file", "run_terminal_command"];
+pub(super) const EZER_BUILD_TOOLS: [&str; 2] = ["read_file", "run_terminal_command"];
 
 fn respond(
     replay: &ConversationReplay,
@@ -112,7 +112,7 @@ fn chat_scripts(
         respond(
             &replay,
             conversation,
-            &chat_body("s", &GROK_BUILD_TOOLS, turns),
+            &chat_body("s", &EZER_BUILD_TOOLS, turns),
         )
         .unwrap()
     }
@@ -306,7 +306,7 @@ fn replacing_the_scripts_keeps_a_replaced_script_unfinished() {
     respond(
         &replay,
         ConversationId::nth(1),
-        &chat_body("s", &GROK_BUILD_TOOLS, vec![]),
+        &chat_body("s", &EZER_BUILD_TOOLS, vec![]),
     );
 
     replay.set(vec![Conversation::nth(2).reply("child")]);
@@ -342,7 +342,7 @@ fn script_for_a_system_prompt_finds_its_conversation_whatever_the_arrival_order(
         respond(
             &replay,
             ConversationId::nth(number),
-            &chat_body(system, &GROK_BUILD_TOOLS, vec![]),
+            &chat_body(system, &EZER_BUILD_TOOLS, vec![]),
         )
         .unwrap()
     });
@@ -362,7 +362,7 @@ fn script_no_conversation_opens_falls_through_and_is_reported_unopened() {
     let answer = respond(
         &replay,
         ConversationId::nth(2),
-        &chat_body("reviewer prompt", &GROK_BUILD_TOOLS, vec![]),
+        &chat_body("reviewer prompt", &EZER_BUILD_TOOLS, vec![]),
     );
     assert_eq!(
         (
@@ -403,7 +403,7 @@ fn result_check_records_a_mismatch_once_and_only_when_it_fails() {
             respond(
                 &replay,
                 ConversationId::nth(1),
-                &chat_body("s", &GROK_BUILD_TOOLS, turns),
+                &chat_body("s", &EZER_BUILD_TOOLS, turns),
             )
         };
 
@@ -440,7 +440,7 @@ fn result_matches_reports_its_pattern_when_the_result_does_not_match() {
             respond(
                 &replay,
                 ConversationId::nth(1),
-                &chat_body("s", &GROK_BUILD_TOOLS, turns),
+                &chat_body("s", &EZER_BUILD_TOOLS, turns),
             )
         };
 
@@ -548,7 +548,7 @@ fn pinned_turn_with_tool_calls_serves_them_then_its_reply() {
 fn script_whose_first_turn_is_pinned_falls_through_before_it_starts() {
     let replay = ConversationReplay::default();
     replay.set(vec![Conversation::nth(1).at_request(2).reply("X")]);
-    let body = chat_body("s", &GROK_BUILD_TOOLS, vec![]);
+    let body = chat_body("s", &EZER_BUILD_TOOLS, vec![]);
 
     let first = respond(&replay, ConversationId::nth(1), &body);
     let second = respond(&replay, ConversationId::nth(1), &body);
@@ -566,13 +566,13 @@ fn pinned_turn_is_served_through_before_the_script_is_finished() {
     respond(
         &replay,
         ConversationId::nth(1),
-        &chat_body("s", &GROK_BUILD_TOOLS, turn(1)),
+        &chat_body("s", &EZER_BUILD_TOOLS, turn(1)),
     );
     let after_one = replay.violations();
     respond(
         &replay,
         ConversationId::nth(1),
-        &chat_body("s", &GROK_BUILD_TOOLS, turn(2)),
+        &chat_body("s", &EZER_BUILD_TOOLS, turn(2)),
     );
     let after_two = replay.violations();
 
@@ -604,14 +604,14 @@ fn pin_taking_over_a_turn_still_calling_leaves_no_unfinished_violation() {
     let calling = respond(
         &replay,
         ConversationId::nth(1),
-        &chat_body("s", &GROK_BUILD_TOOLS, vec![]),
+        &chat_body("s", &EZER_BUILD_TOOLS, vec![]),
     );
     let taken_over = respond(
         &replay,
         ConversationId::nth(1),
         &chat_body(
             "s",
-            &GROK_BUILD_TOOLS,
+            &EZER_BUILD_TOOLS,
             vec![chat_result("call_mock_1_1", "file body")],
         ),
     );
@@ -641,7 +641,7 @@ fn pin_before_a_calling_turn_still_reports_the_trailing_turn_unfinished() {
         respond(
             &replay,
             ConversationId::nth(1),
-            &chat_body("s", &GROK_BUILD_TOOLS, turns),
+            &chat_body("s", &EZER_BUILD_TOOLS, turns),
         )
     };
     let result = || vec![chat_result("call_mock_1_1", "file body")];

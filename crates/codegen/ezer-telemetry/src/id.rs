@@ -57,7 +57,7 @@ fn load_or_compute_agent_id() -> String {
         }
     }
 
-    let cache_path = ezer_config::grok_home().join("agent_id");
+    let cache_path = ezer_config::ezer_home().join("agent_id");
     let should_persist = match read_agent_id_cache(&cache_path) {
         Ok(Some(cached)) => {
             tighten_agent_id_cache_perms(&cache_path);

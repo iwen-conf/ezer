@@ -106,7 +106,7 @@ impl Fixture {
             } else {
                 benchmark_unrelated_cwd(workspace_index - SAME_REPO_CANDIDATE_COUNT)
             };
-            let encoded = ezer_shell::util::grok_home::encode_cwd_dirname(&cwd);
+            let encoded = ezer_shell::util::ezer_home::encode_cwd_dirname(&cwd);
             let cwd_dir = sessions_root.join(encoded);
             fs::create_dir(&cwd_dir).expect("create encoded cwd directory");
             let session_count = if same_repo {
@@ -518,7 +518,7 @@ fn write_summary(
         head_commit: Some(format!("{ordinal:040x}")),
         head_branch: Some("main".to_owned()),
         request_id: None,
-        grok_home: None,
+        ezer_home: None,
         last_active_at: Some(active_at),
         generated_title: Some(format!("Benchmark session {ordinal}")),
         title_is_manual: false,
@@ -565,9 +565,9 @@ fn bench_session_list(c: &mut Criterion) {
     let home = TempDir::new().expect("create fixture root");
     // SAFETY: no runtime or benchmark worker activity exists during setup.
     unsafe {
-        std::env::set_var("GROK_HOME", home.path());
+        std::env::set_var("EZER_HOME", home.path());
     }
-    assert_eq!(ezer_shell::util::grok_home::grok_home(), home.path());
+    assert_eq!(ezer_shell::util::ezer_home::ezer_home(), home.path());
     let fixture = Fixture::new(home);
 
     let runtime = tokio::runtime::Builder::new_current_thread()

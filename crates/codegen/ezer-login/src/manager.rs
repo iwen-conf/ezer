@@ -24,7 +24,7 @@ use super::model::LEGACY_SCOPE;
 #[cfg(test)]
 use super::model::UserInfo;
 use super::model::{
-    AuthMode, GrokAuth, early_invalidation, is_expired, is_expired_with_buffer, lookup_auth,
+    AuthMode, EzerAuth, early_invalidation, is_expired, is_expired_with_buffer, lookup_auth,
 };
 use super::refresh::{RefreshOutcome, TokenRefresher, resolve_refresh_credential};
 #[cfg(test)]
@@ -34,7 +34,7 @@ use super::storage::{
     write_auth_json,
 };
 use crate::backend::{ActiveAuthBackend, AuthBackend};
-use crate::config::GrokComConfig;
+use crate::config::EzerComConfig;
 use crate::error::AuthError;
 use crate::token_type::TokenType;
 #[cfg(test)]
@@ -132,10 +132,10 @@ pub struct AuthManager {
     /// In-memory bearer. Mutate via [`Self::with_inner_write`] or [`Self::refresh_chain`].
     /// The closure helpers' sync return type enforces "no `.await` while holding the lock".
     /// `Arc` so the spawned `/user` enrichment task can write back.
-    inner: Arc<RwLock<Option<GrokAuth>>>,
+    inner: Arc<RwLock<Option<EzerAuth>>>,
     path: PathBuf,
     scope: String,
-    grok_com_config: GrokComConfig,
+    ezer_com_config: EzerComConfig,
     proxy_base_url: String,
     refresher: RwLock<Option<Arc<dyn TokenRefresher>>>,
     /// Idempotency guard for `configure_refresher` so double-calls don't reset internal state (e.g. `OidcRefresher::upload_in_flight`).
@@ -216,9 +216,9 @@ pub enum CachedTokenState {
     /// Nothing cached, another authority's session, or a valid token the login policy hides.
     Missing,
     /// Serves on the wire right now. Carries what [`AuthManager::current`] would
-    /// return so callers never re-read; boxed because `GrokAuth` is large and
+    /// return so callers never re-read; boxed because `EzerAuth` is large and
     /// the other variants are unit-sized.
-    Valid(Box<GrokAuth>),
+    Valid(Box<EzerAuth>),
     /// Cached but past the early-invalidation buffer (what [`AuthManager::is_expired`] reports).
     Expired,
 }
@@ -250,44 +250,44 @@ impl ScopeRemoval {
 impl AuthManager {
     /// Public default cli-chat-proxy base URL, mirroring `agent::config::CLI_CHAT_PROXY_BASE_URL_DEFAULT`.
     #[cfg(any(test, feature = "test-support"))]
-    const DEFAULT_PROXY_BASE_URL: &str = "https://cli-chat-proxy.grok.com/v1";
+    const DEFAULT_PROXY_BASE_URL: &str = "";
     /// Test/support-only convenience against the public default proxy. Production callers resolve the
     /// configured proxy and pass it via [`Self::new_with_proxy_base_url`], so this boundary never
     /// silently sends enrichment to the public host.
     #[cfg(any(test, feature = "test-support"))]
-    pub fn new(grok_home: &Path, grok_com_config: GrokComConfig) -> Self {
+    pub fn new(ezer_home: &Path, ezer_com_config: EzerComConfig) -> Self {
         Self::new_with_proxy_base_url(
-            grok_home,
-            grok_com_config,
+            ezer_home,
+            ezer_com_config,
             Self::DEFAULT_PROXY_BASE_URL.to_string(),
         )
     }
     pub fn new_with_proxy_base_url(
-        grok_home: &Path,
-        grok_com_config: GrokComConfig,
+        ezer_home: &Path,
+        ezer_com_config: EzerComConfig,
         proxy_base_url: String,
     ) -> Self {
-        let scope = ActiveAuthBackend::default().scope_key(&grok_com_config);
+        let scope = ActiveAuthBackend::default().scope_key(&ezer_com_config);
         ezer_telemetry::unified_log::info(
             "AuthManager::new",
             None,
             Some(serde_json::json!({
                 "scope": &scope,
-                "grok_home": grok_home.display().to_string(),
+                "ezer_home": ezer_home.display().to_string(),
                 "HOME": std::env::var("HOME").unwrap_or_else(|_| "(unset)".into()),
-                "GROK_HOME": std::env::var("GROK_HOME").unwrap_or_else(|_| "(unset)".into()),
+                "EZER_HOME": std::env::var("EZER_HOME").unwrap_or_else(|_| "(unset)".into()),
                 "EZER_AUTH_PATH": std::env::var("EZER_AUTH_PATH").unwrap_or_else(|_| "(unset)".into()),
                 "EZER_AUTH": std::env::var("EZER_AUTH").map(|_| "(set)".to_string()).unwrap_or_else(|_| "(unset)".into()),
             })),
         );
-        let path = auth_json_path(grok_home);
+        let path = auth_json_path(ezer_home);
         if let Ok(inline_json) = std::env::var("EZER_AUTH") {
-            if let Ok(auth) = serde_json::from_str::<GrokAuth>(&inline_json) {
+            if let Ok(auth) = serde_json::from_str::<EzerAuth>(&inline_json) {
                 return Self::assemble(
                     Some(auth),
                     path,
                     scope,
-                    grok_com_config,
+                    ezer_com_config,
                     proxy_base_url,
                     None,
                 );
@@ -339,7 +339,7 @@ impl AuthManager {
             auth,
             path,
             scope,
-            grok_com_config,
+            ezer_com_config,
             proxy_base_url,
             Some(initial_disk_state),
         );
@@ -377,10 +377,10 @@ impl AuthManager {
     }
     /// Single field-assembly point for [`Self::new`]'s two construction paths (inline `EZER_AUTH` vs. on-disk `auth.json`), which differ only in the threaded fields. One literal means a newly added field can't be silently dropped from one branch.
     fn assemble(
-        inner: Option<GrokAuth>,
+        inner: Option<EzerAuth>,
         path: PathBuf,
         scope: String,
-        grok_com_config: GrokComConfig,
+        ezer_com_config: EzerComConfig,
         proxy_base_url: String,
         disk_state: Option<DiskAuthState>,
     ) -> Self {
@@ -388,7 +388,7 @@ impl AuthManager {
             inner: Arc::new(RwLock::new(inner)),
             path,
             scope,
-            grok_com_config,
+            ezer_com_config,
             proxy_base_url,
             refresher: RwLock::new(None),
             refresher_configured: std::sync::atomic::AtomicBool::new(false),
@@ -571,17 +571,17 @@ impl AuthManager {
     }
     /// `Some(error)` when a `force_login_team_uuid` pin is set and the token's team principal isn't allowed; `None` when compliant or unpinned. Reads the principal from the token's own (unverified) JWT claim.
     /// This is fail-fast defense-in-depth, not the security boundary (the server is authoritative). An API-key session is rejected under the kill switch, else allowed.
-    pub fn cached_token_policy_error(&self, auth: &GrokAuth) -> Option<AuthError> {
+    pub fn cached_token_policy_error(&self, auth: &EzerAuth) -> Option<AuthError> {
         if auth.auth_mode == AuthMode::ApiKey {
             return self
-                .grok_com_config
+                .ezer_com_config
                 .api_key_auth_disabled()
                 .then_some(AuthError::ApiKeyAuthDisabled);
         }
         if !ActiveAuthBackend::default().is_xai_authority() {
             return None;
         }
-        let policy = crate::oidc::login_principal_policy(&self.grok_com_config)?;
+        let policy = crate::oidc::login_principal_policy(&self.ezer_com_config)?;
         let actual = crate::oidc::peek_access_token_principal_id(&auth.key);
         crate::oidc::enforce_login_principal(Some(&policy), actual.as_deref())
             .err()
@@ -607,7 +607,7 @@ impl AuthManager {
     }
     /// Every accessor that hands a credential to a caller reads `inner` through here.
     /// The direct reads left elsewhere compare token keys or look at `expires_at`, and hand out nothing.
-    fn owned_inner(&self) -> Option<GrokAuth> {
+    fn owned_inner(&self) -> Option<EzerAuth> {
         let auth = self.with_inner_read(|inner| inner.cloned())?;
         if !crate::backend::AuthBackend::owns(&crate::backend::ActiveAuthBackend::default(), &auth)
         {
@@ -618,7 +618,7 @@ impl AuthManager {
     }
     /// Hide a cached token rejected by the login policy.
     /// No clear here (keeps the sync read path lock-free); `auth()`/recovery/`new()` do the clearing.
-    fn vet_cached(&self, auth: GrokAuth) -> Option<GrokAuth> {
+    fn vet_cached(&self, auth: EzerAuth) -> Option<EzerAuth> {
         match self.cached_token_policy_error(&auth) {
             None => Some(auth),
             Some(e) => {
@@ -628,20 +628,20 @@ impl AuthManager {
         }
     }
     /// Cached in-memory token if outside the early-invalidation buffer.
-    pub fn current(&self) -> Option<GrokAuth> {
+    pub fn current(&self) -> Option<EzerAuth> {
         let auth = self.owned_inner().filter(|a| !self.is_token_expired(a))?;
         self.vet_cached(auth)
     }
     /// Closure-scoped write. Sync return type prevents `.await` while the lock is held.
     /// Prefer this over `self.inner.write()`.
     #[inline]
-    pub(crate) fn with_inner_write<R>(&self, f: impl FnOnce(&mut Option<GrokAuth>) -> R) -> R {
+    pub(crate) fn with_inner_write<R>(&self, f: impl FnOnce(&mut Option<EzerAuth>) -> R) -> R {
         let mut guard = self.inner.write();
         f(&mut guard)
     }
     /// Closure-scoped read counterpart to [`Self::with_inner_write`].
     #[inline]
-    pub(crate) fn with_inner_read<R>(&self, f: impl FnOnce(Option<&GrokAuth>) -> R) -> R {
+    pub(crate) fn with_inner_read<R>(&self, f: impl FnOnce(Option<&EzerAuth>) -> R) -> R {
         let guard = self.inner.read();
         f(guard.as_ref())
     }
@@ -665,12 +665,12 @@ impl AuthManager {
     }
     /// In-memory bearer regardless of the early-invalidation buffer.
     /// Prefer [`Self::auth`] when `.await` is available.
-    pub fn current_or_expired(&self) -> Option<GrokAuth> {
+    pub fn current_or_expired(&self) -> Option<EzerAuth> {
         self.current().or_else(|| self.expired_auth())
     }
     /// Cached token if still wire-valid ([`Self::is_token_hard_expired`]), ignoring the early-invalidation buffer.
     /// For sync callers that cannot refresh and must not demote a still-accepted token.
-    pub fn current_wire_valid(&self) -> Option<GrokAuth> {
+    pub fn current_wire_valid(&self) -> Option<EzerAuth> {
         let auth = self
             .owned_inner()
             .filter(|a| !self.is_token_hard_expired(a))?;
@@ -691,25 +691,25 @@ impl AuthManager {
             .is_some_and(|a| !a.is_data_collection_disabled())
     }
     /// Expired in-memory entry (for its `refresh_token`).
-    pub fn expired_auth(&self) -> Option<GrokAuth> {
+    pub fn expired_auth(&self) -> Option<EzerAuth> {
         let auth = self.owned_inner().filter(|a| self.is_token_expired(a))?;
         self.vet_cached(auth)
     }
     /// Expiry policy: `expires_at - early_invalidation` if present.
     /// `External` with `auth_token_ttl` expires at `create_time + ttl`; the fallback is `create_time + 30d` (WebLogin-style).
-    fn is_token_expired(&self, auth: &GrokAuth) -> bool {
+    fn is_token_expired(&self, auth: &EzerAuth) -> bool {
         self.token_expired_with_buffer(auth, early_invalidation())
     }
     /// Actual (hard) expiry: the instant the proxy would actually reject the token, with no early-invalidation margin.
     /// The export gate ([`Self::has_usable_token`]) uses this instead of [`Self::is_token_expired`].
     /// A token still inside the buffer is sent (and accepted) on the wire via `current_or_expired()`, so it must not count as unusable.
-    fn is_token_hard_expired(&self, auth: &GrokAuth) -> bool {
+    fn is_token_hard_expired(&self, auth: &EzerAuth) -> bool {
         self.token_expired_with_buffer(auth, Duration::zero())
     }
     /// Whether a cached token can be handed out without a refresh when the refresh authority is unavailable.
     /// Stricter than [`Self::is_token_hard_expired`] by [`SEND_HORIZON_SECS`]: the sampler's send-time resolver is wire-valid only.
     /// A token served here with milliseconds left is stripped before the request leaves, which goes out with no credential at all and 401s.
-    fn outlives_send_horizon(&self, auth: &GrokAuth) -> bool {
+    fn outlives_send_horizon(&self, auth: &EzerAuth) -> bool {
         !self.token_expired_with_buffer(auth, Duration::seconds(SEND_HORIZON_SECS))
     }
     /// Whether the cached bearer would still be on the wire after the pre-flight→send gap ([`Self::outlives_send_horizon`]).
@@ -725,7 +725,7 @@ impl AuthManager {
         let expires_at = match auth.expires_at {
             Some(at) => at,
             None => {
-                let ttl = match (auth.auth_mode, self.grok_com_config.auth_token_ttl) {
+                let ttl = match (auth.auth_mode, self.ezer_com_config.auth_token_ttl) {
                     (AuthMode::External, Some(ttl)) => Duration::seconds(ttl as i64),
                     _ => super::model::TOKEN_TTL,
                 };
@@ -734,12 +734,12 @@ impl AuthManager {
         };
         expires_at.signed_duration_since(Utc::now()).to_std().ok()
     }
-    fn token_expired_with_buffer(&self, auth: &GrokAuth, buffer: Duration) -> bool {
+    fn token_expired_with_buffer(&self, auth: &EzerAuth, buffer: Duration) -> bool {
         if auth.expires_at.is_some() {
             return is_expired_with_buffer(auth, buffer);
         }
         if auth.auth_mode == AuthMode::External
-            && let Some(ttl) = self.grok_com_config.auth_token_ttl
+            && let Some(ttl) = self.ezer_com_config.auth_token_ttl
         {
             let age = Utc::now().signed_duration_since(auth.create_time);
             return age >= Duration::seconds(ttl as i64) - buffer;
@@ -748,8 +748,8 @@ impl AuthManager {
     }
     /// Persist rotated tokens to disk and cache, then spawn `/user` enrichment. Invariants: **Disk write before any network I/O** (else a sibling process can reuse the not-yet-rotated RT and the IdP returns `invalid_grant`).
     /// **Caller holds the `auth.json` file lock** (production callers: `refresh_chain` Success arm, `flow::run_auth_flow`).
-    /// Returns the input `GrokAuth` BEFORE enrichment lands; callers needing the post-enrichment view re-read `current()`.
-    pub async fn update(self: &Arc<Self>, auth: GrokAuth) -> std::io::Result<GrokAuth> {
+    /// Returns the input `EzerAuth` BEFORE enrichment lands; callers needing the post-enrichment view re-read `current()`.
+    pub async fn update(self: &Arc<Self>, auth: EzerAuth) -> std::io::Result<EzerAuth> {
         let update_started = std::time::Instant::now();
         let map = match read_auth_json_or_empty_recovering_corrupt(&self.path) {
             Ok(map) => map,
@@ -796,7 +796,7 @@ impl AuthManager {
         Ok(auth)
     }
     /// Persist to disk and cache without spawning the background `/user` task (already merged inline, or a stale fetch must not race a fresh write).
-    pub async fn save_without_enrichment(&self, auth: GrokAuth) -> std::io::Result<GrokAuth> {
+    pub async fn save_without_enrichment(&self, auth: EzerAuth) -> std::io::Result<EzerAuth> {
         let started = std::time::Instant::now();
         let map = match read_auth_json_or_empty_recovering_corrupt(&self.path) {
             Ok(map) => map,
@@ -843,23 +843,23 @@ impl AuthManager {
     /// Spawn the `/user` enrichment task; body in the `enrichment` submodule.
     /// `/user` lives on the xAI proxy, so a build pointed elsewhere would send its bearer to the wrong host.
     /// That would happen on every login and every refresh.
-    fn spawn_user_info_enrichment(self: &Arc<Self>, auth: GrokAuth) {
+    fn spawn_user_info_enrichment(self: &Arc<Self>, auth: EzerAuth) {
         if !ActiveAuthBackend::default().is_xai_authority() {
             return;
         }
         enrichment::spawn(Arc::clone(self), auth);
     }
     /// Blocking `/user` enrichment for login flows that exit before the background task lands.
-    pub(crate) async fn enrich_auth_inline(&self, auth: &mut GrokAuth) {
+    pub(crate) async fn enrich_auth_inline(&self, auth: &mut EzerAuth) {
         enrichment::enrich_inline(self, auth).await;
     }
     /// Path to the `auth.json` this manager reads/writes (respects `EZER_AUTH_PATH` / constructor home).
-    /// Prefer this over `grok_home()/auth.json` so temp-home tests and custom stores stay isolated.
+    /// Prefer this over `ezer_home()/auth.json` so temp-home tests and custom stores stay isolated.
     pub fn auth_json_path(&self) -> &Path {
         &self.path
     }
-    pub fn grok_com_config(&self) -> &GrokComConfig {
-        &self.grok_com_config
+    pub fn ezer_com_config(&self) -> &EzerComConfig {
+        &self.ezer_com_config
     }
     /// Handle notified after every successful token refresh.
     /// Used by [`ModelsManager`] to trigger model catalog recovery after sleep/wake.
@@ -890,14 +890,14 @@ impl AuthManager {
     pub async fn run_external_refresh_command(
         &self,
         command: &str,
-    ) -> Result<GrokAuth, crate::ExternalRefreshError> {
+    ) -> Result<EzerAuth, crate::ExternalRefreshError> {
         let prev = self.inner_auth_or_external_default();
         crate::refresh_with_command(command, &prev).await
     }
     /// Hot-swap credentials (called by config watcher). Does NOT write to disk.
     /// Clears a sticky permanent verdict only when the new bearer is wire-valid (login / sibling adopt).
     /// Hard-expired swaps keep the sticky short-circuit so a dead RT is not re-tried until a real login.
-    pub fn hot_swap(&self, new_auth: GrokAuth) {
+    pub fn hot_swap(&self, new_auth: EzerAuth) {
         if !self.is_token_hard_expired(&new_auth) {
             *self.permanent_failure.write() = None;
         }
@@ -912,9 +912,9 @@ impl AuthManager {
     /// `try_adopt_disk_token` (refresh chains) and `pick_up_sibling_token` (`auth()` / proactive loop) both route here. The guards and the shared `hot_swap` therefore cannot drift between the two paths.
     pub(crate) fn try_use_disk_token(
         &self,
-        disk_auth: Option<&GrokAuth>,
+        disk_auth: Option<&EzerAuth>,
         reason: RefreshReason,
-    ) -> Result<GrokAuth, DiskTokenDecline> {
+    ) -> Result<EzerAuth, DiskTokenDecline> {
         let Some(disk_auth) = disk_auth else {
             return Err(DiskTokenDecline::Missing);
         };
@@ -939,7 +939,7 @@ impl AuthManager {
     }
     /// Re-read disk and try to adopt a sibling-written token, emitting telemetry on success.
     /// Combines `read_disk_auth`, `try_use_disk_token`, and the structured log every `refresh_chain` callsite needs.
-    fn try_adopt_disk_token(&self, reason: RefreshReason, msg: &str) -> Option<GrokAuth> {
+    fn try_adopt_disk_token(&self, reason: RefreshReason, msg: &str) -> Option<EzerAuth> {
         let disk_auth = self.read_disk_auth();
         let prev = self
             .current_or_expired()
@@ -979,8 +979,8 @@ impl AuthManager {
     /// Current auth or an `External`-defaulted placeholder.
     /// **External path only**: the placeholder's `auth_mode = External` would mis-classify an OIDC token.
     /// Carries user fields forward into the binary's freshly-minted token.
-    fn inner_auth_or_external_default(&self) -> GrokAuth {
-        self.owned_inner().unwrap_or_else(|| GrokAuth {
+    fn inner_auth_or_external_default(&self) -> EzerAuth {
+        self.owned_inner().unwrap_or_else(|| EzerAuth {
             auth_mode: AuthMode::External,
             ..Default::default()
         })
@@ -988,7 +988,7 @@ impl AuthManager {
     /// Test-only hot_swap and disk write (skips proxy `/user`).
     /// Production persistence routes through `update()`.
     #[cfg(test)]
-    fn persist_and_swap(&self, auth: GrokAuth) -> Option<GrokAuth> {
+    fn persist_and_swap(&self, auth: EzerAuth) -> Option<EzerAuth> {
         self.hot_swap(auth.clone());
         let mut map = match read_auth_json_or_empty(&self.path) {
             Ok(m) => m,
@@ -1018,13 +1018,13 @@ impl AuthManager {
             .is_some_and(|mem_rt| Self::refresh_token_superseded(disk_rt, &mem_rt))
     }
     /// Re-read `auth.json` from disk without updating in-memory state.
-    pub fn read_disk_auth(&self) -> Option<GrokAuth> {
+    pub fn read_disk_auth(&self) -> Option<EzerAuth> {
         self.read_disk_auth_with_state().0
     }
     /// Disk read for the configured scope with NO observation side effects (no `disk_state` write, no transition telemetry).
     /// For side-effect-free getters like [`Self::attempted_verdict_key`].
     /// Prefer [`Self::read_disk_auth`] when the read should drive transition logging.
-    fn read_disk_auth_silent(&self) -> Option<GrokAuth> {
+    fn read_disk_auth_silent(&self) -> Option<EzerAuth> {
         read_auth_json(&self.path)
             .ok()
             .and_then(|map| lookup_auth(&map, &self.scope))
@@ -1046,7 +1046,7 @@ impl AuthManager {
     /// Like [`read_disk_auth`] but also returns the [`DiskAuthState`].
     /// Callers can then tell a transient disk anomaly (`FileMissing`/`Unreadable`) apart from a genuine logout (`EntryMissing`).
     /// Observes the state for transition logging, exactly like `read_disk_auth`.
-    pub fn read_disk_auth_with_state(&self) -> (Option<GrokAuth>, DiskAuthState) {
+    pub fn read_disk_auth_with_state(&self) -> (Option<EzerAuth>, DiskAuthState) {
         let (auth, state, err_detail) = match read_auth_json(&self.path) {
             Ok(map) => {
                 let found = lookup_auth(&map, &self.scope);
@@ -1078,7 +1078,7 @@ impl AuthManager {
     fn observe_disk_state(
         &self,
         new_state: DiskAuthState,
-        auth: Option<&GrokAuth>,
+        auth: Option<&EzerAuth>,
         err_detail: Option<String>,
     ) {
         let prev = {
@@ -1184,7 +1184,7 @@ impl AuthManager {
     ///
     /// Also the team-pin gate: a cached/refreshed wrong-team session is cleared and rejected here, never handed to a consumer.
     #[tracing::instrument(skip(self), fields(token_type = tracing::field::Empty))]
-    pub async fn auth(self: &Arc<Self>) -> Result<GrokAuth, AuthError> {
+    pub async fn auth(self: &Arc<Self>) -> Result<EzerAuth, AuthError> {
         let auth = self.auth_dispatch().await?;
         if let Some(e) = self.cached_token_policy_error(&auth) {
             self.reject_and_clear(&e);
@@ -1192,8 +1192,8 @@ impl AuthManager {
         }
         Ok(auth)
     }
-    async fn auth_dispatch(self: &Arc<Self>) -> Result<GrokAuth, AuthError> {
-        let snapshot: Option<GrokAuth> = self.owned_inner();
+    async fn auth_dispatch(self: &Arc<Self>) -> Result<EzerAuth, AuthError> {
+        let snapshot: Option<EzerAuth> = self.owned_inner();
         let token_type = TokenType::from_auth(snapshot.as_ref());
         tracing::Span::current().record("token_type", tracing::field::debug(token_type));
         if let Some(ref auth) = snapshot
@@ -1272,7 +1272,7 @@ impl AuthManager {
         reason: RefreshReason,
         attempted_key: Option<String>,
         _lock: &AuthFileLock,
-    ) -> Result<GrokAuth, AuthError> {
+    ) -> Result<EzerAuth, AuthError> {
         let pre_key_suffix = attempted_key.as_deref().map(bearer_suffix);
         match outcome {
             RefreshOutcome::Success(new_auth) => match self.update(*new_auth).await {
@@ -1442,7 +1442,7 @@ impl AuthManager {
         }
     }
     /// Check if a candidate auth has a different token than what's in memory.
-    pub fn is_different_token(&self, candidate: &GrokAuth) -> bool {
+    pub fn is_different_token(&self, candidate: &EzerAuth) -> bool {
         let current_key = self.inner.read().as_ref().map(|a| a.key.clone());
         current_key.as_deref() != Some(&candidate.key)
     }
@@ -1521,7 +1521,7 @@ impl AuthManager {
         !(mem_refreshable || disk_refreshable)
     }
     fn is_external_provider_refresh_authority(&self) -> bool {
-        self.grok_com_config.auth_provider_command.is_some()
+        self.ezer_com_config.auth_provider_command.is_some()
             && self.token_type() == TokenType::ExternalBinary
     }
     /// `true` iff a [`TokenRefresher`] is wired in.
@@ -1558,7 +1558,7 @@ impl AuthManager {
     /// For one-shot recovery off the live bearer, use `try_recover_unauthorized()`.
     pub fn unauthorized_recovery(
         self: &Arc<Self>,
-        rejected: Option<GrokAuth>,
+        rejected: Option<EzerAuth>,
         source: crate::recovery::RecoverySource,
     ) -> crate::recovery::UnauthorizedRecovery {
         crate::recovery::UnauthorizedRecovery::new(self.clone(), rejected, source)
@@ -1856,17 +1856,17 @@ impl ezer_tools::types::ApiKeyProvider for SharedAuthKeyProvider {
 }
 fn prefers_static_api_key(am: &AuthManager) -> bool {
     matches!(
-        am.grok_com_config.preferred_method,
+        am.ezer_com_config.preferred_method,
         Some(super::config::PreferredAuthMethod::ApiKey)
     )
 }
 /// Precedence: env, then process model key, then disk. Off under kill-switch / oidc pin.
 fn resolve_static_api_key(am: &AuthManager) -> Option<String> {
-    if am.grok_com_config.api_key_auth_disabled() {
+    if am.ezer_com_config.api_key_auth_disabled() {
         return None;
     }
     if matches!(
-        am.grok_com_config.preferred_method,
+        am.ezer_com_config.preferred_method,
         Some(super::config::PreferredAuthMethod::Oidc)
     ) {
         return None;

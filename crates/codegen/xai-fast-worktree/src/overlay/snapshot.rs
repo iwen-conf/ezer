@@ -605,7 +605,7 @@ mod tests {
             "snapshot_upper": "/var/lib/repo-fuse/instance/worktrees/abc123/upper",
             "work_dir": "/var/lib/repo-fuse/instance/worktrees/abc123/work",
             "lower_dir": "/var/lib/repo-fuse/instance/fuse-lower",
-            "mount_target": "/home/user/.grok/worktrees/abc123",
+            "mount_target": "/home/user/.ezer/worktrees/abc123",
             "created_at": "2026-02-19T22:38:00Z"
         }"#;
 

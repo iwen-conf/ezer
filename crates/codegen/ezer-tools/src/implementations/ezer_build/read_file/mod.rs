@@ -23,7 +23,7 @@ use crate::types::template_renderer::TemplateRenderer;
 use crate::types::tool::{ToolKind, ToolNamespace};
 use std::sync::LazyLock;
 mod versions;
-use crate::types::schema::GrokIntegerSchema;
+use crate::types::schema::EzerIntegerSchema;
 /// Configuration for the ReadFile tool, stored as `Params<ReadFileParams>` in Resources.
 #[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -136,14 +136,14 @@ pub struct ReadFileInput {
         skip_serializing_if = "Option::is_none"
     )]
     #[schemars(
-        with = "GrokIntegerSchema",
+        with = "EzerIntegerSchema",
         default = "schema_default_offset",
         description = "The line number to start reading from. Only provide if the file is too large to read at once."
     )]
     pub offset: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[schemars(
-        with = "GrokIntegerSchema",
+        with = "EzerIntegerSchema",
         description = "The number of lines to read. Only provide if the file is too large to read at once."
     )]
     pub limit: Option<usize>,
@@ -686,7 +686,7 @@ impl crate::types::tool_metadata::ToolMetadata for ReadFileTool {
         ToolKind::Read
     }
     fn tool_namespace(&self) -> ToolNamespace {
-        ToolNamespace::GrokBuild
+        ToolNamespace::EzerBuild
     }
     fn description_template(&self) -> &str {
         DESCRIPTION_FULL

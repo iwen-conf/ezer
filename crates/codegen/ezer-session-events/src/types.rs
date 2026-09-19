@@ -573,7 +573,7 @@ mod tests {
         let with_kind = serde_json::to_value(Event::TurnStarted {
             session_id: "s".into(),
             turn_number: 2,
-            model_id: "grok-4".into(),
+            model_id: "test-model-4".into(),
             yolo_mode: false,
             conversation_message_count: 3,
             session_relationship: SessionRelationship::Primary,
@@ -593,7 +593,7 @@ mod tests {
         let normal = serde_json::to_value(Event::TurnStarted {
             session_id: "s".into(),
             turn_number: 1,
-            model_id: "grok-4".into(),
+            model_id: "test-model-4".into(),
             yolo_mode: false,
             conversation_message_count: 0,
             session_relationship: SessionRelationship::Primary,
@@ -628,7 +628,7 @@ mod tests {
             attempt: 2,
             consecutive_failures: 6,
             every: 3,
-            model_id: "grok-4".to_string(),
+            model_id: "test-model-4".to_string(),
         };
         let v = serde_json::to_value(&ev).unwrap();
         assert_eq!(
@@ -638,14 +638,14 @@ mod tests {
         assert_eq!(v.get("attempt"), Some(&serde_json::json!(2)));
         assert_eq!(v.get("consecutive_failures"), Some(&serde_json::json!(6)));
         assert_eq!(v.get("every"), Some(&serde_json::json!(3)));
-        assert_eq!(v.get("model_id"), Some(&serde_json::json!("grok-4")));
+        assert_eq!(v.get("model_id"), Some(&serde_json::json!("test-model-4")));
     }
 
     #[test]
     fn goal_summarizer_events_serialize_tag_and_fields() {
         let fired = Event::GoalSummarizerFired {
             attempt: 2,
-            model_id: "grok-4".to_string(),
+            model_id: "test-model-4".to_string(),
         };
         let v = serde_json::to_value(&fired).unwrap();
         assert_eq!(
@@ -653,7 +653,7 @@ mod tests {
             Some(&serde_json::json!("goal_summarizer_fired"))
         );
         assert_eq!(v.get("attempt"), Some(&serde_json::json!(2)));
-        assert_eq!(v.get("model_id"), Some(&serde_json::json!("grok-4")));
+        assert_eq!(v.get("model_id"), Some(&serde_json::json!("test-model-4")));
 
         let completed = Event::GoalSummarizerCompleted {
             attempt: 2,
@@ -687,7 +687,7 @@ mod tests {
         let ev = Event::GoalRoleModelResolved {
             role: "skeptic",
             skeptic_idx: Some(2),
-            model_id: "grok-4".to_string(),
+            model_id: "test-model-4".to_string(),
             agent_type: "general-purpose".to_string(),
             source: "remote",
         };
@@ -698,7 +698,7 @@ mod tests {
         );
         assert_eq!(v.get("role"), Some(&serde_json::json!("skeptic")));
         assert_eq!(v.get("skeptic_idx"), Some(&serde_json::json!(2)));
-        assert_eq!(v.get("model_id"), Some(&serde_json::json!("grok-4")));
+        assert_eq!(v.get("model_id"), Some(&serde_json::json!("test-model-4")));
         assert_eq!(
             v.get("agent_type"),
             Some(&serde_json::json!("general-purpose"))
@@ -711,7 +711,7 @@ mod tests {
         let ev = Event::GoalRoleModelResolved {
             role: "planner",
             skeptic_idx: None,
-            model_id: "grok-4".to_string(),
+            model_id: "test-model-4".to_string(),
             agent_type: "general-purpose".to_string(),
             source: "remote",
         };

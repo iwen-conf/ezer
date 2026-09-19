@@ -22,20 +22,20 @@ use tracing_subscriber::layer::{Context, Layer};
 use tracing_subscriber::registry::LookupSpan;
 
 use crate::session_ctx::SESSION_ID_FIELD;
-use ezer_config::grok_home;
+use ezer_config::ezer_home;
 
 /// Which env var requested a single-file debug log (drives filter and diagnostics).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum DebugSource {
-    GrokLogFile,
-    GrokDebugLog,
+    EzerLogFile,
+    EzerDebugLog,
 }
 
 impl DebugSource {
     fn label(self) -> &'static str {
         match self {
-            Self::GrokLogFile => "EZER_LOG_FILE",
-            Self::GrokDebugLog => "EZER_DEBUG_LOG",
+            Self::EzerLogFile => "EZER_LOG_FILE",
+            Self::EzerDebugLog => "EZER_DEBUG_LOG",
         }
     }
 }
@@ -54,9 +54,9 @@ pub const ACP_UPDATE_PAYLOAD_TARGET: &str = "acp_update_payload";
 /// Re-check on rmcp bump.
 pub const RMCP_SSE_NOISE_TARGET: &str = "rmcp::transport::common::client_side_sse";
 
-// Broad firehose filter for the routing and GROK_DEBUG_LOG sources
+// Broad firehose filter for the routing and EZER_DEBUG_LOG sources
 // Capture our crates at debug regardless of a narrowing RUST_LOG, with deps at info so they don't flood
-// Curated first-party allowlist: new grok crates default to `info` until added here
+// Curated first-party allowlist: new ezer crates default to `info` until added here
 const FIREHOSE_BASE_DIRECTIVES: &str = "info,ezer_pager=debug,ezer_shell=debug,ezer_gateway=debug,ezer_login=debug,ezer_tools=debug,ezer_telemetry=debug,ezer_agent=debug,ezer_mcp=debug,ezer_session_search=debug,xai_acp_lib=debug,sampling_log=off";
 
 // Full firehose directives: the curated crate list plus the pager's ACP update target (built from the constant above, not a literal)
@@ -64,13 +64,13 @@ fn firehose_directives() -> String {
     format!("{FIREHOSE_BASE_DIRECTIVES},{ACP_UPDATE_TARGET}=debug")
 }
 
-// The broad firehose filter, used by both the routing layer and the GROK_DEBUG_LOG single-file source (mirrors `default_file_filter`)
+// The broad firehose filter, used by both the routing layer and the EZER_DEBUG_LOG single-file source (mirrors `default_file_filter`)
 fn firehose_filter() -> EnvFilter {
     EnvFilter::new(firehose_directives())
 }
 
-// RUST_LOG-respecting filter for the GROK_LOG_FILE source: DEBUG default, honor RUST_LOG, silence sampling_log
-// This preserves GROK_LOG_FILE back-compat
+// RUST_LOG-respecting filter for the EZER_LOG_FILE source: DEBUG default, honor RUST_LOG, silence sampling_log
+// This preserves EZER_LOG_FILE back-compat
 fn default_file_filter() -> EnvFilter {
     EnvFilter::builder()
         .with_default_directive(LevelFilter::DEBUG.into())
@@ -349,8 +349,8 @@ where
         }
         Some(DebugTarget::SingleFile { path, src }) => {
             let filter = match src {
-                DebugSource::GrokLogFile => default_file_filter(),
-                DebugSource::GrokDebugLog => firehose_filter(),
+                DebugSource::EzerLogFile => default_file_filter(),
+                DebugSource::EzerDebugLog => firehose_filter(),
             };
             match build_file_layer::<S>(&path, filter) {
                 Ok(layer) => registry.with(layer).init(),
@@ -382,12 +382,12 @@ pub(crate) enum DebugTarget {
 /// EZER_DEBUG_LOG — a truthy bool routes per session into `~/.ezer/debug`, an explicit path writes a single file. Read
 /// via `var_os` (not `var`) so a non-UTF-8 path isn't silently dropped.
 pub(crate) fn resolve_debug_target() -> Option<DebugTarget> {
-    let grok_log_file = std::env::var_os("EZER_LOG_FILE");
-    let grok_debug_log = std::env::var_os("EZER_DEBUG_LOG");
+    let ezer_log_file = std::env::var_os("EZER_LOG_FILE");
+    let ezer_debug_log = std::env::var_os("EZER_DEBUG_LOG");
     resolve_debug_target_inner(
-        grok_log_file.as_deref(),
-        grok_debug_log.as_deref(),
-        &grok_home().join("debug"),
+        ezer_log_file.as_deref(),
+        ezer_debug_log.as_deref(),
+        &ezer_home().join("debug"),
     )
 }
 
@@ -409,19 +409,19 @@ fn os_path(v: &OsStr) -> PathBuf {
 // resolution only decides between a routing dir and a single-file path. Takes `OsStr` so non-UTF-8 paths round-trip.
 // Only the bool-vs-path discrimination needs UTF-8 (a non-UTF-8 value can't be a bool keyword, so it's a path)
 fn resolve_debug_target_inner(
-    grok_log_file: Option<&OsStr>,
-    grok_debug_log: Option<&OsStr>,
+    ezer_log_file: Option<&OsStr>,
+    ezer_debug_log: Option<&OsStr>,
     debug_dir: &Path,
 ) -> Option<DebugTarget> {
-    if let Some(raw) = grok_log_file
+    if let Some(raw) = ezer_log_file
         && !is_blank(raw)
     {
         return Some(DebugTarget::SingleFile {
             path: os_path(raw),
-            src: DebugSource::GrokLogFile,
+            src: DebugSource::EzerLogFile,
         });
     }
-    let raw = grok_debug_log?;
+    let raw = ezer_debug_log?;
     match raw.to_str().map(str::trim) {
         Some("" | "0" | "false" | "off" | "no") => None,
         Some("1" | "true" | "on" | "yes") => Some(DebugTarget::PerSession {
@@ -430,7 +430,7 @@ fn resolve_debug_target_inner(
         // Any other UTF-8 value, or a non-UTF-8 value (`None`), is an explicit path.
         _ => Some(DebugTarget::SingleFile {
             path: os_path(raw),
-            src: DebugSource::GrokDebugLog,
+            src: DebugSource::EzerDebugLog,
         }),
     }
 }
@@ -442,7 +442,7 @@ const LOG_RETENTION: std::time::Duration = std::time::Duration::from_secs(7 * 24
 /// `~/.ezer/debug` older than [`LOG_RETENTION`] so the dir doesn't grow
 /// unbounded. Age-based (not count-based) so a still-open log from a concurrent process is never unlinked mid-write; best-effort, ignore errors.
 pub(crate) fn sweep_old_logs() {
-    prune_old_logs(&grok_home().join("debug"), LOG_RETENTION);
+    prune_old_logs(&ezer_home().join("debug"), LOG_RETENTION);
 }
 
 // Pure prune core: remove `*.txt` files and orphaned `latest.txt` swap temps in `dir` older than `max_age`. Age-based so
@@ -558,7 +558,7 @@ mod tests {
             target,
             DebugTarget::SingleFile {
                 path: PathBuf::from("/tmp/custom.log"),
-                src: DebugSource::GrokDebugLog,
+                src: DebugSource::EzerDebugLog,
             }
         );
     }
@@ -575,14 +575,14 @@ mod tests {
             target,
             DebugTarget::SingleFile {
                 path: PathBuf::from("/tmp/explicit.log"),
-                src: DebugSource::GrokLogFile,
+                src: DebugSource::EzerLogFile,
             }
         );
     }
 
     #[test]
     fn resolve_target_empty_log_file_falls_through_to_debug_log() {
-        // Empty or whitespace GROK_LOG_FILE is treated as unset (mirrors GROK_DEBUG_LOG)
+        // Empty or whitespace EZER_LOG_FILE is treated as unset (mirrors EZER_DEBUG_LOG)
         for blank in ["", "   "] {
             let target = resolve_debug_target_inner(
                 Some(OsStr::new(blank)),
@@ -607,12 +607,12 @@ mod tests {
     fn resolve_target_non_utf8_debug_log_path_is_single_file() {
         use std::os::unix::ffi::OsStrExt;
 
-        // A non-UTF-8 GROK_DEBUG_LOG value is a path, not a bool keyword, and its bytes must round-trip (not be silently dropped)
+        // A non-UTF-8 EZER_DEBUG_LOG value is a path, not a bool keyword, and its bytes must round-trip (not be silently dropped)
         let raw = OsStr::from_bytes(b"/tmp/\xff/fire.txt");
         let target = resolve_debug_target_inner(None, Some(raw), Path::new("/debug")).unwrap();
         match target {
             DebugTarget::SingleFile { path, src } => {
-                assert_eq!(src, DebugSource::GrokDebugLog);
+                assert_eq!(src, DebugSource::EzerDebugLog);
                 assert_eq!(path.as_os_str(), raw);
             }
             other => panic!("expected SingleFile for non-UTF-8 path, got {other:?}"),

@@ -1,4 +1,4 @@
-//! Mid-turn interjection dispatch: optimistic local echo, the `x.ai/interject` effect, and prompt-history recording.
+//! Mid-turn interjection dispatch: optimistic local echo, the `ezer/interject` effect, and prompt-history recording.
 
 use super::ctx::NO_SESSION_NOTICE;
 use super::voice::voice_stop_on_submit;
@@ -74,7 +74,7 @@ fn dispatch_interject_on_inner(
     }
 
     // Push a standard user prompt block locally for instant feedback
-    // Record its id so the broadcast echo (`x.ai/session/interjection`) is deduped instead of rendering a second copy on this pane
+    // Record its id so the broadcast echo (`ezer/session/interjection`) is deduped instead of rendering a second copy on this pane
     let interjection_id = uuid::Uuid::new_v4().to_string();
     agent.self_interjection_ids.insert(interjection_id.clone());
     let entry_id = agent

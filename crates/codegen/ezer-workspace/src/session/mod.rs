@@ -606,7 +606,7 @@ pub struct WorkspaceShared {
     /// `None` until `connect_hub()` sets it.
     pub(crate) activity_notify_handle:
         arc_swap::ArcSwap<Option<ezer_tools::notification::types::ToolNotificationHandle>>,
-    /// Sink for workspace-originated ext-notifications to the client (e.g. `x.ai/search/fuzzy/status`).
+    /// Sink for workspace-originated ext-notifications to the client (e.g. `ezer/search/fuzzy/status`).
     /// Mode-agnostic: the shell wires it to the agent gateway in local mode, and to the server in proxy mode.
     /// `None` until set via [`WorkspaceHandle::set_client_ext_sink`](crate::handle::WorkspaceHandle::set_client_ext_sink).
     pub(crate) client_ext_sink: arc_swap::ArcSwap<Option<ClientExtSink>>,
@@ -632,7 +632,7 @@ pub struct WorkspaceShared {
         std::sync::Arc<parking_lot::Mutex<crate::file_system::CodebaseIndexManager>>,
     /// Finalize the FS rewind checkpoint on non-`Completed` turn-end outcomes (from `EZER_WORKSPACE_REWIND_ALL_OUTCOMES`, default off).
     pub(crate) workspace_rewind_all_outcomes: bool,
-    /// Resolved `$EZER_WORKSPACE_HOME`, the workspace-owned on-disk state root (`<grok_home>/workspace` by default).
+    /// Resolved `$EZER_WORKSPACE_HOME`, the workspace-owned on-disk state root (`<ezer_home>/workspace` by default).
     /// The upload queue spills here.
     pub(crate) workspace_home: std::path::PathBuf,
     pub(crate) upload_queue: Option<std::sync::Arc<xai_file_utils::queue::UploadQueue>>,

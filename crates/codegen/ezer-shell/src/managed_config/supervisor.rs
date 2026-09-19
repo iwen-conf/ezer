@@ -1,6 +1,6 @@
 //! The single refresh owner: every managed-config fetch and apply is driven from here.
 
-use ezer_login::GrokAuth;
+use ezer_login::EzerAuth;
 
 use super::ManagedConfigError;
 use super::response::{
@@ -108,7 +108,7 @@ async fn fetch_managed_config_once(
         .timeout(std::time::Duration::from_secs(15));
     // Replay-probe echo (telemetry only); fail-open so a corrupt sidecar never bricks the fetch.
     if let Some(nonce) = ezer_config::signed_policy::stored_envelope_nonce(
-        &crate::util::grok_home::grok_home(),
+        &crate::util::ezer_home::ezer_home(),
         echo_principal,
     ) && let Ok(value) = reqwest::header::HeaderValue::from_str(&nonce)
     {
@@ -310,7 +310,7 @@ impl SyncOutcome {
 
 async fn sync_bounded(
     budget: SyncBudget,
-    team_override: Option<GrokAuth>,
+    team_override: Option<EzerAuth>,
 ) -> Option<Result<SyncOutcome, ManagedConfigError>> {
     let sync = sync_with_budget(budget, team_override);
     match budget.deadline() {
@@ -325,7 +325,7 @@ enum FetchedConfig {
         body: ManagedConfigResponse,
     },
     Team {
-        auth: Box<GrokAuth>,
+        auth: Box<EzerAuth>,
         body: ManagedConfigResponse,
     },
     NoPrincipal,
@@ -334,7 +334,7 @@ enum FetchedConfig {
 /// Fetch without touching disk: the deployment key first, then a signed-in team.
 async fn fetch_for_principal(
     budget: SyncBudget,
-    team_override: Option<GrokAuth>,
+    team_override: Option<EzerAuth>,
 ) -> Result<FetchedConfig, ManagedConfigError> {
     let max_attempts = budget.max_attempts();
     // Merged-config resolution: the bearer must not go to the public default URL.
@@ -383,7 +383,7 @@ async fn fetch_for_principal(
 
 async fn sync_with_budget(
     budget: SyncBudget,
-    team_override: Option<GrokAuth>,
+    team_override: Option<EzerAuth>,
 ) -> Result<SyncOutcome, ManagedConfigError> {
     match fetch_for_principal(budget, team_override).await? {
         FetchedConfig::DeploymentKey { key, body } => {
@@ -427,7 +427,7 @@ pub enum ManagedConfigSync {
 }
 
 /// Failures are logged, not propagated.
-pub async fn post_login_sync(authenticated: Option<GrokAuth>) -> ManagedConfigSync {
+pub async fn post_login_sync(authenticated: Option<EzerAuth>) -> ManagedConfigSync {
     store::clear_orphan();
     if !store::is_fetch_enabled() {
         return ManagedConfigSync::Skipped;
@@ -542,7 +542,7 @@ pub async fn ensure_managed_policy_present(
 /// near the bound (or under a cancelled caller) still persists to disk.
 async fn refreshed_team_principal(
     auth_manager: &std::sync::Arc<ezer_login::AuthManager>,
-) -> Option<GrokAuth> {
+) -> Option<EzerAuth> {
     let refresh = tokio::spawn({
         let auth_manager = auth_manager.clone();
         async move { auth_manager.auth().await }
@@ -552,7 +552,7 @@ async fn refreshed_team_principal(
         .ok()
         .and_then(Result::ok)
         .and_then(Result::ok)
-        .filter(GrokAuth::is_team_principal)
+        .filter(EzerAuth::is_team_principal)
 }
 
 #[derive(Debug)]

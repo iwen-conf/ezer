@@ -253,7 +253,7 @@ struct ReinitOutcome {
 struct AgentLoadOutcome {
     agent_id: super::agent::AgentId,
     success: bool,
-    /// `x.ai/runningPromptId` from the reload response: the turn another client is driving mid-reconnect.
+    /// `ezer/runningPromptId` from the reload response: the turn another client is driving mid-reconnect.
     /// Adopted at finalize (mirrors the `SessionLoaded` adoption in `dispatch.rs`).
     running_prompt_id: Option<String>,
     /// Persistent-memory implementation pinned by the re-spawned actor.
@@ -1172,7 +1172,7 @@ pub(crate) async fn run(
         .and_then(|s| s.show_resolved_model)
         .unwrap_or(true);
     app.sharing_enabled = false;
-    // BYOK: ignore xAI/X remote banners unless the user opted into grok.com login.
+    // BYOK: ignore xAI/X remote banners unless the user opted into ezer.com login.
     let xai_ui = ezer_config::xai_login_enabled();
     let remote_notices = xai_ui.then(|| remote_settings.as_ref()).flatten();
     app.privacy_notice_rollout = ezer_config::env_bool("EZER_PRIVACY_NOTICE_ROLLOUT")
@@ -1225,7 +1225,7 @@ pub(crate) async fn run(
     app.shell_feedback_trace_offer = connection.feedback_trace_offer;
     app.auth_methods = connection.auth_methods.clone();
     let force_login = args.force_login && !connection.auth_methods.is_empty();
-    // Never auto-open grok.com / xAI OAuth on startup. `--force-login` remains explicit.
+    // Never auto-open ezer.com / xAI OAuth on startup. `--force-login` remains explicit.
     let needs_interactive_login = force_login;
     if needs_interactive_login {
         app.welcome_prompt_focused = false;
@@ -1237,11 +1237,11 @@ pub(crate) async fn run(
                 crate::acp::AuthStartMode::Command => super::app_view::AuthMode::Command,
             };
         } else {
-            let grok_com = connection
+            let ezer_com = connection
                 .auth_methods
                 .iter()
-                .find(|m| m.id().0.as_ref() == "grok.com");
-            if let Some(method) = grok_com {
+                .find(|m| m.id().0.as_ref() == "example.test");
+            if let Some(method) = ezer_com {
                 app.login_label = Some(method.name().to_string());
                 app.login_method_id = Some(method.id().clone());
                 let is_provider = method
@@ -1400,7 +1400,7 @@ pub(crate) async fn run(
         use ezer_shell::util::config::{
             resolve_announcements, resolve_slash_command_tags, resolve_tips,
         };
-        // BYOK: never surface announcements fetched from xAI / grok.com remote settings.
+        // BYOK: never surface announcements fetched from xAI / ezer.com remote settings.
         let announcements = resolve_announcements(
             requirements.as_ref(),
             user_config.as_ref(),
@@ -1422,8 +1422,8 @@ pub(crate) async fn run(
             None,
         );
         if !app.tips.is_empty() {
-            let grok_home = ezer_tools::util::grok_home::grok_home();
-            app.tip = ezer_shell::util::tips::pick_and_advance(&app.tips, &grok_home);
+            let ezer_home = ezer_tools::util::ezer_home::ezer_home();
+            app.tip = ezer_shell::util::tips::pick_and_advance(&app.tips, &ezer_home);
         }
         let remote_slash_tags = remote_settings
             .as_ref()

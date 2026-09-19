@@ -53,7 +53,7 @@ impl SlashCommand for ModelCommand {
         }
 
         // A trailing effort token on a reasoning model makes a session-scoped switch (not persisted as default)
-        // Resolve via the shared gate so a rejected level (e.g. `none` on grok-4.5) reports the effort error with the model's offered ids.
+        // Resolve via the shared gate so a rejected level (e.g. `none` on test-model-4.5) reports the effort error with the model's offered ids.
         // Without it the fall-through reports "Unknown model: … none"
         if let Some((prefix, token)) = split_trailing_token(trimmed)
             && let Some(id) = resolve_model(ctx.models, prefix)
@@ -243,7 +243,7 @@ mod tests {
     fn empty_query_returns_one_row_per_logical_model() {
         let mut state = ModelState::default();
         let (rid, rinfo) = model_with_reasoning("reasoning-x", "Reasoning X");
-        let (pid, pinfo) = plain_model("grok-4.5", "ezer 4.5");
+        let (pid, pinfo) = plain_model("test-model-4.5", "ezer 4.5");
         state.available.insert(rid, rinfo);
         state.available.insert(pid, pinfo);
 
@@ -416,10 +416,10 @@ mod tests {
     #[test]
     fn run_prefers_full_multi_word_model_name_over_prefix_plus_effort() {
         // The catalog has both "ezer" (reasoning) and "ezer 4.5"
-        // `/model Grok 4.5` must select the full name, not treat "4.5" as an effort on "ezer"
+        // `/model Test Model 4.5` must select the full name, not treat "4.5" as an effort on "ezer"
         let mut state = ModelState::default();
         let (short_id, short_info) = model_with_reasoning("ezer", "ezer");
-        let (long_id, long_info) = model_with_reasoning("grok-4.5", "ezer 4.5");
+        let (long_id, long_info) = model_with_reasoning("test-model-4.5", "ezer 4.5");
         state.available.insert(short_id, short_info);
         state.available.insert(long_id.clone(), long_info);
         let mut ctx = dummy_exec_ctx(&state);
@@ -435,7 +435,7 @@ mod tests {
     #[test]
     fn run_rejects_effort_for_non_reasoning_model() {
         let mut state = ModelState::default();
-        let (id, info) = plain_model("grok-4.5", "ezer 4.5");
+        let (id, info) = plain_model("test-model-4.5", "ezer 4.5");
         state.available.insert(id, info);
         let mut ctx = dummy_exec_ctx(&state);
         let result = ModelCommand.run(&mut ctx, "ezer 4.5 high");
@@ -449,7 +449,7 @@ mod tests {
     #[test]
     fn run_bare_model_name_dispatches_set_default_model() {
         let mut state = ModelState::default();
-        let (id, info) = plain_model("grok-4.5", "ezer 4.5");
+        let (id, info) = plain_model("test-model-4.5", "ezer 4.5");
         state.available.insert(id.clone(), info);
         let mut ctx = dummy_exec_ctx(&state);
         let result = ModelCommand.run(&mut ctx, "ezer 4.5");
@@ -465,7 +465,7 @@ mod tests {
     #[test]
     fn run_set_default_model_resolves_case_insensitively() {
         let mut state = ModelState::default();
-        let (id, info) = plain_model("grok-4.5", "ezer 4.5");
+        let (id, info) = plain_model("test-model-4.5", "ezer 4.5");
         state.available.insert(id.clone(), info);
         let mut ctx = dummy_exec_ctx(&state);
         let result = ModelCommand.run(&mut ctx, "ezer 4.5");

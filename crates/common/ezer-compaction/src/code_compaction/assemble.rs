@@ -80,7 +80,7 @@ pub fn assemble_compacted_history<T: CompactionItemFactory>(
         compacted.push(T::new_user(wrap_user_query(last_query.as_str())));
     }
 
-    // grok-build keeps the legacy `<user_query>`-wrapped continuation text and
+    // ezer-build keeps the legacy `<user_query>`-wrapped continuation text and
     // appends the transcript hint after the continuation summary.
     let mut formatted_summary = format_compact_summary_content(&parts.compaction_summary);
     if let Some(ref hint) = parts.transcript_hint {

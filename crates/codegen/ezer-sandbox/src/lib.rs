@@ -73,7 +73,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 static SANDBOX: OnceLock<GlobalSandboxState> = OnceLock::new();
 static CONFIGURED_PROFILE: OnceLock<String> = OnceLock::new();
 static AUTO_ALLOW_BASH: AtomicBool = AtomicBool::new(false);
-const BWRAP_ENV_VAR: &str = "__GROK_INSIDE_BWRAP";
+const BWRAP_ENV_VAR: &str = "__EZER_INSIDE_BWRAP";
 pub fn is_inside_bwrap() -> bool {
     std::env::var(BWRAP_ENV_VAR).is_ok()
 }
@@ -184,7 +184,7 @@ impl SandboxManager {
             return Ok(());
         }
         if requires_hook_write_deny(&self.profile, workspace) {
-            ezer_config::ensure_grok_hook_slots(paths::grok_home().as_path())
+            ezer_config::ensure_ezer_hook_slots(paths::ezer_home().as_path())
                 .map_err(|e| anyhow::anyhow!("hook write-deny ensure failed: {e}"))?;
         }
         hook_write_deny::maybe_install_namespace_lockdown_inside_bwrap(&self.profile, workspace)
@@ -389,13 +389,13 @@ fn chmod_000(path: &Path) -> Option<()> {
     std::fs::set_permissions(path, perms).ok()?;
     Some(())
 }
-/// Zero-permission placeholder (file or dir) under `grok_home` used by bwrap bind-over. The placeholder name is suffixed
+/// Zero-permission placeholder (file or dir) under `ezer_home` used by bwrap bind-over. The placeholder name is suffixed
 /// with the current PID so concurrent ezer processes don't race each other's create/remove/chmod on a shared path. A lost
 /// race could yield `None`, silently dropping the bind and failing open.
 #[cfg(all(feature = "enforce", target_os = "linux"))]
 fn bwrap_blocked_placeholder(name: &str, want_dir: bool) -> Option<PathBuf> {
     use std::fs::OpenOptions;
-    let path = paths::grok_home().join(format!("{name}.{}", std::process::id()));
+    let path = paths::ezer_home().join(format!("{name}.{}", std::process::id()));
     if let Some(parent) = path.parent() {
         std::fs::create_dir_all(parent).ok()?;
     }
@@ -923,10 +923,10 @@ mod tests {
             .unwrap()
             .as_nanos();
         let ws = std::env::temp_dir().join(format!("ezer-{tag}-{}-{nanos}", std::process::id()));
-        let grok = ws.join(".ezer");
-        std::fs::create_dir_all(&grok).unwrap();
+        let ezer = ws.join(".ezer");
+        std::fs::create_dir_all(&ezer).unwrap();
         std::fs::write(
-            grok.join(ezer_config::SANDBOX_CONFIG_FILENAME),
+            ezer.join(ezer_config::SANDBOX_CONFIG_FILENAME),
             toml_body,
         )
         .unwrap();
@@ -1075,7 +1075,7 @@ mod tests {
             .get_args()
             .map(|a| a.to_string_lossy().to_string())
             .collect();
-        let blocked_dir = paths::grok_home()
+        let blocked_dir = paths::ezer_home()
             .join(format!("sandbox-blocked-dir.{}", std::process::id()))
             .to_string_lossy()
             .to_string();

@@ -45,7 +45,7 @@ disallowed-methods = [
     { path = "std::fs::canonicalize", reason = "returns \\\\?\\ verbatim paths on Windows; use dunce::canonicalize" },
     { path = "std::path::Path::canonicalize", reason = "returns \\\\?\\ verbatim paths on Windows; use dunce::canonicalize" },
     { path = "tokio::fs::canonicalize", reason = "returns \\\\?\\ verbatim paths on Windows; use ezer_tools::util::fs helpers or spawn_blocking + dunce::canonicalize" },
-    { path = "std::env::home_dir", reason = "ezer-home resolution goes through xai-dirs (uncached) or ezer_config::grok_home (cached); generic home via xai_dirs::home_dir" },
+    { path = "std::env::home_dir", reason = "ezer-home resolution goes through xai-dirs (uncached) or ezer_config::ezer_home (cached); generic home via xai_dirs::home_dir" },
     # allow-invalid: most codegen crates no longer depend on `dirs` at all,
     # which would otherwise warn that the banned path is unreachable.
     { path = "dirs::home_dir", reason = "home-anchored paths resolve via xai_dirs::home_dir so all sites agree; Node-based tools use os.homedir, which matches it, not the known-folder API", allow-invalid = true },

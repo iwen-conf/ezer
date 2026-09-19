@@ -105,7 +105,7 @@ impl CommandTrigger {
 }
 
 /// Pager builtins that shadow a shell builtin of the same name and stay hidden until the shell's
-/// catalog advertises it. Any backend advertising one must implement the matching `x.ai/memory/*`
+/// catalog advertises it. Any backend advertising one must implement the matching `ezer/memory/*`
 /// extension method.
 const SHELL_GATED_COMMANDS: &[&str] = &["memory", "flush", "dream"];
 
@@ -227,7 +227,7 @@ impl CommandRegistry {
                 .any(|a| self.restricted.contains(&a.to_lowercase()))
     }
 
-    /// Replace the restricted-command deny list. Invoking one shows the SuperGrok upsell instead of executing.
+    /// Replace the restricted-command deny list. Invoking one shows the MaxTier upsell instead of executing.
     pub fn set_restricted_commands(&mut self, names: &[String]) {
         self.restricted = names
             .iter()
@@ -535,7 +535,7 @@ impl CommandRegistry {
 
             // Restricted commands (per-user deny list, e.g. tier restrictions) deliberately stay listed.
             // They keep their triggers/key entries so the dropdown, ghost completion, and palette show them like any other command (discoverability)
-            // Execution is blocked by `get()`'s `restricted_match` filter; invoking one shows the SuperGrok upsell instead
+            // Execution is blocked by `get()`'s `restricted_match` filter; invoking one shows the MaxTier upsell instead
 
             // Insert canonical key.
             self.key_to_index.insert(canonical.to_string(), idx);

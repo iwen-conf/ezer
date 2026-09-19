@@ -227,7 +227,7 @@ pub(super) async fn bounded_clipboard_probe(
 }
 /// Picker search debounce ([`Effect::DebounceSessionSearch`]): long enough to coalesce a typing burst, short enough to feel live.
 pub(super) const SESSION_SEARCH_DEBOUNCE_MS: u64 = 250;
-/// Run the `x.ai/mcp/list` read after a CTA install and map it into a `TaskResult::PluginCtaMcpsLoaded`.
+/// Run the `ezer/mcp/list` read after a CTA install and map it into a `TaskResult::PluginCtaMcpsLoaded`.
 /// The read is uncached, which also nudges the shell to retry auth-required servers.
 /// Shared by the immediate fetch and the delayed re-probe.
 pub(super) async fn fetch_plugin_cta_mcps(
@@ -241,7 +241,7 @@ pub(super) async fn fetch_plugin_cta_mcps(
         "cache": false,
     });
     let req = acp::ExtRequest::new(
-        "x.ai/mcp/list",
+        "ezer/mcp/list",
         serde_json::value::to_raw_value(&params)
             .expect("serialize mcp/list params")
             .into(),
@@ -269,7 +269,7 @@ pub(super) async fn fetch_plugin_cta_mcps(
 }
 /// Convert an ACP error to a user-friendly string for display.
 /// Rate-limit errors render the free-usage paywall, else the server detail, else the auth-aware fallback (see [`format_rate_limited_user_message`]).
-/// The server detail is rewritten for API-key auth when the body pushes personal SuperGrok.
+/// The server detail is rewritten for API-key auth when the body pushes personal MaxTier.
 pub(super) fn format_acp_error(err: &acp::Error, is_api_key_auth: bool) -> String {
     if i32::from(err.code) == RATE_LIMITED_ERROR_CODE {
         let detail = error_data_detail(err);
@@ -326,7 +326,7 @@ pub(crate) fn compact_error(err: &acp::Error) -> CompactError {
     };
     CompactError { cancelled, message }
 }
-/// Send an `x.ai/memory/{flush,dream}` request and decode its typed response.
+/// Send an `ezer/memory/{flush,dream}` request and decode its typed response.
 pub(super) async fn memory_command_request<T: serde::de::DeserializeOwned>(
     method: &'static str,
     session_id: &acp::SessionId,
@@ -404,14 +404,14 @@ pub(super) fn parse_session_load_restore_meta(
         .and_then(|v| serde_json::from_value(v).ok());
     (code_restored, restore_summary, restore_degree)
 }
-/// CANONICAL wire parser for `LoadSessionResponse._meta["x.ai/runningPromptId"]`.
+/// CANONICAL wire parser for `LoadSessionResponse._meta["ezer/runningPromptId"]`.
 /// Returns the session's in-flight running prompt id when the session was loaded MID-turn (some other client is driving), otherwise `None`.
 /// The loader adopts this id so subsequent live `session/update` deltas pass the `current_prompt_id` gate (see `app/acp_handler.rs`).
 pub(crate) fn parse_session_load_running_prompt_id(
     resp_meta: Option<&acp::Meta>,
 ) -> Option<String> {
     resp_meta
-        .and_then(|m| m.get("x.ai/runningPromptId"))
+        .and_then(|m| m.get("ezer/runningPromptId"))
         .and_then(|v| v.as_str())
         .map(String::from)
 }
@@ -462,14 +462,14 @@ pub(crate) fn sanitize_user_error(raw: &str) -> String {
 }
 /// Additive session creation flags passed from the CLI through AppView into effects.
 /// `--no-ask-user` always strips the tool, regardless of which profile was selected.
-/// `_meta["x.ai/session"].kind` is stamped `"chat"` so the shell takes the `require_gateway` / thin profile.
+/// `_meta["ezer/session"].kind` is stamped `"chat"` so the shell takes the `require_gateway` / thin profile.
 #[derive(Debug, Clone, Default)]
 pub(crate) struct SessionFlags {
     pub plan_mode: bool,
     pub subagents: bool,
     pub ask_user: bool,
     /// Restore code state on resume (`--restore-code`).
-    /// Injected as `x.ai/restore_code` into `LoadSession` meta, or passed
+    /// Injected as `ezer/restore_code` into `LoadSession` meta, or passed
     /// as `restoreCode` in the `resume_session` ACP payload for worktrees.
     pub restore_code: Option<bool>,
     pub agent_override: Option<serde_json::Value>,
@@ -531,7 +531,7 @@ impl SessionFlags {
             meta.insert("agentProfile".into(), serde_json::json!(profile));
         }
         if self.chat_mode {
-            meta.insert("x.ai/session".into(), serde_json::json!({ "kind": "chat" }));
+            meta.insert("ezer/session".into(), serde_json::json!({ "kind": "chat" }));
             #[cfg(feature = "local-workspace")]
             if let Some(ref lw) = self.local_workspace {
                 stamp_local_workspace_meta(&mut meta, lw);
@@ -553,11 +553,11 @@ impl SessionFlags {
 }
 /// Workspace-bind `_meta` keys **always** forbidden on chat create/load.
 ///
-/// `x.ai/cloud_existing_workspace` is intentionally omitted: scrub keeps it only when `x.ai/local_workspace.mode == "attach"`.
+/// `ezer/cloud_existing_workspace` is intentionally omitted: scrub keeps it only when `ezer/local_workspace.mode == "attach"`.
 #[allow(dead_code)]
 pub(super) const CHAT_FORBIDDEN_WORKSPACE_BIND_KEYS: &[&str] = &[
     "envId",
-    "x.ai/cloud_server_id",
+    "ezer/cloud_server_id",
 ];
 /// FS-only tool ids for local existing workspace (chat attach/own).
 #[cfg(feature = "local-workspace")]
@@ -570,15 +570,15 @@ pub(super) const LOCAL_WORKSPACE_FS_ONLY_TOOL_IDS: &[&str] = &[
     "workspace.put_files",
     "workspace.get_files",
 ];
-/// Stamp `_meta["x.ai/session"].kind = "chat"` and strip Build `agentProfile`.
+/// Stamp `_meta["ezer/session"].kind = "chat"` and strip Build `agentProfile`.
 pub(super) fn apply_chat_kind_meta(meta: &mut Option<acp::Meta>) {
     let obj = meta.get_or_insert_with(acp::Meta::new);
-    obj.insert("x.ai/session".into(), serde_json::json!({ "kind": "chat" }));
+    obj.insert("ezer/session".into(), serde_json::json!({ "kind": "chat" }));
     obj.remove("agentProfile");
 }
 /// Stamp the chat and local-workspace intent.
-/// Attach also stamps `x.ai/cloud_existing_workspace`.
-/// Never stamps `envId` or `x.ai/cloud_server_id`.
+/// Attach also stamps `ezer/cloud_existing_workspace`.
+/// Never stamps `envId` or `ezer/cloud_server_id`.
 #[cfg(feature = "local-workspace")]
 pub(super) fn stamp_local_workspace_meta(
     meta: &mut serde_json::Map<String, serde_json::Value>,
@@ -598,14 +598,14 @@ pub(super) fn stamp_local_workspace_meta(
         local
             .insert("cwd".into(), serde_json::json!(cwd.to_string_lossy().into_owned()));
     }
-    meta.insert("x.ai/local_workspace".into(), serde_json::Value::Object(local));
+    meta.insert("ezer/local_workspace".into(), serde_json::Value::Object(local));
     tracing::info!(
         target: crate::views::welcome::workspace_mode::WORKSPACE_MODE_LOG,
         event = "acp_meta_stamped",
         mode,
         server_id = cfg.server_id.as_deref(),
         cwd = cfg.cwd.as_ref().map(|p| p.display().to_string()),
-        "stamped x.ai/local_workspace onto session meta"
+        "stamped ezer/local_workspace onto session meta"
     );
     if cfg.mode == LocalWorkspaceMode::Attach && let Some(ref sid) = cfg.server_id {
         let mut existing = serde_json::Map::new();
@@ -618,7 +618,7 @@ pub(super) fn stamp_local_workspace_meta(
                 );
         }
         meta.insert(
-            "x.ai/cloud_existing_workspace".into(),
+            "ezer/cloud_existing_workspace".into(),
             serde_json::Value::Object(existing),
         );
     }
@@ -651,7 +651,7 @@ pub(super) fn finalize_chat_session_meta(
 }
 /// Remove client workspace-bind keys from chat create/load meta (defense in depth).
 /// Own stamps intent only (shell mints `server_id`).
-/// Never keep `envId` or Direct hub `x.ai/cloud_server_id`.
+/// Never keep `envId` or Direct hub `ezer/cloud_server_id`.
 pub(super) fn scrub_chat_workspace_bind_meta(meta: &mut Option<acp::Meta>) {
     let Some(obj) = meta.as_mut() else {
         return;
@@ -662,15 +662,15 @@ pub(super) fn scrub_chat_workspace_bind_meta(meta: &mut Option<acp::Meta>) {
     #[cfg(feature = "local-workspace")]
     {
         let allow_existing_attach = obj
-            .get("x.ai/local_workspace")
+            .get("ezer/local_workspace")
             .and_then(|v| v.get("mode"))
             .and_then(|m| m.as_str()) == Some("attach");
         if !allow_existing_attach {
-            obj.remove("x.ai/cloud_existing_workspace");
+            obj.remove("ezer/cloud_existing_workspace");
         }
     }
     {
-        obj.remove("x.ai/cloud_existing_workspace");
+        obj.remove("ezer/cloud_existing_workspace");
     }
 }
 /// Fail closed on operator attestation outside the FS-only allowlist.
@@ -798,7 +798,7 @@ pub(super) fn count_chat_history_stats(history_path: &Path) -> (usize, usize) {
 }
 pub(super) async fn send_logout(tx: &AcpAgentTx) {
     let req = acp::ExtRequest::new(
-        "x.ai/auth/logout",
+        "ezer/auth/logout",
         serde_json::value::to_raw_value(&serde_json::json!({}))
             .expect("serialize auth/logout params")
             .into(),
@@ -807,12 +807,12 @@ pub(super) async fn send_logout(tx: &AcpAgentTx) {
         tracing::warn!(error = %e, "logout failed");
     }
 }
-/// Best-effort `x.ai/auth/cancel`: stops the shell's device/loopback wait so a later login is single-flight.
+/// Best-effort `ezer/auth/cancel`: stops the shell's device/loopback wait so a later login is single-flight.
 /// Errors are ignored; the UI already left `Authenticating`.
 /// `request_seq` scopes the cancel to the abandoned attempt.
 pub(super) async fn send_auth_cancel(tx: &AcpAgentTx, request_seq: u64) -> TaskResult {
     let req = acp::ExtRequest::new(
-        "x.ai/auth/cancel",
+        "ezer/auth/cancel",
         serde_json::value::to_raw_value(
                 &serde_json::json!({ "request_seq": request_seq }),
             )
@@ -829,7 +829,7 @@ pub(super) async fn send_check_subscription(
     verify: Option<u64>,
 ) -> TaskResult {
     let req = acp::ExtRequest::new(
-        "x.ai/auth/check_subscription",
+        "ezer/auth/check_subscription",
         serde_json::value::to_raw_value(&serde_json::json!({}))
             .expect("serialize check_subscription params")
             .into(),
@@ -869,7 +869,7 @@ pub(super) async fn send_credit_limit_recheck(
     agent_id: AgentId,
 ) -> TaskResult {
     let req = acp::ExtRequest::new(
-        "x.ai/auth/check_subscription",
+        "ezer/auth/check_subscription",
         serde_json::value::to_raw_value(&serde_json::json!({}))
             .expect("serialize check_subscription params")
             .into(),
@@ -1353,7 +1353,7 @@ pub(crate) async fn persist_setting(
     }
 }
 /// Body for `Effect::PersistPermissionMode`. Factored out for testability.
-/// `BestEffort` fires ACP `x.ai/yolo_mode_changed` before the disk write (it fires regardless of the outcome, and a queued first prompt sent right after must not overtake it behind the config lock).
+/// `BestEffort` fires ACP `ezer/yolo_mode_changed` before the disk write (it fires regardless of the outcome, and a queued first prompt sent right after must not overtake it behind the config lock).
 /// `WithRollback` persists first and notifies only on disk success, so the agent never sees a value the UI is about to roll back.
 pub(crate) async fn persist_permission_mode_and_notify(
     canonical: &'static str,
@@ -1369,7 +1369,7 @@ pub(crate) async fn persist_permission_mode_and_notify(
             "permission_mode": config_str,
         });
         let notification = acp::ExtNotification::new(
-            "x.ai/yolo_mode_changed",
+            "ezer/yolo_mode_changed",
             serde_json::value::to_raw_value(&params)
                 .expect("serialize yolo_mode_changed params")
                 .into(),
@@ -1395,7 +1395,7 @@ pub(crate) async fn persist_permission_mode_and_notify(
     }
     route_permission_mode_result(disk_outcome, persist, config_str)
 }
-/// Whether to fire the ACP `x.ai/yolo_mode_changed` notification.
+/// Whether to fire the ACP `ezer/yolo_mode_changed` notification.
 /// `WithRollback` suppresses on disk failure (the agent must not see the optimistic value); `BestEffort` always fires.
 pub(super) fn should_send_yolo_acp_notification(
     disk_outcome: &Result<(), String>,
@@ -1425,7 +1425,7 @@ pub(super) fn parse_kill_outcome(
         .and_then(|envelope| envelope.result)
         .map(|payload| payload.outcome)
 }
-/// Map an `x.ai/subagent/cancel` response (payload under `result`) to a kill outcome.
+/// Map an `ezer/subagent/cancel` response (payload under `result`) to a kill outcome.
 /// Prefers the typed `outcome`; falls back to the legacy `cancelled` bool for an older shell or an unknown future `kind`.
 /// An error/unparseable body is `RpcFailed` (the subagent may still be running, so leave the row alone).
 pub(super) fn parse_subagent_kill_outcome(resp: &str) -> SubagentKillOutcome {
@@ -1583,14 +1583,14 @@ pub(super) fn has_prepaid_credits(
 ) -> bool {
     balance.and_then(|b| b.prepaid_balance_cents).map(i64::abs).is_some_and(|c| c > 0)
 }
-/// Fetch the user's auto top-up rule via the `x.ai/auto-topup-rule` extension.
+/// Fetch the user's auto top-up rule via the `ezer/auto-topup-rule` extension.
 /// A transport failure yields [`AutoTopupFetch::Unchanged`] so the caller keeps any cached rule rather than treating the blip as "no auto top-up".
 pub(super) async fn fetch_auto_topup_info(
     tx: &xai_acp_lib::AcpAgentTx,
 ) -> crate::views::credit_bar::AutoTopupFetch {
     use crate::views::credit_bar::AutoTopupFetch;
     let req = acp::ExtRequest::new(
-        "x.ai/auto-topup-rule",
+        "ezer/auto-topup-rule",
         serde_json::value::to_raw_value(&serde_json::json!({}))
             .expect("serialize auto-topup params")
             .into(),
@@ -1603,7 +1603,7 @@ pub(super) async fn fetch_auto_topup_info(
     let result = wrapper.get("result").unwrap_or(&wrapper);
     parse_auto_topup_response(result)
 }
-/// Map an `x.ai/auto-topup-rule` payload to an [`AutoTopupFetch`].
+/// Map an `ezer/auto-topup-rule` payload to an [`AutoTopupFetch`].
 /// A body that fails to deserialize is a fetch error (`Unchanged`, keep the cached rule), not a definitive "no rule".
 /// A malformed response therefore can't silently flip the credits warning.
 pub(super) fn parse_auto_topup_response(
@@ -1634,7 +1634,7 @@ pub(super) fn parse_auto_topup_response(
 /// is best-effort, so skip on contention.
 pub(super) fn unregister_active_session_best_effort(session_id: &acp::SessionId) {
     unregister_active_session_best_effort_in(
-        &ezer_shell::util::grok_home::grok_home(),
+        &ezer_shell::util::ezer_home::ezer_home(),
         session_id,
     );
 }

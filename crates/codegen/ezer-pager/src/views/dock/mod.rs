@@ -31,7 +31,7 @@ const MORE_INDENT: &str = "   ";
 const QUEUE_BODY_INDENT: u16 = 1;
 const STOP_LABEL: &str = "[stop]";
 
-/// Seeded at startup and on `x.ai/settings/update` from Feature::Dock.
+/// Seeded at startup and on `ezer/settings/update` from Feature::Dock.
 static ENABLED: AtomicBool = AtomicBool::new(false);
 
 #[cfg(test)]
@@ -64,7 +64,7 @@ pub struct DockRow {
     pub kind: String,
     pub description: String,
     pub activity: Option<String>,
-    /// Right-aligned meta column, e.g. `grok-4.5 2m14s` or `every 5m (next in 2m)`.
+    /// Right-aligned meta column, e.g. `test-model-4.5 2m14s` or `every 5m (next in 2m)`.
     pub meta: String,
     pub killable: bool,
     /// Loops only paint `[↗]` when a linked child still exists to open.
@@ -545,7 +545,7 @@ mod tests {
                     kind: "Explore".into(),
                     description: "find dashboard render path".into(),
                     activity: Some("reading render.rs".into()),
-                    meta: "grok-4.5 2m14s".into(),
+                    meta: "test-model-4.5 2m14s".into(),
                     killable: true,
                     openable: true,
                     spinning: false,
@@ -639,7 +639,7 @@ mod tests {
             first.contains("Explore find dashboard render path — reading render.rs"),
             "{first}"
         );
-        assert!(first.trim_end().ends_with("grok-4.5 2m14s"), "{first}");
+        assert!(first.trim_end().ends_with("test-model-4.5 2m14s"), "{first}");
         assert!(
             row_text(&buf, 3).contains("General third"),
             "third row is in the preview, not folded: {}",
@@ -1697,7 +1697,7 @@ mod tests {
             "description must truncate: {first:?}"
         );
         assert!(
-            first.contains("grok-4.5"),
+            first.contains("test-model-4.5"),
             "meta must stay visible: {first:?}"
         );
     }

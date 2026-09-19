@@ -116,13 +116,13 @@ impl acp::Agent for MvpAgent {
                 "auto worktree gc and session search deferred until remote_settings arrive"
             );
         }
-        let grok_home = xai_fast_worktree::resolve_grok_home();
+        let ezer_home = xai_fast_worktree::resolve_ezer_home();
         tokio::task::spawn_blocking(move || {
             crate::session::worktree_pool::cleanup_stale_pool_worktrees(None);
             if !remote_settled {
                 return;
             }
-            Self::reclaim_worktrees(grok_home, auto_gc_policy);
+            Self::reclaim_worktrees(ezer_home, auto_gc_policy);
         });
         if remote_settled {
             self.start_search_index_once();
@@ -202,7 +202,7 @@ impl acp::Agent for MvpAgent {
             client_type = ?client_type,
             event = "code_nav_capability_parsed",
             "code-nav capability initialized from initialize request; \
-             index will start lazily on first x.ai/code/* request if eligible"
+             index will start lazily on first ezer/code/* request if eligible"
         );
         let interactive_trust_client = Self::parse_interactive_trust_capability(
             &arguments,
@@ -289,10 +289,10 @@ impl acp::Agent for MvpAgent {
             }),
             ),
         );
-        if !self.cfg.borrow().grok_com_config.api_key_auth_disabled()
+        if !self.cfg.borrow().ezer_com_config.api_key_auth_disabled()
             && auth_method::read_xai_api_key_env().is_err()
             && let Some(api_key) = ezer_login::read_api_key(
-                &crate::util::grok_home::grok_home(),
+                &crate::util::ezer_home::ezer_home(),
             )
         {
             unsafe { std::env::set_var("XAI_API_KEY", &api_key) };
@@ -306,11 +306,11 @@ impl acp::Agent for MvpAgent {
         let disable_api_key_auth = self
             .cfg
             .borrow()
-            .grok_com_config
+            .ezer_com_config
             .api_key_auth_disabled();
         {
             let cfg = self.cfg.borrow();
-            let gc = &cfg.grok_com_config;
+            let gc = &cfg.ezer_com_config;
             if disable_api_key_auth || gc.force_login_team_uuid.is_some() {
                 ezer_telemetry::unified_log::info(
                     "auth: enterprise login policy active",
@@ -325,7 +325,7 @@ impl acp::Agent for MvpAgent {
                 );
             }
         }
-        let preferred_method_early = self.cfg.borrow().grok_com_config.preferred_method;
+        let preferred_method_early = self.cfg.borrow().ezer_com_config.preferred_method;
         let xai_api_base_url = self.cfg.borrow().endpoints.xai_api_base_url.clone();
         let has_byok = self
             .models_manager
@@ -383,11 +383,11 @@ impl acp::Agent for MvpAgent {
             enterprise_oidc_issuer,
         ) = {
             let cfg = self.cfg.borrow();
-            let issuer = cfg.grok_com_config.oidc.as_ref().map(|o| o.issuer.clone());
+            let issuer = cfg.ezer_com_config.oidc.as_ref().map(|o| o.issuer.clone());
             (
-                cfg.grok_com_config.auth_provider_label.clone(),
-                cfg.grok_com_config.auth_provider_command.is_some(),
-                cfg.grok_com_config.oidc.is_some(),
+                cfg.ezer_com_config.auth_provider_label.clone(),
+                cfg.ezer_com_config.auth_provider_command.is_some(),
+                cfg.ezer_com_config.oidc.is_some(),
                 issuer,
             )
         };
@@ -410,7 +410,7 @@ impl acp::Agent for MvpAgent {
             tracing::info!(
                 label = ?login_label,
                 has_auth_provider,
-                "auth: advertising grok.com auth method",
+                "auth: advertising ezer.com auth method",
             );
         }
         let preferred_method = preferred_method_early;
@@ -443,7 +443,7 @@ impl acp::Agent for MvpAgent {
             None,
             Some(
                 serde_json::json!({
-                "grok_home": crate::util::grok_home::grok_home().display().to_string(),
+                "ezer_home": crate::util::ezer_home::ezer_home().display().to_string(),
                 "HOME": std::env::var("HOME").unwrap_or_else(|_| "(unset)".into()),
                 "has_external_api_key": has_external_api_key,
                 "first_party_env_api_key_ok": first_party_env_ok,
@@ -532,14 +532,14 @@ impl acp::Agent for MvpAgent {
                         .load_session(true)
                         .meta(
                             serde_json::json!({
-                    "x.ai/fs_notify": true,
+                    "ezer/fs_notify": true,
                     // Advertised so SDKs can warn when a registration depends on hook behavior this agent doesn't honor
-                    "x.ai/hooks": {
+                    "ezer/hooks": {
                         "blockingEvents": crate::extensions::hooks::ADVERTISED_BLOCKING_EVENTS,
                         "decisions": crate::extensions::hooks::ADVERTISED_DECISIONS,
                         "stopSignals": crate::extensions::hooks::ADVERTISED_STOP_SIGNALS,
                     },
-                    "x.ai/capabilities": {
+                    "ezer/capabilities": {
                         "toolOverrides": tool_overrides_capability(),
                     },
                 })
@@ -560,14 +560,14 @@ impl acp::Agent for MvpAgent {
                         "EZER_AGENT_METADATA",
                     );
                     serde_json::json!({
-                    "grokShell": true,
+                    "ezerShell": true,
                     // Re-deriving this precedence client-side has regressed OIDC refresh, so clients consume the agent's choice from here
                     "defaultAuthMethodId": default_auth_method_id_wire,
-                    // The agent can drive in-process SDK MCP servers over the ACP reverse channel (`x.ai/mcp/sdk_call`)
+                    // The agent can drive in-process SDK MCP servers over the ACP reverse channel (`ezer/mcp/sdk_call`)
                     // The SDK reads this to enable transport="acp"
                     (ezer_mcp::wire::MCP_SDK): true,
                     // `session/new` / `session/load` accept per-session plugin roots in `_meta.pluginDirs`
-                    // The SDKs gate `GrokOptions.plugins` on this
+                    // The SDKs gate `EzerOptions.plugins` on this
                     (SESSION_PLUGIN_DIRS_CAPABILITY_KEY): true,
                     "currentWorkingDirectory": current_working_directory.to_string_lossy().to_string(),
                     "agentVersion": ezer_version::VERSION,
@@ -585,7 +585,7 @@ impl acp::Agent for MvpAgent {
                         .is_feature_enabled(crate::agent::config::Feature::CancelRewind),
                     // Resolved session-recap state (remote settings / config / env; default ON)
                     // The client gates BOTH its automatic away-recap poll and the manual `/recap` on this
-                    // A disabled feature produces zero `x.ai/recap` traffic
+                    // A disabled feature produces zero `ezer/recap` traffic
                     "sessionRecap": self.cfg.borrow().is_session_recap_enabled(),
                     "feedbackTraceOffer": self.feedback_trace_offer(),
                     "voiceMode": self.cfg.borrow().is_voice_mode_enabled(),
@@ -605,7 +605,7 @@ impl acp::Agent for MvpAgent {
             None,
             Some(serde_json::json!({"method": arguments.method_id.0.as_ref()})),
         );
-        if let Some(preferred) = self.cfg.borrow().grok_com_config.preferred_method {
+        if let Some(preferred) = self.cfg.borrow().ezer_com_config.preferred_method {
             let kind = auth_method::AuthMethodKind::from_id(&arguments.method_id);
             let allowed = match preferred {
                 ezer_login::PreferredAuthMethod::ApiKey => kind.is_api_key(),
@@ -631,7 +631,7 @@ impl acp::Agent for MvpAgent {
         }
         match arguments.method_id.0.as_ref() {
             auth_method::XAI_API_KEY_METHOD_ID => {
-                if self.cfg.borrow().grok_com_config.api_key_auth_disabled() {
+                if self.cfg.borrow().ezer_com_config.api_key_auth_disabled() {
                     emit_login_span(false, "api_key", None, Some("disabled_by_admin"));
                     return Err(
                         acp::Error::auth_required()
@@ -643,7 +643,7 @@ impl acp::Agent for MvpAgent {
                     if let Ok(api_key) = auth_method::read_xai_api_key_env() {
                         sampling_config.api_key = Some(api_key.clone());
                         if let Err(e) = ezer_login::store_api_key(
-                            &crate::util::grok_home::grok_home(),
+                            &crate::util::ezer_home::ezer_home(),
                             &api_key,
                         ) {
                             tracing::warn!("failed to persist API key to auth.json: {e}");
@@ -760,7 +760,7 @@ impl acp::Agent for MvpAgent {
                         .authenticate_after_cached_token_unavailable(arguments)
                         .await;
                 }
-                self.enforce_grok_code_access(&auth).await;
+                self.enforce_remote_code_access(&auth).await;
                 self.maybe_sync_bundle_in_background(false);
                 let auth_for_settings = auth.clone();
                 {
@@ -788,7 +788,7 @@ impl acp::Agent for MvpAgent {
                 Ok(self.auth_response_with_meta())
             }
             auth_method::EZER_COM_METHOD_ID | auth_method::OIDC_METHOD_ID => {
-                let grok_ctx = self.auth_manager.grok_com_config();
+                let ezer_ctx = self.auth_manager.ezer_com_config();
                 let auth_meta = AuthRequestMeta::from_json(arguments.meta.as_ref());
                 tracing::info!(
                     method = arguments.method_id.0.as_ref(),
@@ -813,7 +813,7 @@ impl acp::Agent for MvpAgent {
                     let _ = self.auth_manager.clear();
                 }
                 let cli_oauth = auth_meta.use_oauth.then_some(true);
-                let use_oidc = self.cfg.borrow().resolve_grok_oauth(cli_oauth);
+                let use_oidc = self.cfg.borrow().resolve_ezer_oauth(cli_oauth);
                 tracing::debug!(resolved = use_oidc.value, source = ?use_oidc.source, "auth: method resolved");
                 ezer_telemetry::unified_log::debug(
                     "auth: method resolved",
@@ -851,7 +851,7 @@ impl acp::Agent for MvpAgent {
                         }
                         r = ezer_login::run_auth_flow_with_stderr_bridge(
                             &self.auth_manager,
-                            grok_ctx,
+                            ezer_ctx,
                             config_device_flow,
                             ezer_login::AuthChannels {
                                 url_tx: Some(url_tx),
@@ -872,7 +872,7 @@ impl acp::Agent for MvpAgent {
                         }
                         r = ezer_login::run_auth_flow(
                             &self.auth_manager,
-                            grok_ctx,
+                            ezer_ctx,
                             config_device_flow,
                             auth_meta.reauth,
                             None,
@@ -903,15 +903,15 @@ impl acp::Agent for MvpAgent {
                 {
                     let mut sampling_config = self.sampling_config.borrow_mut();
                     sampling_config.api_key = Some(auth.key.clone());
-                    tracing::debug!("auth: grok.com/oidc handler set api_key (SessionToken)");
+                    tracing::debug!("auth: ezer.com/oidc handler set api_key (SessionToken)");
                     ezer_telemetry::unified_log::debug(
-                        "auth: grok.com/oidc handler set api_key (SessionToken)",
+                        "auth: ezer.com/oidc handler set api_key (SessionToken)",
                         None,
                         None,
                     );
                 }
                 self.auth_manager.hot_swap(auth.clone());
-                self.enforce_grok_code_access(&auth).await;
+                self.enforce_remote_code_access(&auth).await;
                 self.maybe_sync_bundle_in_background(false);
                 tokio::task::spawn_local(
                     crate::managed_config::post_login_sync(Some(auth.clone())),
@@ -1530,7 +1530,7 @@ impl acp::Agent for MvpAgent {
                 self.gateway
                     .forward_fire_and_forget(
                         acp::ExtNotification::new(
-                            "x.ai/session/prompt_complete",
+                            "ezer/session/prompt_complete",
                             params.into(),
                         ),
                     );
@@ -1965,74 +1965,74 @@ impl acp::Agent for MvpAgent {
         let mut backend_no_bridge_err: Option<acp::Error> = None;
         let method = args.method.clone();
         let result = match method.as_ref() {
-            "x.ai/getApiKey" | "x.ai/setApiKey" => {
+            "ezer/getApiKey" | "ezer/setApiKey" => {
                 crate::extensions::auth::handle(self, &args).await
             }
-            "x.ai/session/info" | "x.ai/session/close" | "x.ai/session/list"
-            | "x.ai/sessions/list" => {
+            "ezer/session/info" | "ezer/session/close" | "ezer/session/list"
+            | "ezer/sessions/list" => {
                 crate::agent::handlers::session::handle(self, &args).await
             }
-            "x.ai/workspaces/list" => {
+            "ezer/workspaces/list" => {
                 crate::agent::handlers::workspaces::handle(self, &args).await
             }
-            "x.ai/models/list" => {
+            "ezer/models/list" => {
                 crate::agent::handlers::models::handle(self, &args).await
             }
-            "x.ai/session/updates" => {
+            "ezer/session/updates" => {
                 crate::extensions::session_updates::handle(&args, &self.gateway).await
             }
-            "x.ai/session/state" => {
+            "ezer/session/state" => {
                 crate::extensions::session_state::handle_state(&args).await
             }
-            "x.ai/session/import" => {
+            "ezer/session/import" => {
                 crate::extensions::session_state::handle_import(&args).await
             }
-            "x.ai/session/load_history" => {
+            "ezer/session/load_history" => {
                 crate::extensions::chat_conversation_history::handle(self, &args).await
             }
-            "x.ai/session/search" => {
+            "ezer/session/search" => {
                 crate::extensions::session_search::handle(self, &args).await
             }
-            "x.ai/session/resolve_local_for_worktree_resume"
-            | "x.ai/session/rehydrate" => {
+            "ezer/session/resolve_local_for_worktree_resume"
+            | "ezer/session/rehydrate" => {
                 let ops = self.resolve_workspace_ops()?;
                 crate::extensions::worktree::handle(self, &ops, &args).await
             }
             #[cfg(feature = "local-workspace")]
-            "x.ai/session/add_local_workspace" => {
+            "ezer/session/add_local_workspace" => {
                 crate::extensions::session_admin::handle(self, &args).await
             }
-            "x.ai/session/rename" | "x.ai/session/delete"
-            | "x.ai/session/update_mcp_servers" | "x.ai/session/fork"
-            | "x.ai/plugins/reload" | "x.ai/commands/list" => {
+            "ezer/session/rename" | "ezer/session/delete"
+            | "ezer/session/update_mcp_servers" | "ezer/session/fork"
+            | "ezer/plugins/reload" | "ezer/commands/list" => {
                 crate::extensions::session_admin::handle(self, &args).await
             }
             m if InternalMethod::from_name(m).is_some() => {
                 crate::extensions::session_admin::handle(self, &args).await
             }
-            "x.ai/session/repair" => crate::extensions::repair::handle(self, &args).await,
-            "x.ai/session/usage" => crate::extensions::usage::handle(self, &args).await,
+            "ezer/session/repair" => crate::extensions::repair::handle(self, &args).await,
+            "ezer/session/usage" => crate::extensions::usage::handle(self, &args).await,
             crate::extensions::memory::MEMORY_FLUSH_METHOD
             | crate::extensions::memory::MEMORY_DREAM_METHOD
-            | "x.ai/memory/rewrite"
+            | "ezer/memory/rewrite"
             | crate::extensions::memory::MEMORY_LIST_METHOD
             | crate::extensions::memory::MEMORY_TOGGLE_METHOD
             | crate::extensions::memory::MEMORY_FORGET_METHOD => {
                 crate::extensions::memory::handle(self, &args).await
             }
-            "x.ai/skills/refresh-baseline" => {
+            "ezer/skills/refresh-baseline" => {
                 self.refresh_skill_baseline_for_all_sessions();
                 crate::extensions::to_ext_response(
                     Ok(serde_json::json!({"ok": true})),
                 )
             }
-            "x.ai/interject" => crate::extensions::interject::handle(self, &args).await,
-            "x.ai/feedback" | "x.ai/feedback/dismiss" | "x.ai/feedback/drafts/list"
-            | "x.ai/feedback/drafts/get" | "x.ai/feedback/drafts/delete"
-            | "x.ai/feedback/drafts/update" | "x.ai/feedback/upload-trace"
-            | "x.ai/btw" => crate::extensions::feedback::handle(self, &args).await,
-            "x.ai/recap" => crate::extensions::recap::handle(self, &args).await,
-            "x.ai/cloud/terminate" => {
+            "ezer/interject" => crate::extensions::interject::handle(self, &args).await,
+            "ezer/feedback" | "ezer/feedback/dismiss" | "ezer/feedback/drafts/list"
+            | "ezer/feedback/drafts/get" | "ezer/feedback/drafts/delete"
+            | "ezer/feedback/drafts/update" | "ezer/feedback/upload-trace"
+            | "ezer/btw" => crate::extensions::feedback::handle(self, &args).await,
+            "ezer/recap" => crate::extensions::recap::handle(self, &args).await,
+            "ezer/cloud/terminate" => {
                 crate::extensions::auth_gate::require_xai_auth(
                     &self.auth_manager,
                     "Authentication required",
@@ -2064,7 +2064,7 @@ impl acp::Agent for MvpAgent {
                     })?;
                 crate::extensions::to_raw_response(&serde_json::json!({ "ok": true }))
             }
-            "x.ai/cloud/env/list" => {
+            "ezer/cloud/env/list" => {
                 crate::extensions::auth_gate::require_xai_auth(
                     &self.auth_manager,
                     "Authentication required",
@@ -2089,7 +2089,7 @@ impl acp::Agent for MvpAgent {
                 }),
                 )
             }
-            "x.ai/cloud/env/create" => {
+            "ezer/cloud/env/create" => {
                 crate::extensions::auth_gate::require_xai_auth(
                     &self.auth_manager,
                     "Authentication required",
@@ -2146,7 +2146,7 @@ impl acp::Agent for MvpAgent {
                 }),
                 )
             }
-            "x.ai/cloud/env/update" => {
+            "ezer/cloud/env/update" => {
                 crate::extensions::auth_gate::require_xai_auth(
                     &self.auth_manager,
                     "Authentication required",
@@ -2206,7 +2206,7 @@ impl acp::Agent for MvpAgent {
                 }),
                 )
             }
-            "x.ai/cloud/env/delete" => {
+            "ezer/cloud/env/delete" => {
                 crate::extensions::auth_gate::require_xai_auth(
                     &self.auth_manager,
                     "Authentication required",
@@ -2233,87 +2233,87 @@ impl acp::Agent for MvpAgent {
                     })?;
                 crate::extensions::to_raw_response(&serde_json::json!({ "ok": true }))
             }
-            "x.ai/billing" => crate::extensions::billing::handle(self, &args).await,
-            "x.ai/auto-topup-rule" => {
+            "ezer/billing" => crate::extensions::billing::handle(self, &args).await,
+            "ezer/auto-topup-rule" => {
                 crate::extensions::billing::handle(self, &args).await
             }
-            "x.ai/share_session" => crate::extensions::share::handle(self, &args).await,
-            "x.ai/privacy/setCodingDataRetention" => {
+            "ezer/share_session" => crate::extensions::share::handle(self, &args).await,
+            "ezer/privacy/setCodingDataRetention" => {
                 crate::extensions::privacy::handle(self, &args).await
             }
-            "x.ai/consent/record" => {
+            "ezer/consent/record" => {
                 crate::extensions::consent::handle(self, &args).await
             }
-            "x.ai/rollout/survey" => {
+            "ezer/rollout/survey" => {
                 crate::extensions::rollout::handle(self, &args).await
             }
-            "x.ai/prompt_history" => {
+            "ezer/prompt_history" => {
                 crate::extensions::prompt_history::handle(self, &args).await
             }
-            "x.ai/suggest" => crate::extensions::suggest::handle(self, &args).await,
-            "x.ai/suggestPrompt" => crate::extensions::suggest::handle(self, &args).await,
-            s if s.starts_with("x.ai/auth/") => {
+            "ezer/suggest" => crate::extensions::suggest::handle(self, &args).await,
+            "ezer/suggestPrompt" => crate::extensions::suggest::handle(self, &args).await,
+            s if s.starts_with("ezer/auth/") => {
                 crate::extensions::auth::handle(self, &args).await
             }
-            s if s.starts_with("x.ai/session_summaries/") => {
+            s if s.starts_with("ezer/session_summaries/") => {
                 crate::agent::handlers::session::handle(self, &args).await
             }
-            s if s.starts_with("x.ai/git/worktree/") => {
+            s if s.starts_with("ezer/git/worktree/") => {
                 let ops = self.resolve_workspace_ops()?;
                 crate::extensions::worktree::handle(self, &ops, &args).await
             }
-            s if s.starts_with("x.ai/git/") => {
+            s if s.starts_with("ezer/git/") => {
                 let ops = self.resolve_workspace_ops()?;
                 crate::extensions::git::handle(self, &ops, &args).await
             }
-            s if s.starts_with("x.ai/compact_conversation") => {
+            s if s.starts_with("ezer/compact_conversation") => {
                 crate::extensions::memory::handle(self, &args).await
             }
-            s if s.starts_with("x.ai/plugins/") => {
+            s if s.starts_with("ezer/plugins/") => {
                 crate::extensions::plugins::handle(self, &args).await
             }
-            s if s.starts_with("x.ai/marketplace/") => {
+            s if s.starts_with("ezer/marketplace/") => {
                 crate::extensions::marketplace::handle(self, &args).await
             }
-            s if s.starts_with("x.ai/hooks/") => {
+            s if s.starts_with("ezer/hooks/") => {
                 crate::extensions::hooks::handle(self, &args).await
             }
-            s if s.starts_with("x.ai/hunk-tracker/") => {
+            s if s.starts_with("ezer/hunk-tracker/") => {
                 let ops = self.resolve_workspace_ops()?;
                 crate::extensions::hunk_tracker::handle(self, &ops, &args).await
             }
-            s if s.starts_with("x.ai/pr/") => {
+            s if s.starts_with("ezer/pr/") => {
                 crate::extensions::pr::handle(self, &args).await
             }
             s if s.starts_with(crate::extensions::mcp::mcp_methods::PREFIX) => {
                 crate::extensions::mcp::handle(self, &args).await
             }
-            s if s.starts_with("x.ai/task/") => {
+            s if s.starts_with("ezer/task/") => {
                 crate::extensions::task::handle(self, &args).await
             }
-            s if s.starts_with("x.ai/scheduler/") => {
+            s if s.starts_with("ezer/scheduler/") => {
                 crate::extensions::task::handle_scheduler(self, &args).await
             }
-            s if s.starts_with("x.ai/subagent/") => {
+            s if s.starts_with("ezer/subagent/") => {
                 crate::extensions::task::handle_subagent(self, &args).await
             }
-            s if s.starts_with("x.ai/terminal/") => {
+            s if s.starts_with("ezer/terminal/") => {
                 crate::extensions::terminal::handle(self, &args).await
             }
             s if crate::extensions::fs::is_fs_method(s) => {
                 crate::extensions::fs::handle(self, &args).await
             }
-            s if s.starts_with("x.ai/search/") => {
+            s if s.starts_with("ezer/search/") => {
                 crate::extensions::search::handle(self, &args).await
             }
-            s if s.starts_with("x.ai/bundle/") => {
+            s if s.starts_with("ezer/bundle/") => {
                 crate::extensions::bundle::handle(self, &args).await
             }
-            s if s.starts_with("x.ai/code/") => {
+            s if s.starts_with("ezer/code/") => {
                 let ops = self.resolve_workspace_ops()?;
                 crate::extensions::code_nav::handle(self, &ops, &args).await
             }
-            s if s.starts_with("x.ai/skills/") || s == "x.ai/workflows/list" => {
+            s if s.starts_with("ezer/skills/") || s == "ezer/workflows/list" => {
                 let compat = self.cfg.borrow().compat_resolved;
                 let cwd = crate::extensions::skills::request_cwd(&args);
                 let registry = self.plugin_registry_for_cwd(cwd.as_deref()).await;
@@ -2325,13 +2325,13 @@ impl acp::Agent for MvpAgent {
                     )
                     .await
             }
-            s if s.starts_with("x.ai/review") => {
+            s if s.starts_with("ezer/review") => {
                 crate::extensions::feedback::handle(self, &args).await
             }
-            s if s.starts_with("x.ai/debug/") => {
+            s if s.starts_with("ezer/debug/") => {
                 crate::extensions::debug::handle(self, &args).await
             }
-            s if s.starts_with("x.ai/rewind") => {
+            s if s.starts_with("ezer/rewind") => {
                 crate::extensions::rewind::handle(self, &args).await
             }
             other => {
@@ -2353,7 +2353,7 @@ impl acp::Agent for MvpAgent {
         args: acp::ExtNotification,
     ) -> Result<(), acp::Error> {
         tracing::info!("Received extension notification: method={}", args.method);
-        if args.method.as_ref() == "x.ai/yolo_mode_changed"
+        if args.method.as_ref() == "ezer/yolo_mode_changed"
             && let Ok(params) = serde_json::from_str::<
                 serde_json::Value,
             >(args.params.get())
@@ -2426,7 +2426,7 @@ impl acp::Agent for MvpAgent {
                 );
             }
         }
-        if args.method.as_ref() == "x.ai/permissions/reset" {
+        if args.method.as_ref() == "ezer/permissions/reset" {
             let mut updated = 0;
             self.session_registry
                 .for_each_resident(|_, h| {
@@ -2447,7 +2447,7 @@ impl acp::Agent for MvpAgent {
         if args.method.as_ref() == InternalMethod::EvictSessions.name() {
             self.handle_evict_sessions(&args.params).await;
         }
-        if args.method.as_ref() == "x.ai/toggle_plan_mode"
+        if args.method.as_ref() == "ezer/toggle_plan_mode"
             && let Ok(params) = serde_json::from_str::<
                 serde_json::Value,
             >(args.params.get())
@@ -2484,7 +2484,7 @@ impl acp::Agent for MvpAgent {
                 );
             }
         }
-        if args.method.as_ref().starts_with("x.ai/queue/")
+        if args.method.as_ref().starts_with("ezer/queue/")
             && let Ok(params) = serde_json::from_str::<
                 serde_json::Value,
             >(args.params.get())
@@ -2522,14 +2522,14 @@ impl acp::Agent for MvpAgent {
                 }
             }
         }
-        if args.method.as_ref() == "x.ai/terminal/pty/input"
+        if args.method.as_ref() == "ezer/terminal/pty/input"
             && let Ok(params) = serde_json::from_str::<
                 serde_json::Value,
             >(args.params.get())
         {
             crate::extensions::terminal::handle_pty_input(&params).await;
         }
-        if args.method.as_ref() == "_x.ai/session/update" {
+        if args.method.as_ref() == "_ezer/session/update" {
             if let Ok(notification) = serde_json::from_str::<
                 SessionNotification,
             >(args.params.get()) {
@@ -2553,7 +2553,7 @@ impl acp::Agent for MvpAgent {
                 tracing::warn!("Failed to parse xAI session notification params");
             }
         }
-        if args.method.as_ref() == "x.ai/telemetry/non_git_decision" {
+        if args.method.as_ref() == "ezer/telemetry/non_git_decision" {
             #[derive(serde::Deserialize)]
             struct NonGitDecisionParams {
                 decision: String,
@@ -2579,7 +2579,7 @@ impl acp::Agent for MvpAgent {
                 tracing::warn!("Failed to parse non_git_decision telemetry params");
             }
         }
-        if args.method.as_ref() == "x.ai/telemetry/multi_agent_followup" {
+        if args.method.as_ref() == "ezer/telemetry/multi_agent_followup" {
             #[derive(serde::Deserialize)]
             struct MultiAgentFollowupParams {
                 preferred_agent_label: char,
@@ -2615,7 +2615,7 @@ impl acp::Agent for MvpAgent {
                 tracing::warn!("Failed to parse multi-agent followup telemetry params");
             }
         }
-        if args.method.as_ref() == "x.ai/telemetry/multi_agent_apply" {
+        if args.method.as_ref() == "ezer/telemetry/multi_agent_apply" {
             #[derive(serde::Deserialize)]
             struct MultiAgentApplyParams {
                 applied_agent_label: char,
@@ -2651,7 +2651,7 @@ impl acp::Agent for MvpAgent {
                 tracing::warn!("Failed to parse multi-agent apply telemetry params");
             }
         }
-        if args.method.as_ref() == "x.ai/telemetry/multi_agent_discard" {
+        if args.method.as_ref() == "ezer/telemetry/multi_agent_discard" {
             #[derive(serde::Deserialize)]
             struct MultiAgentDiscardParams {
                 /// (label, session_id, model_id)

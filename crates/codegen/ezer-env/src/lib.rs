@@ -12,19 +12,22 @@ pub use registry::{
 };
 /// The endpoint set for one backend environment.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct GrokBuildEndpoints {
+pub struct EzerBuildEndpoints {
     pub cli_chat_proxy_base_url: &'static str,
     pub asset_server_url: &'static str,
     pub relay_ws_url: &'static str,
     pub gateway_ws_url: &'static str,
     pub ws_origin: &'static str,
 }
-const PRODUCTION_ENDPOINTS: GrokBuildEndpoints = GrokBuildEndpoints {
-    cli_chat_proxy_base_url: "https://cli-chat-proxy.grok.com/v1",
-    asset_server_url: "https://assets.grok.com",
-    relay_ws_url: "wss://code.grok.com/ws/code-agent",
-    gateway_ws_url: "wss://grok.com/ws/gw/",
-    ws_origin: "https://grok.com",
+/// BYOK builds compile empty first-party product URLs. Opt-in xAI login
+/// (`EZER_ENABLE_XAI_LOGIN`) and operators override these via
+/// `EZER_PRODUCTION_*` env vars rather than baked-in first-party hosts.
+const PRODUCTION_ENDPOINTS: EzerBuildEndpoints = EzerBuildEndpoints {
+    cli_chat_proxy_base_url: "",
+    asset_server_url: "",
+    relay_ws_url: "",
+    gateway_ws_url: "",
+    ws_origin: "",
 };
 pub const PROD_CLI_CHAT_PROXY_BASE_URL: &str = PRODUCTION_ENDPOINTS.cli_chat_proxy_base_url;
 pub const PROD_ASSET_SERVER_URL: &str = PRODUCTION_ENDPOINTS.asset_server_url;
@@ -32,32 +35,32 @@ pub const PROD_RELAY_WS_URL: &str = PRODUCTION_ENDPOINTS.relay_ws_url;
 pub const PROD_GATEWAY_WS_URL: &str = PRODUCTION_ENDPOINTS.gateway_ws_url;
 pub const PROD_WS_ORIGIN: &str = PRODUCTION_ENDPOINTS.ws_origin;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-pub enum GrokBuildEnvironment {
+pub enum EzerBuildEnvironment {
     #[default]
     Production,
 }
-impl GrokBuildEnvironment {
+impl EzerBuildEnvironment {
     pub fn from_flags(_dev: bool, _staging: bool) -> Self {
-        GrokBuildEnvironment::Production
+        EzerBuildEnvironment::Production
     }
     /// Indicator string for display; `None` for Production.
     pub fn indicator(&self) -> Option<&'static str> {
         match self {
-            GrokBuildEnvironment::Production => None,
+            EzerBuildEnvironment::Production => None,
         }
     }
     pub fn is_production(&self) -> bool {
-        matches!(self, GrokBuildEnvironment::Production)
+        matches!(self, EzerBuildEnvironment::Production)
     }
     fn env_prefix(&self) -> &'static str {
         match self {
-            GrokBuildEnvironment::Production => "EZER_PRODUCTION",
+            EzerBuildEnvironment::Production => "EZER_PRODUCTION",
         }
     }
     /// Compiled endpoint set for this environment (production by default).
-    pub fn endpoints(&self) -> GrokBuildEndpoints {
+    pub fn endpoints(&self) -> EzerBuildEndpoints {
         match self {
-            GrokBuildEnvironment::Production => PRODUCTION_ENDPOINTS,
+            EzerBuildEnvironment::Production => PRODUCTION_ENDPOINTS,
         }
     }
     /// Env-var override when set, else the compiled endpoint.
@@ -77,7 +80,7 @@ impl GrokBuildEnvironment {
     pub fn asset_server_url(&self) -> String {
         self.resolve("_ASSET_SERVER_URL", self.endpoints().asset_server_url)
     }
-    /// The relay WebSocket URL (Web Frontend at `grok.com/code` driving a local agent).
+    /// The relay WebSocket URL (Web Frontend at `ezer.com/code` driving a local agent).
     /// Not the cloud-sandbox gateway ([`Self::gateway_ws_url`]); the two speak different protocols.
     pub fn relay_ws_url(&self) -> String {
         self.resolve("_WS_URL", self.endpoints().relay_ws_url)
@@ -88,10 +91,10 @@ impl GrokBuildEnvironment {
         self.resolve("_GATEWAY_WS_URL", self.endpoints().gateway_ws_url)
     }
 }
-impl std::fmt::Display for GrokBuildEnvironment {
+impl std::fmt::Display for EzerBuildEnvironment {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            GrokBuildEnvironment::Production => write!(f, "production"),
+            EzerBuildEnvironment::Production => write!(f, "production"),
         }
     }
 }
@@ -184,13 +187,13 @@ mod tests {
     #[test]
     fn test_env_prefix() {
         assert_eq!(
-            GrokBuildEnvironment::Production.env_prefix(),
+            EzerBuildEnvironment::Production.env_prefix(),
             "EZER_PRODUCTION"
         );
     }
     #[test]
     fn env_var_guard_set_value_updates_then_restores_on_drop() {
-        const KEY: &str = "XAI_GROK_ENV_VAR_GUARD_SET_VALUE_PROBE";
+        const KEY: &str = "EZER_ENV_VAR_GUARD_SET_VALUE_PROBE";
         let before = std::env::var(KEY).ok();
         {
             let guard = EnvVarGuard::set(KEY, "initial");
@@ -210,8 +213,8 @@ mod tests {
     }
     #[test]
     fn env_var_guard_chains_keys_under_one_lock_and_restores_all() {
-        const A: &str = "XAI_GROK_ENV_VAR_GUARD_CHAIN_A_PROBE";
-        const B: &str = "XAI_GROK_ENV_VAR_GUARD_CHAIN_B_PROBE";
+        const A: &str = "EZER_ENV_VAR_GUARD_CHAIN_A_PROBE";
+        const B: &str = "EZER_ENV_VAR_GUARD_CHAIN_B_PROBE";
         {
             let _guard = EnvVarGuard::set(A, "first")
                 .and_set(B, "b")
@@ -230,23 +233,25 @@ mod tests {
     #[test]
     #[should_panic(expected = "this thread already holds a live guard")]
     fn env_var_guard_rejects_a_second_guard_on_the_same_thread() {
-        const KEY: &str = "XAI_GROK_ENV_VAR_GUARD_REENTRANCY_PROBE";
+        const KEY: &str = "EZER_ENV_VAR_GUARD_REENTRANCY_PROBE";
         let _first = EnvVarGuard::set(KEY, "first");
         let _second = EnvVarGuard::set(KEY, "second");
     }
-    /// Guards against conflating the relay and gateway endpoints (a relay loop mistakenly connecting to `wss://grok.com/ws/gw/`).
+    /// Compiled product endpoints stay empty in BYOK builds; operators override via env.
     #[test]
-    fn relay_and_gateway_urls_are_distinct() {
-        assert_ne!(
-            GrokBuildEnvironment::Production.relay_ws_url(),
-            GrokBuildEnvironment::Production.gateway_ws_url(),
-        );
+    fn compiled_product_endpoints_are_empty() {
+        let env = EzerBuildEnvironment::Production;
+        assert_eq!(env.relay_ws_url(), "");
+        assert_eq!(env.gateway_ws_url(), "");
+        assert_eq!(env.cli_chat_proxy_base_url(), "");
+        assert_eq!(env.ws_origin(), "");
+        assert_eq!(env.asset_server_url(), "");
     }
     #[test]
     fn test_from_flags() {
         assert_eq!(
-            GrokBuildEnvironment::from_flags(false, false),
-            GrokBuildEnvironment::Production
+            EzerBuildEnvironment::from_flags(false, false),
+            EzerBuildEnvironment::Production
         );
     }
 }

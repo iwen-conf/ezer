@@ -134,20 +134,20 @@ async fn test_model_tracking() {
     let (handle, actor) = SessionSignalsActor::new();
     let actor_handle = tokio::spawn(actor.run());
 
-    handle.set_primary_model("grok-3");
+    handle.set_primary_model("test-model-3");
 
     let snapshot = handle.snapshot().await.unwrap();
-    assert_eq!(snapshot.primary_model_id, Some("grok-3".to_string()));
-    assert_eq!(snapshot.models_used, vec!["grok-3".to_string()]);
+    assert_eq!(snapshot.primary_model_id, Some("test-model-3".to_string()));
+    assert_eq!(snapshot.models_used, vec!["test-model-3".to_string()]);
 
     // Record additional model usage
-    handle.record_model_usage("grok-4");
-    handle.record_model_usage("grok-3"); // Duplicate
+    handle.record_model_usage("test-model-4");
+    handle.record_model_usage("test-model-3"); // Duplicate
 
     let snapshot = handle.snapshot().await.unwrap();
     assert_eq!(snapshot.models_used.len(), 2);
-    assert!(snapshot.models_used.contains(&"grok-3".to_string()));
-    assert!(snapshot.models_used.contains(&"grok-4".to_string()));
+    assert!(snapshot.models_used.contains(&"test-model-3".to_string()));
+    assert!(snapshot.models_used.contains(&"test-model-4".to_string()));
 
     handle.shutdown();
     actor_handle.await.unwrap();
@@ -757,7 +757,7 @@ async fn test_seed_counts_restores_all_counters() {
             "bash".to_string(),
             "search_replace".to_string(),
         ],
-        vec!["grok-3".to_string(), "grok-4".to_string()],
+        vec!["test-model-3".to_string(), "test-model-4".to_string()],
     );
 
     let snapshot = handle.snapshot().await.unwrap();
@@ -776,21 +776,21 @@ async fn test_seed_counts_restores_all_counters() {
 
     // Model tracking
     assert_eq!(snapshot.models_used.len(), 2);
-    assert!(snapshot.models_used.contains(&"grok-3".to_string()));
-    assert!(snapshot.models_used.contains(&"grok-4".to_string()));
+    assert!(snapshot.models_used.contains(&"test-model-3".to_string()));
+    assert!(snapshot.models_used.contains(&"test-model-4".to_string()));
 
     // After seeding, new tool calls should accumulate correctly
     handle.record_tool_call("bash"); // existing tool
     handle.record_tool_call("grep"); // new tool
-    handle.record_model_usage("grok-3"); // existing model
-    handle.record_model_usage("grok-4.5"); // new model
+    handle.record_model_usage("test-model-3"); // existing model
+    handle.record_model_usage("test-model-4.5"); // new model
 
     let snapshot = handle.snapshot().await.unwrap();
     assert_eq!(snapshot.tool_call_count, 14); // the seeded 12 plus 2 new calls
     assert_eq!(snapshot.tools_used.len(), 4); // bash not duplicated, grep added
     assert!(snapshot.tools_used.contains(&"grep".to_string()));
-    assert_eq!(snapshot.models_used.len(), 3); // grok-3 not duplicated, grok-5 added
-    assert!(snapshot.models_used.contains(&"grok-4.5".to_string()));
+    assert_eq!(snapshot.models_used.len(), 3); // test-model-3 not duplicated, ezer-5 added
+    assert!(snapshot.models_used.contains(&"test-model-4.5".to_string()));
 
     handle.shutdown();
     actor_handle.await.unwrap();
@@ -809,7 +809,7 @@ async fn test_restore_signals_full_round_trip() {
     handle1.record_tool_failure("bash");
     handle1.record_error();
     handle1.record_assistant_message();
-    handle1.record_model_usage("grok-3");
+    handle1.record_model_usage("test-model-3");
 
     handle1.record_inference_metrics(InferenceLatencyStats {
         time_to_first_token_ms: Some(100),
@@ -827,7 +827,7 @@ async fn test_restore_signals_full_round_trip() {
     handle1.record_tool_call("search_replace");
     handle1.record_cancellation();
     handle1.record_assistant_message();
-    handle1.record_model_usage("grok-4");
+    handle1.record_model_usage("test-model-4");
 
     handle1.increment_turn(); // turn 3
     handle1.record_tool_call("bash");
@@ -893,8 +893,8 @@ async fn test_restore_signals_full_round_trip() {
     assert!(restored.tools_used.contains(&"read_file".to_string()));
     assert!(restored.tools_used.contains(&"search_replace".to_string()));
     assert_eq!(restored.models_used.len(), 2);
-    assert!(restored.models_used.contains(&"grok-3".to_string()));
-    assert!(restored.models_used.contains(&"grok-4".to_string()));
+    assert!(restored.models_used.contains(&"test-model-3".to_string()));
+    assert!(restored.models_used.contains(&"test-model-4".to_string()));
     assert_eq!(restored.latency_sample_count, 2);
     assert_eq!(restored.avg_time_to_first_token_ms, 150);
     assert_eq!(restored.avg_response_time_ms, 1500);
@@ -944,7 +944,7 @@ async fn test_restore_signals_full_round_trip() {
     handle2.increment_turn(); // turn 5
     handle2.record_tool_call("grep"); // new tool
     handle2.record_tool_call("bash"); // existing tool (should dedup)
-    handle2.record_model_usage("grok-3"); // existing model (should dedup)
+    handle2.record_model_usage("test-model-3"); // existing model (should dedup)
     handle2.record_error();
     handle2.record_assistant_message();
 
@@ -959,7 +959,7 @@ async fn test_restore_signals_full_round_trip() {
     assert_eq!(after_turn.error_count, 3); // the restored 2 plus 1 new error
     assert_eq!(after_turn.tools_used.len(), 4); // bash not duplicated, grep added
     assert!(after_turn.tools_used.contains(&"grep".to_string()));
-    assert_eq!(after_turn.models_used.len(), 2); // grok-3 not duplicated
+    assert_eq!(after_turn.models_used.len(), 2); // test-model-3 not duplicated
     // Latency: (100+200+300)/3 = 200
     assert_eq!(after_turn.latency_sample_count, 3);
     assert_eq!(after_turn.avg_time_to_first_token_ms, 200);

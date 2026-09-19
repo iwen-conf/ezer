@@ -18,8 +18,8 @@ use crate::extensions::hooks::{
 use crate::extensions::notification::HookAnnotationKind;
 use crate::sampling::types::ToolCallResponse;
 
-const HOOK_EVENT_METHOD: &str = "x.ai/hooks/event";
-const HOOK_RUN_METHOD: &str = "x.ai/hooks/run";
+const HOOK_EVENT_METHOD: &str = "ezer/hooks/event";
+const HOOK_RUN_METHOD: &str = "ezer/hooks/run";
 
 const CLIENT_HOOK_TIMEOUT: Duration = Duration::from_secs(30);
 
@@ -60,11 +60,11 @@ fn classify(outcome: ReverseOutcome) -> (ClientHookResponse, ClientHookGateOutco
     let raw = match outcome {
         ReverseOutcome::Responded(raw) => raw,
         ReverseOutcome::Transport(err) => {
-            tracing::warn!(%err, "x.ai/hooks/run transport error (no client wired?); failing open");
+            tracing::warn!(%err, "ezer/hooks/run transport error (no client wired?); failing open");
             return fail_open(ClientHookGateOutcome::TransportError);
         }
         ReverseOutcome::Timeout => {
-            tracing::warn!("x.ai/hooks/run timed out; failing open");
+            tracing::warn!("ezer/hooks/run timed out; failing open");
             return fail_open(ClientHookGateOutcome::TimedOut);
         }
     };
@@ -74,7 +74,7 @@ fn classify(outcome: ReverseOutcome) -> (ClientHookResponse, ClientHookGateOutco
             (resp, label)
         }
         Err(err) => {
-            tracing::warn!(%err, "malformed x.ai/hooks/run response; failing open");
+            tracing::warn!(%err, "malformed ezer/hooks/run response; failing open");
             fail_open(ClientHookGateOutcome::Malformed)
         }
     }
@@ -90,12 +90,12 @@ fn decision_label(decision: ClientHookDecision) -> ClientHookGateOutcome {
         ClientHookDecision::Continue => ClientHookGateOutcome::Proceeded,
         ClientHookDecision::Ask => {
             tracing::warn!(
-                "x.ai/hooks/run returned 'ask'; client hooks cannot ask yet — failing open"
+                "ezer/hooks/run returned 'ask'; client hooks cannot ask yet — failing open"
             );
             ClientHookGateOutcome::UnknownDecision
         }
         ClientHookDecision::Other => {
-            tracing::warn!("x.ai/hooks/run returned an unknown decision value; failing open");
+            tracing::warn!("ezer/hooks/run returned an unknown decision value; failing open");
             ClientHookGateOutcome::UnknownDecision
         }
     }

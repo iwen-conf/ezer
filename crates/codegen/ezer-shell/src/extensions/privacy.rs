@@ -1,4 +1,4 @@
-//! `x.ai/privacy/setCodingDataRetention` extension handler.
+//! `ezer/privacy/setCodingDataRetention` extension handler.
 //!
 //! PUTs the new opt-out flag to cli-chat-proxy and updates local auth state to match.
 //! The local update only refreshes the cached copy, so its errors are ignored.
@@ -12,7 +12,7 @@ use crate::agent::MvpAgent;
 #[tracing::instrument(skip_all, fields(method = %args.method))]
 pub async fn handle(agent: &MvpAgent, args: &acp::ExtRequest) -> ExtResult {
     match args.method.as_ref() {
-        "x.ai/privacy/setCodingDataRetention" => handle_set(agent, args).await,
+        "ezer/privacy/setCodingDataRetention" => handle_set(agent, args).await,
         _ => Err(acp::Error::method_not_found()),
     }
 }
@@ -34,7 +34,7 @@ async fn handle_set(agent: &MvpAgent, args: &acp::ExtRequest) -> ExtResult {
 
     let proxy_url = agent.cfg.borrow().endpoints.proxy_url();
     let url = format!("{proxy_url}/privacy/coding-data-retention");
-    let token_header = agent.auth_manager.grok_com_config().token_header.clone();
+    let token_header = agent.auth_manager.ezer_com_config().token_header.clone();
 
     let body = serde_json::json!({
         "codingDataRetentionOptOut": params.coding_data_retention_opt_out,

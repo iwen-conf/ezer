@@ -513,7 +513,7 @@ pub fn record_crash_sample() {
 }
 
 pub fn default_dir() -> PathBuf {
-    ezer_shell::util::grok_home::grok_home().join("memtrace")
+    ezer_shell::util::ezer_home::ezer_home().join("memtrace")
 }
 
 #[derive(Debug, PartialEq, Eq)]

@@ -8,7 +8,7 @@
 //! - **DivideAndConquer** → `config.dnc_chunk_token_limit` → N chunks.
 //!
 //! Everything else — turn filtering, prior-compaction user-query
-//! extraction, chunk summarisation, and the final `<grok_user_queries>`
+//! extraction, chunk summarisation, and the final `<ezer_user_queries>`
 //! + `<chunk_summary>` assembly — is shared. The harness supplies the
 //! candidate items, the *current* user-queries preamble (ezer chat
 //! extracts it from the raw `ChatCompletionRequest`), the sampler, the
@@ -40,7 +40,7 @@ const UNBOUNDED_CHUNK_LIMIT: u32 = u32::MAX;
 /// into a harness message type.
 #[derive(Debug, Clone)]
 pub struct ChunkedCompactionOutput {
-    /// `<grok_user_queries>` preamble + `<chunk_summary index="i">` blocks.
+    /// `<ezer_user_queries>` preamble + `<chunk_summary index="i">` blocks.
     /// The harness wraps this into its summary-carrier message.
     pub combined_text: String,
     /// Thinking-channel output: `<chunk_analysis>` blocks. Empty when the
@@ -53,7 +53,7 @@ pub struct ChunkedCompactionOutput {
 /// Steps:
 /// 1. Filter items with
 ///    [`filter_turns_for_inter_compaction`](crate::history::filter::filter_turns_for_inter_compaction).
-/// 2. [`separate_prior_user_queries`] — split prior `<grok_user_queries>`
+/// 2. [`separate_prior_user_queries`] — split prior `<ezer_user_queries>`
 ///    blocks out of every prior compaction summary item. The LLM never sees
 ///    them. Shared with intra-compaction's `History` target so both
 ///    pipelines handle re-compactions identically.
@@ -127,7 +127,7 @@ pub async fn sample_compaction_chunked<T: CompactionItemBuilder + Send + Sync>(
         )));
     }
 
-    // Step 2 — split prior `<grok_user_queries>` out of every prior
+    // Step 2 — split prior `<ezer_user_queries>` out of every prior
     // compaction summary item. The LLM never sees them (it would re-emit
     // them verbatim and snowball across rounds); they are reattached to
     // the final summary via `assemble_user_queries_preamble`. Shared with

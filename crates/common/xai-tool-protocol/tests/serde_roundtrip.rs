@@ -1205,7 +1205,7 @@ fn hook_frame_round_trips_with_optional_fields() {
 fn session_event_turn_started_round_trips_via_re_export() {
     let event = SessionEvent::TurnStarted {
         turn_number: 10,
-        model_id: "grok-3".into(),
+        model_id: "test-model-3".into(),
         yolo_mode: true,
     };
     let v = roundtrip(&event);

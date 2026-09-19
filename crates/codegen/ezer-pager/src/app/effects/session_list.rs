@@ -36,7 +36,7 @@ impl LocalPresence {
     }
 }
 
-/// Degraded conversations lane on `x.ai/session/list`, parsed from the response's `_meta["x.ai/partial"]` envelope.
+/// Degraded conversations lane on `ezer/session/list`, parsed from the response's `_meta["ezer/partial"]` envelope.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ConversationsPartial {
     NoOauth,
@@ -53,7 +53,7 @@ impl ConversationsPartial {
     }
 }
 
-/// `x.ai/session/list` answers arrive either as a JSON-RPC envelope (`result` or `error`) or as the bare list payload.
+/// `ezer/session/list` answers arrive either as a JSON-RPC envelope (`result` or `error`) or as the bare list payload.
 pub(super) fn read_session_list_response(raw: &str) -> Result<Value, String> {
     let mut wrapper: Value = serde_json::from_str(raw).unwrap_or_default();
     if let Some(err) = wrapper.get("error") {
@@ -67,7 +67,7 @@ pub(super) fn read_session_list_response(raw: &str) -> Result<Value, String> {
 
 /// `None` when the conversations lane completed (or was skipped); unknown reasons degrade to [`ConversationsPartial::Error`].
 pub(super) fn parse_session_list_partial(payload: &Value) -> Option<ConversationsPartial> {
-    let partial = payload.get("_meta")?.get("x.ai/partial")?;
+    let partial = payload.get("_meta")?.get("ezer/partial")?;
     if partial.get("conversations").and_then(Value::as_bool) != Some(true) {
         return None;
     }
@@ -81,7 +81,7 @@ pub(super) fn parse_session_list_partial(payload: &Value) -> Option<Conversation
 pub(super) fn parse_session_list_scope(payload: &Value) -> ListScope {
     match payload
         .get("_meta")
-        .and_then(|m| m.get("x.ai/listScope"))
+        .and_then(|m| m.get("ezer/listScope"))
         .and_then(Value::as_str)
     {
         Some("repo") => ListScope::Repo,
@@ -139,7 +139,7 @@ fn parse_session_picker_entries_with(
                 .map(String::from);
             let is_conversation = v
                 .get("_meta")
-                .and_then(|m| m.get("x.ai/session"))
+                .and_then(|m| m.get("ezer/session"))
                 .and_then(|s| s.get("kind"))
                 .and_then(Value::as_str)
                 == Some("chat");
@@ -271,7 +271,7 @@ fn parse_session_picker_entries_with(
         })
         .filter_map(|mut e| {
             // A Build row with no prompt is one the user opened but never typed into; listing it in `/resume` is noise
-            // Conversation rows stay: new grok.com chats have no title until server-side titling runs
+            // Conversation rows stay: new ezer.com chats have no title until server-side titling runs
             if e.summary.is_empty() {
                 if e.source == "conversation" {
                     e.summary = "Untitled".to_owned();

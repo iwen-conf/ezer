@@ -145,7 +145,7 @@ json_get() {
 
 # Read a token from ~/.ezer/auth.json for the given scope key.
 # Format: {"scope_url": {"key": "token"}, ...}
-read_grok_token() {
+read_ezer_token() {
     local auth_file="$HOME/.ezer/auth.json"
     local scope="$1"
     [ -f "$auth_file" ] || return 1
@@ -162,8 +162,8 @@ if [ -n "$EZER_DEPLOYMENT_KEY" ]; then
     AUTH_SOURCE="deployment key"
     echo "Auth: using deployment key." >&2
 else
-    OIDC_TOKEN=$(read_grok_token "$OIDC_SCOPE" 2>/dev/null) || true
-    LEGACY_TOKEN=$(read_grok_token "$LEGACY_SCOPE" 2>/dev/null) || true
+    OIDC_TOKEN=$(read_ezer_token "$OIDC_SCOPE" 2>/dev/null) || true
+    LEGACY_TOKEN=$(read_ezer_token "$LEGACY_SCOPE" 2>/dev/null) || true
     if [ -n "$OIDC_TOKEN" ]; then
         AUTH_SOURCE="auth.json (oidc)"
         echo "Auth: using OIDC token from ~/.ezer/auth.json." >&2

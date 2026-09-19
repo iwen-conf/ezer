@@ -7,14 +7,14 @@ use crate::refresh::{
     AuthSnapshot, DiagnosticUploader, ExternalBinaryRefresher, ExternalCommandRunner,
     OidcRefresher, TokenRefresher,
 };
-use crate::{AuthManager, GrokAuth, GrokComConfig};
+use crate::{AuthManager, EzerAuth, EzerComConfig};
 
 #[derive(Default)]
-pub struct GrokAuthBackend;
+pub struct EzerAuthBackend;
 
 #[async_trait::async_trait(?Send)]
-impl AuthBackend for GrokAuthBackend {
-    fn scope_key(&self, config: &GrokComConfig) -> String {
+impl AuthBackend for EzerAuthBackend {
+    fn scope_key(&self, config: &EzerComConfig) -> String {
         config.auth_scope()
     }
 
@@ -25,7 +25,7 @@ impl AuthBackend for GrokAuthBackend {
 
     /// An xAI login can come from OAuth2, a customer's own login provider, the auth binary, or a devbox, so there is no one issuer to check for.
     /// Saying yes to all of them is safe: a credential minted elsewhere still gets sent to xAI, which rejects it.
-    fn owns(&self, _auth: &GrokAuth) -> bool {
+    fn owns(&self, _auth: &EzerAuth) -> bool {
         true
     }
 
@@ -35,18 +35,18 @@ impl AuthBackend for GrokAuthBackend {
         true
     }
 
-    fn login_host(&self, config: &GrokComConfig) -> String {
-        super::host_of(&config.grok_ws_origin)
+    fn login_host(&self, config: &EzerComConfig) -> String {
+        super::host_of(&config.ezer_ws_origin)
     }
 
     fn is_xai_authority(&self) -> bool {
         true
     }
 
-    async fn login(&self, req: LoginRequest<'_>) -> anyhow::Result<(GrokAuth, bool)> {
+    async fn login(&self, req: LoginRequest<'_>) -> anyhow::Result<(EzerAuth, bool)> {
         crate::flow::run_auth_flow_steps(
             req.auth_manager,
-            req.grok_com_config,
+            req.ezer_com_config,
             req.config_device_flow,
             req.reauth,
             req.force_interactive,

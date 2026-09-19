@@ -8,7 +8,7 @@ use super::{
 };
 use crate::managed_config::LaunchProfile;
 use tokio_util::sync::CancellationToken;
-use ezer_login::{AuthManager, GrokComConfig};
+use ezer_login::{AuthManager, EzerComConfig};
 
 #[test]
 fn startup_settings_deadline_selects_by_profile() {
@@ -97,7 +97,7 @@ fn supplied_settings_skip_the_getter() {
 #[test]
 fn cancelled_bootstrap_returns_before_side_effects() {
     let dir = tempfile::tempdir().expect("tempdir");
-    let auth = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
+    let auth = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
     let cancel = CancellationToken::new();
     cancel.cancel();
     let err = match bootstrap_with_cancel(&AgentConfig::default(), &auth, None, &cancel, None) {
@@ -116,7 +116,7 @@ fn second_bootstrap_bails_when_cancelled_while_the_gate_is_held() {
     let worker_cancel = cancel.clone();
     let handle = std::thread::spawn(move || {
         let dir = tempfile::tempdir().expect("tempdir");
-        let auth = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
+        let auth = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
         entered_worker.store(true, Ordering::SeqCst);
         bootstrap_with_cancel(&AgentConfig::default(), &auth, None, &worker_cancel, None)
     });

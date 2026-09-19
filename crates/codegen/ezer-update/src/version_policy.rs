@@ -1,7 +1,7 @@
 //! The hard `required_*` bounds gate startup; `minimum`/`maximum` are updater-only.
 //! Every knob fails open.
 
-use crate::version::get_installed_grok_version;
+use crate::version::get_installed_ezer_version;
 use semver::Version;
 use tracing::warn;
 use ezer_shell::util::config::VersionPolicy;
@@ -96,7 +96,7 @@ fn required_range_message(decision: &RequiredRangeDecision) -> Option<String> {
 /// Recovery subcommands return before this, so they stay usable.
 pub fn enforce_version_policy_or_exit() {
     let policy = VersionPolicy::resolve();
-    let current = get_installed_grok_version();
+    let current = get_installed_ezer_version();
     let decision = evaluate_required_range(&current, &policy);
     if let Some(message) = required_range_message(&decision) {
         warn!(?decision, "required version range: refusing to start");

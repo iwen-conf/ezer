@@ -72,7 +72,7 @@ enum WorktreeDbCommand {
 pub async fn run(args: WorktreeArgs, agent_config: &AgentConfig) -> Result<()> {
     let cancel = CancellationToken::new();
     ezer_telemetry::startup::mark_utility_process();
-    let spawned = crate::acp::spawn::spawn_grok_shell(agent_config.clone(), &cancel, None).await?;
+    let spawned = crate::acp::spawn::spawn_ezer_shell(agent_config.clone(), &cancel, None).await?;
     let _agent_guard =
         crate::acp::spawn::AgentShutdownGuard::new(cancel.clone(), Some(spawned.thread_handle));
     let _init: acp::InitializeResponse = acp_send(
@@ -158,7 +158,7 @@ async fn cmd_list(
 ) -> Result<()> {
     let records: Vec<WorktreeRecord> = ext_call(
         tx,
-        "x.ai/git/worktree/list",
+        "ezer/git/worktree/list",
         &serde_json::json!({
             "repo": repo,
             "type": types,
@@ -177,7 +177,7 @@ async fn cmd_list(
 async fn cmd_show(tx: &xai_acp_lib::AcpAgentTx, id_or_path: &str) -> Result<()> {
     let rec: Option<WorktreeRecord> = ext_call(
         tx,
-        "x.ai/git/worktree/show",
+        "ezer/git/worktree/show",
         &serde_json::json!({ "idOrPath" : id_or_path }),
     )
     .await?;
@@ -205,7 +205,7 @@ async fn cmd_rm(
     for id_or_path in &ids {
         let resp: Result<RemoveResponse> = ext_call(
             tx,
-            "x.ai/git/worktree/remove",
+            "ezer/git/worktree/remove",
             &serde_json::json!({
                 "idOrPath": id_or_path,
                 "force": force,
@@ -235,7 +235,7 @@ async fn cmd_gc(
 ) -> Result<()> {
     let report: GcReport = ext_call(
         tx,
-        "x.ai/git/worktree/gc",
+        "ezer/git/worktree/gc",
         &serde_json::json!({
             "dryRun": dry_run,
             "maxAge": max_age,
@@ -255,7 +255,7 @@ async fn cmd_gc(
 async fn cmd_db(tx: &xai_acp_lib::AcpAgentTx, command: WorktreeDbCommand) -> Result<()> {
     match command {
         WorktreeDbCommand::Stats => {
-            let stats: DbStats = ext_call(tx, "x.ai/git/worktree/db/stats", &()).await?;
+            let stats: DbStats = ext_call(tx, "ezer/git/worktree/db/stats", &()).await?;
             let written = display::print_stats(&stats, &mut std::io::stdout().lock());
             Ok(crate::util::ignore_broken_pipe(written)?)
         }
@@ -264,12 +264,12 @@ async fn cmd_db(tx: &xai_acp_lib::AcpAgentTx, command: WorktreeDbCommand) -> Res
             struct PathResp {
                 path: String,
             }
-            let resp: PathResp = ext_call(tx, "x.ai/git/worktree/db/path", &()).await?;
+            let resp: PathResp = ext_call(tx, "ezer/git/worktree/db/path", &()).await?;
             println!("{}", resp.path);
             Ok(())
         }
         WorktreeDbCommand::Rebuild => {
-            let report: RebuildReport = ext_call(tx, "x.ai/git/worktree/db/rebuild", &()).await?;
+            let report: RebuildReport = ext_call(tx, "ezer/git/worktree/db/rebuild", &()).await?;
             let written = display::print_rebuild(&report, &mut std::io::stdout().lock());
             Ok(crate::util::ignore_broken_pipe(written)?)
         }
@@ -281,7 +281,7 @@ mod tests {
     #[test]
     fn ext_request_builds_list_with_filters() {
         let req = ext_request(
-            "x.ai/git/worktree/list",
+            "ezer/git/worktree/list",
             &serde_json::json!({
                 "repo": "xai",
                 "type": ["session"],
@@ -289,7 +289,7 @@ mod tests {
             }),
         )
         .unwrap();
-        assert_eq!(req.method.as_ref(), "x.ai/git/worktree/list");
+        assert_eq!(req.method.as_ref(), "ezer/git/worktree/list");
         let params: serde_json::Value = serde_json::from_str(req.params.get()).unwrap();
         assert_eq!(params.get("repo").and_then(|v| v.as_str()), Some("xai"));
         assert_eq!(params.get("includeAll"), Some(&serde_json::json!(true)));
@@ -297,7 +297,7 @@ mod tests {
     #[test]
     fn ext_request_builds_gc_with_max_age_string() {
         let req = ext_request(
-            "x.ai/git/worktree/gc",
+            "ezer/git/worktree/gc",
             &serde_json::json!({
                 "dryRun": true,
                 "maxAge": "7d",
@@ -312,7 +312,7 @@ mod tests {
     #[test]
     fn ext_request_builds_remove_with_id_or_path() {
         let req = ext_request(
-            "x.ai/git/worktree/remove",
+            "ezer/git/worktree/remove",
             &serde_json::json!({
                 "idOrPath": "wt-abc123",
                 "force": true,
@@ -329,7 +329,7 @@ mod tests {
     #[test]
     fn ext_request_builds_show() {
         let req = ext_request(
-            "x.ai/git/worktree/show",
+            "ezer/git/worktree/show",
             &serde_json::json!({ "idOrPath": "/some/path" }),
         )
         .unwrap();
@@ -342,28 +342,28 @@ mod tests {
     #[test]
     fn ext_request_builds_detach_salvage_clean() {
         let d = ext_request(
-            "x.ai/git/worktree/detach",
+            "ezer/git/worktree/detach",
             &serde_json::json!({ "idOrPath": "/wt", "allowCopy": false }),
         )
         .unwrap();
-        assert_eq!(d.method.as_ref(), "x.ai/git/worktree/detach");
+        assert_eq!(d.method.as_ref(), "ezer/git/worktree/detach");
         let s = ext_request(
-            "x.ai/git/worktree/salvage",
+            "ezer/git/worktree/salvage",
             &serde_json::json!({ "idOrPath": "/wt", "out": "/out" }),
         )
         .unwrap();
-        assert_eq!(s.method.as_ref(), "x.ai/git/worktree/salvage");
+        assert_eq!(s.method.as_ref(), "ezer/git/worktree/salvage");
         let c = ext_request(
-            "x.ai/git/worktree/clean-artifacts",
+            "ezer/git/worktree/clean-artifacts",
             &serde_json::json!({ "idOrPath": "/wt" }),
         )
         .unwrap();
-        assert_eq!(c.method.as_ref(), "x.ai/git/worktree/clean-artifacts");
+        assert_eq!(c.method.as_ref(), "ezer/git/worktree/clean-artifacts");
     }
     #[test]
     fn ext_request_builds_db_stats_empty_params() {
-        let req = ext_request("x.ai/git/worktree/db/stats", &()).unwrap();
-        assert_eq!(req.method.as_ref(), "x.ai/git/worktree/db/stats");
+        let req = ext_request("ezer/git/worktree/db/stats", &()).unwrap();
+        assert_eq!(req.method.as_ref(), "ezer/git/worktree/db/stats");
     }
     #[test]
     fn remove_response_deserializes_with_resolved_path() {
@@ -389,7 +389,7 @@ mod tests {
         let envelope: ExtEnvelope<PathResp> = serde_json::from_str(json).unwrap();
         assert!(envelope.error.is_none());
         let inner = envelope.result.unwrap();
-        assert_eq!(inner.path, "/home/user/.grok/worktrees.db");
+        assert_eq!(inner.path, "/home/user/.ezer/worktrees.db");
     }
     #[test]
     fn ext_envelope_unwraps_error_result() {

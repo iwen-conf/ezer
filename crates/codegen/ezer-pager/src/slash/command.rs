@@ -148,7 +148,7 @@ pub struct AppCtx<'a> {
     /// Whether the consumer billing surface is visible (`AppView::usage_visible`); gates `/usage` subcommands.
     pub billing_surface_visible: bool,
     /// Whether `/usage` is offered and executable.
-    /// False for external-auth deployments with no grok.com billing session.
+    /// False for external-auth deployments with no ezer.com billing session.
     pub usage_command_visible: bool,
     pub workflows_available: bool,
     /// Saved or built-in workflow definitions advertised by the shell (`_meta.workflowSource`).
@@ -176,7 +176,7 @@ pub struct CommandExecCtx<'a> {
     /// Whether the consumer billing surface is visible (`AppView::usage_visible`); gates `/usage` subcommands.
     pub billing_surface_visible: bool,
     /// Whether `/usage` is offered and executable.
-    /// False for external-auth deployments with no grok.com billing session.
+    /// False for external-auth deployments with no ezer.com billing session.
     pub usage_command_visible: bool,
     /// Snapshot of the active agent's PAGER-owned settings, built by the dispatcher when it builds the command.
     /// Slash commands like `/multiline` read this to compute `!current` and dispatch a typed `Action::SetX(new)`.

@@ -167,7 +167,7 @@ async fn pattern2_absolute_path_completely_different_tree() {
 }
 
 #[tokio::test]
-async fn pattern2_grok_sessions_internal_path() {
+async fn pattern2_ezer_sessions_internal_path() {
     // Model searches internal session paths — no suggestion should fire.
     let (_tmp, root) = setup_fs(&["src"], &[]);
     let cwd = root.clone();

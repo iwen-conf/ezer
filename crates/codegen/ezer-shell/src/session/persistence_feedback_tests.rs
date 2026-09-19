@@ -14,8 +14,8 @@ fn test_feedback_jsonl_multi_line_roundtrip() {
         rating_type: Some(RatingType::Thumbs),
         rating_value: Some(-1),
         feedback_text: Some("could be better".into()),
-        model_id: Some("grok-3-fast".into()),
-        resolved_model_id: Some("grok-4.5".into()),
+        model_id: Some("test-model-3-fast".into()),
+        resolved_model_id: Some("test-model-4.5".into()),
         reasoning_effort: Some("high".into()),
         ..Default::default()
     };

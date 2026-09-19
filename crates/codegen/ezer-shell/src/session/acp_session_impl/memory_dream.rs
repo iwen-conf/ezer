@@ -520,10 +520,10 @@ impl SessionActor {
                 ConversationItem::user(user_message),
             ],
             model: Some(model),
-            x_grok_conv_id: Some(format!("dream-{}", uuid::Uuid::new_v4())),
-            x_grok_req_id: Some(format!("xai-dream-{}", uuid::Uuid::new_v4())),
-            x_grok_session_id: Some(session_id),
-            x_grok_agent_id: Some(ezer_telemetry::id::agent_id()),
+            x_ezer_conv_id: Some(format!("dream-{}", uuid::Uuid::new_v4())),
+            x_ezer_req_id: Some(format!("xai-dream-{}", uuid::Uuid::new_v4())),
+            x_ezer_session_id: Some(session_id),
+            x_ezer_agent_id: Some(ezer_telemetry::id::agent_id()),
             ..Default::default()
         };
         let response = sampling_client
@@ -635,10 +635,10 @@ impl SessionActor {
             let request = ConversationRequest {
                 items,
                 model: Some(model),
-                x_grok_conv_id: Some(format!("flush-{}", uuid::Uuid::new_v4())),
-                x_grok_req_id: Some(format!("xai-flush-{}", uuid::Uuid::new_v4())),
-                x_grok_session_id: Some(session_id.clone()),
-                x_grok_agent_id: Some(ezer_telemetry::id::agent_id()),
+                x_ezer_conv_id: Some(format!("flush-{}", uuid::Uuid::new_v4())),
+                x_ezer_req_id: Some(format!("xai-flush-{}", uuid::Uuid::new_v4())),
+                x_ezer_session_id: Some(session_id.clone()),
+                x_ezer_agent_id: Some(ezer_telemetry::id::agent_id()),
                 ..Default::default()
             };
 
@@ -839,7 +839,7 @@ impl SessionActor {
         }
     }
 
-    /// Rewrite a raw memory note into well-structured markdown via a one-shot LLM call to `grok-4.6`.
+    /// Rewrite a raw memory note into well-structured markdown via a one-shot LLM call to `test-model-4.6`.
     ///
     /// Same pattern as [`handle_ai_suggest`]: prepare a sampling client, build a system and user prompt, collect with a short idle timeout.
     pub(super) async fn handle_rewrite_memory_note(
@@ -884,7 +884,7 @@ impl SessionActor {
         let request = ConversationRequest {
             items,
             tools: vec![],
-            model: Some("grok-4.6".to_owned()),
+            model: Some("test-model-4.6".to_owned()),
             temperature: Some(0.3),
             max_output_tokens: Some(1024),
             ..Default::default()

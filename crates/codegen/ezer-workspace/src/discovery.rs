@@ -219,7 +219,7 @@ mod tests {
     use std::fs;
 
     // Note: `list_skills` also discovers user-scoped skills from
-    // `~/.grok/skills/`, so on a developer machine the result may be
+    // `~/.ezer/skills/`, so on a developer machine the result may be
     // non-empty even for an empty workspace. Tests below check for specific skills rather than asserting emptiness.
 
     #[tokio::test]
@@ -316,7 +316,7 @@ mod tests {
 
     #[test]
     fn agent_config_file_wire_matches_workspace_types_mirror() {
-        // The RPC serializes grok-build's AgentConfigFile and the remote consumer deserializes the workspace-types mirror
+        // The RPC serializes ezer-build's AgentConfigFile and the remote consumer deserializes the workspace-types mirror
         // Pin the cross-crate serde shape so a rename/attr drift on either side can't silently break discovery
         let src = ezer_agent::prompt::agents_md::AgentConfigFile {
             file_name: "AGENTS.md".to_string(),
@@ -342,7 +342,7 @@ mod tests {
         );
     }
 
-    // Discovery also scans the real `~/.grok`, so fixtures use test-unique names.
+    // Discovery also scans the real `~/.ezer`, so fixtures use test-unique names.
     #[tokio::test]
     async fn discover_agents_md_receives_normalized_rule_content() {
         let tmp = tempfile::tempdir().unwrap();
@@ -404,7 +404,7 @@ mod tests {
     }
 
     // Note: `discover_plugins` also discovers user-scoped plugins
-    // from `~/.grok/plugins/`, so tests check for specific plugins.
+    // from `~/.ezer/plugins/`, so tests check for specific plugins.
 
     #[test]
     fn discover_plugins_finds_manifest_plugin() {
@@ -474,10 +474,10 @@ mod tests {
     #[test]
     fn load_project_config_reads_toml_as_json() {
         let tmp = tempfile::tempdir().unwrap();
-        let grok_dir = tmp.path().join(".grok");
-        fs::create_dir_all(&grok_dir).unwrap();
+        let ezer_dir = tmp.path().join(".ezer");
+        fs::create_dir_all(&ezer_dir).unwrap();
         fs::write(
-            grok_dir.join("config.toml"),
+            ezer_dir.join("config.toml"),
             "[skills]\npaths = [\"/extra/skills\"]\n\n[plugins]\ndisabled = [\"noisy-plugin\"]\n",
         )
         .unwrap();

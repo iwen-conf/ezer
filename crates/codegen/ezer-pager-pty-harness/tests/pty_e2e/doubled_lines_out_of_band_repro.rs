@@ -54,14 +54,14 @@ async fn out_of_band_stale_row_heals_on_focus_gained() {
     );
 
     // Simulate the out-of-band reflow: write a stale row straight into the virtual screen at col 1.
-    // Col 1 is the static left margin grok's diff renderer doesn't repaint during the logo shimmer.
+    // Col 1 is the static left margin ezer's diff renderer doesn't repaint during the logo shimmer.
     h.feed_screen(format!("\x1b[6;1H{STALE_MARKER}").as_bytes());
     assert!(
         h.contains_text(STALE_MARKER),
         "marker should be on the virtual screen right after injection"
     );
 
-    // grok must not self-heal out-of-band content via ordinary diff redraws
+    // ezer must not self-heal out-of-band content via ordinary diff redraws
     // It only rewrites cells whose own model changed, so this row is stranded
     h.update(Duration::from_millis(300));
     assert!(
@@ -70,7 +70,7 @@ async fn out_of_band_stale_row_heals_on_focus_gained() {
         h.screen_contents()
     );
 
-    // A FocusGained (CSI I) forces a full clear and repaint that re-asserts grok's whole screen and removes the out-of-band row
+    // A FocusGained (CSI I) forces a full clear and repaint that re-asserts ezer's whole screen and removes the out-of-band row
     h.inject_keys(b"\x1b[I").expect("inject FocusGained");
     // Poll for the heal instead of a fixed settle so host load can't flake it.
     wait_for_labels_absent(&mut h, &[STALE_MARKER], Duration::from_secs(5));

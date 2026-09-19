@@ -358,7 +358,7 @@ fn assert_elided_ranges_match_file(is_cursor: bool) {
     }
 }
 #[test]
-fn elided_ranges_match_file_lines_grok() {
+fn elided_ranges_match_file_lines_ezer() {
     assert_elided_ranges_match_file(false);
 }
 /// A short query leaves the budget to the skill: an 8 KB skill (twice the floor) is inlined whole.
@@ -629,8 +629,8 @@ fn notice_fits_reserve_with_long_names() {
             windows: vec![window; 2 + usize::from(i == 0)],
         })
         .collect();
-    let grok = ezer_build_info();
-    for (file_path, info) in [(&path, &grok), (&long_path, &long_names)] {
+    let ezer = ezer_build_info();
+    for (file_path, info) in [(&path, &ezer), (&long_path, &long_names)] {
         let notice = build_offload_notice(usize::MAX, usize::MAX, file_path, info, &fullest);
         let offset = info.offset.as_deref().expect("window param present");
         let listed = notice.matches(&format!("{offset}=")).count();
@@ -691,7 +691,7 @@ fn build_truncated_never_panics_on_degenerate_inputs() {
         }
     }
 }
-/// `grok_home()` is a process-wide `OnceLock`, so the real async method is only exercised for the no-offload gate.
+/// `ezer_home()` is a process-wide `OnceLock`, so the real async method is only exercised for the no-offload gate.
 /// Threshold gate: a prompt exactly at `LARGE_PROMPT_THRESHOLD` is returned unchanged and no file is written.
 #[tokio::test(flavor = "current_thread")]
 async fn maybe_truncate_at_threshold_returns_unchanged_no_file() {

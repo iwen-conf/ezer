@@ -8,7 +8,7 @@ use super::common::*;
 #[ignore]
 async fn reasoning_efforts_menu_renders_and_remaps_on_wire() {
     let content = ContentController::start_with_models(vec![
-        MockModel::new("grok-4.5")
+        MockModel::new("test-model-4.5")
             .with_api_backend("responses")
             .with_supports_reasoning_effort(true)
             .with_reasoning_efforts(vec![

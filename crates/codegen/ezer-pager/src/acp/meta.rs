@@ -146,7 +146,7 @@ mod tests {
 
     #[test]
     fn parse_missing_new_fields() {
-        // Simulate old grok-shell that doesn't send streamStartMs/turnStartMs
+        // Simulate old ezer-shell that doesn't send streamStartMs/turnStartMs
         let meta_json = json!({
             "totalTokens": 1000u64,
             "agentTimestampMs": 1700000000000i64,

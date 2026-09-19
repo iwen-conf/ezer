@@ -45,7 +45,7 @@ User-level configuration lives in `$EZER_HOME/config.toml` (default `~/.ezer/con
 
 | Key | Type / Values | Requirements | Managed | Details |
 | --- | --- | --- | --- | --- |
-| `announcements` | `array of tables` | `—` | `user` | Local/managed announcement tables only. Payloads fetched from xAI / grok.com / x.com are stripped and never shown. |
+| `announcements` | `array of tables` | `—` | `user` | Local/managed announcement tables only. Payloads fetched from xAI / ezer.com / x.com are stripped and never shown. |
 
 ### `auth`
 

@@ -99,7 +99,7 @@ impl RepoManifest {
                 continue;
             }
             let mount = std::path::PathBuf::from(raw);
-            // Confine to the workspace: a malicious `.grok/repos.json` must not point walks outside it
+            // Confine to the workspace: a malicious `.ezer/repos.json` must not point walks outside it
             // Reject `..` and any mount not under `workspace_root`, matching `unnamed_cwd` / `confine_mount_under_workspace`
             if mount
                 .components()

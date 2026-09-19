@@ -1,6 +1,6 @@
-//! GrokDay is the light counterpart to GrokNight.
+//! EzerDay is the light counterpart to EzerNight.
 //! Backgrounds and text use a neutral grayscale ramp (no blue/warm tint).
-//! Accent colors are the same hue family as GrokNight but deepened for contrast on light backgrounds.
+//! Accent colors are the same hue family as EzerNight but deepened for contrast on light backgrounds.
 
 use ratatui::style::{Color, Modifier};
 
@@ -50,7 +50,7 @@ mod palette {
 use palette::*;
 
 impl Theme {
-    pub const fn grokday() -> Self {
+    pub const fn ezerday() -> Self {
         Self {
             bg_base: BG_STORM,
             bg_light: BG_HIGHLIGHT,

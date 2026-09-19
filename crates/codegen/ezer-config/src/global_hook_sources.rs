@@ -60,8 +60,8 @@ pub enum GlobalHookSourceError {
         #[source]
         source: io::Error,
     },
-    #[error("symlinked GROK_HOME is not allowed under sandbox write-deny: {path}")]
-    SymlinkedGrokHome { path: PathBuf },
+    #[error("symlinked EZER_HOME is not allowed under sandbox write-deny: {path}")]
+    SymlinkedEzerHome { path: PathBuf },
     #[error("hook source path contains a symlink component (retargetable): {path}")]
     SymlinkedSource { path: PathBuf },
     #[error("hook JSON file has hard-link aliases (st_nlink={nlink}): {path}")]
@@ -306,49 +306,49 @@ fn ensure_real_file_slot(path: &Path) -> Result<(), GlobalHookSourceError> {
 /// Ensure real `$EZER_HOME/hooks` dir and `hooks-paths` file (create if missing).
 /// The create is race-resistant (`create_dir` / `create_new` with `O_NOFOLLOW`) and never truncates an existing registry.
 /// Symlinks and wrong types are rejected.
-pub fn ensure_grok_hook_slots(grok_home: &Path) -> Result<(), GlobalHookSourceError> {
-    if path_has_symlink_component(grok_home) {
-        return Err(GlobalHookSourceError::SymlinkedGrokHome {
-            path: grok_home.to_path_buf(),
+pub fn ensure_ezer_hook_slots(ezer_home: &Path) -> Result<(), GlobalHookSourceError> {
+    if path_has_symlink_component(ezer_home) {
+        return Err(GlobalHookSourceError::SymlinkedEzerHome {
+            path: ezer_home.to_path_buf(),
         });
     }
 
-    match std::fs::create_dir(grok_home) {
+    match std::fs::create_dir(ezer_home) {
         Ok(()) => {}
         Err(e) if e.kind() == io::ErrorKind::AlreadyExists => {}
         Err(e) if e.kind() == io::ErrorKind::NotFound => {
-            std::fs::create_dir_all(grok_home).map_err(|source| {
+            std::fs::create_dir_all(ezer_home).map_err(|source| {
                 GlobalHookSourceError::CreateHooksDir {
-                    path: grok_home.to_path_buf(),
+                    path: ezer_home.to_path_buf(),
                     source,
                 }
             })?;
         }
         Err(source) => {
             return Err(GlobalHookSourceError::CreateHooksDir {
-                path: grok_home.to_path_buf(),
+                path: ezer_home.to_path_buf(),
                 source,
             });
         }
     }
-    if path_has_symlink_component(grok_home) {
-        return Err(GlobalHookSourceError::SymlinkedGrokHome {
-            path: grok_home.to_path_buf(),
+    if path_has_symlink_component(ezer_home) {
+        return Err(GlobalHookSourceError::SymlinkedEzerHome {
+            path: ezer_home.to_path_buf(),
         });
     }
-    let grok_meta = std::fs::symlink_metadata(grok_home).map_err(|source| {
+    let ezer_meta = std::fs::symlink_metadata(ezer_home).map_err(|source| {
         GlobalHookSourceError::CreateHooksDir {
-            path: grok_home.to_path_buf(),
+            path: ezer_home.to_path_buf(),
             source,
         }
     })?;
-    if grok_meta.file_type().is_symlink() || !grok_meta.file_type().is_dir() {
-        return Err(GlobalHookSourceError::SymlinkedGrokHome {
-            path: grok_home.to_path_buf(),
+    if ezer_meta.file_type().is_symlink() || !ezer_meta.file_type().is_dir() {
+        return Err(GlobalHookSourceError::SymlinkedEzerHome {
+            path: ezer_home.to_path_buf(),
         });
     }
 
-    let hooks = grok_home.join("hooks");
+    let hooks = ezer_home.join("hooks");
     match std::fs::create_dir(&hooks) {
         Ok(()) => {}
         Err(e) if e.kind() == io::ErrorKind::AlreadyExists => {
@@ -366,9 +366,9 @@ pub fn ensure_grok_hook_slots(grok_home: &Path) -> Result<(), GlobalHookSourceEr
         return Err(GlobalHookSourceError::SymlinkedSource { path: hooks });
     }
 
-    ensure_real_file_slot(&grok_home.join("hooks-paths"))?;
+    ensure_real_file_slot(&ezer_home.join("hooks-paths"))?;
 
-    ensure_grok_trust_boundary_slots(grok_home)?;
+    ensure_ezer_trust_boundary_slots(ezer_home)?;
     Ok(())
 }
 
@@ -383,32 +383,32 @@ pub const TRUST_BOUNDARY_FILENAMES: &[&str] = &[
 
 /// Ensure real regular files for [`TRUST_BOUNDARY_FILENAMES`] (create if missing).
 /// Files are created if absent and never truncated, the same contract as `hooks-paths`.
-pub(crate) fn ensure_grok_trust_boundary_slots(
-    grok_home: &Path,
+pub(crate) fn ensure_ezer_trust_boundary_slots(
+    ezer_home: &Path,
 ) -> Result<(), GlobalHookSourceError> {
-    if path_has_symlink_component(grok_home) {
-        return Err(GlobalHookSourceError::SymlinkedGrokHome {
-            path: grok_home.to_path_buf(),
+    if path_has_symlink_component(ezer_home) {
+        return Err(GlobalHookSourceError::SymlinkedEzerHome {
+            path: ezer_home.to_path_buf(),
         });
     }
     for name in TRUST_BOUNDARY_FILENAMES {
-        ensure_real_file_slot(&grok_home.join(name))?;
+        ensure_real_file_slot(&ezer_home.join(name))?;
     }
     Ok(())
 }
 
 /// Resolve `$EZER_HOME` trust-boundary files (symlink-rejected for sandbox).
 pub fn resolve_trust_boundary_sources(
-    grok_home: &Path,
+    ezer_home: &Path,
 ) -> Result<Vec<GlobalHookSource>, GlobalHookSourceError> {
-    if path_has_symlink_component(grok_home) {
-        return Err(GlobalHookSourceError::SymlinkedGrokHome {
-            path: grok_home.to_path_buf(),
+    if path_has_symlink_component(ezer_home) {
+        return Err(GlobalHookSourceError::SymlinkedEzerHome {
+            path: ezer_home.to_path_buf(),
         });
     }
     let mut out = Vec::with_capacity(TRUST_BOUNDARY_FILENAMES.len());
     for name in TRUST_BOUNDARY_FILENAMES {
-        let path = grok_home.join(name);
+        let path = ezer_home.join(name);
         if path_has_symlink_component(&path) {
             return Err(GlobalHookSourceError::SymlinkedSource { path });
         }
@@ -453,21 +453,21 @@ fn open_registry_create_new(path: &Path) -> io::Result<std::fs::File> {
 
 /// Resolve ezer-owned direct global hook sources (`reject_symlinks` for sandbox).
 pub fn resolve_global_hook_sources(
-    grok_home: Option<&Path>,
+    ezer_home: Option<&Path>,
     reject_symlinks: bool,
 ) -> Result<ResolvedGlobalHookSources, GlobalHookSourceError> {
     let mut out = Vec::new();
     let mut configured_error = None;
 
-    if let Some(grok) = grok_home {
-        if reject_symlinks && path_has_symlink_component(grok) {
-            return Err(GlobalHookSourceError::SymlinkedGrokHome {
-                path: grok.to_path_buf(),
+    if let Some(ezer) = ezer_home {
+        if reject_symlinks && path_has_symlink_component(ezer) {
+            return Err(GlobalHookSourceError::SymlinkedEzerHome {
+                path: ezer.to_path_buf(),
             });
         }
 
-        let hooks = grok.join("hooks");
-        let hooks_paths = grok.join("hooks-paths");
+        let hooks = ezer.join("hooks");
+        let hooks_paths = ezer.join("hooks-paths");
         if reject_symlinks {
             for p in [&hooks, &hooks_paths] {
                 if path_has_symlink_component(p) {

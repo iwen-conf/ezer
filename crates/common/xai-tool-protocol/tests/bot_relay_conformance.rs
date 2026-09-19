@@ -487,7 +487,7 @@ fn handwritten_link_conflict_siblings() {
         [
             BotRelaySiblingAccount {
                 sign_in: BotRelaySignIn::X,
-                handle: Some("grokfan".to_owned()),
+                handle: Some("ezerfan".to_owned()),
                 created_at_ms: 1_699_920_000_000,
                 linked: true,
             },

@@ -4,24 +4,24 @@ use prod_mc_cli_chat_proxy_types::SubagentBundle;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 use ezer_login::backend::{ActiveAuthBackend, AuthBackend};
-use ezer_login::{GrokAuth, GrokComConfig};
-const GROK_CODE_BACKEND_URL: &str = "https://code.grok.com";
+use ezer_login::{EzerAuth, EzerComConfig};
+const REMOTE_CODE_BACKEND_URL: &str = "";
 const DEFAULT_TIMEOUT: Duration = Duration::from_secs(30);
-const GROK_CODE_WEB_URL: &str = "https://grok.com";
+const REMOTE_CODE_WEB_URL: &str = "";
 pub fn share_url(permission_id: &str) -> String {
     let web_url =
-        std::env::var("EZER_CODE_WEB_URL").unwrap_or_else(|_| GROK_CODE_WEB_URL.to_string());
+        std::env::var("EZER_CODE_WEB_URL").unwrap_or_else(|_| REMOTE_CODE_WEB_URL.to_string());
     format!("{}/build/share/{}", web_url, permission_id)
 }
 fn add_cli_chat_proxy_headers_blocking(
     builder: reqwest::blocking::RequestBuilder,
-    auth: &GrokAuth,
+    auth: &EzerAuth,
     alpha_test_key: Option<&str>,
     url: &str,
 ) -> reqwest::blocking::RequestBuilder {
     let mut builder = builder
         .header("Authorization", format!("Bearer {}", &auth.key))
-        .header("X-XAI-Token-Auth", GrokComConfig::default().token_header)
+        .header("X-XAI-Token-Auth", EzerComConfig::default().token_header)
         .header("x-userid", &auth.user_id)
         .header("x-ezer-client-version", ezer_version::VERSION);
     if let Some(email) = &auth.email {
@@ -55,7 +55,7 @@ async fn add_bundle_fetch_headers(
         Some(am) if ActiveAuthBackend::default().is_xai_authority() => am.auth().await.ok(),
         _ => None,
     };
-    let mut credentials = crate::util::grok_auth_credentials::GrokAuthCredentials::new(
+    let mut credentials = crate::util::ezer_auth_credentials::EzerAuthCredentials::new(
         resolved_auth.as_ref().map(|auth| auth.key.clone()),
     );
     credentials.deployment_key = deployment_key.map(str::to_owned);
@@ -300,7 +300,7 @@ impl BackendClient {
             client: reqwest_middleware::ClientBuilder::new(reqwest_client.clone()).build(),
             reqwest_client,
             base_url: std::env::var("EZER_CODE_BACKEND_URL")
-                .unwrap_or_else(|_| GROK_CODE_BACKEND_URL.to_string()),
+                .unwrap_or_else(|_| REMOTE_CODE_BACKEND_URL.to_string()),
             auth_manager: None,
         }
     }
@@ -313,7 +313,7 @@ impl BackendClient {
             auth_manager: None,
         }
     }
-    /// Attach a live `AuthManager` so every request resolves a fresh token instead of requiring the caller to pass `&GrokAuth`.
+    /// Attach a live `AuthManager` so every request resolves a fresh token instead of requiring the caller to pass `&EzerAuth`.
     pub(crate) fn with_auth_manager(
         mut self,
         manager: std::sync::Arc<ezer_login::AuthManager>,
@@ -330,7 +330,7 @@ impl BackendClient {
         self.auth_manager = Some(manager);
         self
     }
-    async fn resolve_auth(&self) -> Result<GrokAuth, BackendError> {
+    async fn resolve_auth(&self) -> Result<EzerAuth, BackendError> {
         let manager = self
             .auth_manager
             .as_ref()
@@ -386,7 +386,7 @@ impl BackendClient {
         };
         headers.insert(
             "X-XAI-Token-Auth",
-            required(&GrokComConfig::default().token_header, "X-XAI-Token-Auth")?,
+            required(&EzerComConfig::default().token_header, "X-XAI-Token-Auth")?,
         );
         headers.insert("x-userid", required(&auth.user_id, "x-userid")?);
         if let Some(email) = &auth.email
@@ -555,7 +555,7 @@ impl SettingsFetch {
 /// Makes up to [`crate::http::SETTINGS_FETCH_MAX_ATTEMPTS`] attempts on transient failures.
 pub fn fetch_settings_blocking(
     cli_chat_proxy_base_url: &str,
-    auth: &GrokAuth,
+    auth: &EzerAuth,
     alpha_test_key: Option<&str>,
 ) -> SettingsFetch {
     fetch_settings_blocking_with_attempts(
@@ -568,7 +568,7 @@ pub fn fetch_settings_blocking(
 /// Private so the attempt count stays out of the public API; tests use it to skip retry backoff on the transient-failure paths.
 fn fetch_settings_blocking_with_attempts(
     cli_chat_proxy_base_url: &str,
-    auth: &GrokAuth,
+    auth: &EzerAuth,
     alpha_test_key: Option<&str>,
     max_attempts: u32,
 ) -> SettingsFetch {

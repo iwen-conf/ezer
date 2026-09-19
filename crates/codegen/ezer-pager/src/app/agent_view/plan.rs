@@ -60,7 +60,7 @@ impl AgentView {
         let cwd_str = self.session.cwd.to_string_lossy().into_owned();
         let encoded_cwd = urlencoding::encode(&cwd_str);
         Some(
-            ezer_shell::util::grok_home::grok_home()
+            ezer_shell::util::ezer_home::ezer_home()
                 .join("sessions")
                 .join(encoded_cwd.as_ref())
                 .join(session_id.0.as_ref())

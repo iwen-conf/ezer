@@ -20,7 +20,7 @@ fn live_fetch_with_unpersisted_session_is_served() {
 
         // Disk holds `test-user` (seeded above); warm with a different in-memory
         // session that has not been persisted.
-        let fresh: ezer_login::GrokAuth = serde_json::from_value(serde_json::json!({
+        let fresh: ezer_login::EzerAuth = serde_json::from_value(serde_json::json!({
             "key": "fresh-session-token",
             "auth_mode": "oidc",
             "oidc_issuer": ezer_login::xai_oauth2_issuer(),

@@ -153,7 +153,7 @@ pub struct VideoGenClient {
     attribution_callback: Option<SharedAttributionCallback>,
     /// When `true`, the user is on a tier the Imagine server zero-limits
     /// (free / X Basic). The video tools short-circuit before any HTTP call
-    /// and return the SuperGrok upsell prose. See [`VideoGenClient::is_tier_restricted`].
+    /// and return the MaxTier upsell prose. See [`VideoGenClient::is_tier_restricted`].
     tier_restricted: bool,
     /// See [`VideoGenConfig::Enabled`]'s `zdr_restricted`.
     zdr_restricted: bool,
@@ -291,7 +291,7 @@ impl VideoGenClient {
 
     /// Whether the current user's tier (free / X Basic) is zero-limited on
     /// Imagine server-side. The video tools use this to short-circuit with the
-    /// SuperGrok upsell instead of issuing a doomed request.
+    /// MaxTier upsell instead of issuing a doomed request.
     pub(crate) fn is_tier_restricted(&self) -> bool {
         self.tier_restricted
     }
@@ -750,7 +750,7 @@ pub enum VideoGenConfig {
         extra_headers: indexmap::IndexMap<String, String>,
         zdr_video_output_s3: Option<Box<ZdrVideoOutputS3Config>>,
         /// `true` when the user is on a tier the Imagine server zero-limits (free / X Basic). The video tools stay advertised
-        /// but short-circuit at call time with the SuperGrok upsell prose. Set by the host from the subscription tier; always
+        /// but short-circuit at call time with the MaxTier upsell prose. Set by the host from the subscription tier; always
         /// `false` for team / API-key / workspace.
         tier_restricted: bool,
         /// `true` when `tools.disable_zdr_incompatible_tools` is set with no valid
@@ -768,13 +768,13 @@ impl VideoGenConfig {
 
 /// Prose returned to the model (as a normal, successful tool result) when a free / X Basic user
 /// calls a video tool. The model relays it to the user; the deliberate `/imagine-video` slash
-/// command shows the SuperGrok upsell modal instead.
+/// command shows the MaxTier upsell modal instead.
 pub(crate) const TIER_RESTRICTED_UPSELL: &str = "Video generation is not available on this plan. Do not retry this tool.";
 
 /// Error for video tool calls in a ZDR session with no output bucket.
 /// A verbatim tool *error* (unlike the [`TIER_RESTRICTED_UPSELL`] prose):
 /// paraphrasing a privacy-adjacent message risks distortion.
-pub(crate) const ZDR_RESTRICTED_MESSAGE: &str = "Video generation tools are unavailable under zero data retention (ZDR). To enable, either turn off /privacy mode to disable ZDR or supply a user-hosted storage bucket (see https://docs.x.ai/build/settings/zdr-video-storage).";
+pub(crate) const ZDR_RESTRICTED_MESSAGE: &str = "Video generation tools are unavailable under zero data retention (ZDR). To enable, either turn off /privacy mode to disable ZDR or supply a user-hosted storage bucket.";
 
 fn zdr_restricted_error() -> xai_tool_runtime::ToolError {
     xai_tool_runtime::ToolError::new(
@@ -1175,7 +1175,7 @@ impl crate::types::tool_metadata::ToolMetadata for ImageToVideoTool {
     }
 
     fn tool_namespace(&self) -> ToolNamespace {
-        ToolNamespace::GrokBuild
+        ToolNamespace::EzerBuild
     }
 
     fn description_template(&self) -> &str {
@@ -1283,7 +1283,7 @@ impl crate::types::tool_metadata::ToolMetadata for ReferenceToVideoTool {
     }
 
     fn tool_namespace(&self) -> ToolNamespace {
-        ToolNamespace::GrokBuild
+        ToolNamespace::EzerBuild
     }
 
     fn description_template(&self) -> &str {

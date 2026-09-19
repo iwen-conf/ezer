@@ -91,7 +91,7 @@ impl OidcRefresher {
     /// One-shot retry with the refresh token on disk after `invalid_grant`.
     /// If disk already holds a valid (unexpired) access token with a different key, adopt it directly.
     /// That spends no refresh token on another IdP call and prevents cascading `invalid_grant` when a sibling already refreshed.
-    async fn retry_with_fresh_disk_token(&self, tried: &crate::GrokAuth) -> Option<RefreshOutcome> {
+    async fn retry_with_fresh_disk_token(&self, tried: &crate::EzerAuth) -> Option<RefreshOutcome> {
         let disk_now = self.auth.read_disk_auth()?;
 
         // If disk has a valid access token that differs from what we tried, a sibling already refreshed

@@ -20,13 +20,13 @@ fn action_outcome(response: &serde_json::Value) -> xai_hooks_plugins_types::Acti
 #[test]
 fn plugins_action_install_and_update_respect_marketplace_lockdown() {
     run_agent_test(|cwd, _server| async move {
-        let grok_home =
-            std::path::PathBuf::from(std::env::var("GROK_HOME").expect("harness sets GROK_HOME"));
-        std::fs::create_dir_all(&grok_home).unwrap();
+        let ezer_home =
+            std::path::PathBuf::from(std::env::var("EZER_HOME").expect("harness sets EZER_HOME"));
+        std::fs::create_dir_all(&ezer_home).unwrap();
         // Binding lockdown: one allowed marketplace (installs/updates of
         // anything else refuse) and project MCP pinned off.
         std::fs::write(
-            grok_home.join("requirements.toml"),
+            ezer_home.join("requirements.toml"),
             "enable_all_project_mcp_servers = false\n\n\
              [[strict_known_marketplaces]]\n\
              source = \"git\"\n\
@@ -63,7 +63,7 @@ fn plugins_action_install_and_update_respect_marketplace_lockdown() {
         use ezer_agent::plugins::install_registry::{
             InstallKind, InstallRegistry, InstalledRepo, RepoPlugin,
         };
-        let blocked_repo_dir = grok_home.join("plugins").join("blocked-repo");
+        let blocked_repo_dir = ezer_home.join("plugins").join("blocked-repo");
         std::fs::create_dir_all(&blocked_repo_dir).unwrap();
         let now = chrono::Utc::now().to_rfc3339();
         let mut registry = InstallRegistry::load();
@@ -97,7 +97,7 @@ fn plugins_action_install_and_update_respect_marketplace_lockdown() {
         // Install action must be refused by the acquisition gate.
         let response = ext_method(
             &conn,
-            "x.ai/plugins/action",
+            "ezer/plugins/action",
             json!({
                 "sessionId": session_id.0.to_string(),
                 "action": {"type": "install", "source": plugin_dir.display().to_string()},
@@ -131,7 +131,7 @@ fn plugins_action_install_and_update_respect_marketplace_lockdown() {
         // fetch (per-repo failure line, not a git error).
         let response = ext_method(
             &conn,
-            "x.ai/plugins/action",
+            "ezer/plugins/action",
             json!({
                 "sessionId": session_id.0.to_string(),
                 "action": {"type": "update", "plugin_id": "blocked-plugin"},
@@ -168,7 +168,7 @@ fn plugins_action_install_and_update_respect_marketplace_lockdown() {
         .expect("serialize mcp/toggle params");
         let err = tokio::time::timeout(
             RPC_TIMEOUT,
-            conn.ext_method(acp::ExtRequest::new("x.ai/mcp/toggle", Arc::from(params))),
+            conn.ext_method(acp::ExtRequest::new("ezer/mcp/toggle", Arc::from(params))),
         )
         .await
         .expect("mcp/toggle timed out")

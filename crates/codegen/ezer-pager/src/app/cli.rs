@@ -25,7 +25,7 @@ pub enum Command {
         /// Ignored (kept for backwards compatibility). OAuth2 is now the only auth method.
         #[arg(long, hide = true)]
         legacy: bool,
-        /// Use optional browser OAuth (off unless EZER_ENABLE_XAI_LOGIN=1).
+        /// Use optional browser OAuth (off by default).
         #[arg(long = "oauth", alias = "oidc", conflicts_with_all = ["device_auth"])]
         oauth: bool,
         /// Use device-code authentication for headless/remote environments.
@@ -297,7 +297,7 @@ pub struct AgentArgs {
     #[arg(long = "cli-chat-proxy-base-url")]
     pub cli_chat_proxy_base_url: Option<String>,
     /// Override the public API base URL.
-    #[arg(long = "xai-api-base-url")]
+    #[arg(long = "api-base-url", alias = "xai-api-base-url")]
     pub xai_api_base_url: Option<String>,
     /// Agent runtime mode
     #[command(subcommand)]
@@ -342,9 +342,9 @@ pub enum AgentCmd {
 #[derive(Debug, clap::Args, Clone, Default)]
 pub struct HeadlessArgs {
     #[arg(long = "relay-ws-origin")]
-    pub grok_ws_origin: Option<String>,
+    pub ezer_ws_origin: Option<String>,
     #[arg(long = "relay-ws-url")]
-    pub grok_ws_url: Option<String>,
+    pub ezer_ws_url: Option<String>,
 }
 /// Arguments for the `agent serve` subcommand.
 #[derive(Debug, clap::Args, Clone)]
@@ -645,8 +645,8 @@ pub struct PagerArgs {
         hide = true
     )]
     pub no_memory: bool,
-    /// Run a memory flush after the headless turn (or instead of a prompt when resuming). Calls `x.ai/memory/flush` and waits for the flush LLM.
-    /// resuming). Calls `x.ai/memory/flush` and waits for the flush LLM.
+    /// Run a memory flush after the headless turn (or instead of a prompt when resuming). Calls `ezer/memory/flush` and waits for the flush LLM.
+    /// resuming). Calls `ezer/memory/flush` and waits for the flush LLM.
     /// Headless only: `/flush` as `-p` text is not a reliable flush trigger.
     #[arg(long = "memory-flush", hide = true)]
     pub memory_flush: bool,
@@ -1376,7 +1376,7 @@ mod tests {
         assert!(args.single.is_none());
     }
     #[test]
-    fn bare_grok_has_no_initial_prompt() {
+    fn bare_ezer_has_no_initial_prompt() {
         let args = PagerArgs::try_parse_from(["ezer"]).expect("bare ezer parses");
         assert_eq!(args.initial_prompt(), None);
     }

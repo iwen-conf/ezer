@@ -206,7 +206,7 @@ pub(super) fn active_contexts_for_pane(pane: ActivePane) -> Vec<crate::actions::
 ///
 /// This will grow as we add more panes (tasks, review files, etc.).
 pub type AgentPane = ActivePane;
-/// MCP server initialization progress, received from the shell (`x.ai/mcp/init_progress`).
+/// MCP server initialization progress, received from the shell (`ezer/mcp/init_progress`).
 #[derive(Debug, Clone)]
 pub struct McpInitProgress {
     pub total: u32,
@@ -703,7 +703,7 @@ pub struct PluginCtaState {
     pub dismissed: std::collections::HashSet<String>,
 }
 /// Follow-up suggestion chips for the latest assistant response
-/// (`x.ai/follow_ups`). Streaming-only: never persisted, does not survive a
+/// (`ezer/follow_ups`). Streaming-only: never persisted, does not survive a
 /// session reload. Keyed by the assistant `response_id` (the newest-wins key).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct FollowUps {
@@ -930,7 +930,7 @@ pub struct AgentView {
     /// does not. Netted against the wall-anchored turn span so a suspend during an open question isn't reported as worked time.
     pub turn_paused_wall: std::time::Duration,
     /// IDs of interjections this client sent and already rendered locally
-    /// (optimistic echo). The shell broadcasts `x.ai/session/interjection` to every attached pane; when our own broadcast echoes back carrying an id in this set, `handle_interjection` drops it (we already showed it) and removes the id. Other panes (which lack the id) render it. This is the queue's optimistic-echo and reconcile-by-id pattern, applied so the originator gets instant feedback AND viewers stay in sync.
+    /// (optimistic echo). The shell broadcasts `ezer/session/interjection` to every attached pane; when our own broadcast echoes back carrying an id in this set, `handle_interjection` drops it (we already showed it) and removes the id. Other panes (which lack the id) render it. This is the queue's optimistic-echo and reconcile-by-id pattern, applied so the originator gets instant feedback AND viewers stay in sync.
     pub self_interjection_ids: std::collections::HashSet<String>,
     /// Optimistic interjection scrollback rows, keyed by `interjection_id`.
     /// Failed sends remove these entries by id so retry cannot drop the wrong identical follow-up.
@@ -1298,13 +1298,13 @@ pub struct AgentView {
     /// whether the header shows its `‹ i/n ›` switcher. Updated every frame by `draw` beside [`Self::in_dashboard_overlay`], and read from the same place: the shortcuts bar builds the pane's hints once for both the bar and the cheatsheet, neither of which can see `draw`'s arguments.
     pub(crate) overlay_can_cycle: bool,
     /// MCP server init progress. Set when the shell starts connecting
-    /// MCP servers, cleared when `x.ai/mcp_initialized` arrives.
+    /// MCP servers, cleared when `ezer/mcp_initialized` arrives.
     /// Renders as the top-bar MCP chip (`views::agent_status::mcp_status_line`).
     pub(crate) mcp_init_progress: Option<McpInitProgress>,
     /// Set when a session create or fork is dispatched. Cleared when the id binds or the create fails.
     /// Renders "Starting session…" in the turn-status row.
     pub(crate) session_starting_since: Option<Instant>,
-    /// Latest `session/new` setup step from `x.ai/session/setup`; names the stuck step on a timeout. Cleared on bind/fail.
+    /// Latest `session/new` setup step from `ezer/session/setup`; names the stuck step on a timeout. Cleared on bind/fail.
     pub(crate) session_new_phase: Option<ezer_shell::agent::SessionSetupPhase>,
     /// The create's `_meta.sessionId`, held until `SessionCreated` binds it, so setup phases route here. Cleared on bind/fail.
     pub(crate) pending_session_id: Option<agent_client_protocol::SessionId>,
@@ -1384,7 +1384,7 @@ pub struct AgentView {
     /// lands on a tick; borrowed during render so streaming redraws don't
     /// rescan/allocate the prompt every frame.
     pub(crate) timeline_hover_preview: Option<(usize, String)>,
-    /// Running agent definition for this session (`x.ai/session/info` `agentName`).
+    /// Running agent definition for this session (`ezer/session/info` `agentName`).
     pub session_agent_name: Option<String>,
     /// Map of child session IDs to subagent metadata. Populated on `SubagentSpawned` notifications, used for permission routing (which agent owns a session) and provenance display.
     /// `SubagentSpawned` notifications, used for permission routing
@@ -1461,7 +1461,7 @@ pub struct AgentView {
     /// complete. Kind-only: the payload is re-derived from the widget on
     /// reissue so the freshly attached image chip travels with it.
     pub(crate) deferred_send: Option<AgentDeferredSend>,
-    /// Armed when an `x.ai/session/prompt_complete` broadcast arrives for the turn THIS client drives while it is still awaiting that turn's
+    /// Armed when an `ezer/session/prompt_complete` broadcast arrives for the turn THIS client drives while it is still awaiting that turn's
     /// `session/prompt` RPC response. The RPC normally lands milliseconds later and disarms this; if it never does (lost in leader response routing / reconnect races), the event loop reconciles turn state from the broadcast after [`super::dispatch::TURN_END_RECONCILE_GRACE`] so the pane cannot stay latched in `TurnRunning`/`TurnCancelling` forever
     /// (a lost response would otherwise leave the TUI on "Cancelling…" with Esc and the input dead until a restart).
     pub(crate) pending_turn_end_reconcile: Option<PendingTurnEnd>,
@@ -1484,11 +1484,11 @@ pub struct AgentView {
     /// Send-now promote: skip `scroll_to_entry_top` on next matching adoption.
     /// Survives cancel-rail `take()` of [`Self::expect_send_now_cancel`].
     pub(crate) follow_without_jump_prompt_id: Option<String>,
-    /// Ids of THIS client's server-queue rows that are still optimistic echoes: the `session/prompt` RPC is in flight and no `x.ai/queue/changed` broadcast has confirmed the row yet. Inserted by the echo push, drained when a broadcast lists the id (queued or running) or the RPC resolves without the row landing.
+    /// Ids of THIS client's server-queue rows that are still optimistic echoes: the `session/prompt` RPC is in flight and no `ezer/queue/changed` broadcast has confirmed the row yet. Inserted by the echo push, drained when a broadcast lists the id (queued or running) or the RPC resolves without the row landing.
     pub(crate) optimistic_queue_ids: std::collections::HashSet<String>,
-    /// A queue-row send-now the user fired while the row was still an optimistic echo. Firing `x.ai/queue/interject` then would race the row's own in-flight `session/prompt` and silently no-op shell-side
+    /// A queue-row send-now the user fired while the row was still an optimistic echo. Firing `ezer/queue/interject` then would race the row's own in-flight `session/prompt` and silently no-op shell-side
     /// (a rapid double-Enter on a queued bash command could "disappear": the interject overtook the row, the no-op dropped the send-now, and the armed cancel expectation hid the still-queued row).
-    /// Parked here and fired from the confirming `x.ai/queue/changed`
+    /// Parked here and fired from the confirming `ezer/queue/changed`
     pub(crate) send_now_awaiting_confirm: Option<String>,
     /// User blocks painted at send-now dispatch, keyed by prompt id; the turn-start adoption consumes an entry to reuse its block. The flag marks an edit-interject override (fresher than the mirror text the adoption captures). Cleared on session reload.
     pub(crate) send_now_painted_blocks:
@@ -1498,7 +1498,7 @@ pub struct AgentView {
     /// session start independently of the Extensions modal.
     pub plugin_cta: PluginCtaState,
     /// Follow-up suggestion chips for the latest assistant response
-    /// (`x.ai/follow_ups`). `None` when no chips are shown. Set by
+    /// (`ezer/follow_ups`). `None` when no chips are shown. Set by
     /// [`AgentView::apply_follow_ups`]; cleared at each turn start.
     pub(crate) follow_ups: Option<FollowUps>,
     /// `promptId` (turn identity) of the currently-shown `follow_ups`, when the delivery that displayed them carried one. Tracked separately because [`FollowUps`] is keyed by `response_id` and does not carry the turn id.
@@ -1518,7 +1518,7 @@ pub struct AgentView {
     /// The ordering key for newest-wins: a fresh id takes the next value (the new high-water), so every previously-seen id is strictly lower.
     /// new high-water), so every previously-seen id is strictly lower.
     pub(crate) follow_up_next_gen: u64,
-    /// Stamped `x.ai/follow_ups` that arrived for a turn that is NOT yet the currently-adopted one, keyed by `promptId`. Ext notifications and `session/update` travel on separate channels, so a turn's follow_ups can land BEFORE the `session/update` that adopts it. Rather than drop such a delivery (chips would never appear if it was the only one), it is buffered here and flushed by [`AgentView::flush_pending_follow_ups`] when that `promptId` becomes current. A `promptId` that is already a prior turn and never becomes current again is never flushed (so stale chips are not revived); the buffer is FIFO-bounded by [`MAX_PENDING_FOLLOW_UPS`] via `follow_up_pending_order`.
+    /// Stamped `ezer/follow_ups` that arrived for a turn that is NOT yet the currently-adopted one, keyed by `promptId`. Ext notifications and `session/update` travel on separate channels, so a turn's follow_ups can land BEFORE the `session/update` that adopts it. Rather than drop such a delivery (chips would never appear if it was the only one), it is buffered here and flushed by [`AgentView::flush_pending_follow_ups`] when that `promptId` becomes current. A `promptId` that is already a prior turn and never becomes current again is never flushed (so stale chips are not revived); the buffer is FIFO-bounded by [`MAX_PENDING_FOLLOW_UPS`] via `follow_up_pending_order`.
     pub(crate) follow_up_pending: HashMap<String, FollowUps>,
     /// Insertion order of `follow_up_pending` keys, so an overflow evicts ONLY
     /// the OLDEST buffered entry (never the whole map).
@@ -1650,7 +1650,7 @@ fn translate_local_submit(
                 .and_then(|o| o.id.as_deref())
                 .unwrap_or(super::dispatch::UPSELL_URL_UPGRADE);
             ezer_telemetry::session_ctx::log_event(
-                ezer_telemetry::events::SuperGrokUpsellClicked {
+                ezer_telemetry::events::UpgradeUpsellClicked {
                     source,
                     auth_method: None,
                 },
@@ -1885,7 +1885,7 @@ fn is_hash_key(key: &KeyEvent) -> bool {
 /// Check `[features] remember_mode` in config.toml. Defaults to `false`.
 fn remember_mode_enabled() -> bool {
     let path =
-        ezer_tools::util::grok_home::grok_home().join(ezer_config::USER_CONFIG_FILENAME);
+        ezer_tools::util::ezer_home::ezer_home().join(ezer_config::USER_CONFIG_FILENAME);
     let Some(doc) = crate::config_toml_edit::read_config_document_for_edit(&path) else {
         return false;
     };
@@ -2972,7 +2972,7 @@ pub(crate) mod test_fixtures {
         );
         assert_eq!(agent.follow_ups.as_ref().unwrap().suggestions, vec!["a"]);
     }
-    /// After adopting a NEW turn, a buffer-replayed `x.ai/follow_ups`
+    /// After adopting a NEW turn, a buffer-replayed `ezer/follow_ups`
     /// for a PRIOR turn's response_id must NOT revive stale chips: its
     /// `promptId` is not the active turn and it is already in the seen ring.
     #[test]
@@ -2993,7 +2993,7 @@ pub(crate) mod test_fixtures {
         assert!(agent.apply_follow_ups_with_prompt("resp-2".into(), Some("p2"), vec!["b".into()]));
         assert_eq!(agent.follow_ups.as_ref().unwrap().response_id, "resp-2");
     }
-    /// Stamped path: a LATE FIRST-TIME (never-seen) `x.ai/follow_ups` for a PRIOR turn, arriving while a newer turn is active, must NOT render. Before the fix it slipped through the "strictly newer" branch
+    /// Stamped path: a LATE FIRST-TIME (never-seen) `ezer/follow_ups` for a PRIOR turn, arriving while a newer turn is active, must NOT render. Before the fix it slipped through the "strictly newer" branch
     /// (never recorded in `follow_up_seen`, so the seen-reject didn't catch it).
     #[test]
     fn apply_follow_ups_late_prior_turn_first_time_rejected() {
@@ -3042,7 +3042,7 @@ pub(crate) mod test_fixtures {
         );
         assert_eq!(agent.follow_ups.as_ref().unwrap().response_id, "resp-1");
     }
-    /// None-fallback (older shells / no promptId): with no turn identity on the notification AND a newer turn active, a late first-time arrival cannot be distinguished from the new turn's first follow_ups, so it follows the legacy newest-wins (renders). This path is not reachable for current shells (which always stamp `promptId`) or for buffer-replays (suppressed upstream by the `_meta["x.ai/replayed"]` gate); it is pinned here so the stamped-path fix above is understood to be the deterministic guard.
+    /// None-fallback (older shells / no promptId): with no turn identity on the notification AND a newer turn active, a late first-time arrival cannot be distinguished from the new turn's first follow_ups, so it follows the legacy newest-wins (renders). This path is not reachable for current shells (which always stamp `promptId`) or for buffer-replays (suppressed upstream by the `_meta["ezer/replayed"]` gate); it is pinned here so the stamped-path fix above is understood to be the deterministic guard.
     #[test]
     fn apply_follow_ups_none_prompt_first_time_follows_legacy_newest_wins() {
         let mut agent = make_agent();
@@ -3053,7 +3053,7 @@ pub(crate) mod test_fixtures {
         );
         assert_eq!(agent.follow_ups.as_ref().unwrap().response_id, "resp-x");
     }
-    /// Buffer-before-adoption: a stamped `x.ai/follow_ups` for a turn that is NOT yet current (its `session/update` adoption raced behind the ext channel) must be BUFFERED, not dropped, and then RENDER when that turn becomes current and is flushed.
+    /// Buffer-before-adoption: a stamped `ezer/follow_ups` for a turn that is NOT yet current (its `session/update` adoption raced behind the ext channel) must be BUFFERED, not dropped, and then RENDER when that turn becomes current and is flushed.
     #[test]
     fn apply_follow_ups_buffered_before_adoption_flushes_on_adoption() {
         let mut agent = make_agent();

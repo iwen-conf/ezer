@@ -7,7 +7,7 @@
   "prompt_id": "97135ed2-71a5-4581-b959-3341bbd03e5f",
   "transcript_path": "/home/user/sessions/019fa651/updates.jsonl",
   "model": {
-    "id": "grok-4.5",
+    "id": "test-model-4.5",
     "display_name": "ezer 4.5"
   },
   "workspace": {

@@ -84,7 +84,7 @@ fn resolve_overlay_detailed(
     inline: Option<&str>,
     path: Option<&Path>,
 ) -> Option<(toml::Value, OverlaySource, Vec<String>)> {
-    // Inline (`GROK_CONFIG`) wins only when it fully succeeds
+    // Inline (`EZER_CONFIG`) wins only when it fully succeeds
     // When it is absent, empty, or rejected at any stage (parse, `$VAR` expand, version_overrides, normalize), fall through to the path candidate
     // That way a valid file is never skipped because of a bad inline value
     if let Some(inline) = inline

@@ -38,7 +38,7 @@ pub const EZER_AGENT_ENV_VALUE: &str = "1";
 
 /// Force `EZER_AGENT=1` on an agent terminal child so request/login env cannot
 /// clear the agent marker.
-pub fn apply_grok_agent_marker(cmd: &mut tokio::process::Command) {
+pub fn apply_ezer_agent_marker(cmd: &mut tokio::process::Command) {
     cmd.env(EZER_AGENT_ENV, EZER_AGENT_ENV_VALUE);
 }
 

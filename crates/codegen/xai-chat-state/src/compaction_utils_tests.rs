@@ -2008,7 +2008,7 @@ async fn build_compacted_history_multi_turn_with_parallel_tool_calls() {
                     arguments: r#"{"target_file":"src/lib.rs"}"#.into(),
                 },
             ],
-            model_id: Some("grok-3".to_string()),
+            model_id: Some("test-model-3".to_string()),
             model_fingerprint: None,
             reasoning_effort: None,
         }),
@@ -2042,7 +2042,7 @@ async fn build_compacted_history_multi_turn_with_parallel_tool_calls() {
                     arguments: r#"{"command":"cargo test"}"#.into(),
                 },
             ],
-            model_id: Some("grok-3".to_string()),
+            model_id: Some("test-model-3".to_string()),
             model_fingerprint: None,
             reasoning_effort: None,
         }),
@@ -2799,7 +2799,7 @@ fn verbatim_reasoning_kept_unless_messages_backend() {
     assert!(
         kept.iter()
             .any(|i| matches!(i, ConversationItem::Reasoning(_))),
-        "reasoning must be kept when strip_reasoning = false (Grok backends)"
+        "reasoning must be kept when strip_reasoning = false (Ezer backends)"
     );
     let stripped = prepare_conversation_for_verbatim_summarization(mk(), true);
     assert!(

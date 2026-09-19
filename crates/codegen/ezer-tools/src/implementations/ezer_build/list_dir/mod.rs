@@ -647,7 +647,7 @@ impl crate::types::tool_metadata::ToolMetadata for ListDirTool {
         ToolKind::List
     }
     fn tool_namespace(&self) -> ToolNamespace {
-        ToolNamespace::GrokBuild
+        ToolNamespace::EzerBuild
     }
     fn description_template(&self) -> &str {
         r#"Lists files and directories in a given path.

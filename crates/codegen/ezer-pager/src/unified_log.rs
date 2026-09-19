@@ -1,6 +1,6 @@
 //! Unified log forwarding for the pager.
 //!
-//! Buffers log entries in memory and flushes them to the shell via `x.ai/log` ACP notifications.
+//! Buffers log entries in memory and flushes them to the shell via `ezer/log` ACP notifications.
 //! Call [`init`] once at startup with the ACP sender, then use [`info`], [`warn`], [`error`], [`debug`] from anywhere.
 
 use std::sync::{Mutex, OnceLock};
@@ -56,7 +56,7 @@ fn make_entry(
 /// the connect that must survive a failed startup go through here.
 pub fn write_direct_info(msg: &str, ctx: Option<serde_json::Value>) {
     ezer_telemetry::unified_log::ingest_client_entries(
-        LogSource::GrokPager,
+        LogSource::EzerPager,
         &[make_entry(LogLevel::Info, msg, None, ctx)],
     );
 }
@@ -64,7 +64,7 @@ pub fn write_direct_info(msg: &str, ctx: Option<serde_json::Value>) {
 /// [`write_direct_info`] at warn level, for failure reports that must land even when the ACP forwarder is wedged.
 pub fn write_direct_warn(msg: &str, sid: Option<&str>, ctx: Option<serde_json::Value>) {
     ezer_telemetry::unified_log::ingest_client_entries(
-        LogSource::GrokPager,
+        LogSource::EzerPager,
         &[make_entry(LogLevel::Warn, msg, sid, ctx)],
     );
 }
@@ -87,7 +87,7 @@ fn build_notification(entries: Vec<ClientLogEntry>) -> Option<acp::ExtNotificati
         return None;
     }
     let params = LogNotificationParams {
-        src: LogSource::GrokPager,
+        src: LogSource::EzerPager,
         entries,
     };
     let raw = serde_json::value::to_raw_value(&params).ok()?;

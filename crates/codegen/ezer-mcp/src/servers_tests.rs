@@ -120,21 +120,21 @@ fn stdio_path_override_matches_path_case_insensitively() {
 fn is_figma_mcp_matches_name_and_host() {
     assert!(is_figma_mcp("figma", "https://example.com/mcp"));
     assert!(is_figma_mcp("Figma", "https://example.com/mcp"));
-    assert!(is_figma_mcp("grok_com_figma", "https://example.com/mcp"));
+    assert!(is_figma_mcp("ezer_com_figma", "https://example.com/mcp"));
     assert!(is_figma_mcp("EZER_COM_FIGMA", "https://example.com/mcp"));
-    assert!(is_figma_mcp("grok_com_FIGMA", "https://example.com/mcp"));
+    assert!(is_figma_mcp("ezer_com_FIGMA", "https://example.com/mcp"));
     assert!(is_figma_mcp("other", "https://mcp.figma.com/mcp"));
     assert!(is_figma_mcp("other", "https://figma.com/mcp"));
     assert!(!is_figma_mcp("linear", "https://mcp.linear.app/mcp"));
     assert!(!is_figma_mcp("figma_extra", "https://example.com/mcp"));
-    assert!(!is_figma_mcp("grok_com_linear", "https://example.com/mcp"));
+    assert!(!is_figma_mcp("ezer_com_linear", "https://example.com/mcp"));
     assert!(!is_figma_mcp("linear", "not-a-url"));
     assert!(!is_figma_mcp("linear", "https://notfigma.com/mcp"));
     assert!(!is_figma_mcp("linear", "https://figma.com.evil/mcp"));
 }
 
 #[test]
-fn ensure_figma_user_agent_sets_grok_cli_when_missing() {
+fn ensure_figma_user_agent_sets_ezer_cli_when_missing() {
     let mut headers = reqwest::header::HeaderMap::new();
     ensure_figma_user_agent(&mut headers, "figma", "https://mcp.figma.com/mcp");
     assert_eq!(
@@ -189,7 +189,7 @@ fn parse_config_headers_skips_invalid_and_keeps_last_duplicate() {
 }
 
 #[test]
-fn apply_user_agent_policy_sets_versioned_grok_cli() {
+fn apply_user_agent_policy_sets_versioned_ezer_cli() {
     let mut headers = reqwest::header::HeaderMap::new();
     apply_user_agent_policy(&mut headers, "linear", "https://mcp.linear.app/mcp");
     let expected = format!("ezer-cli/{}", ezer_version::VERSION);
@@ -3398,7 +3398,7 @@ async fn try_call_tool_reconnects_then_succeeds_after_retriable_transport_error(
                 }
             }
         });
-        let handler = GrokClientHandler {
+        let handler = EzerClientHandler {
             info: McpClient::make_client_info("dead", /* advertise_elicitation */ true),
             server_name: "dead".to_string(),
             notify_tx: Arc::new(parking_lot::Mutex::new(None)),
@@ -3518,7 +3518,7 @@ async fn watched_live_client(name: &str) -> Arc<McpClient> {
             }
         }
     });
-    let handler = GrokClientHandler {
+    let handler = EzerClientHandler {
         info: McpClient::make_client_info(name, /* advertise_elicitation */ true),
         server_name: name.to_string(),
         notify_tx: Arc::new(parking_lot::Mutex::new(None)),
@@ -3594,7 +3594,7 @@ async fn dropping_the_owned_map_releases_watched_clients() {
 #[test]
 fn is_auth_rejection_message_matches_auth_signals() {
     assert!(is_auth_rejection_message(
-        "MCP server 'grok_com_notion' handshake failed: Auth required, when send initialize request"
+        "MCP server 'ezer_com_notion' handshake failed: Auth required, when send initialize request"
     ));
     assert!(is_auth_rejection_message("401 Unauthorized"));
     assert!(is_auth_rejection_message("unauthorized"));
@@ -4301,7 +4301,7 @@ fn acp_zero_ipc_client_info_does_not_advertise_elicitation() {
 #[tokio::test]
 async fn client_handler_routes_tools_changed() {
     let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel::<McpClientEvent>();
-    let handler = GrokClientHandler {
+    let handler = EzerClientHandler {
         info: McpClient::make_client_info("test", /* advertise_elicitation */ true),
         server_name: "test".to_string(),
         notify_tx: Arc::new(parking_lot::Mutex::new(Some(tx))),
@@ -4367,19 +4367,19 @@ fn probe_ctx<'a>(
     event_writer: &'a ezer_session_events::EventWriter,
     mode: OauthInteractivity,
 ) -> McpSpawnCtx<'a> {
-    crate::isolate_grok_home_for_tests();
+    crate::isolate_ezer_home_for_tests();
     McpSpawnCtx {
         session_id: None,
         event_writer,
         mode,
         scope: None,
         discovery: McpOauthDiscovery::Network,
-        send_grok_agent_id_header: false,
+        send_ezer_agent_id_header: false,
     }
 }
 
 fn session_test_ctx(event_writer: &ezer_session_events::EventWriter) -> McpSpawnCtx<'_> {
-    crate::isolate_grok_home_for_tests();
+    crate::isolate_ezer_home_for_tests();
     McpSpawnCtx::for_session(
         "sess",
         event_writer,
@@ -4599,7 +4599,7 @@ fn apply_stdio_env_session_id_cannot_be_shadowed() {
 }
 
 #[tokio::test]
-async fn grok_agent_id_header_rejects_invalid_session_id() {
+async fn ezer_agent_id_header_rejects_invalid_session_id() {
     let writer = ezer_session_events::EventWriter::noop();
     let ctx = McpSpawnCtx::for_session(
         "bad\nsession",
@@ -4607,7 +4607,7 @@ async fn grok_agent_id_header_rejects_invalid_session_id() {
         OauthInteractivity::Interactive,
         None,
     )
-    .with_grok_agent_id_header();
+    .with_ezer_agent_id_header();
     let server = acp::McpServer::Http(
         acp::McpServerHttp::new("local", "http://127.0.0.1:9/mcp").headers(vec![]),
     );
@@ -5296,7 +5296,7 @@ async fn recording_service(
             }
         }
     });
-    let handler = GrokClientHandler {
+    let handler = EzerClientHandler {
         info: McpClient::make_client_info("recording", /* advertise_elicitation */ false),
         server_name: "recording".to_string(),
         notify_tx: Arc::new(parking_lot::Mutex::new(None)),

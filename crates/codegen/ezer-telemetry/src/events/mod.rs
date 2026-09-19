@@ -335,8 +335,8 @@ telemetry_event!(PlanSubmit, "plan_submit");
 telemetry_event!(EventLoopStall, "event_loop_stall");
 telemetry_event!(TermWriterBlocked, "term_writer_blocked");
 telemetry_event!(PromptAckTimeoutFired, "prompt_ack_timeout_fired");
-telemetry_event!(SuperGrokUpsellShown, "supergrok_upsell_shown");
-telemetry_event!(SuperGrokUpsellClicked, "supergrok_upsell_clicked");
+telemetry_event!(UpgradeUpsellShown, "upgrade_upsell_shown");
+telemetry_event!(UpgradeUpsellClicked, "upgrade_upsell_clicked");
 telemetry_event!(AnnouncementCtaShown, "announcement_cta_shown");
 telemetry_event!(AnnouncementCtaClicked, "announcement_cta_clicked");
 telemetry_event!(CodingDataConsentSelected, "coding_data_consent_selected");
@@ -1201,7 +1201,7 @@ mod tests {
                 hook_rewrote: false,
                 duration_ms: 7,
                 tool_result_size_bytes: Some(2_048),
-                model_id: "grok".into(),
+                model_id: "ezer".into(),
                 file_path: None,
                 parameters: None,
                 tool_use_id: None,
@@ -1224,7 +1224,7 @@ mod tests {
                 hook_rewrote: false,
                 duration_ms: 7,
                 tool_result_size_bytes: None,
-                model_id: "grok".into(),
+                model_id: "ezer".into(),
                 file_path: None,
                 parameters: None,
                 tool_use_id: None,
@@ -1639,7 +1639,7 @@ mod tests {
             tokens_used: 100_000,
             context_window: 128_000,
             percentage: 78,
-            model_id: "grok-4".into(),
+            model_id: "test-model-4".into(),
             user_context_provided: false,
             compaction_id: "cid-1".into(),
             compaction_mode: CompactionModeLabel::Segments,
@@ -1654,7 +1654,7 @@ mod tests {
                 "tokens_used": 100_000,
                 "context_window": 128_000,
                 "percentage": 78,
-                "model_id": "grok-4",
+                "model_id": "test-model-4",
                 "user_context_provided": false,
                 "compaction_id": "cid-1",
                 "compaction_mode": "segments",
@@ -1668,7 +1668,7 @@ mod tests {
             tokens_used: 10_000,
             context_window: 128_000,
             percentage: 8,
-            model_id: "grok-4".into(),
+            model_id: "test-model-4".into(),
             user_context_provided: false,
             compaction_id: "cid-2".into(),
             compaction_mode: CompactionModeLabel::Summary,
@@ -1683,7 +1683,7 @@ mod tests {
                 "tokens_used": 10_000,
                 "context_window": 128_000,
                 "percentage": 8,
-                "model_id": "grok-4",
+                "model_id": "test-model-4",
                 "user_context_provided": false,
                 "compaction_id": "cid-2",
                 "compaction_mode": "summary",
@@ -1700,7 +1700,7 @@ mod tests {
             duration_ms: 63_000,
             tokens_before: 399_000,
             tokens_after: 15_000,
-            model_id: Some("grok-4".into()),
+            model_id: Some("test-model-4".into()),
             compaction_id: "cid-1".into(),
             compaction_mode: CompactionModeLabel::Summary,
             two_pass: TwoPassOutcome::TwoPass,
@@ -1719,7 +1719,7 @@ mod tests {
                 "duration_ms": 63_000,
                 "tokens_before": 399_000,
                 "tokens_after": 15_000,
-                "model_id": "grok-4",
+                "model_id": "test-model-4",
                 "compaction_id": "cid-1",
                 "compaction_mode": "summary",
                 "two_pass": "two_pass",
@@ -1921,7 +1921,7 @@ mod tests {
                 outcome: Outcome::Completed,
                 duration_ms: 5,
                 tool_call_count: 0,
-                model_id: "grok-4".into(),
+                model_id: "test-model-4".into(),
                 session_id: None,
                 cancellation_category: None,
                 error_category: None,
@@ -1960,7 +1960,7 @@ mod tests {
                 outcome: Outcome::Completed,
                 duration_ms: 1200,
                 tool_call_count: 3,
-                model_id: "grok-4.6".into(),
+                model_id: "test-model-4.6".into(),
                 session_id: None,
                 cancellation_category: None,
                 error_category: None,
@@ -1977,7 +1977,7 @@ mod tests {
                 "outcome": "completed",
                 "duration_ms": 1200,
                 "tool_call_count": 3,
-                "model_id": "grok-4.6",
+                "model_id": "test-model-4.6",
                 "context_tokens": 204_958,
             })
         );
@@ -1991,7 +1991,7 @@ mod tests {
     #[test]
     fn model_response_received_carries_per_call_context_tokens() {
         let v = serde_json::to_value(ModelResponseReceived {
-            model_id: "grok-4.6".into(),
+            model_id: "test-model-4.6".into(),
             duration_ms: 900,
             stop_reason: None,
             prompt_tokens: Some(26_886),

@@ -1395,15 +1395,15 @@ pub(crate) fn set_official_marketplace_auto_installed(config_path: &Path) -> std
 /// Try removing a source from `settings.json` / `known_marketplaces.json` under
 /// `~/.ezer/` and `~/.claude/`. Returns `true` if removed from at least one file.
 pub fn try_remove_source_from_json_files(source_url_or_path: &str) -> bool {
-    // Resolve user grok via user_grok_home() (None when no home resolves) and home separately
-    // Removal then still runs from $EZER_HOME when no home dir exists, and never touches a cwd-relative .grok
+    // Resolve user ezer via user_ezer_home() (None when no home resolves) and home separately
+    // Removal then still runs from $EZER_HOME when no home dir exists, and never touches a cwd-relative .ezer
     let home = xai_dirs::home_dir();
-    let grok = ezer_config::user_grok_home();
+    let ezer = ezer_config::user_ezer_home();
 
     let mut settings_candidates: Vec<std::path::PathBuf> = Vec::new();
-    if let Some(ref grok) = grok {
-        settings_candidates.push(grok.join("settings.local.json"));
-        settings_candidates.push(grok.join("settings.json"));
+    if let Some(ref ezer) = ezer {
+        settings_candidates.push(ezer.join("settings.local.json"));
+        settings_candidates.push(ezer.join("settings.json"));
     }
     if let Some(ref home) = home {
         settings_candidates.push(home.join(".claude").join("settings.local.json"));
@@ -1411,8 +1411,8 @@ pub fn try_remove_source_from_json_files(source_url_or_path: &str) -> bool {
     }
 
     let mut known_candidates: Vec<std::path::PathBuf> = Vec::new();
-    if let Some(ref grok) = grok {
-        known_candidates.push(grok.join("plugins").join("known_marketplaces.json"));
+    if let Some(ref ezer) = ezer {
+        known_candidates.push(ezer.join("plugins").join("known_marketplaces.json"));
     }
     if let Some(ref home) = home {
         known_candidates.push(

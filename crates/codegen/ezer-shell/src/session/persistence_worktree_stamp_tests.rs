@@ -21,7 +21,7 @@ fn worktree_cwd_under(home: &std::path::Path) -> String {
 #[serial]
 fn summary_new_stamps_kind_label_and_source_for_worktree_cwd() {
     let home = tempfile::TempDir::new().unwrap();
-    let _env = EnvGuard::set("GROK_HOME", home.path());
+    let _env = EnvGuard::set("EZER_HOME", home.path());
     let cwd = worktree_cwd_under(home.path());
 
     let summary = Summary::new(
@@ -43,7 +43,7 @@ fn summary_new_stamps_kind_label_and_source_for_worktree_cwd() {
 #[serial]
 fn summary_new_leaves_worktree_fields_unset_for_plain_cwd() {
     let home = tempfile::TempDir::new().unwrap();
-    let _env = EnvGuard::set("GROK_HOME", home.path());
+    let _env = EnvGuard::set("EZER_HOME", home.path());
     let plain_cwd = home.path().join("project");
     std::fs::create_dir_all(&plain_cwd).unwrap();
 
@@ -65,7 +65,7 @@ fn summary_new_leaves_worktree_fields_unset_for_plain_cwd() {
 #[serial]
 async fn new_with_explicit_dir_overrides_worktree_stamp_so_subagent_stays_hidden() {
     let home = tempfile::TempDir::new().unwrap();
-    let _env = EnvGuard::set("GROK_HOME", home.path());
+    let _env = EnvGuard::set("EZER_HOME", home.path());
     let cwd = worktree_cwd_under(home.path());
     let target_dir = home.path().join("child-session");
 
@@ -99,7 +99,7 @@ async fn new_with_explicit_dir_overrides_worktree_stamp_so_subagent_stays_hidden
 #[serial]
 async fn new_with_explicit_dir_stores_requested_identity() {
     let home = tempfile::TempDir::new().unwrap();
-    let _env = EnvGuard::set("GROK_HOME", home.path());
+    let _env = EnvGuard::set("EZER_HOME", home.path());
     let target_dir = home.path().join("child-session");
     let agent_id =
         xai_message_delivery_core::AgentId::from_uuid_v7(uuid::Uuid::now_v7().to_string()).unwrap();

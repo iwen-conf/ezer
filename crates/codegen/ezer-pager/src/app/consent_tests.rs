@@ -132,7 +132,7 @@ fn two_links_are_indexed_in_order() {
 #[test]
 fn a_url_we_will_not_open_degrades_to_plain_text() {
     for url in [
-        "http://x.ai/a",
+        "http://ezer/a",
         // `cmd /c start` on Windows would read the tail as a second command.
         "https://x.ai/a&calc",
         // A percent pair is a variable to the same shell.

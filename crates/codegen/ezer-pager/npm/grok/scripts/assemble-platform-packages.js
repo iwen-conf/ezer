@@ -84,36 +84,36 @@ async function main() {
     const targets = [
         {
             platform: 'darwin', arch: 'arm64', binName: 'grok',
-            envVar: 'GROK_DARWIN_ARM64',
+            envVar: 'EZER_DARWIN_ARM64',
             defaultSource: path.join(xaiRoot, 'target', 'release', 'ezer-pager'),
         },
         {
             platform: 'darwin', arch: 'x64', binName: 'grok',
-            envVar: 'GROK_DARWIN_X64',
+            envVar: 'EZER_DARWIN_X64',
             defaultSource: path.join(xaiRoot, 'target', 'x86_64-apple-darwin', 'release', 'ezer-pager'),
         },
         {
             platform: 'linux', arch: 'x64', binName: 'grok',
-            envVar: 'GROK_LINUX_X64',
+            envVar: 'EZER_LINUX_X64',
             defaultSource: path.join(xaiRoot, 'target',
                 'explorer_cross_x86_64-unknown-linux-gnu',
                 'x86_64-unknown-linux-gnu', 'release', 'ezer-pager'),
         },
         {
             platform: 'linux', arch: 'arm64', binName: 'grok',
-            envVar: 'GROK_LINUX_ARM64',
+            envVar: 'EZER_LINUX_ARM64',
             defaultSource: path.join(xaiRoot, 'target',
                 'explorer_cross_aarch64-unknown-linux-gnu',
                 'aarch64-unknown-linux-gnu', 'release', 'ezer-pager'),
         },
         {
             platform: 'win32', arch: 'x64', binName: 'grok.exe',
-            envVar: 'GROK_WIN32_X64',
+            envVar: 'EZER_WIN32_X64',
             defaultSource: path.join(xaiRoot, 'target', 'x86_64-pc-windows-msvc', 'release', 'ezer-pager.exe'),
         },
         {
             platform: 'win32', arch: 'arm64', binName: 'grok.exe',
-            envVar: 'GROK_WIN32_ARM64',
+            envVar: 'EZER_WIN32_ARM64',
             defaultSource: path.join(xaiRoot, 'target', 'aarch64-pc-windows-msvc', 'release', 'ezer-pager.exe'),
         },
     ];

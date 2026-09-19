@@ -282,7 +282,7 @@ mod tests {
             );
         }
 
-        let rgb = Theme::groknight();
+        let rgb = Theme::ezernight();
         assert_eq!(rgb.selection_overlay().bg, Some(rgb.bg_visual));
         assert_eq!(rgb.hover_overlay().bg, Some(rgb.bg_hover));
         assert!(
@@ -364,8 +364,8 @@ mod tests {
     #[test]
     fn rgb_theme_muted_keeps_explicit_gray_without_forced_dim() {
         use ratatui::style::Modifier;
-        // GrokNight paints real RGB grays; muted/dim must not invent DIM.
-        let theme = Theme::groknight();
+        // EzerNight paints real RGB grays; muted/dim must not invent DIM.
+        let theme = Theme::ezernight();
         assert!(!matches!(theme.gray, Color::Reset));
         let muted = theme.muted();
         assert_eq!(muted.fg, Some(theme.gray));

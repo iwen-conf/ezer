@@ -2,7 +2,7 @@
 //!
 //! Receives [`ezer_mcp::servers::McpClientEvent`]s emitted by:
 //! - per-client transport-liveness watchers ([`ezer_mcp::liveness`]),
-//! - the [`ezer_mcp::servers::GrokClientHandler`] (server-pushed `tools/list_changed` and `resources/list_changed`),
+//! - the [`ezer_mcp::servers::EzerClientHandler`] (server-pushed `tools/list_changed` and `resources/list_changed`),
 //! - the `ensure_initialized` success/failure path,
 //! - the session MCP config diff path (`UpdateMcpServers` / toggle).
 //!
@@ -10,7 +10,7 @@
 //! Two events with the same key collapse into the latest one.
 //! An MCP server bursting 100 `tools/list_changed` notifications inside 10 ms produces exactly one ACP push.
 //!
-//! Each surviving entry is emitted as an ACP [`agent_client_protocol::ExtNotification`] with method `x.ai/mcp/server_status`.
+//! Each surviving entry is emitted as an ACP [`agent_client_protocol::ExtNotification`] with method `ezer/mcp/server_status`.
 //! The payload schema is defined by [`McpServerStatusPayload`].
 //!
 //! ## Contract
@@ -40,7 +40,7 @@ use crate::extensions::mcp::{MANAGED_GATEWAY_ENTRY_PREFIX, McpServerSource};
 pub(crate) const COALESCE_WINDOW: Duration = Duration::from_millis(50);
 
 /// Method name for the ACP push.
-pub const SERVER_STATUS_METHOD: &str = "x.ai/mcp/server_status";
+pub const SERVER_STATUS_METHOD: &str = "ezer/mcp/server_status";
 
 /// JSON payload pushed over ACP. Fields written in camelCase per ACP convention.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -315,7 +315,7 @@ pub(crate) fn build_payload(
 }
 
 /// update `shutting_down` for `ConfigRemoved` / `Ready` keys.
-/// emit one ACP `x.ai/mcp/server_status` push per surviving buffer entry, via the provided gateway.
+/// emit one ACP `ezer/mcp/server_status` push per surviving buffer entry, via the provided gateway.
 /// Failures are logged and dropped; the dispatcher must not block the session actor.
 pub(crate) fn flush_window(
     session_id: &str,
@@ -871,14 +871,14 @@ mod tests {
         assert_eq!(payload.reason, McpServerStatusReason::HandshakeFailed);
     }
 
-    /// Gateway catalog ids are `Managed`; `grok_com_*` spawned names are not.
+    /// Gateway catalog ids are `Managed`; `ezer_com_*` spawned names are not.
     #[test]
     fn classify_source_gateway_is_managed() {
         assert_eq!(
             classify_source("managed_gateway:linear"),
             McpServerSource::Managed
         );
-        assert_eq!(classify_source("grok_com_linear"), McpServerSource::Local);
+        assert_eq!(classify_source("ezer_com_linear"), McpServerSource::Local);
         assert_eq!(classify_source("github"), McpServerSource::Local);
     }
 
@@ -1192,13 +1192,13 @@ mod tests {
     fn recoverable_http_servers_excludes_stdio_and_disabled() {
         let configs = vec![
             http_cfg("http-mcp-server"),
-            http_cfg("grok_com_slack"),
+            http_cfg("remote_slack"),
             http_cfg("admin_off"),    // disabled
             stdio_cfg("local_stdio"), // stdio
         ];
         let disabled: HashSet<String> = ["admin_off".to_string()].into_iter().collect();
         let got = recoverable_http_servers(&configs, &disabled);
-        let want: HashSet<String> = ["http-mcp-server".to_string(), "grok_com_slack".to_string()]
+        let want: HashSet<String> = ["http-mcp-server".to_string(), "remote_slack".to_string()]
             .into_iter()
             .collect();
         assert_eq!(got, want);

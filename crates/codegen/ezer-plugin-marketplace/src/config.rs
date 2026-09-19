@@ -176,7 +176,7 @@ fn extract_marketplace_entries(
 /// Settings roots ezer itself owns (`~/.ezer`); sources found here are
 /// ezer-native for policy scoping.
 pub fn native_settings_roots() -> Vec<PathBuf> {
-    ezer_config::user_grok_home().into_iter().collect()
+    ezer_config::user_ezer_home().into_iter().collect()
 }
 
 /// Settings roots owned by other tools (`~/.claude`); sources found here are
@@ -349,20 +349,20 @@ mod tests {
         let enabled: toml::Value = toml::from_str("[marketplace]\nrequire_sha = true\n").unwrap();
 
         // SAFETY: single-threaded within the lock; restored before release.
-        unsafe { std::env::remove_var("GROK_MARKETPLACE_REQUIRE_SHA") };
+        unsafe { std::env::remove_var("EZER_MARKETPLACE_REQUIRE_SHA") };
         assert!(!load_require_sha(&empty), "absent everywhere → off");
         assert!(load_require_sha(&enabled), "config alone can enable");
 
-        unsafe { std::env::set_var("GROK_MARKETPLACE_REQUIRE_SHA", "1") };
+        unsafe { std::env::set_var("EZER_MARKETPLACE_REQUIRE_SHA", "1") };
         assert!(load_require_sha(&empty), "env alone can enable");
 
-        unsafe { std::env::set_var("GROK_MARKETPLACE_REQUIRE_SHA", "0") };
+        unsafe { std::env::set_var("EZER_MARKETPLACE_REQUIRE_SHA", "0") };
         assert!(
             load_require_sha(&enabled),
             "a falsy env must not relax config-set policy (tighten-only)"
         );
 
-        unsafe { std::env::remove_var("GROK_MARKETPLACE_REQUIRE_SHA") };
+        unsafe { std::env::remove_var("EZER_MARKETPLACE_REQUIRE_SHA") };
     }
 
     #[test]
@@ -370,7 +370,7 @@ mod tests {
         let _guard = REQUIRE_SHA_ENV_LOCK
             .lock()
             .unwrap_or_else(|p| p.into_inner());
-        unsafe { std::env::remove_var("GROK_MARKETPLACE_REQUIRE_SHA") };
+        unsafe { std::env::remove_var("EZER_MARKETPLACE_REQUIRE_SHA") };
 
         let layers = ezer_config::ConfigLayers {
             user: toml::from_str("[marketplace]\nrequire_sha = true\n").unwrap(),

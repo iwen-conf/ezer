@@ -32,7 +32,7 @@ mod inner {
     use tracing_subscriber::registry::LookupSpan;
 
     use super::TARGET;
-    use ezer_config::grok_home;
+    use ezer_config::ezer_home;
 
     const ENV_MEMORY_LOG: &str = "EZER_MEMORY_LOG";
 
@@ -104,7 +104,7 @@ mod inner {
     }
 
     fn resolve_log_path() -> Option<PathBuf> {
-        let default_path = || grok_home().join("logs").join("memory.log");
+        let default_path = || ezer_home().join("logs").join("memory.log");
         let raw = match std::env::var(ENV_MEMORY_LOG) {
             Ok(val) => val,
             Err(_) => return Some(default_path()),

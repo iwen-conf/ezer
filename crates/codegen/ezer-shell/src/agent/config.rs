@@ -12,7 +12,7 @@ use std::num::NonZeroU64;
 use std::path::PathBuf;
 use std::sync::Arc;
 use ezer_agent::prompt::skills::SkillsConfig;
-use ezer_login::{AuthManager, GrokComConfig, OidcAuthConfig};
+use ezer_login::{AuthManager, EzerComConfig, OidcAuthConfig};
 use ezer_sampler::{AuthScheme, SamplerConfig};
 use ezer_sampling_types::{
     CompactionAtTokens, CompactionsRemaining, REASONING_EFFORT_META_KEY,
@@ -45,8 +45,8 @@ pub const DEFAULT_AGENT_TYPE: &str = "ezer-build-plan";
 pub(crate) fn default_agent_type() -> String {
     DEFAULT_AGENT_TYPE.to_owned()
 }
-pub const CLI_CHAT_PROXY_BASE_URL_DEFAULT: &str = "https://cli-chat-proxy.grok.com/v1";
-pub const XAI_API_BASE_URL_DEFAULT: &str = "https://api.x.ai/v1";
+pub const CLI_CHAT_PROXY_BASE_URL_DEFAULT: &str = "";
+pub const XAI_API_BASE_URL_DEFAULT: &str = "";
 const NO_INLINE_CITATIONS_RESPONSE_INCLUDE: &str = "no_inline_citations";
 /// One or more environment variable names that may hold a model API key.
 /// Serde `untagged`: accepts a string or an array in TOML/JSON.
@@ -193,12 +193,12 @@ pub struct EndpointsConfig {
     /// Dev/debug repoint of the internal span firehose (replaces the legacy `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` behavior).
     /// Used by local-ic-testing / internal dev flows. Wins over the legacy `OTEL_*` vars.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub grok_internal_otlp_traces_endpoint: Option<String>,
+    pub ezer_internal_otlp_traces_endpoint: Option<String>,
     /// Env: `EZER_INTERNAL_OTLP_HEADERS`.
     /// `k=v,k2=v2` extra headers for the internal export (debug).
     /// Wins over the legacy `OTEL_EXPORTER_OTLP_HEADERS`.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub grok_internal_otlp_headers: Option<String>,
+    pub ezer_internal_otlp_headers: Option<String>,
     /// External-OTEL master switch, captured at construction via [`external_otel_master_switch_resolved`].
     /// That resolver applies requirement pin > `EZER_EXTERNAL_OTEL` env > `[telemetry].otel_enabled` config, managed layers included. Those are the same layers that activate the external stream.
     /// When set, the standard `OTEL_EXPORTER_OTLP_*` vars are reserved for the external OTEL stream. The internal trace pipeline then ignores them entirely. An admin who opts in by *any* layer never receives the internally-authed firehose. Held as a field (not re-read in the resolvers) so the resolvers stay pure and testable without env races.
@@ -299,11 +299,11 @@ impl EndpointsConfig {
             )
         })
     }
-    /// INTERNAL OTLP traces endpoint. Precedence: `grok_internal_otlp_traces_endpoint` (verbatim) legacy `otel_exporter_otlp_traces_endpoint` (verbatim) > `otel_exporter_otlp_endpoint` + `/v1/traces` (back-compat; deprecated) `proxy_url` + `/traces`.
+    /// INTERNAL OTLP traces endpoint. Precedence: `ezer_internal_otlp_traces_endpoint` (verbatim) legacy `otel_exporter_otlp_traces_endpoint` (verbatim) > `otel_exporter_otlp_endpoint` + `/v1/traces` (back-compat; deprecated) `proxy_url` + `/traces`.
     /// The legacy tier applies ONLY when the external-OTEL master switch is unset, keeping the internally-authed firehose off external collectors.
     /// Uses the proxy default (not the `xai_api_base_url` fallback) so telemetry reports to xAI even when inference is overridden.
     pub(crate) fn resolve_otlp_traces_endpoint(&self) -> String {
-        if let Some(full) = blank_as_unset(&self.grok_internal_otlp_traces_endpoint) {
+        if let Some(full) = blank_as_unset(&self.ezer_internal_otlp_traces_endpoint) {
             return full.trim_end_matches('/').to_string();
         }
         if !self.external_otel_master_switch
@@ -329,10 +329,10 @@ impl EndpointsConfig {
         blank_as_unset(&self.otel_exporter_otlp_endpoint)
             .map(|base| format!("{}/v1/traces", base.trim_end_matches('/')))
     }
-    /// Extra headers for the INTERNAL export: `grok_internal_otlp_headers` first.
+    /// Extra headers for the INTERNAL export: `ezer_internal_otlp_headers` first.
     /// Legacy fallback to `otel_exporter_otlp_headers` ONLY when the external-OTEL master switch is unset (back-compat for existing users).
     pub(crate) fn resolve_otlp_headers(&self) -> Vec<(String, String)> {
-        if let Some(headers) = blank_as_unset(&self.grok_internal_otlp_headers) {
+        if let Some(headers) = blank_as_unset(&self.ezer_internal_otlp_headers) {
             return parse_otlp_header_list(&headers);
         }
         if !self.external_otel_master_switch {
@@ -343,15 +343,15 @@ impl EndpointsConfig {
         Vec::new()
     }
     /// Whether the legacy fallback actually supplied the internal endpoint OR internal headers from the standard `OTEL_EXPORTER_OTLP_*` vars.
-    /// True when the master switch is unset, the standard var for that half is non-blank, and no `grok_internal_otlp_*` override shadowed it.
+    /// True when the master switch is unset, the standard var for that half is non-blank, and no `ezer_internal_otlp_*` override shadowed it.
     /// CONTRACT: this flag is passed to the external OTEL stream's init, which MUST refuse to activate when it is true. The same standard vars cannot feed both pipelines (no-double-send invariant, enforced in code).
     pub(crate) fn internal_otlp_consumed_standard_vars(&self) -> bool {
         if self.external_otel_master_switch {
             return false;
         }
-        let endpoint_consumed = blank_as_unset(&self.grok_internal_otlp_traces_endpoint).is_none()
+        let endpoint_consumed = blank_as_unset(&self.ezer_internal_otlp_traces_endpoint).is_none()
             && self.legacy_internal_otlp_traces_endpoint().is_some();
-        let headers_consumed = blank_as_unset(&self.grok_internal_otlp_headers).is_none()
+        let headers_consumed = blank_as_unset(&self.ezer_internal_otlp_headers).is_none()
             && blank_as_unset(&self.otel_exporter_otlp_headers).is_some();
         endpoint_consumed || headers_consumed
     }
@@ -507,8 +507,8 @@ impl Default for EndpointsConfig {
             otel_exporter_otlp_endpoint: env_string("OTEL_EXPORTER_OTLP_ENDPOINT"),
             otel_exporter_otlp_traces_endpoint: env_string("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT"),
             otel_exporter_otlp_headers: env_string("OTEL_EXPORTER_OTLP_HEADERS"),
-            grok_internal_otlp_traces_endpoint: env_string("EZER_INTERNAL_OTLP_TRACES_ENDPOINT"),
-            grok_internal_otlp_headers: env_string("EZER_INTERNAL_OTLP_HEADERS"),
+            ezer_internal_otlp_traces_endpoint: env_string("EZER_INTERNAL_OTLP_TRACES_ENDPOINT"),
+            ezer_internal_otlp_headers: env_string("EZER_INTERNAL_OTLP_HEADERS"),
             external_otel_master_switch: external_otel_master_switch_resolved(),
             otel_traces_exporter: env_string("OTEL_TRACES_EXPORTER"),
             otel_traces_export_interval: env_string("OTEL_BSP_SCHEDULE_DELAY")
@@ -986,7 +986,7 @@ pub struct ModelsConfig {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub image_description: Option<String>,
     /// Model pin for next-prompt suggestions (tab-autocomplete ghost text).
-    /// When unset: the remote pin, then the client hint / built-in `grok-4.6` default with the catalog guard; see `ModelOverrideConfig::resolve`.
+    /// When unset: the remote pin, then the client hint / built-in `test-model-4.6` default with the catalog guard; see `ModelOverrideConfig::resolve`.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub prompt_suggestion: Option<String>,
     /// Restricts which models are user-selectable for normal chat (picker, `/model`, `-m`).
@@ -1219,9 +1219,9 @@ pub struct Config {
     pub config_models: IndexMap<String, ConfigModelOverride>,
     #[serde(skip)]
     pub config_warnings: Vec<super::config_model_override_parse::ConfigWarning>,
-    pub grok_com_config: GrokComConfig,
-    /// `[grok_com_config] login_device_flow` (or its `[auth]` alias), read from the raw merged toml.
-    /// Not a `GrokComConfig` field (that struct is public and exhaustive); passed into the login flow by callers.
+    pub ezer_com_config: EzerComConfig,
+    /// `[ezer_com_config] login_device_flow` (or its `[auth]` alias), read from the raw merged toml.
+    /// Not a `EzerComConfig` field (that struct is public and exhaustive); passed into the login flow by callers.
     #[serde(skip)]
     pub login_device_flow: Option<bool>,
     /// `[auth_provider.<name>]` tables, populated by [`parse_auth_providers`] from trusted config layers only.
@@ -1295,9 +1295,9 @@ pub struct Config {
     #[serde(default, skip_serializing)]
     pub managed_mcps: crate::config::ManagedMcpsConfig,
     /// `[auth]` alias: consumed by `expand_auth_alias` before serde.
-    /// Typed as `GrokComConfig` (same schema) so sub-field typos are caught.
+    /// Typed as `EzerComConfig` (same schema) so sub-field typos are caught.
     #[serde(default, skip_serializing)]
-    pub auth: Option<GrokComConfig>,
+    pub auth: Option<EzerComConfig>,
     /// `[desktop]` section: owned by ezer-desktop (Electron app), opaque to the CLI agent.
     #[serde(default, skip_serializing)]
     pub desktop: Option<toml::Value>,
@@ -1464,7 +1464,7 @@ pub struct Config {
     /// Resolved to the compiled default (`default_session_summary_model`) when unset; see `ModelOverrideConfig::resolve`.
     #[serde(skip)]
     pub session_summary_model: Option<String>,
-    /// Image describe model (`grok-4.6` default via `ModelOverrideConfig::resolve`).
+    /// Image describe model (`test-model-4.6` default via `ModelOverrideConfig::resolve`).
     #[serde(skip)]
     pub image_description_model: Option<String>,
     /// Next-prompt suggestion model pin (`env > [models] prompt_suggestion > remote`).
@@ -1605,7 +1605,7 @@ impl Default for Config {
             feature_values: BTreeMap::new(),
             config_models: IndexMap::new(),
             config_warnings: Vec::new(),
-            grok_com_config: GrokComConfig::default(),
+            ezer_com_config: EzerComConfig::default(),
             login_device_flow: None,
             auth_providers: IndexMap::new(),
             model_providers: IndexMap::new(),
@@ -1733,7 +1733,7 @@ fn non_boolean_feature_error(path: &str, value: &toml::Value) -> String {
 /// Config paths read by raw-layer resolvers, not [`Config`] serde fields, so `serde_ignored` must not report them as unrecognized keys.
 const NON_SERDE_CONFIG_PATHS: &[&str] = &[
     crate::util::config::SLASH_COMMAND_TAGS_CONFIG_PATH,
-    "grok_com_config.login_device_flow",
+    "ezer_com_config.login_device_flow",
     "cli.grove",
     "cli.grove_worktree",
     "cli.nfs_worktree",
@@ -1834,8 +1834,8 @@ impl Config {
     /// Build an `AuthManager` with the configured proxy URL applied.
     pub fn create_auth_manager(&self) -> AuthManager {
         AuthManager::new_with_proxy_base_url(
-            &crate::util::grok_home::grok_home(),
-            self.grok_com_config.clone(),
+            &crate::util::ezer_home::ezer_home(),
+            self.ezer_com_config.clone(),
             self.endpoints.proxy_url(),
         )
     }
@@ -2059,14 +2059,14 @@ impl Config {
             );
         }
         super::config_model_override_parse::log_config_warnings(&config.config_warnings);
-        if config.grok_com_config.oidc.is_none() {
-            config.grok_com_config.oidc = OidcAuthConfig::from_env();
+        if config.ezer_com_config.oidc.is_none() {
+            config.ezer_com_config.oidc = OidcAuthConfig::from_env();
         }
-        if config.grok_com_config.oidc.is_none() && config.grok_com_config.oauth2.is_none() {
-            config.grok_com_config.oauth2 = ezer_login::OAuth2ProviderConfig::from_env();
+        if config.ezer_com_config.oidc.is_none() && config.ezer_com_config.oauth2.is_none() {
+            config.ezer_com_config.oauth2 = ezer_login::OAuth2ProviderConfig::from_env();
         }
         config.login_device_flow = match raw_config
-            .get("grok_com_config")
+            .get("ezer_com_config")
             .and_then(toml::Value::as_table)
             .and_then(|t| t.get("login_device_flow"))
         {
@@ -2075,7 +2075,7 @@ impl Config {
             Some(other) => {
                 config.config_warnings.push(
                     super::config_model_override_parse::ConfigWarning::config_key(
-                        "grok_com_config.login_device_flow".to_string(),
+                        "ezer_com_config.login_device_flow".to_string(),
                         super::config_model_override_parse::ConfigWarningKind::InvalidValue,
                         format!("expected a boolean, got {}", other.type_str()),
                     ),
@@ -2289,15 +2289,15 @@ impl Config {
         self.resolve_runtime_fields(&ctx);
         crate::util::config::set_remote_campaigns_from_settings(self.remote_settings.as_ref());
     }
-    /// If the TOML contains `[auth]`, copy its contents under `[grok_com_config]`.
-    /// `[grok_com_config]` takes precedence if both are present (explicit wins).
-    /// This lets customers write the shorter `[auth.oidc]` instead of `[grok_com_config.oidc]`.
+    /// If the TOML contains `[auth]`, copy its contents under `[ezer_com_config]`.
+    /// `[ezer_com_config]` takes precedence if both are present (explicit wins).
+    /// This lets customers write the shorter `[auth.oidc]` instead of `[ezer_com_config.oidc]`.
     fn expand_auth_alias(raw_config: &toml::Value) -> toml::Value {
         let mut config = raw_config.clone();
         if let toml::Value::Table(ref mut table) = config
             && let Some(auth) = table.remove("auth")
         {
-            if let Some(gcc) = table.get_mut("grok_com_config") {
+            if let Some(gcc) = table.get_mut("ezer_com_config") {
                 if let (toml::Value::Table(gcc_table), toml::Value::Table(auth_table)) =
                     (gcc, &auth)
                 {
@@ -2306,7 +2306,7 @@ impl Config {
                     }
                 }
             } else {
-                table.insert("grok_com_config".to_owned(), auth);
+                table.insert("ezer_com_config".to_owned(), auth);
             }
         }
         config
@@ -2316,14 +2316,14 @@ impl Config {
         if let Some(mode) = env_telemetry_mode("EZER_TELEMETRY_ENABLED") {
             self.features.telemetry = Some(mode);
         }
-        self.grok_com_config.force_login_team_uuid = ezer_login::resolve_force_login_team(
+        self.ezer_com_config.force_login_team_uuid = ezer_login::resolve_force_login_team(
             force_login_team_from_requirements(),
             ezer_login::force_login_team_from_env(),
-            self.grok_com_config.force_login_team_uuid.take(),
+            self.ezer_com_config.force_login_team_uuid.take(),
         );
     }
     /// Whether product analytics may run. Every product analytics check calls this.
-    pub fn product_analytics_enabled(&self, auth: Option<&ezer_login::GrokAuth>) -> bool {
+    pub fn product_analytics_enabled(&self, auth: Option<&ezer_login::EzerAuth>) -> bool {
         self.is_telemetry_enabled() && !auth.is_some_and(|auth| auth.is_zdr_team())
     }
     pub(crate) fn is_telemetry_enabled(&self) -> bool {
@@ -2893,7 +2893,7 @@ impl Config {
     /// Resolve whether to use ezer's default OAuth2 (xAI auth.x.ai).
     /// Enterprise OIDC (`oidc` in config.toml) always wins; this only gates the default xAI OAuth2 fallback when no enterprise OIDC is configured.
     /// Priority: `--oauth` > EZER_OAUTH_ENABLED env > default (true, meaning OAuth).
-    pub(crate) fn resolve_grok_oauth(&self, cli_oidc: Option<bool>) -> Resolved<bool> {
+    pub(crate) fn resolve_ezer_oauth(&self, cli_oidc: Option<bool>) -> Resolved<bool> {
         BoolFlag::env("EZER_OAUTH_ENABLED")
             .cli(cli_oidc)
             .default(true)
@@ -2958,7 +2958,7 @@ pub(crate) fn resolve_turn_transient_retry(
 }
 /// Canonical resolver for `mcp.push_server_status`.
 /// Stacks the same 7-step `BoolFlag` precedence as [`resolve_mcp_liveness_watchers`]: `requirement > cli > env (EZER_MCP_PUSH_SERVER_STATUS) > config > managed > feature_flag > default (true)`.
-/// `util::config::resolve_mcp_push_server_status` delegates here so the precedence is single-sourced. The default is `true`: the pager's subscription to `x.ai/mcp/server_status` is wired on by default. The flag exists primarily as a kill switch.
+/// `util::config::resolve_mcp_push_server_status` delegates here so the precedence is single-sourced. The default is `true`: the pager's subscription to `ezer/mcp/server_status` is wired on by default. The flag exists primarily as a kill switch.
 pub fn resolve_mcp_push_server_status(
     requirement: Option<bool>,
     cli: Option<bool>,
@@ -3020,7 +3020,7 @@ impl SyncBoolFlag {
         self.disable_env = Some(name);
         self
     }
-    /// Either-direction env resolver (typically `GROK_*`).
+    /// Either-direction env resolver (typically `EZER_*`).
     /// Returns `Some(enabled)` for an explicit signal, `None` to fall through.
     pub(crate) const fn enable_env(mut self, resolver: fn() -> Option<bool>) -> Self {
         self.enable_env = Some(resolver);
@@ -3072,7 +3072,7 @@ impl SyncBoolFlag {
 pub(crate) fn is_telemetry_disabled_sync() -> bool {
     !SyncBoolFlag::new(telemetry_enabled_from_toml)
         .disable_env("DISABLE_TELEMETRY")
-        .enable_env(grok_telemetry_env_enabled)
+        .enable_env(ezer_telemetry_env_enabled)
         .resolve()
 }
 /// Like [`is_telemetry_disabled_sync`] but only `true` when telemetry is *explicitly* off.
@@ -3080,7 +3080,7 @@ pub(crate) fn is_telemetry_disabled_sync() -> bool {
 pub(crate) fn is_telemetry_explicitly_disabled_sync() -> bool {
     !SyncBoolFlag::new(telemetry_enabled_from_toml)
         .disable_env("DISABLE_TELEMETRY")
-        .enable_env(grok_telemetry_env_enabled)
+        .enable_env(ezer_telemetry_env_enabled)
         .default(true)
         .resolve()
 }
@@ -3113,14 +3113,14 @@ fn error_reporting_enabled_from_toml(root: &toml::Value) -> Option<bool> {
         .as_bool()
 }
 /// `EZER_TELEMETRY_ENABLED` resolved through `TelemetryMode::parse` so the extended string forms (e.g. `"session_metrics"`) are accepted.
-fn grok_telemetry_env_enabled() -> Option<bool> {
+fn ezer_telemetry_env_enabled() -> Option<bool> {
     env_telemetry_mode("EZER_TELEMETRY_ENABLED").map(|m| !m.is_disabled())
 }
 /// Load `~/.ezer/requirements.toml` standalone so the admin pin can beat
 /// env vars.
 /// The merged config layer can't express that: last-merge-wins loses provenance.
 pub(crate) fn read_requirements_toml() -> Option<toml::Value> {
-    let path = crate::util::grok_home::grok_home().join("requirements.toml");
+    let path = crate::util::ezer_home::ezer_home().join("requirements.toml");
     let content = std::fs::read_to_string(&path).ok()?;
     toml::from_str(&content).ok()
 }
@@ -4048,7 +4048,7 @@ pub struct ModelInfo {
     /// Provider family that mints this model's conversation items (e.g. "xai"); `None` means unknown.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub model_family: Option<String>,
-    /// The base URL of the model (session endpoint). e.g. "https://cli-chat-proxy.grok.com/v1"
+    /// The base URL of the model (session endpoint). e.g. "https://proxy.example.test/v1"
     pub base_url: String,
     /// Human-readable name of the model.
     /// Honored by both the picker (`/model`) and `/session-info`: when set, that's the label shown to users in either consumer.
@@ -4537,7 +4537,7 @@ pub struct Features {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub compaction_tool_choice: Option<String>,
     /// Per-`Ready`-client transport-liveness pollers and the session-actor `StatusDispatcher`. When `true` (default), each successfully-handshaken MCP client gets a poller.
-    /// The poller detects rmcp service-loop termination and pushes `x.ai/mcp/server_status` updates to the client.
+    /// The poller detects rmcp service-loop termination and pushes `ezer/mcp/server_status` updates to the client.
     /// When `false`, neither watchers nor the dispatcher are spawned, useful as an emergency kill switch for the rollout. `None` defers to env / default (true). Not read through this struct: the live resolver re-reads the `[features]` key out-of-band from raw TOML in `util::config::resolve::mcp`. Declared so `serde_ignored` does not report it as an unrecognized key.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub mcp_liveness_watchers: Option<bool>,
@@ -4550,7 +4550,7 @@ pub struct Features {
     /// The resolver reads raw TOML; declared only so `serde_ignored` allows the key.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub turn_transient_retry: Option<bool>,
-    /// Pager-side subscription to the `x.ai/mcp/server_status` push. Not read through this struct. The pager-side gate (`acp_handler::push_server_status_enabled`) uses an **env-only** OnceLock cache.
+    /// Pager-side subscription to the `ezer/mcp/server_status` push. Not read through this struct. The pager-side gate (`acp_handler::push_server_status_enabled`) uses an **env-only** OnceLock cache.
     /// The `[features]` key itself is honoured out-of-band, re-read from raw TOML in `util::config::resolve::mcp`. This field is declared so `serde_ignored` does not report the key as unrecognized.
     /// Practical consequence: setting `[features] mcp_push_server_status = false` in `~/.ezer/config.toml` will NOT disable the pager's subscription on a freshly-launched process. To disable the pager subscription, set `EZER_MCP_PUSH_SERVER_STATUS=0` in the env before launch.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -4754,7 +4754,7 @@ pub(crate) fn try_resolve_model_credentials(
     let mut credentials = resolve_credentials(entry, session_key);
     enforce_disable_api_key_auth(
         &mut credentials,
-        cfg.grok_com_config.api_key_auth_disabled(),
+        cfg.ezer_com_config.api_key_auth_disabled(),
         session_key,
     );
     Some(credentials)
@@ -4930,11 +4930,11 @@ pub(crate) fn resolve_aux_model_sampling_config(
     None
 }
 
-/// Compiled xAI catalog slugs (`grok-*`) 402 on free BYOK gateways.
+/// Compiled xAI catalog slugs (`ezer-*`) 402 on free BYOK gateways.
 /// Session title / image-describe / similar aux calls should use the active model instead.
 pub(crate) fn is_compiled_xai_catalog_slug(model: &str) -> bool {
     let slug = model.rsplit('.').next().unwrap_or(model);
-    slug.starts_with("grok-")
+    slug.starts_with("ezer-")
 }
 
 /// Prefer the active session sampler when an aux resolve would send a compiled
@@ -5327,7 +5327,7 @@ impl ModelSwitchIncompatibleAgentError {
     }
 }
 /// The `force_login_team_uuid` pin from the merged `requirements.toml` / MDM layers; the non-overridable tier in `resolve_force_login_team`.
-/// Read at call time so the clamp holds on config-load paths that build `GrokComConfig` without a separate `apply_requirements` pass.
+/// Read at call time so the clamp holds on config-load paths that build `EzerComConfig` without a separate `apply_requirements` pass.
 /// Shell loads the requirements here and hands auth the parsed value.
 fn force_login_team_from_requirements() -> Option<ezer_login::ForceLoginTeam> {
     ezer_login::force_login_team_from_requirements_value(

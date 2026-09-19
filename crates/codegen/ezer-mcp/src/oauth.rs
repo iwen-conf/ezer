@@ -229,7 +229,7 @@ fn auth_lock_path(server_name: &str) -> std::path::PathBuf {
             }
         })
         .collect();
-    ezer_config::grok_home().join(format!("mcp_auth_{safe}.lock"))
+    ezer_config::ezer_home().join(format!("mcp_auth_{safe}.lock"))
 }
 
 /// `readiness` carries a caller's fresh [`ensure_oauth_ready`] result so the flow does not re-probe.
@@ -681,7 +681,7 @@ mod tests {
             .unwrap();
         mgr.set_metadata(require_iss_metadata(token_endpoint));
         mgr.configure_client(
-            OAuthClientConfig::new("grok-test-client", "http://127.0.0.1:0/callback")
+            OAuthClientConfig::new("ezer-test-client", "http://127.0.0.1:0/callback")
                 .with_application_type("native"),
         )
         .unwrap();

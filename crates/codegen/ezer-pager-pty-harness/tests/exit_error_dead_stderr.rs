@@ -13,12 +13,12 @@ use std::process::{Command, Stdio};
 use ezer_pager_pty_harness::pager_binary;
 
 /// `ezer <args>` in an isolated, credential-less home.
-fn grok_command(home: &std::path::Path, args: &[&str]) -> Command {
+fn ezer_command(home: &std::path::Path, args: &[&str]) -> Command {
     let mut cmd = Command::new(pager_binary().expect("resolve pager binary"));
     cmd.args(args)
         .env_clear()
         .env("HOME", home)
-        .env("GROK_HOME", home)
+        .env("EZER_HOME", home)
         .env("PATH", std::env::var("PATH").unwrap_or_default())
         .env("EZER_MANAGED_CONFIG", "0")
         .stdin(Stdio::null())
@@ -39,7 +39,7 @@ fn dead_stderr() -> std::io::PipeWriter {
 fn assert_exit_error_survives_dead_stderr(args: &[&str], expected_lines: &[&str]) {
     let home = tempfile::tempdir().unwrap();
 
-    let control = grok_command(home.path(), args)
+    let control = ezer_command(home.path(), args)
         .stderr(Stdio::piped())
         .output()
         .expect("spawn control run");
@@ -57,7 +57,7 @@ fn assert_exit_error_survives_dead_stderr(args: &[&str], expected_lines: &[&str]
         );
     }
 
-    let status = grok_command(home.path(), args)
+    let status = ezer_command(home.path(), args)
         .stderr(dead_stderr())
         .status()
         .expect("spawn run with dead stderr");

@@ -8,11 +8,11 @@ use super::layer::{PolicyLayerOwnership, PolicySourceAuthority};
 use super::url_match::{AllowUrlMatcher, DenyUrlMatcher, argv_matches, mcp_server_name};
 
 /// What defined the server or marketplace a policy is applied to.
-/// `GrokNative` (user/system config, plugins, admin pins) is exempt from advisory sources; everything else is `Foreign` and subject to every source.
+/// `EzerNative` (user/system config, plugins, admin pins) is exempt from advisory sources; everything else is `Foreign` and subject to every source.
 /// Ambiguity classifies as `Foreign` (fail closed).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PolicySubjectOrigin {
-    GrokNative,
+    EzerNative,
     Foreign,
 }
 
@@ -286,11 +286,11 @@ impl McpServerAllowlist {
     }
 }
 
-/// Namespace prefix for legacy injected MCP server names (`grok_com_*`).
+/// Namespace prefix for legacy injected MCP server names (`ezer_com_*`).
 /// Policy matching still uses this spelling.
-pub(super) const MANAGED_MCP_PREFIX: &str = "grok_com_";
+pub(super) const MANAGED_MCP_PREFIX: &str = "ezer_com_";
 
-/// Max `char` length of a managed runtime name (`grok_com_` + normalized display
+/// Max `char` length of a managed runtime name (`ezer_com_` + normalized display
 /// name), sized to the 64-char tool-name budget. Shared with `mcp_name_matches`
 /// so a long policy `serverName` still matches its truncated runtime name.
 pub(super) const MANAGED_MCP_NAME_MAX_CHARS: usize = 39;
@@ -303,13 +303,13 @@ pub(super) fn normalize_managed_name(bare: &str) -> String {
 }
 
 /// Match a policy `serverName` against a runtime server name: both sides
-/// reduce to one key (strip `grok_com_`, [`normalize_managed_name`]) and
+/// reduce to one key (strip `ezer_com_`, [`normalize_managed_name`]) and
 /// compare by exact equality — never substring; an empty key never matches.
 pub(super) fn mcp_name_matches(pattern: &str, name: &str) -> bool {
     fn key(s: &str) -> String {
         normalize_managed_name(s.strip_prefix(MANAGED_MCP_PREFIX).unwrap_or(s))
     }
-    // Mirror the legacy injected-name truncation: `grok_com_*` runtime
+    // Mirror the legacy injected-name truncation: `ezer_com_*` runtime
     // names were capped at MANAGED_MCP_NAME_MAX_CHARS total (prefix-inclusive
     // on the bare part).
     fn truncate(key: String) -> String {

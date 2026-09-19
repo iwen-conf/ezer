@@ -374,13 +374,13 @@ mod tests {
 
     #[test]
     fn inactive_nonempty_query_is_dim_without_a_caret() {
-        assert_inactive_query_is_dim(&Theme::groknight());
+        assert_inactive_query_is_dim(&Theme::ezernight());
         assert_inactive_query_is_dim(&Theme::terminal());
     }
 
     #[test]
     fn focused_search_label_uses_the_title_color() {
-        let theme = Theme::groknight();
+        let theme = Theme::ezernight();
         let area = Rect::new(0, 0, 40, 1);
         let mut buf = Buffer::empty(area);
         let mut state = crate::views::picker::PickerState::default();

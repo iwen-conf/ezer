@@ -216,7 +216,7 @@ impl crate::types::tool_metadata::ToolMetadata for AskUserQuestionTool {
     }
 
     fn tool_namespace(&self) -> ToolNamespace {
-        ToolNamespace::GrokBuild
+        ToolNamespace::EzerBuild
     }
 
     fn emitted_notifications(&self) -> &'static [&'static str] {

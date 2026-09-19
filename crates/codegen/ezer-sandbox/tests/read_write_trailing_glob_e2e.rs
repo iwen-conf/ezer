@@ -63,16 +63,16 @@ fn trailing_glob_read_write_grants_parent_directory() {
     let _cleanup = CleanupGuard(root.clone());
     let workspace = root.join("ws");
     let home = root.join("home");
-    let grok_home = root.join("ezer-home");
+    let ezer_home = root.join("ezer-home");
     // Under the fixture HOME, which no base grant covers: only the explicit read_write entry can make this tree writable
     let cache = home.join("cargo-cache");
-    for dir in [&workspace, &grok_home, &cache.join("registry-a1b2")] {
+    for dir in [&workspace, &ezer_home, &cache.join("registry-a1b2")] {
         fs::create_dir_all(dir).expect("create fixture dir");
     }
 
     let cache_abs = dunce::canonicalize(&cache).expect("canonicalize cache");
     fs::write(
-        grok_home.join(ezer_config::SANDBOX_CONFIG_FILENAME),
+        ezer_home.join(ezer_config::SANDBOX_CONFIG_FILENAME),
         format!(
             "[profiles.cargo]\nextends = \"workspace\"\nread_write = [{:?}]\n",
             format!("{}/**", cache_abs.display())
@@ -84,7 +84,7 @@ fn trailing_glob_read_write_grants_parent_directory() {
     let output = Command::new(&exe)
         .env(ROOT_ENV, root.as_os_str())
         .env("HOME", home.as_os_str())
-        .env("GROK_HOME", grok_home.as_os_str())
+        .env("EZER_HOME", ezer_home.as_os_str())
         .arg("--ignored")
         .arg("--exact")
         .arg("--nocapture")

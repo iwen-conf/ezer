@@ -1,10 +1,10 @@
-//! One binary, one home: `grok_home()` memoizes the first read for the process, so tests that need a temp home have to share one.
+//! One binary, one home: `ezer_home()` memoizes the first read for the process, so tests that need a temp home have to share one.
 //! `#[serial]` keeps their env writes apart.
 
 use std::sync::{Arc, OnceLock};
 
 use agent_client_protocol as acp;
-use ezer_login::{AuthManager, GrokComConfig};
+use ezer_login::{AuthManager, EzerComConfig};
 use ezer_shell::session::info::Info;
 use ezer_shell::session::persistence::delete_session_history;
 use ezer_shell::session::storage::search::{
@@ -18,7 +18,7 @@ fn home() -> &'static std::path::Path {
     static HOME: OnceLock<(tempfile::TempDir, EnvGuard)> = OnceLock::new();
     HOME.get_or_init(|| {
         let dir = tempfile::TempDir::new().unwrap();
-        let guard = EnvGuard::set("GROK_HOME", dir.path());
+        let guard = EnvGuard::set("EZER_HOME", dir.path());
         (dir, guard)
     })
     .0
@@ -90,10 +90,10 @@ async fn deleting_a_session_clears_only_its_own_search_row() {
     );
     assert!(finds(&index, root, "scoped").await, "precondition: indexed");
 
-    let auth = Arc::new(AuthManager::new(root, GrokComConfig::default()));
+    let auth = Arc::new(AuthManager::new(root, EzerComConfig::default()));
 
     let session_dir =
-        ezer_shell::util::grok_home::sessions_cwd_dir_in(root, "/ws-a").join("orphan");
+        ezer_shell::util::ezer_home::sessions_cwd_dir_in(root, "/ws-a").join("orphan");
     std::fs::remove_dir_all(&session_dir).unwrap();
     let deletion = delete_session_history("orphan", None, false, auth.clone(), Some(&index))
         .await
@@ -142,7 +142,7 @@ async fn deleting_a_session_evicts_its_row_without_a_handle() {
         "precondition: indexed"
     );
 
-    let auth = Arc::new(AuthManager::new(root, GrokComConfig::default()));
+    let auth = Arc::new(AuthManager::new(root, EzerComConfig::default()));
     let deletion = delete_session_history("indexless", Some("/ws-d"), false, auth, None)
         .await
         .unwrap();

@@ -24,7 +24,7 @@ fn live(calls: &[(&str, u32, u32, Option<i64>)]) -> UsageSummary {
 #[test]
 fn first_turn_writes_session_and_one_turn() {
     let mut file = SessionUsageFile::new("sess-1");
-    let first = live(&[("grok-4", 100, 20, Some(50))]);
+    let first = live(&[("test-model-4", 100, 20, Some(50))]);
     file.apply_turn(1, "2026-08-26T00:00:00Z", &first, None);
 
     let [t0] = file.turns.as_slice() else {
@@ -38,21 +38,21 @@ fn first_turn_writes_session_and_one_turn() {
     assert_eq!(file.session.output_tokens, 20);
     assert_eq!(file.session.turn_count, 1);
     assert_eq!(file.session.cost_usd_ticks, Some(50));
-    assert_eq!(file.session.primary_model_id.as_deref(), Some("grok-4"));
+    assert_eq!(file.session.primary_model_id.as_deref(), Some("test-model-4"));
     assert_eq!(file.updated_at, "2026-08-26T00:00:00Z");
 }
 
 #[test]
 fn session_primary_model_is_the_most_used_not_the_last_turn() {
     let mut file = SessionUsageFile::new("sess-1");
-    let first = live(&[("grok-4", 100, 20, Some(50)), ("grok-4", 80, 10, Some(40))]);
+    let first = live(&[("test-model-4", 100, 20, Some(50)), ("test-model-4", 80, 10, Some(40))]);
     file.apply_turn(1, "t1", &first, None);
     file.apply_turn(
         2,
         "t2",
         &live(&[
-            ("grok-4", 100, 20, Some(50)),
-            ("grok-4", 80, 10, Some(40)),
+            ("test-model-4", 100, 20, Some(50)),
+            ("test-model-4", 80, 10, Some(40)),
             ("ezer-fast", 10, 2, Some(1)),
         ]),
         Some(&first),
@@ -64,18 +64,18 @@ fn session_primary_model_is_the_most_used_not_the_last_turn() {
             .and_then(|t| t.usage.primary_model_id.as_deref()),
         Some("ezer-fast")
     );
-    assert_eq!(file.session.primary_model_id.as_deref(), Some("grok-4"));
+    assert_eq!(file.session.primary_model_id.as_deref(), Some("test-model-4"));
 }
 
 #[test]
 fn second_turn_appends_and_session_becomes_latest_ledger() {
     let mut file = SessionUsageFile::new("sess-1");
-    let first = live(&[("grok-4", 100, 20, Some(50))]);
+    let first = live(&[("test-model-4", 100, 20, Some(50))]);
     file.apply_turn(1, "t1", &first, None);
     file.apply_turn(
         2,
         "t2",
-        &live(&[("grok-4", 100, 20, Some(50)), ("grok-4", 40, 10, Some(20))]),
+        &live(&[("test-model-4", 100, 20, Some(50)), ("test-model-4", 40, 10, Some(20))]),
         Some(&first),
     );
 
@@ -95,10 +95,10 @@ fn second_turn_appends_and_session_becomes_latest_ledger() {
 #[test]
 fn inherited_turn_number_without_fold_appends() {
     let mut file = SessionUsageFile::new("sess-1");
-    let first = live(&[("grok-4", 100, 20, Some(50))]);
+    let first = live(&[("test-model-4", 100, 20, Some(50))]);
     file.apply_turn(1, "t1", &first, None);
     file.restore_apply_cursor(None, None);
-    let resumed = live(&[("grok-4", 10, 2, Some(5))]);
+    let resumed = live(&[("test-model-4", 10, 2, Some(5))]);
     file.apply_turn(1, "t-resume", &resumed, None);
 
     let [t0, t1] = file.turns.as_slice() else {
@@ -115,7 +115,7 @@ fn inherited_turn_number_without_fold_appends() {
 #[test]
 fn duplicate_turn_number_zero_delta_does_not_mutate_turns() {
     let mut file = SessionUsageFile::new("sess-1");
-    let first = live(&[("grok-4", 100, 20, Some(50))]);
+    let first = live(&[("test-model-4", 100, 20, Some(50))]);
     file.apply_turn(1, "t1", &first, None);
     file.apply_turn(1, "t1-again", &first, Some(&first));
 
@@ -130,9 +130,9 @@ fn duplicate_turn_number_zero_delta_does_not_mutate_turns() {
 #[test]
 fn duplicate_turn_number_folds_extra_live_usage() {
     let mut file = SessionUsageFile::new("sess-1");
-    let first = live(&[("grok-4", 100, 20, Some(50))]);
+    let first = live(&[("test-model-4", 100, 20, Some(50))]);
     file.apply_turn(1, "t1", &first, None);
-    let continued = live(&[("grok-4", 100, 20, Some(50)), ("grok-4", 40, 10, Some(20))]);
+    let continued = live(&[("test-model-4", 100, 20, Some(50)), ("test-model-4", 40, 10, Some(20))]);
     file.apply_turn(1, "t1-late", &continued, Some(&first));
 
     let [t0] = file.turns.as_slice() else {
@@ -151,16 +151,16 @@ fn duplicate_turn_number_folds_extra_live_usage() {
 #[test]
 fn resume_folds_new_process_ledger_onto_persisted_session() {
     let mut file = SessionUsageFile::new("sess-1");
-    let first = live(&[("grok-4", 100, 20, Some(50))]);
+    let first = live(&[("test-model-4", 100, 20, Some(50))]);
     file.apply_turn(1, "t1", &first, None);
     file.apply_turn(
         2,
         "t2",
-        &live(&[("grok-4", 100, 20, Some(50)), ("grok-4", 40, 10, Some(20))]),
+        &live(&[("test-model-4", 100, 20, Some(50)), ("test-model-4", 40, 10, Some(20))]),
         Some(&first),
     );
 
-    let post_resume_1 = live(&[("grok-4", 25, 5, Some(8))]);
+    let post_resume_1 = live(&[("test-model-4", 25, 5, Some(8))]);
     file.apply_turn(3, "t3", &post_resume_1, None);
 
     let [_, _, t2] = file.turns.as_slice() else {
@@ -178,21 +178,21 @@ fn resume_folds_new_process_ledger_onto_persisted_session() {
 #[test]
 fn resume_later_turns_use_process_local_delta() {
     let mut file = SessionUsageFile::new("sess-1");
-    let first = live(&[("grok-4", 100, 20, Some(50))]);
+    let first = live(&[("test-model-4", 100, 20, Some(50))]);
     file.apply_turn(1, "t1", &first, None);
     file.apply_turn(
         2,
         "t2",
-        &live(&[("grok-4", 100, 20, Some(50)), ("grok-4", 40, 10, Some(20))]),
+        &live(&[("test-model-4", 100, 20, Some(50)), ("test-model-4", 40, 10, Some(20))]),
         Some(&first),
     );
 
-    let post_resume_1 = live(&[("grok-4", 25, 5, Some(8))]);
+    let post_resume_1 = live(&[("test-model-4", 25, 5, Some(8))]);
     file.apply_turn(3, "t3", &post_resume_1, None);
     file.apply_turn(
         4,
         "t4",
-        &live(&[("grok-4", 25, 5, Some(8)), ("grok-4", 30, 6, Some(9))]),
+        &live(&[("test-model-4", 25, 5, Some(8)), ("test-model-4", 30, 6, Some(9))]),
         Some(&post_resume_1),
     );
 
@@ -210,12 +210,12 @@ fn resume_later_turns_use_process_local_delta() {
 #[test]
 fn retain_turns_through_drops_later_turns_and_rebuilds_session() {
     let mut file = SessionUsageFile::new("sess-1");
-    let first = live(&[("grok-4", 100, 20, Some(50))]);
+    let first = live(&[("test-model-4", 100, 20, Some(50))]);
     file.apply_turn(1, "t1", &first, None);
     file.apply_turn(
         2,
         "t2",
-        &live(&[("grok-4", 100, 20, Some(50)), ("grok-4", 40, 10, Some(20))]),
+        &live(&[("test-model-4", 100, 20, Some(50)), ("test-model-4", 40, 10, Some(20))]),
         Some(&first),
     );
     file.retain_turns_through(1);
@@ -232,12 +232,12 @@ fn retain_turns_through_drops_later_turns_and_rebuilds_session() {
 #[test]
 fn turn_lookup_returns_matching_row() {
     let mut file = SessionUsageFile::new("sess-1");
-    let first = live(&[("grok-4", 100, 20, Some(50))]);
+    let first = live(&[("test-model-4", 100, 20, Some(50))]);
     file.apply_turn(1, "t1", &first, None);
     file.apply_turn(
         2,
         "t2",
-        &live(&[("grok-4", 100, 20, Some(50)), ("grok-4", 40, 10, Some(20))]),
+        &live(&[("test-model-4", 100, 20, Some(50)), ("test-model-4", 40, 10, Some(20))]),
         Some(&first),
     );
 

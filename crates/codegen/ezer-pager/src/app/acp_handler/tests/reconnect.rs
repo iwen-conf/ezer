@@ -473,7 +473,7 @@
         let _ = handle(
             make_ext_session_notification_with_method(
                 "sess-subagent-reload",
-                "x.ai/session/update",
+                "ezer/session/update",
                 test_subagent_spawned("sess-subagent-reload", "child-replay"),
             ),
             &mut app,
@@ -509,7 +509,7 @@
         let _ = handle(
             make_ext_session_notification_with_method(
                 "sess-subagent-late-replay",
-                "x.ai/session/update",
+                "ezer/session/update",
                 test_subagent_spawned("sess-subagent-late-replay", "child-late-replay"),
             ),
             &mut app,
@@ -906,7 +906,7 @@
                 meta,
             };
             acp::ExtNotification::new(
-                "x.ai/session/update",
+                "ezer/session/update",
                 std::sync::Arc::from(serde_json::value::to_raw_value(&payload).unwrap()),
             )
         }
@@ -978,7 +978,7 @@
             meta: Some(serde_json::json!({ "isReplay": true, "eventId": "sess-sub-3" })),
         };
         let notif = acp::ExtNotification::new(
-            "x.ai/session_notification",
+            "ezer/session_notification",
             serde_json::value::to_raw_value(&payload).unwrap().into(),
         );
         assert!(handle_ext_notification(&notif, &mut app));
@@ -1085,12 +1085,12 @@
         let id = AgentId(0);
         {
             let agent = app.agents.get_mut(&id).unwrap();
-            seed_models(agent, "grok-3", &["grok-3", "grok-4"]);
+            seed_models(agent, "test-model-3", &["test-model-3", "test-model-4"]);
         }
 
         // An unknown model is ignored; both markers stay untouched
         assert!(!handle_ext_notification(
-            &model_changed_ext_with_event("sess-1", "grok-99-unknown", "sess-1-7"),
+            &model_changed_ext_with_event("sess-1", "ezer-99-unknown", "sess-1-7"),
             &mut app
         ));
         assert_eq!(
@@ -1104,7 +1104,7 @@
 
         // A known model applies; both markers advance
         assert!(handle_ext_notification(
-            &model_changed_ext_with_event("sess-1", "grok-4", "sess-1-8"),
+            &model_changed_ext_with_event("sess-1", "test-model-4", "sess-1-8"),
             &mut app
         ));
         assert_eq!(

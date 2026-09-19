@@ -1,4 +1,4 @@
-//! GrokNight theme: neutral gray base with TokyoNight accent colors.
+//! EzerNight theme: neutral gray base with TokyoNight accent colors.
 //!
 //! The canonical palette is defined in RGB (`Color::Rgb`).
 //! At startup [`Theme::quantized`] downgrades every color to the terminal's detected capability level (256-color, 16-color, etc.).
@@ -52,7 +52,7 @@ mod palette {
 use palette::*;
 
 impl Theme {
-    pub const fn groknight() -> Self {
+    pub const fn ezernight() -> Self {
         Self {
             bg_base: BG_STORM,
             bg_light: BG_HIGHLIGHT,

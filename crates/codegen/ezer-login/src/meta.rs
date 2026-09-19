@@ -34,7 +34,7 @@ pub struct AuthMeta {
     /// `Some` means the user is blocked; `None` means the user has access.
     #[serde(default)]
     pub gate: Option<GateInfo>,
-    /// Display name for the current subscription tier (e.g. "SuperGrok Heavy", "X Premium", "Free"), from CCP `/settings`.
+    /// Display name for the current subscription tier (e.g. "highest tier", "X Premium", "Free"), from CCP `/settings`.
     #[serde(default)]
     pub subscription_tier: Option<String>,
     /// Whether `/feedback` may offer a one-shot trace upload; it lives on auth meta so it refreshes with auth changes.

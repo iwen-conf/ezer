@@ -671,7 +671,7 @@ fn cycle_reaches_every_filter_with_foreign_present() {
         SourceFilter::All,
         SourceFilter::Local,
         SourceFilter::Remote,
-        SourceFilter::Grok,
+        SourceFilter::Ezer,
     ] {
         let _ = dispatch(Action::CycleSessionSourceFilter, &mut app);
         assert_eq!(app.session_picker_source_filter, expected);

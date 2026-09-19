@@ -349,7 +349,7 @@ fn stale_auth_copy_timeout_does_not_clear_newer_feedback() {
     app.auth_state = AuthState::Authenticating {
         request_seq: 1,
         handle: None,
-        auth_url: Some("https://grok.com/auth".to_owned()),
+        auth_url: Some("https://example.test/auth".to_owned()),
         mode: AuthMode::Command,
     };
 
@@ -598,7 +598,7 @@ fn wrap_host_image_request_eligible_covers_full_miss_and_attachment_error_only()
     use crate::app::actions::{ClipboardPasteCompletion, ClipboardPasteFailure};
 
     // A clean empty miss and a remote read *error* both fall through to the wrap host-image request
-    // That request is how `grok wrap` pastes images over headless SSH
+    // That request is how `ezer wrap` pastes images over headless SSH
     assert!(wrap_host_image_request_eligible(
         ClipboardPasteCompletion::FullMiss
     ));
@@ -985,7 +985,7 @@ fn confirmation_required_builds_plugins_confirmation_with_confirmed_true() {
     }
 }
 
-/// Regression: a failed `x.ai/subagent/cancel` RPC must NOT finalize the row; the subagent may still be running.
+/// Regression: a failed `ezer/subagent/cancel` RPC must NOT finalize the row; the subagent may still be running.
 /// Only a shell response of "nothing live" finalizes it.
 #[test]
 fn kill_rpc_failure_does_not_finalize_but_nothing_live_does() {
@@ -1183,7 +1183,7 @@ fn switch_model_complete_resizes_the_context_bar_to_the_new_window() {
 fn switch_model_complete_success_updates_model_and_pushes_message() {
     let mut app = test_app_with_agent();
     let id = AgentId(0);
-    let model_id = acp::ModelId::new(std::sync::Arc::from("grok-4.5"));
+    let model_id = acp::ModelId::new(std::sync::Arc::from("test-model-4.5"));
 
     // Set up available models so the display name can be resolved.
     app.agents
@@ -1237,7 +1237,7 @@ fn switch_model_complete_success_updates_model_and_pushes_message() {
 fn switch_model_complete_skips_message_and_persist_when_unchanged() {
     let mut app = test_app_with_agent();
     let id = AgentId(0);
-    let model_id = acp::ModelId::new(std::sync::Arc::from("grok-4.5"));
+    let model_id = acp::ModelId::new(std::sync::Arc::from("test-model-4.5"));
 
     let agent = app.agents.get_mut(&id).unwrap();
     agent.session.models.available.insert(
@@ -1346,7 +1346,7 @@ fn switch_to_non_reasoning_model_clears_persisted_effort() {
     use ezer_shell::sampling::types::ReasoningEffort;
     let mut app = test_app_with_agent();
     let id = AgentId(0);
-    let model_id = acp::ModelId::new(std::sync::Arc::from("grok-4.5"));
+    let model_id = acp::ModelId::new(std::sync::Arc::from("test-model-4.5"));
 
     // Simulate prior reasoning effort from a previous model.
     app.agents
@@ -1597,7 +1597,7 @@ fn same_agent_type_switch_no_modal() {
     let model_a = acp::ModelId::new(std::sync::Arc::from("ezer-build-a"));
     let model_b = acp::ModelId::new(std::sync::Arc::from("ezer-build-b"));
 
-    // Add both models to the catalog (no agentType, so both use grok-build)
+    // Add both models to the catalog (no agentType, so both use ezer-build)
     let agent = app.agents.get_mut(&id).unwrap();
     agent.session.models.available.insert(
         model_a.clone(),
@@ -1637,7 +1637,7 @@ fn switch_model_pending_lifecycle() {
     // Full lifecycle: pending starts false, SwitchModel sets it true, SwitchModelComplete clears it
     let mut app = test_app_with_agent();
     let id = AgentId(0);
-    let model_id = acp::ModelId::new(std::sync::Arc::from("grok-4.5"));
+    let model_id = acp::ModelId::new(std::sync::Arc::from("test-model-4.5"));
 
     // Initially false.
     assert!(!expect_agent(&app, id).session.model_switch_pending);
@@ -2547,8 +2547,8 @@ fn gate_refreshed_emits_check_subscription_on_gate_lift() {
     let mut app = test_app();
     // User starts gated (no subscription).
     app.gate = Some(ezer_login::GateInfo {
-        message: "SuperGrok subscription required".into(),
-        url: Some("https://grok.com/supergrok".into()),
+        message: "MaxTier subscription required".into(),
+        url: Some("https://example.test/upgrade".into()),
         label: Some("Subscribe".into()),
     });
     assert!(!app.has_access());

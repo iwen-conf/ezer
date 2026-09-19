@@ -17,11 +17,11 @@ fn auth_copy_dispatch_preserves_all_delivery_states() {
         app.auth_state = AuthState::Authenticating {
             request_seq: 1,
             handle: None,
-            auth_url: Some("https://grok.com/auth".to_owned()),
+            auth_url: Some("https://example.test/auth".to_owned()),
             mode: AuthMode::Command,
         };
         let effects = crate::app::dispatch::router::dispatch_copy_auth_url(&mut app, |url| {
-            assert_eq!(url, "https://grok.com/auth");
+            assert_eq!(url, "https://example.test/auth");
             delivery
         });
         assert_eq!(app.auth_clipboard_delivery, Some(delivery));
@@ -613,7 +613,7 @@ fn shown_banner_id(app: &AppView) -> Option<String> {
 /// `AnnouncementsOpenCta(surface)` re-resolves through the slot gate and opens the promo url from every surface.
 /// The opens are observed through the file named by `EZER_TEST_OPEN_URL_FILE`.
 /// A critical owning the slot, or no usable cta, makes it a silent no-op, so a stale prior-frame click cannot open the promo url.
-#[serial_test::serial(GROK_TEST_OPEN_URL_FILE)]
+#[serial_test::serial(EZER_TEST_OPEN_URL_FILE)]
 #[test]
 fn announcements_open_cta_opens_promo_and_noops_under_critical() {
     use ezer_telemetry::events::AnnouncementCtaSurface;
@@ -967,7 +967,7 @@ fn announcements_show_clears_hidden_promo_ids() {
 fn switch_model_dispatch_produces_effect_and_sets_pending() {
     let mut app = test_app_with_agent();
     let id = AgentId(0);
-    let model_id = acp::ModelId::new(std::sync::Arc::from("grok-4.5"));
+    let model_id = acp::ModelId::new(std::sync::Arc::from("test-model-4.5"));
     assert!(!agent_ref(&app, id).session.model_switch_pending);
     let effects = dispatch(
         Action::SwitchModel {
@@ -2418,7 +2418,7 @@ fn build_rows_fallback_anchor_is_frozen_when_last_active_at_is_none() {
 /// While the turn is IDLE the scrollback scan gives the peek header label the TYPE of the most recent agent block (Response / Edit / Thought / …).
 /// The most recent block wins; a fresh user prompt is a turn boundary with no agent response after it yet, so the label is "Idle".
 /// (The RUNNING case follows live turn activity; see the `extract_response_type_*` tests.)
-#[serial_test::serial(GROK_AGENT_DASHBOARD)]
+#[serial_test::serial(EZER_AGENT_DASHBOARD)]
 #[test]
 fn peek_label_reflects_last_response_type() {
     use crate::scrollback::block::RenderBlock;
@@ -2490,7 +2490,7 @@ fn mouse_event(
     }
 }
 /// A single left-click on a row selects it and attaches the conversation immediately.
-#[serial_test::serial(GROK_AGENT_DASHBOARD)]
+#[serial_test::serial(EZER_AGENT_DASHBOARD)]
 #[test]
 fn mouse_left_click_attaches_immediately() {
     use crossterm::event::{Event, MouseButton, MouseEventKind};
@@ -2518,7 +2518,7 @@ fn mouse_left_click_attaches_immediately() {
 /// Every left-click attaches, including rapid repeated clicks.
 /// The previous design used a 500ms window to distinguish single (select) from double (attach) click.
 /// Now every click attaches, so the user's mental model "click = open" always holds.
-#[serial_test::serial(GROK_AGENT_DASHBOARD)]
+#[serial_test::serial(EZER_AGENT_DASHBOARD)]
 #[test]
 fn mouse_repeated_click_keeps_attaching() {
     use crossterm::event::{Event, MouseButton, MouseEventKind};
@@ -2552,7 +2552,7 @@ fn mouse_repeated_click_keeps_attaching() {
 }
 /// Clicks after the previous 500ms double-click window also attach.
 /// (The previous test asserted single-click behaviour for clicks more than 500ms apart; now every click attaches.)
-#[serial_test::serial(GROK_AGENT_DASHBOARD)]
+#[serial_test::serial(EZER_AGENT_DASHBOARD)]
 #[test]
 fn mouse_click_after_long_pause_still_attaches() {
     use crossterm::event::{Event, MouseButton, MouseEventKind};
@@ -2583,7 +2583,7 @@ fn mouse_click_after_long_pause_still_attaches() {
     }
 }
 /// Click on the peek close-button rect closes the peek.
-#[serial_test::serial(GROK_AGENT_DASHBOARD)]
+#[serial_test::serial(EZER_AGENT_DASHBOARD)]
 #[test]
 fn mouse_click_on_peek_close_rect_clears_peek() {
     use crossterm::event::{Event, MouseButton, MouseEventKind};
@@ -2891,7 +2891,7 @@ fn toggle_scroll_log_flips_recorder_and_reports_path() {
         "disable must be confirmed, got {texts:?}"
     );
 }
-#[serial_test::serial(GROK_TEST_OPEN_URL_FILE)]
+#[serial_test::serial(EZER_TEST_OPEN_URL_FILE)]
 #[test]
 fn open_managed_connectors_starts_wait_when_modal_open() {
     use crate::views::extensions_modal::{ExtensionsModalState, ExtensionsTab};

@@ -192,9 +192,9 @@ pub fn classify_sqlite_error(error: &anyhow::Error) -> SqliteFailureKind {
 }
 
 impl WorktreeDb {
-    /// Open (or create) the DB at `grok_home/worktrees.db`.
-    pub fn open(grok_home: &Path) -> Result<Self> {
-        Self::open_at(&grok_home.join(WORKTREES_DB_FILE))
+    /// Open (or create) the DB at `ezer_home/worktrees.db`.
+    pub fn open(ezer_home: &Path) -> Result<Self> {
+        Self::open_at(&ezer_home.join(WORKTREES_DB_FILE))
     }
 
     /// Open with an explicit path.
@@ -225,31 +225,31 @@ impl WorktreeDb {
             .with_context(|| format!("failed to set journal mode {}", mode.as_ref()))
     }
 
-    /// Open `~/.ezer/worktrees.db` via `resolve_grok_home` (`$EZER_HOME`, else
+    /// Open `~/.ezer/worktrees.db` via `resolve_ezer_home` (`$EZER_HOME`, else
     /// `<home>/.ezer`). Resolved fresh each call for test overrides. Each call
     /// opens its own connection — hot paths should cache the instance.
     pub fn open_default() -> Result<Self> {
-        Self::open(&resolve_grok_home()?)
+        Self::open(&resolve_ezer_home()?)
     }
 
-    fn journal_mode_and_base_path(grok_home: &Path) -> (JournalMode, PathBuf) {
-        let base_path = grok_home.join(WORKTREES_DB_FILE);
+    fn journal_mode_and_base_path(ezer_home: &Path) -> (JournalMode, PathBuf) {
+        let base_path = ezer_home.join(WORKTREES_DB_FILE);
         let mode = JournalMode::for_db_path(&base_path);
         (mode, base_path)
     }
 
     /// The path a read-write open would use (per-host on network mounts).
     /// Runs statfs and a hostname lookup, so resolve once and carry it.
-    pub fn resolve_db_path(grok_home: &Path) -> PathBuf {
-        let (mode, base_path) = Self::journal_mode_and_base_path(grok_home);
+    pub fn resolve_db_path(ezer_home: &Path) -> PathBuf {
+        let (mode, base_path) = Self::journal_mode_and_base_path(ezer_home);
         mode.effective_db_path(&base_path)
     }
 
     /// Read-only open: creates no directory, database file, or schema. Not
     /// side-effect free, though: reading a WAL database leaves `-shm` and
     /// `-wal` sidecars, and a network-mount open still converts the journal.
-    pub fn open_read_only(grok_home: &Path) -> RegistryOpen {
-        let (mode, base_path) = Self::journal_mode_and_base_path(grok_home);
+    pub fn open_read_only(ezer_home: &Path) -> RegistryOpen {
+        let (mode, base_path) = Self::journal_mode_and_base_path(ezer_home);
         let path = mode.effective_db_path(&base_path);
         match Self::open_read_only_at(mode, &path) {
             Ok(Some(db)) => RegistryOpen::Opened { path, db },
@@ -446,22 +446,22 @@ pub fn now_epoch_secs() -> i64 {
 }
 
 /// Resolve the ezer home: `$EZER_HOME`, else `<home>/.ezer`.
-pub fn resolve_grok_home() -> Result<PathBuf> {
-    xai_dirs::resolve_grok_home()
+pub fn resolve_ezer_home() -> Result<PathBuf> {
+    xai_dirs::resolve_ezer_home()
         .context("neither $EZER_HOME nor a home directory could be resolved")
 }
 
-/// Serializes tests that mutate the process-global `GROK_HOME` env var so they
+/// Serializes tests that mutate the process-global `EZER_HOME` env var so they
 /// don't clobber each other under `cargo test`, where tests share one process
 /// (nextest isolates per-process, but the suite must also pass under `cargo test`).
 #[cfg(test)]
-static GROK_HOME_ENV_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+static EZER_HOME_ENV_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
 
-/// Test-only: hold [`GROK_HOME_ENV_LOCK`], point `GROK_HOME` at a private tmp
+/// Test-only: hold [`EZER_HOME_ENV_LOCK`], point `EZER_HOME` at a private tmp
 /// dir, restore on drop. `Drop` restores the env before the lock releases so
 /// the next setter never sees a stale value.
 #[cfg(test)]
-pub(crate) struct GrokHomeFixture {
+pub(crate) struct EzerHomeFixture {
     _lock: std::sync::MutexGuard<'static, ()>,
     prev: Option<std::ffi::OsString>,
     prev_xdg_data_home: Option<std::ffi::OsString>,
@@ -475,20 +475,20 @@ pub(crate) struct GrokHomeFixture {
 }
 
 #[cfg(test)]
-impl GrokHomeFixture {
+impl EzerHomeFixture {
     pub(crate) fn new() -> Self {
-        let lock = GROK_HOME_ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        let lock = EZER_HOME_ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
         let tmp = tempfile::TempDir::new().unwrap();
         let home = tmp.path().join("ezer-home");
         std::fs::create_dir_all(&home).unwrap();
-        // Warm journal-mode + schema before GROK_HOME is visible, so the hot
+        // Warm journal-mode + schema before EZER_HOME is visible, so the hot
         // loop skips retry sleeps. This open is exclusive; the retry is the
         // actual race fix.
         let _ = WorktreeDb::open(&home);
-        let prev = std::env::var_os("GROK_HOME");
-        // SAFETY: the fixture holds the GROK_HOME env lock for its whole
+        let prev = std::env::var_os("EZER_HOME");
+        // SAFETY: the fixture holds the EZER_HOME env lock for its whole
         // lifetime, so no other test thread reads or writes the environment.
-        unsafe { std::env::set_var("GROK_HOME", &home) };
+        unsafe { std::env::set_var("EZER_HOME", &home) };
         Self {
             _lock: lock,
             prev,
@@ -522,14 +522,14 @@ impl GrokHomeFixture {
 }
 
 #[cfg(test)]
-impl Drop for GrokHomeFixture {
+impl Drop for EzerHomeFixture {
     fn drop(&mut self) {
-        // SAFETY: the fixture still holds the GROK_HOME env lock here, so no
+        // SAFETY: the fixture still holds the EZER_HOME env lock here, so no
         // other test thread reads or writes the environment during restore.
         unsafe {
             match self.prev.take() {
-                Some(p) => std::env::set_var("GROK_HOME", p),
-                None => std::env::remove_var("GROK_HOME"),
+                Some(p) => std::env::set_var("EZER_HOME", p),
+                None => std::env::remove_var("EZER_HOME"),
             }
             if self.touched_grove_env {
                 match self.prev_xdg_data_home.take() {

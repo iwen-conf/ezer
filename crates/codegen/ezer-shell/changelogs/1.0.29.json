@@ -16,7 +16,7 @@
   },
   {
     "category": "fixes",
-    "description": "**Multiple concurrent `grok agent stdio`** processes against the same GROK_HOME no longer crash at startup.",
+    "description": "**Multiple concurrent `grok agent stdio`** processes against the same EZER_HOME no longer crash at startup.",
     "breaking_change": false
   },
   {

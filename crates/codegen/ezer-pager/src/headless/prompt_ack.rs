@@ -11,7 +11,7 @@ use ezer_telemetry::events::{
 
 use crate::app::prompt_ack::{AckSignal, PromptAckDeadlines, queue_changed_acks};
 
-/// Bounds the rewind cancel and the final `x.ai/log` flush after an unacknowledged prompt: a wedged in-process
+/// Bounds the rewind cancel and the final `ezer/log` flush after an unacknowledged prompt: a wedged in-process
 /// shell holds the dispatch lock its `cancel()` also needs (see `test_hooks::park_forever_if_blackholed`).
 pub(super) const HEADLESS_ABORT_SEND_TIMEOUT: Duration = Duration::from_secs(2);
 
@@ -45,7 +45,7 @@ pub(super) fn headless_ack_signal(
             ) {
                 Ok(changed) => changed,
                 Err(error) => {
-                    tracing::warn!(%error, "headless: unparsable x.ai/queue/changed payload");
+                    tracing::warn!(%error, "headless: unparsable ezer/queue/changed payload");
                     return None;
                 }
             };

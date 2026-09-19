@@ -201,11 +201,11 @@ async fn word_select_tip_skipped_when_mode_is_word_select() {
 async fn word_select_tip_skipped_when_contextual_hint_disabled() {
     let content = ContentController::start().await.expect("start content");
     // Flash mode with the tip explicitly disabled
-    // GROK_CONTEXTUAL_HINTS stays unset here; that master switch would force all tips on and defeat the config opt-out
-    let grok_home = content.home().join(".ezer");
-    std::fs::create_dir_all(&grok_home).expect("create .ezer");
+    // EZER_CONTEXTUAL_HINTS stays unset here; that master switch would force all tips on and defeat the config opt-out
+    let ezer_home = content.home().join(".ezer");
+    std::fs::create_dir_all(&ezer_home).expect("create .ezer");
     std::fs::write(
-        grok_home.join("config.toml"),
+        ezer_home.join("config.toml"),
         "[ui]\n\
          keep_text_selection = \"flash\"\n\
          [ui.contextual_hints]\n\
@@ -217,7 +217,7 @@ async fn word_select_tip_skipped_when_contextual_hint_disabled() {
     ));
 
     let binary = pager_binary().expect("resolve pager binary");
-    // Pin GROK_CONTEXTUAL_HINTS to empty (parsed as unset) so a value inherited from the runner's shell can't force tips on
+    // Pin EZER_CONTEXTUAL_HINTS to empty (parsed as unset) so a value inherited from the runner's shell can't force tips on
     let overrides: Vec<(String, String)> = vec![("EZER_CONTEXTUAL_HINTS".into(), String::new())];
     let env_refs: Vec<(&str, &str)> = overrides
         .iter()

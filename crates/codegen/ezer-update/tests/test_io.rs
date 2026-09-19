@@ -1,5 +1,5 @@
-//! These tests must run serially: they touch `GROK_HOME` (a `OnceLock` in `ezer-config`), `EZER_TEST_VERSION`, and `NPM_TOKEN`.
-//! Once `GROK_HOME` is initialized for a process, it can't be changed.
+//! These tests must run serially: they touch `EZER_HOME` (a `OnceLock` in `ezer-config`), `EZER_TEST_VERSION`, and `NPM_TOKEN`.
+//! Once `EZER_HOME` is initialized for a process, it can't be changed.
 //! We set it from a single shared `OnceLock` and reset the contents of the directory between tests.
 
 mod common;
@@ -26,7 +26,7 @@ fn reset() {
 
 #[tokio::test]
 #[serial]
-async fn write_version_cache_creates_file_at_grok_home() {
+async fn write_version_cache_creates_file_at_ezer_home() {
     let _ = test_home();
     reset();
 
@@ -103,7 +103,7 @@ async fn write_version_cache_records_recent_timestamp() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// version.json wire format — the on-disk file is read by every grok launch.
+// version.json wire format — the on-disk file is read by every ezer launch.
 // ─────────────────────────────────────────────────────────────────────────────
 #[tokio::test]
 #[serial]
@@ -138,8 +138,8 @@ async fn write_version_cache_idempotent_for_same_version() {
     assert_eq!(v1["version"], "0.1.180");
 }
 
-// The function honors `GROK_TEST_VERSION` for testing. We exercise it via the public re-export only — no private items
-// leaked. ─────────────────────────────────────────────────────────────────────────────. `get_installed_grok_version` is
+// The function honors `EZER_TEST_VERSION` for testing. We exercise it via the public re-export only — no private items
+// leaked. ─────────────────────────────────────────────────────────────────────────────. `get_installed_ezer_version` is
 // not re-exported from `lib.rs`, but it's `pub` from `version` module and accessible via `version::`
 #[tokio::test]
 #[serial]
@@ -150,7 +150,7 @@ async fn get_installed_version_falls_back_to_cargo_pkg_version_when_env_unset() 
     unsafe {
         std::env::remove_var("EZER_TEST_VERSION");
     }
-    let v = ezer_update::version::get_installed_grok_version();
+    let v = ezer_update::version::get_installed_ezer_version();
     let _: semver::Version = v
         .parse()
         .unwrap_or_else(|e| panic!("CARGO_PKG_VERSION is not a valid semver: '{v}': {e}"));
@@ -166,13 +166,13 @@ async fn get_installed_version_with_env_var_takes_precedence() {
         unsafe {
             std::env::remove_var("EZER_TEST_VERSION");
         }
-        ezer_update::version::get_installed_grok_version()
+        ezer_update::version::get_installed_ezer_version()
     };
 
     unsafe {
         std::env::set_var("EZER_TEST_VERSION", "0.0.0-test");
     }
-    let overridden = ezer_update::version::get_installed_grok_version();
+    let overridden = ezer_update::version::get_installed_ezer_version();
     assert_ne!(real, overridden);
     assert_eq!(overridden, "0.0.0-test");
 
@@ -191,7 +191,7 @@ async fn get_installed_version_does_not_validate_env_var_format() {
     unsafe {
         std::env::set_var("EZER_TEST_VERSION", "not-a-version");
     }
-    let v = ezer_update::version::get_installed_grok_version();
+    let v = ezer_update::version::get_installed_ezer_version();
     assert_eq!(v, "not-a-version");
     unsafe {
         std::env::remove_var("EZER_TEST_VERSION");

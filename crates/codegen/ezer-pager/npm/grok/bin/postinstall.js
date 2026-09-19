@@ -16,15 +16,15 @@ const zlib = require('zlib');
 const { execSync } = require('child_process');
 const TOML = require('@iarna/toml');
 
-// $GROK_HOME (else ~/.grok), matching the Rust grok_home(): a symlinked
+// $@@LEGACY_EZER_HOME@@ (else ~/.grok), matching the Rust ezer_home(): a symlinked
 // $HOME resolves the same way. Lets fleets relocate the binary off a slow $HOME
 // (NFS); old code hardcoded os.homedir().
-function defaultGrokHome() {
+function defaultEzerHome() {
     const home = os.homedir();
     try { return path.join(fs.realpathSync(home), '.grok'); } catch { return path.join(home, '.grok'); }
 }
-const GROK_HOME = process.env.GROK_HOME ?? defaultGrokHome();
-const CANONICAL_DIR = path.join(GROK_HOME, 'bin');
+const @@LEGACY_EZER_HOME@@ = process.env.@@LEGACY_EZER_HOME@@ ?? defaultEzerHome();
+const CANONICAL_DIR = path.join(@@LEGACY_EZER_HOME@@, 'bin');
 
 const key = `${process.platform}-${process.arch}`;
 const SUPPORTED = new Set([
@@ -219,7 +219,7 @@ cleanupOldVersions('grok');
 cleanupOldVersions('grok-pager');
 
 // Write installer config
-const configDir = GROK_HOME;
+const configDir = @@LEGACY_EZER_HOME@@;
 const configPath = path.join(configDir, 'config.toml');
 let obj = {};
 try { obj = TOML.parse(fs.readFileSync(configPath, 'utf8')); } catch { }
@@ -227,7 +227,7 @@ obj.cli ??= {};
 obj.cli.installer = 'npm';
 
 // Persist the npm registry so `grok update` and the launcher use the same one.
-const npmRegistry = process.env.GROK_NPM_REGISTRY
+const npmRegistry = process.env.EZER_NPM_REGISTRY
     || (() => {
         try {
             const resolved = execSync(
@@ -246,19 +246,19 @@ if (npmRegistry) {
 fs.writeFileSync(configPath, TOML.stringify(obj), 'utf8');
 
 // Shell completions: print setup hints (no silent shell config mutation).
-// Set GROK_INSTALL_COMPLETIONS=1 to auto-generate to ~/.grok/completions.
-const GROK_PATH = path.join(CANONICAL_DIR, `grok${EXE}`);
-if (process.env.GROK_INSTALL_COMPLETIONS === '1' && !IS_WINDOWS) {
+// Set EZER_INSTALL_COMPLETIONS=1 to auto-generate to ~/.grok/completions.
+const EZER_PATH = path.join(CANONICAL_DIR, `grok${EXE}`);
+if (process.env.EZER_INSTALL_COMPLETIONS === '1' && !IS_WINDOWS) {
     try {
         const { spawnSync } = require('child_process');
-        const completionsDir = path.join(GROK_HOME, 'completions');
+        const completionsDir = path.join(@@LEGACY_EZER_HOME@@, 'completions');
         const bashPath = path.join(completionsDir, 'bash', 'grok.bash');
         const zshPath = path.join(completionsDir, 'zsh', '_grok');
         fs.mkdirSync(path.dirname(bashPath), { recursive: true });
         fs.mkdirSync(path.dirname(zshPath), { recursive: true });
-        const bashRes = spawnSync(GROK_PATH, ['completions', 'bash'], { encoding: 'utf8' });
+        const bashRes = spawnSync(EZER_PATH, ['completions', 'bash'], { encoding: 'utf8' });
         if (bashRes.status === 0) fs.writeFileSync(bashPath, bashRes.stdout);
-        const zshRes = spawnSync(GROK_PATH, ['completions', 'zsh'], { encoding: 'utf8' });
+        const zshRes = spawnSync(EZER_PATH, ['completions', 'zsh'], { encoding: 'utf8' });
         if (zshRes.status === 0) fs.writeFileSync(zshPath, zshRes.stdout);
         console.log('Completions generated to ~/.grok/completions (bash/zsh)');
     } catch {}

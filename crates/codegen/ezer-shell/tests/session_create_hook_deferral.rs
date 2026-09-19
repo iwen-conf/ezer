@@ -10,10 +10,10 @@ use acp_harness::{AutoApproveClient, connect_and_auth, new_session, prompt_turn,
 #[test]
 fn session_create_does_not_wait_for_session_start_hooks() {
     run_agent_test(|cwd, _server| async move {
-        let grok_home = std::path::PathBuf::from(std::env::var("GROK_HOME").expect("GROK_HOME"));
-        let release = grok_home.join("session_start_hook_release");
-        let done = grok_home.join("session_start_hook_done");
-        let hooks_dir = grok_home.join("hooks");
+        let ezer_home = std::path::PathBuf::from(std::env::var("EZER_HOME").expect("EZER_HOME"));
+        let release = ezer_home.join("session_start_hook_release");
+        let done = ezer_home.join("session_start_hook_done");
+        let hooks_dir = ezer_home.join("hooks");
         std::fs::create_dir_all(&hooks_dir).expect("create hooks dir");
         std::fs::write(
             hooks_dir.join("session_start.json"),

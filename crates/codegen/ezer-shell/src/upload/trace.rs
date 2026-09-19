@@ -1111,7 +1111,7 @@ fn claim_spill_reconcile(state: &std::sync::atomic::AtomicU8, collection_enabled
 /// Re-enqueue them when uploads are enabled (`queue` present); purge them when data collection is disabled (`None`).
 /// This runs detached so session setup never waits on disk or cloud I/O.
 pub(crate) fn spawn_startup_spill_reconcile(
-    grok_home: std::path::PathBuf,
+    ezer_home: std::path::PathBuf,
     queue: Option<UploadQueue>,
 ) {
     if !claim_spill_reconcile(&SPILL_RECONCILE_STATE, queue.is_some()) {
@@ -1121,13 +1121,13 @@ pub(crate) fn spawn_startup_spill_reconcile(
         match queue {
             Some(queue) => {
                 let report =
-                    ezer_workspace::recovery::run_startup_recovery(&grok_home, &queue).await;
+                    ezer_workspace::recovery::run_startup_recovery(&ezer_home, &queue).await;
                 tracing::info!(?report, "startup spill recovery complete");
                 queue.cleanup_orphans(xai_file_utils::queue::DEFAULT_MAX_AGE);
             }
             None => {
                 let purged = tokio::task::spawn_blocking(move || {
-                    ezer_workspace::recovery::purge_spilled_items(&grok_home)
+                    ezer_workspace::recovery::purge_spilled_items(&ezer_home)
                 })
                 .await;
                 match purged {
@@ -1219,7 +1219,7 @@ pub(crate) fn spawn_purge_stale_upload_scratch() {
         if PURGE_STARTED.swap(true, Ordering::Relaxed) {
             return;
         }
-        let dir = crate::util::grok_home::grok_home()
+        let dir = crate::util::ezer_home::ezer_home()
             .join("upload_queue")
             .join("scratch");
         let run = move || match purge_stale_upload_scratch_dir(&dir) {
@@ -1249,7 +1249,7 @@ pub(crate) fn spawn_purge_stale_upload_scratch() {
 /// Credentials are re-read on each upload attempt via [`DynamicResolver`].
 /// Session/trace artifacts use this queue for durable spill in every build.
 pub(crate) fn spawn_upload_queue(
-    grok_home: &Path,
+    ezer_home: &Path,
     gcs_config: &TraceExportConfig,
     client_version: Option<&str>,
     auth_manager: Arc<ezer_login::AuthManager>,
@@ -1258,7 +1258,7 @@ pub(crate) fn spawn_upload_queue(
         auth_manager,
         base_config: gcs_config.clone(),
     });
-    let queue = UploadQueue::spawn(grok_home, resolver, UploadRetryPolicy::default());
+    let queue = UploadQueue::spawn(ezer_home, resolver, UploadRetryPolicy::default());
     if let Some(ver) = client_version {
         queue.with_client_version(ver)
     } else {
@@ -1596,7 +1596,7 @@ pub(crate) mod tests {
             turn_number: 1,
             request_id: "req-001".into(),
             turn_started_at: "2026-01-01T00:00:00Z".into(),
-            model: "grok-3".into(),
+            model: "test-model-3".into(),
             host_os: "linux".into(),
             host_arch: "x86_64".into(),
             prompt_has_image: Some(false),
@@ -1706,13 +1706,13 @@ pub(crate) mod tests {
         use crate::session::repo_changes::UploadMethod;
         use chrono::{Duration, Utc};
         use std::collections::BTreeMap;
-        use ezer_login::{GrokAuth, GrokComConfig};
+        use ezer_login::{EzerAuth, EzerComConfig};
         let dir = tempfile::tempdir().unwrap();
-        let grok_com_config = GrokComConfig::default();
-        let scope = grok_com_config.auth_scope();
-        let initial_auth = GrokAuth {
+        let ezer_com_config = EzerComConfig::default();
+        let scope = ezer_com_config.auth_scope();
+        let initial_auth = EzerAuth {
             key: "initial-token".into(),
-            ..GrokAuth::test_default()
+            ..EzerAuth::test_default()
         };
         let mut store = BTreeMap::new();
         store.insert(scope.clone(), initial_auth);
@@ -1720,7 +1720,7 @@ pub(crate) mod tests {
         std::fs::write(dir.path().join("auth.json"), &auth_json).unwrap();
         let auth_manager = Arc::new(ezer_login::AuthManager::new(
             dir.path(),
-            grok_com_config.clone(),
+            ezer_com_config.clone(),
         ));
         let base_config = TraceExportConfig {
             bucket_url: None,
@@ -1748,10 +1748,10 @@ pub(crate) mod tests {
             Some("initial-token"),
             "snapshot should reflect AuthManager.current(), not the stale base_config token"
         );
-        let refreshed_auth = GrokAuth {
+        let refreshed_auth = EzerAuth {
             key: "refreshed-token".into(),
             expires_at: Some(Utc::now() + Duration::hours(1)),
-            ..GrokAuth::test_default()
+            ..EzerAuth::test_default()
         };
         store.insert(scope, refreshed_auth);
         let auth_json = serde_json::to_string_pretty(&store).unwrap();
@@ -1775,14 +1775,14 @@ pub(crate) mod tests {
         use crate::session::repo_changes::UploadMethod;
         use chrono::{Duration, Utc};
         use std::collections::BTreeMap;
-        use ezer_login::{GrokAuth, GrokComConfig};
+        use ezer_login::{EzerAuth, EzerComConfig};
         let dir = tempfile::tempdir().unwrap();
-        let grok_com_config = GrokComConfig::default();
-        let scope = grok_com_config.auth_scope();
-        let expired_auth = GrokAuth {
+        let ezer_com_config = EzerComConfig::default();
+        let scope = ezer_com_config.auth_scope();
+        let expired_auth = EzerAuth {
             key: "expired-token".into(),
             expires_at: Some(Utc::now() - Duration::hours(1)),
-            ..GrokAuth::test_default()
+            ..EzerAuth::test_default()
         };
         let mut store = BTreeMap::new();
         store.insert(scope.clone(), expired_auth);
@@ -1790,7 +1790,7 @@ pub(crate) mod tests {
         std::fs::write(dir.path().join("auth.json"), &auth_json).unwrap();
         let auth_manager = Arc::new(ezer_login::AuthManager::new(
             dir.path(),
-            grok_com_config.clone(),
+            ezer_com_config.clone(),
         ));
         assert!(auth_manager.current().is_none());
         let resolver = DynamicResolver {
@@ -1810,10 +1810,10 @@ pub(crate) mod tests {
                 },
             },
         };
-        let fresh_auth = GrokAuth {
+        let fresh_auth = EzerAuth {
             key: "fresh-from-chat-flow".into(),
             expires_at: Some(Utc::now() + Duration::hours(1)),
-            ..GrokAuth::test_default()
+            ..EzerAuth::test_default()
         };
         store.insert(scope, fresh_auth);
         let auth_json = serde_json::to_string_pretty(&store).unwrap();
@@ -1836,14 +1836,14 @@ pub(crate) mod tests {
         use crate::session::repo_changes::UploadMethod;
         use chrono::{Duration, Utc};
         use std::collections::BTreeMap;
-        use ezer_login::{GrokAuth, GrokComConfig};
+        use ezer_login::{EzerAuth, EzerComConfig};
         let dir = tempfile::tempdir().unwrap();
-        let grok_com_config = GrokComConfig::default();
-        let scope = grok_com_config.auth_scope();
-        let expired_auth = GrokAuth {
+        let ezer_com_config = EzerComConfig::default();
+        let scope = ezer_com_config.auth_scope();
+        let expired_auth = EzerAuth {
             key: "expired-on-disk".into(),
             expires_at: Some(Utc::now() - Duration::hours(1)),
-            ..GrokAuth::test_default()
+            ..EzerAuth::test_default()
         };
         let mut store = BTreeMap::new();
         store.insert(scope, expired_auth);
@@ -1851,7 +1851,7 @@ pub(crate) mod tests {
         std::fs::write(dir.path().join("auth.json"), &auth_json).unwrap();
         let auth_manager = Arc::new(ezer_login::AuthManager::new(
             dir.path(),
-            grok_com_config,
+            ezer_com_config,
         ));
         let resolver = DynamicResolver {
             auth_manager,
@@ -1884,14 +1884,14 @@ pub(crate) mod tests {
         use crate::session::repo_changes::UploadMethod;
         use chrono::{Duration, Utc};
         use std::collections::BTreeMap;
-        use ezer_login::{GrokAuth, GrokComConfig};
+        use ezer_login::{EzerAuth, EzerComConfig};
         let dir = tempfile::tempdir().unwrap();
-        let grok_com_config = GrokComConfig::default();
-        let scope = grok_com_config.auth_scope();
-        let valid_auth = GrokAuth {
+        let ezer_com_config = EzerComConfig::default();
+        let scope = ezer_com_config.auth_scope();
+        let valid_auth = EzerAuth {
             key: "fresh-disk-token".into(),
             expires_at: Some(Utc::now() + Duration::hours(1)),
-            ..GrokAuth::test_default()
+            ..EzerAuth::test_default()
         };
         let mut store = BTreeMap::new();
         store.insert(scope, valid_auth);
@@ -1899,7 +1899,7 @@ pub(crate) mod tests {
         std::fs::write(dir.path().join("auth.json"), &auth_json).unwrap();
         let auth_manager = Arc::new(ezer_login::AuthManager::new(
             dir.path(),
-            grok_com_config,
+            ezer_com_config,
         ));
         let resolver = DynamicResolver {
             auth_manager,
@@ -1936,15 +1936,15 @@ pub(crate) mod tests {
         use crate::session::repo_changes::UploadMethod;
         use chrono::{Duration, Utc};
         use std::collections::BTreeMap;
-        use ezer_login::{GrokAuth, GrokComConfig};
+        use ezer_login::{EzerAuth, EzerComConfig};
         let dir = tempfile::tempdir().unwrap();
-        let grok_com_config = GrokComConfig::default();
-        let scope = grok_com_config.auth_scope();
-        let expired_auth = GrokAuth {
+        let ezer_com_config = EzerComConfig::default();
+        let scope = ezer_com_config.auth_scope();
+        let expired_auth = EzerAuth {
             key: "expired-oidc".into(),
             refresh_token: Some("rt-old".into()),
             expires_at: Some(Utc::now() - Duration::hours(1)),
-            ..GrokAuth::test_default()
+            ..EzerAuth::test_default()
         };
         let mut store = BTreeMap::new();
         store.insert(scope, expired_auth);
@@ -1952,7 +1952,7 @@ pub(crate) mod tests {
         std::fs::write(dir.path().join("auth.json"), &auth_json).unwrap();
         let auth_manager = Arc::new(ezer_login::AuthManager::new(
             dir.path(),
-            grok_com_config,
+            ezer_com_config,
         ));
         struct FreshRefresher;
         #[async_trait::async_trait]
@@ -1962,11 +1962,11 @@ pub(crate) mod tests {
                 _r: ezer_login::manager::RefreshReason,
             ) -> ezer_login::refresh::RefreshOutcome {
                 ezer_login::refresh::RefreshOutcome::Success(Box::new(
-                    ezer_login::GrokAuth {
+                    ezer_login::EzerAuth {
                         key: "refresher-fresh-token".into(),
                         expires_at: Some(chrono::Utc::now() + chrono::Duration::hours(1)),
                         refresh_token: Some("rt-new".into()),
-                        ..ezer_login::GrokAuth::test_default()
+                        ..ezer_login::EzerAuth::test_default()
                     },
                 ))
             }
@@ -2006,18 +2006,18 @@ pub(crate) mod tests {
     async fn proactive_refresh_makes_trace_resolve_a_cache_hit() {
         use crate::session::repo_changes::UploadMethod;
         use chrono::{Duration, Utc};
-        use ezer_login::{GrokAuth, GrokComConfig};
+        use ezer_login::{EzerAuth, EzerComConfig};
         let dir = tempfile::tempdir().unwrap();
-        let grok_com_config = GrokComConfig::default();
+        let ezer_com_config = EzerComConfig::default();
         let auth_manager = Arc::new(ezer_login::AuthManager::new(
             dir.path(),
-            grok_com_config,
+            ezer_com_config,
         ));
-        auth_manager.hot_swap(GrokAuth {
+        auth_manager.hot_swap(EzerAuth {
             key: "expired-oidc".into(),
             refresh_token: Some("rt".into()),
             expires_at: Some(Utc::now() - Duration::hours(1)),
-            ..GrokAuth::test_default()
+            ..EzerAuth::test_default()
         });
         let call_count = Arc::new(std::sync::atomic::AtomicU32::new(0));
         let cc = call_count.clone();
@@ -2029,11 +2029,11 @@ pub(crate) mod tests {
                 _: ezer_login::manager::RefreshReason,
             ) -> ezer_login::refresh::RefreshOutcome {
                 self.0.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
-                ezer_login::refresh::RefreshOutcome::Success(Box::new(GrokAuth {
+                ezer_login::refresh::RefreshOutcome::Success(Box::new(EzerAuth {
                     key: "proactive-fresh".into(),
                     expires_at: Some(chrono::Utc::now() + Duration::hours(1)),
                     refresh_token: Some("rt-new".into()),
-                    ..GrokAuth::test_default()
+                    ..EzerAuth::test_default()
                 }))
             }
         }
@@ -2084,10 +2084,10 @@ pub(crate) mod tests {
     fn dynamic_resolver_preserves_token_when_auth_unavailable() {
         use crate::session::repo_changes::UploadMethod;
         let dir = tempfile::tempdir().unwrap();
-        let grok_com_config = ezer_login::GrokComConfig::default();
+        let ezer_com_config = ezer_login::EzerComConfig::default();
         let auth_manager = Arc::new(ezer_login::AuthManager::new(
             dir.path(),
-            grok_com_config,
+            ezer_com_config,
         ));
         let base_config = TraceExportConfig {
             bucket_url: None,
@@ -2119,13 +2119,13 @@ pub(crate) mod tests {
     fn dynamic_resolver_noop_for_direct_mode() {
         use crate::session::repo_changes::UploadMethod;
         use std::collections::BTreeMap;
-        use ezer_login::GrokAuth;
+        use ezer_login::EzerAuth;
         let dir = tempfile::tempdir().unwrap();
-        let grok_com_config = ezer_login::GrokComConfig::default();
-        let scope = grok_com_config.auth_scope();
-        let auth = GrokAuth {
+        let ezer_com_config = ezer_login::EzerComConfig::default();
+        let scope = ezer_com_config.auth_scope();
+        let auth = EzerAuth {
             key: "some-token".into(),
-            ..GrokAuth::test_default()
+            ..EzerAuth::test_default()
         };
         let mut store = BTreeMap::new();
         store.insert(scope, auth);
@@ -2133,7 +2133,7 @@ pub(crate) mod tests {
         std::fs::write(dir.path().join("auth.json"), &auth_json).unwrap();
         let auth_manager = Arc::new(ezer_login::AuthManager::new(
             dir.path(),
-            grok_com_config,
+            ezer_com_config,
         ));
         let base_config = TraceExportConfig {
             bucket_url: Some("gs://bucket".into()),
@@ -2170,7 +2170,7 @@ pub(crate) mod tests {
         let dir = tempfile::tempdir().unwrap();
         let auth_manager = Arc::new(ezer_login::AuthManager::new(
             dir.path(),
-            ezer_login::GrokComConfig::default(),
+            ezer_login::EzerComConfig::default(),
         ));
         let base_config = TraceExportConfig {
             bucket_url: None,
@@ -2211,12 +2211,12 @@ pub(crate) mod tests {
         let dir = tempfile::tempdir().unwrap();
         let auth_manager = Arc::new(ezer_login::AuthManager::new(
             dir.path(),
-            ezer_login::GrokComConfig::default(),
+            ezer_login::EzerComConfig::default(),
         ));
-        auth_manager.hot_swap(ezer_login::GrokAuth {
+        auth_manager.hot_swap(ezer_login::EzerAuth {
             key: "fresh-token".into(),
             expires_at: Some(chrono::Utc::now() + chrono::Duration::hours(1)),
-            ..ezer_login::GrokAuth::test_default()
+            ..ezer_login::EzerAuth::test_default()
         });
         let resolver = DynamicResolver {
             auth_manager,
@@ -2253,12 +2253,12 @@ pub(crate) mod tests {
         let dir = tempfile::tempdir().unwrap();
         let auth_manager = Arc::new(ezer_login::AuthManager::new(
             dir.path(),
-            ezer_login::GrokComConfig::default(),
+            ezer_login::EzerComConfig::default(),
         ));
-        auth_manager.hot_swap(ezer_login::GrokAuth {
+        auth_manager.hot_swap(ezer_login::EzerAuth {
             key: "session-token".into(),
             expires_at: Some(chrono::Utc::now() + chrono::Duration::hours(1)),
-            ..ezer_login::GrokAuth::test_default()
+            ..ezer_login::EzerAuth::test_default()
         });
         let resolver = DynamicResolver {
             auth_manager,
@@ -2289,10 +2289,10 @@ pub(crate) mod tests {
     async fn spawn_upload_queue_uses_dynamic_resolver_when_auth_manager_provided() {
         use crate::session::repo_changes::UploadMethod;
         let dir = tempfile::tempdir().unwrap();
-        let grok_com_config = ezer_login::GrokComConfig::default();
+        let ezer_com_config = ezer_login::EzerComConfig::default();
         let auth_manager = Arc::new(ezer_login::AuthManager::new(
             dir.path(),
-            grok_com_config,
+            ezer_com_config,
         ));
         let gcs_config = TraceExportConfig {
             bucket_url: None,
@@ -2734,7 +2734,7 @@ pub(crate) mod tests {
         let tmp = tempfile::tempdir().unwrap();
         let auth = std::sync::Arc::new(ezer_login::AuthManager::new(
             tmp.path(),
-            ezer_login::GrokComConfig::default(),
+            ezer_login::EzerComConfig::default(),
         ));
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
         let addr = listener.local_addr().unwrap();

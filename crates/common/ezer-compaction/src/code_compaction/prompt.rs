@@ -106,7 +106,7 @@ mod tests {
     #[test]
     fn kind_structured_matches_build_summary_prompt() {
         // The Structured kind must be byte-identical to the legacy entry point
-        // so routing through the selector never changes grok-build's prompt.
+        // so routing through the selector never changes ezer-build's prompt.
         assert_eq!(
             build_summary_prompt_kind(SummaryPromptKind::Structured, None),
             build_summary_prompt(None)

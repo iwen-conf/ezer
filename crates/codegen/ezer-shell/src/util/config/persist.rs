@@ -110,9 +110,9 @@ impl ConfigWriteGuard {
 /// `SAVE_LOCK` moves into that task so a cancelled await cannot release it while flock is still being acquired.
 pub(crate) async fn lock_config_writes() -> std::io::Result<ConfigWriteGuard> {
     let save = SAVE_LOCK.lock().await;
-    let grok_home = crate::util::grok_home::grok_home();
+    let ezer_home = crate::util::ezer_home::ezer_home();
     tokio::task::spawn_blocking(move || {
-        let flock = acquire_init_lock(&grok_home)?;
+        let flock = acquire_init_lock(&ezer_home)?;
         Ok(ConfigWriteGuard {
             _save: save,
             _flock: flock,
@@ -121,12 +121,12 @@ pub(crate) async fn lock_config_writes() -> std::io::Result<ConfigWriteGuard> {
     .await
     .map_err(|e| std::io::Error::other(format!("config lock task failed: {e}")))?
 }
-/// Exclusive advisory `flock` on `<grok_home>/.config-init.lock`, retried briefly, serializing
+/// Exclusive advisory `flock` on `<ezer_home>/.config-init.lock`, retried briefly, serializing
 /// `config.toml` read-modify-writes; only `WouldBlock` retries, and the file is never removed.
-pub fn acquire_init_lock(grok_home: &std::path::Path) -> std::io::Result<std::fs::File> {
+pub fn acquire_init_lock(ezer_home: &std::path::Path) -> std::io::Result<std::fs::File> {
     use fs2::FileExt;
-    let _ = std::fs::create_dir_all(grok_home);
-    let lock_path = grok_home.join(".config-init.lock");
+    let _ = std::fs::create_dir_all(ezer_home);
+    let lock_path = ezer_home.join(".config-init.lock");
     let file = std::fs::OpenOptions::new()
         .create(true)
         .write(true)
@@ -162,7 +162,7 @@ pub fn read_follow_bound(path: &std::path::Path) -> std::io::Result<(BoundDest, 
     Ok((dest, content))
 }
 fn bind_user_config_dest(path: &std::path::Path) -> std::io::Result<BoundDest> {
-    bind_user_config_dest_with(path, true, ezer_config::user_grok_home().is_some())
+    bind_user_config_dest_with(path, true, ezer_config::user_ezer_home().is_some())
 }
 fn bind_user_config_dest_with(
     path: &std::path::Path,
@@ -180,7 +180,7 @@ pub(crate) fn require_same_user_config_dest(
     slot: &std::path::Path,
     dest: &BoundDest,
 ) -> std::io::Result<BoundDest> {
-    require_same_user_config_dest_with(slot, dest, ezer_config::user_grok_home().is_some())
+    require_same_user_config_dest_with(slot, dest, ezer_config::user_ezer_home().is_some())
 }
 fn require_same_user_config_dest_with(
     slot: &std::path::Path,

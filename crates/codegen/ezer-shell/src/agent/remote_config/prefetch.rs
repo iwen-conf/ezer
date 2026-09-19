@@ -7,10 +7,10 @@ use super::{
     fetch_models_uncommitted, resolve_disk_auth,
 };
 use crate::agent::config::{self, ModelEntry};
-use ezer_login::{GrokAuth, GrokComConfig};
+use ezer_login::{EzerAuth, EzerComConfig};
 
 pub(crate) struct PrefetchInputs {
-    pub(crate) auth: Option<GrokAuth>,
+    pub(crate) auth: Option<EzerAuth>,
     pub(crate) endpoints: config::EndpointsConfig,
     pub(crate) model_fetch_auth: ModelFetchAuth,
 }
@@ -25,7 +25,7 @@ pub(in crate::agent::remote_config) fn resolve_startup_endpoints() -> config::En
 }
 
 pub(crate) fn resolve_prefetch_inputs_from_parts(
-    auth: Option<GrokAuth>,
+    auth: Option<EzerAuth>,
     endpoints: config::EndpointsConfig,
     remote_fetch_enabled: bool,
 ) -> Option<PrefetchInputs> {
@@ -90,10 +90,10 @@ pub(crate) type ResolvedModels = Option<IndexMap<String, ModelEntry>>;
 ///
 /// Never syncs managed config: the refresh supervisor owns that, so a live
 /// server cannot heal a tampered policy ahead of the fail-closed gate.
-/// `grok_com_config` scopes the disk-auth read; the default config sees only env.
+/// `ezer_com_config` scopes the disk-auth read; the default config sees only env.
 fn models_prefetch_inputs(
-    grok_com_config: Option<GrokComConfig>,
-    warmed_auth: Option<GrokAuth>,
+    ezer_com_config: Option<EzerComConfig>,
+    warmed_auth: Option<EzerAuth>,
 ) -> Option<ModelsPrefetchPlan> {
     if crate::managed_config::policy_repair_pending() {
         return None;
@@ -101,21 +101,21 @@ fn models_prefetch_inputs(
     let remote = crate::util::config::resolve_remote_fetch_enabled();
     // Prefer the live in-memory session so a just-refreshed or just-logged-in
     // credential drives the catalog fetch, not a stale or absent disk token.
-    let auth = warmed_auth.or_else(|| resolve_disk_auth(grok_com_config.clone()));
+    let auth = warmed_auth.or_else(|| resolve_disk_auth(ezer_com_config.clone()));
     let endpoints = resolve_startup_endpoints();
     let env = resolve_prefetch_inputs_from_parts(auth.clone(), endpoints, remote)?;
     let expected = ModelsCacheScope::resolve(&env.endpoints, env.model_fetch_auth, auth.as_ref());
     Some(ModelsPrefetchPlan {
         env,
         expected,
-        commit_config: grok_com_config,
+        commit_config: ezer_com_config,
     })
 }
 
 struct ModelsPrefetchPlan {
     env: PrefetchInputs,
     expected: ModelsCacheScope,
-    commit_config: Option<GrokComConfig>,
+    commit_config: Option<EzerComConfig>,
 }
 
 /// Fetch the catalog and commit it under the policy/identity gate. The commit is
@@ -180,10 +180,10 @@ fn spawn_prefetch_thread(
 
 pub(crate) fn start_initial_models_load(
     cancel: tokio_util::sync::CancellationToken,
-    grok_com_config: Option<GrokComConfig>,
-    warmed_auth: Option<GrokAuth>,
+    ezer_com_config: Option<EzerComConfig>,
+    warmed_auth: Option<EzerAuth>,
 ) -> Option<InitialModelsLoad> {
-    let plan = models_prefetch_inputs(grok_com_config, warmed_auth)?;
+    let plan = models_prefetch_inputs(ezer_com_config, warmed_auth)?;
     let (tx, rx) = tokio::sync::oneshot::channel();
     spawn_prefetch_thread("ezer-models-prefetch", plan, cancel, move |models| {
         let _ = tx.send(models);
@@ -199,10 +199,10 @@ const MODELS_WAIT_POLL_INTERVAL: std::time::Duration = std::time::Duration::from
 /// monotonic commit for the next boot.
 pub(crate) fn fetch_initial_models_blocking(
     cancel: &tokio_util::sync::CancellationToken,
-    grok_com_config: Option<GrokComConfig>,
-    warmed_auth: Option<GrokAuth>,
+    ezer_com_config: Option<EzerComConfig>,
+    warmed_auth: Option<EzerAuth>,
 ) -> Option<IndexMap<String, ModelEntry>> {
-    let plan = models_prefetch_inputs(grok_com_config, warmed_auth)?;
+    let plan = models_prefetch_inputs(ezer_com_config, warmed_auth)?;
     let (tx, rx) = std::sync::mpsc::channel();
     spawn_prefetch_thread(
         "ezer-models-prefetch-sync",

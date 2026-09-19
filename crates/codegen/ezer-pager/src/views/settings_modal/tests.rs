@@ -539,7 +539,7 @@ fn render_setting_row_selected_is_reversed_on_terminal_theme() {
         );
     }
 
-    crate::theme::cache::set(crate::theme::ThemeKind::GrokNight);
+    crate::theme::cache::set(crate::theme::ThemeKind::EzerNight);
     let theme = Theme::current();
     let mut buf = Buffer::empty(area);
     render_setting_row(
@@ -1039,7 +1039,7 @@ fn settings_list_row_bg_reset_palette_is_bandless_with_reverse_overlay() {
     assert!(super::render::settings_row_overlay(&theme, false, false).is_none());
 
     // RGB themes keep the band and get no overlay.
-    let rgb = Theme::groknight();
+    let rgb = Theme::ezernight();
     assert_eq!(settings_list_row_bg(&rgb, true, false), rgb.bg_visual);
     assert!(super::render::settings_row_overlay(&rgb, true, false).is_none());
 }
@@ -2997,11 +2997,11 @@ fn try_enter_picking_enum_returns_false_for_non_enum_row() {
 fn fork_secondary_model_picker_opens_on_persisted_model() {
     use agent_client_protocol as acp;
     // Must differ from the baseline slug or the empty-fold arm hides the lookup.
-    let slug = "grok-4.5-fast";
+    let slug = "test-model-4.5-fast";
     assert_ne!(slug, ezer_shell::models::default_model());
     let snapshot = PagerLocalSnapshot {
         available_models: vec![
-            ("ezer 3".to_string(), acp::ModelId::new(Arc::from("grok-3"))),
+            ("ezer 3".to_string(), acp::ModelId::new(Arc::from("test-model-3"))),
             (
                 "ezer 4.5 Fast".to_string(),
                 acp::ModelId::new(Arc::from(slug)),
@@ -3031,7 +3031,7 @@ fn fork_secondary_model_picker_opens_on_persisted_model() {
             ..
         } => {
             assert_eq!(key, "fork_secondary_model");
-            // Choices: [(no override), Grok 3, Grok 4.5 Fast], so idx 2
+            // Choices: [(no override), Ezer 3, Test Model 4.5 Fast], so idx 2
             assert_eq!(
                 choices_idx, 2,
                 "picker must open on the persisted model, not the stale fallback",
@@ -4219,7 +4219,7 @@ fn editing_value_chars_mutate_buffer_and_invalid_enter_is_noop() {
          (catalog has 'ezer 4 Fast' only)",
     );
 
-    // Enter on a buffer that fails the KnownModel validator (catalog has 'Grok 4 Fast'; "a" doesn't match) is Unchanged; commit refused
+    // Enter on a buffer that fails the KnownModel validator (catalog has 'Test Model 4 Fast'; "a" doesn't match) is Unchanged; commit refused
     let outcome = handle_settings_key(&mut s, &KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE));
     assert!(
         matches!(outcome, SettingsKeyOutcome::Unchanged),
@@ -6188,7 +6188,7 @@ fn click_settings_breadcrumb_after_nav_reverts_to_original() {
         other => panic!("expected PickingEnum, got {other:?}"),
     };
     // Pick a different index
-    // The default theme is `groknight` (index 1 per the registry); advance to index 0 to ensure we're navigating to a different value
+    // The default theme is `ezernight` (index 1 per the registry); advance to index 0 to ensure we're navigating to a different value
     let target_idx = if advanced_idx == 0 { 1 } else { 0 };
     match s.mode() {
         SettingsModalMode::PickingEnum {
@@ -6244,8 +6244,8 @@ fn d_key_in_picking_enum_dispatches_open_reset_confirm() {
                 key, "theme",
                 "OpenResetConfirm key must be the active picker setting",
             );
-            // Default theme is `groknight`
-            // Entering the picker captures `original_value = current value = groknight`, so the revert dispatches with that canonical
+            // Default theme is `ezernight`
+            // Entering the picker captures `original_value = current value = ezernight`, so the revert dispatches with that canonical
             assert_eq!(
                 orig, "ezernight",
                 "PreviewTheme revert must carry the original canonical",
@@ -6705,7 +6705,7 @@ fn max_thoughts_width_preview_content_is_italic() {
 
 /// Test 4: the title row distinguishes itself from the content rows via two independent signals.
 /// "Darker" is not the contract; on the dark themes `bg_visual` is lighter than `bg_highlight`, and
-/// only GrokDay renders the title darker.
+/// only EzerDay renders the title darker.
 #[test]
 fn max_thoughts_width_preview_title_styling_distinguishes_from_content() {
     let area = Rect {
@@ -6751,9 +6751,9 @@ fn max_thoughts_width_preview_title_styling_distinguishes_from_content() {
     // Contrast assertion: regardless of the active palette, the raw / un-quantized theme tokens differ
     // We use the raw theme directly so this assertion survives `NO_COLOR` / 256-color quantization
     let raw_theme = match crate::theme::Theme::current_kind() {
-        crate::theme::ThemeKind::GrokNight => crate::theme::Theme::groknight(),
+        crate::theme::ThemeKind::EzerNight => crate::theme::Theme::ezernight(),
         crate::theme::ThemeKind::TokyoNight => crate::theme::Theme::tokyonight(),
-        crate::theme::ThemeKind::GrokDay => crate::theme::Theme::grokday(),
+        crate::theme::ThemeKind::EzerDay => crate::theme::Theme::ezerday(),
         crate::theme::ThemeKind::RosePineMoon => crate::theme::Theme::rosepine_moon(),
         // Resolved via `Theme::current()` rather than a constructor because `theme::oscura` is a private module
         crate::theme::ThemeKind::OscuraMidnight => crate::theme::Theme::current(),
@@ -6761,7 +6761,7 @@ fn max_thoughts_width_preview_title_styling_distinguishes_from_content() {
         // assertion below does not apply — the preview reads via the
         // underline cue instead.
         crate::theme::ThemeKind::Terminal => return,
-        crate::theme::ThemeKind::Auto => crate::theme::Theme::groknight(),
+        crate::theme::ThemeKind::Auto => crate::theme::Theme::ezernight(),
     };
     assert_ne!(
         raw_theme.bg_visual, raw_theme.bg_highlight,

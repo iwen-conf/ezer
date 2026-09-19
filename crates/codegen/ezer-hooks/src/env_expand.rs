@@ -29,7 +29,7 @@ use std::collections::HashMap;
 /// Sentinel prefix for the per-call mask sentinel; see [`make_sentinel`].
 ///
 /// A Unicode Private Use Area code point (`U+F8FF`) plus a long magic ASCII prefix.
-const SENTINEL_PREFIX: &str = "\u{f8ff}__GROK_HOOKS_MASK_";
+const SENTINEL_PREFIX: &str = "\u{f8ff}__EZER_HOOKS_MASK_";
 const SENTINEL_SUFFIX: &str = "__\u{f8ff}";
 
 /// Build the per-call sentinel that hides modifier-form `${...}` substrings from `shellexpand::env_with_context_no_errors`.
@@ -561,12 +561,12 @@ mod tests {
         );
     }
 
-    /// An earlier sentinel was the fixed string `"\u{f8ff}__GROK_HOOKS_MASK__\u{f8ff}"`.
+    /// An earlier sentinel was the fixed string `"\u{f8ff}__EZER_HOOKS_MASK__\u{f8ff}"`.
     /// A user-supplied `extra_env` value containing that exact byte sequence would have been silently rewritten to `${` by the unmask step.
     /// The per-call randomized sentinel removes this hazard.
     #[test]
     fn expand_preserves_pre_existing_legacy_fixed_sentinel_in_extra() {
-        let legacy_sentinel = "\u{f8ff}__GROK_HOOKS_MASK__\u{f8ff}";
+        let legacy_sentinel = "\u{f8ff}__EZER_HOOKS_MASK__\u{f8ff}";
         let mut extra = HashMap::new();
         // Value embeds the legacy sentinel followed by what would parse as an identifier and closing brace if the unmask replace had collided
         extra.insert(

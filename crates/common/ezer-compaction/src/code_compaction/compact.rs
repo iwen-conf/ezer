@@ -193,7 +193,7 @@ where
     }
 
     let prompt = CompactionPrompt {
-        // grok-build appends the summarization prompt as the final user
+        // ezer-build appends the summarization prompt as the final user
         // message; there is no separate system prompt for the compaction call.
         system: String::new(),
         user: build_summary_prompt(user_context),

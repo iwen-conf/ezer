@@ -5846,9 +5846,9 @@ fn env_var_force_disables() {
     // SAFETY: the test temporarily mutates a process-wide env var.
     // `serial_test`'s lock ensures no other test marked with the
     // same `EZER_AGENT_DASHBOARD` key reads it concurrently.
-    unsafe { std::env::set_var("GROK_AGENT_DASHBOARD", "0") };
+    unsafe { std::env::set_var("EZER_AGENT_DASHBOARD", "0") };
     assert!(!super::super::dashboard_enabled());
-    unsafe { std::env::remove_var("GROK_AGENT_DASHBOARD") };
+    unsafe { std::env::remove_var("EZER_AGENT_DASHBOARD") };
 }
 
 fn location_candidate(path: &str, label: &str) -> LocationCandidate {

@@ -110,7 +110,7 @@ fn remote_fetch_value(v: &TomlValue) -> Option<bool> {
 /// This walks the layers first-match instead of using the plain effective-config merge, which puts the user layer over managed.
 /// For this knob the management layer must win, so a user's stray `remote_fetch = true` cannot re-enable a deployment's "never fetch" decision.
 fn remote_fetch_enabled_from_layers(layers: &crate::config::ConfigLayers) -> bool {
-    // Exhaustive destructure (no `..`): a future layer must be slotted into the walk deliberately instead of silently keeping stale precedence `env_overlay` is deliberately NOT in the walk: the `GROK_CONFIG` overlay is soft, user-tier input, and this is an egress gate `campaigns` is excluded for the same reason: campaign patches are soft, dismissable overlays applied after the layer merge
+    // Exhaustive destructure (no `..`): a future layer must be slotted into the walk deliberately instead of silently keeping stale precedence `env_overlay` is deliberately NOT in the walk: the `EZER_CONFIG` overlay is soft, user-tier input, and this is an egress gate `campaigns` is excluded for the same reason: campaign patches are soft, dismissable overlays applied after the layer merge
     // Requirements are re-merged over campaigns for the same reason
     let crate::config::ConfigLayers {
         system_managed,

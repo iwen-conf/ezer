@@ -78,7 +78,7 @@ mod tests {
     }
 
     #[test]
-    fn grok_appearance_dark_and_light() {
+    fn ezer_appearance_dark_and_light() {
         assert_eq!(
             detect_from_env_map(&env(&[("EZER_APPEARANCE", "dark")])),
             Some(SystemAppearance::Dark)
@@ -151,7 +151,7 @@ mod tests {
     }
 
     #[test]
-    fn unknown_or_empty_lc_falls_through_to_colorfgbg_when_grok_absent() {
+    fn unknown_or_empty_lc_falls_through_to_colorfgbg_when_ezer_absent() {
         assert_eq!(
             detect_from_env_map(&env(&[
                 ("LC_EZER_APPEARANCE", "solarized"),

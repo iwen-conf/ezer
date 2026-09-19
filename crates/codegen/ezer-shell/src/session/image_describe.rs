@@ -297,7 +297,7 @@ pub(crate) fn persist_user_images(
         return Ok(Vec::new());
     }
     let assets_dir = session_dir.join("assets");
-    crate::util::grok_home::create_dir_all_owner_only(&assets_dir)?;
+    crate::util::ezer_home::create_dir_all_owner_only(&assets_dir)?;
     let mut out = Vec::with_capacity(images.len());
     for img in images {
         let bytes = base64::engine::general_purpose::STANDARD

@@ -4,7 +4,7 @@ use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 
-use super::model::{API_KEY_SCOPE, AuthMode, AuthStore, GrokAuth};
+use super::model::{API_KEY_SCOPE, AuthMode, AuthStore, EzerAuth};
 
 #[must_use]
 pub struct AuthFileLock {
@@ -43,15 +43,15 @@ impl AuthFileLock {
 /// Shared by the auth manager and the managed-config identity reads: a reader that bypasses it
 /// splits "who is signed in" between the two.
 // Empty override (e.g. an unexpanded `$VAR`) is treated as unset; non-UTF-8 preserved.
-fn resolve_auth_json_path(grok_auth_path: Option<OsString>, grok_home: &Path) -> PathBuf {
-    match grok_auth_path {
+fn resolve_auth_json_path(auth_path_override: Option<OsString>, ezer_home: &Path) -> PathBuf {
+    match auth_path_override {
         Some(p) if !p.is_empty() => PathBuf::from(p),
-        _ => grok_home.join("auth.json"),
+        _ => ezer_home.join("auth.json"),
     }
 }
 
-pub fn auth_json_path(grok_home: &Path) -> PathBuf {
-    resolve_auth_json_path(std::env::var_os("EZER_AUTH_PATH"), grok_home)
+pub fn auth_json_path(ezer_home: &Path) -> PathBuf {
+    resolve_auth_json_path(std::env::var_os("EZER_AUTH_PATH"), ezer_home)
 }
 
 pub fn read_auth_json(auth_file: &Path) -> std::io::Result<AuthStore> {
@@ -342,8 +342,8 @@ fn restore_prior_bytes(auth_file: &Path, bytes: &[u8]) -> std::io::Result<()> {
 }
 
 /// Read the API key from the `xai::api_key` scope in auth.json.
-pub fn read_api_key(grok_home: &Path) -> Option<String> {
-    let path = auth_json_path(grok_home);
+pub fn read_api_key(ezer_home: &Path) -> Option<String> {
+    let path = auth_json_path(ezer_home);
     let map = read_auth_json(&path).ok()?;
     map.get(API_KEY_SCOPE).map(|a| a.key.clone())
 }
@@ -351,12 +351,12 @@ pub fn read_api_key(grok_home: &Path) -> Option<String> {
 /// Store a plain API key in auth.json under the `xai::api_key` scope.
 ///
 /// Uses the corrupt-recovery reader so a malformed auth.json (e.g. from a previous crash) can be healed when the user sets an API key.
-pub fn store_api_key(grok_home: &Path, api_key: &str) -> std::io::Result<()> {
-    let path = auth_json_path(grok_home);
+pub fn store_api_key(ezer_home: &Path, api_key: &str) -> std::io::Result<()> {
+    let path = auth_json_path(ezer_home);
     let mut map = read_auth_json_or_empty_recovering_corrupt(&path)?;
     map.insert(
         API_KEY_SCOPE.to_owned(),
-        GrokAuth {
+        EzerAuth {
             key: api_key.to_owned(),
             auth_mode: AuthMode::ApiKey,
             ..Default::default()
@@ -366,8 +366,8 @@ pub fn store_api_key(grok_home: &Path, api_key: &str) -> std::io::Result<()> {
 }
 
 /// Remove the `xai::api_key` scope from auth.json.
-pub fn clear_api_key(grok_home: &Path) -> std::io::Result<()> {
-    let path = auth_json_path(grok_home);
+pub fn clear_api_key(ezer_home: &Path) -> std::io::Result<()> {
+    let path = auth_json_path(ezer_home);
     if let Ok(mut map) = read_auth_json(&path) {
         map.remove(API_KEY_SCOPE);
         if map.is_empty() {
@@ -414,7 +414,7 @@ mod write_fallback_tests {
         let mut map = AuthStore::new();
         map.insert(
             API_KEY_SCOPE.to_owned(),
-            GrokAuth {
+            EzerAuth {
                 key: "secret-key".to_owned(),
                 auth_mode: AuthMode::ApiKey,
                 ..Default::default()
@@ -572,7 +572,7 @@ mod write_fallback_tests {
         let mut replacement = AuthStore::new();
         replacement.insert(
             API_KEY_SCOPE.to_owned(),
-            GrokAuth {
+            EzerAuth {
                 key: "replacement-key".to_owned(),
                 auth_mode: AuthMode::ApiKey,
                 ..Default::default()

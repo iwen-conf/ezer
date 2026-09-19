@@ -4,7 +4,7 @@ use crate::agent::mvp_agent::MvpAgent;
 use crate::agent::remote_config::{ModelFetchAuth, prefetch_models_blocking};
 use crate::leader::CursorWorkerStartArgs;
 use crate::leader::protocol::InternalMethod;
-use crate::util::grok_home;
+use crate::util::ezer_home;
 use agent_client_protocol as acp;
 use parking_lot::Mutex;
 use std::pin::Pin;
@@ -22,7 +22,7 @@ use xai_acp_lib::{
 };
 #[cfg(test)]
 use ezer_login::AuthMode;
-use ezer_login::{AuthManager, GrokAuth, GrokComConfig, run_auth_flow};
+use ezer_login::{AuthManager, EzerAuth, EzerComConfig, run_auth_flow};
 const MAX_BUFFER_SIZE: usize = 8 * 1024 * 1024;
 use indexmap::IndexMap;
 /// Configuration for periodic auto-update checking in leader mode. A long-running leader periodically calls `check_fn` to check for updates.
@@ -54,7 +54,7 @@ const MAX_AUTO_UPDATE_BUSY_DEFERRALS: u32 = 24;
 /// Causes: a spawner mid-handoff, an old-flow client holding the flock across its ~10s spawn window, or a same-version sibling briefly holding it.
 /// Exceeds that old-flow window so a legitimately-spawning peer wins the race.
 const LEADER_ACQUIRE_TIMEOUT: Duration = Duration::from_secs(15);
-/// Run the auto-update checker loop. The second signal covers relay-driven (grok.com WebSocket) leaders, whose traffic bypasses the IPC server and never sets `agent_busy`.
+/// Run the auto-update checker loop. The second signal covers relay-driven (ezer.com WebSocket) leaders, whose traffic bypasses the IPC server and never sets `agent_busy`.
 /// [`MAX_AUTO_UPDATE_BUSY_DEFERRALS`] bounds the deferrals; past it the update proceeds anyway (still flushing first).
 /// So a permanently-busy signal (orphaned parked interaction, wedged turn) cannot pin the leader to an old binary forever. A stalled download therefore cannot block the loop from responding to shutdown signals. Extracted as a standalone function so it can be unit-tested independently from the full leader infrastructure.
 #[tracing::instrument(level = "debug", skip_all)]
@@ -156,7 +156,7 @@ fn internal_reload_request_line(
 ) -> String {
     crate::leader::protocol::internal_request_line(id, method, params)
 }
-/// Start a skills file watcher and wire it to inject `x.ai/internal/reload_skills` messages into the shared ACP incoming stream.
+/// Start a skills file watcher and wire it to inject `ezer/internal/reload_skills` messages into the shared ACP incoming stream.
 /// The messages fire when SKILL.md files change on disk.
 /// Returns the watcher task, or `None` if no directories could be watched.
 fn spawn_skills_file_watcher<W>(
@@ -227,7 +227,7 @@ pub async fn run_stdio_agent(
     }
     ezer_telemetry::unified_log::set_version(ezer_version::VERSION);
     xai_file_utils::queue::cleanup_orphaned_uploads(
-        &grok_home::grok_home(),
+        &ezer_home::ezer_home(),
         xai_file_utils::queue::DEFAULT_MAX_AGE,
     );
     if let Ok(version) = std::env::var("EZER_CLIENT_VERSION") {
@@ -280,7 +280,7 @@ pub async fn run_stdio_agent(
                 auth_manager.current(),
             )
             .await?;
-            apply_otel_config(&auth_manager, &agent_config.grok_com_config);
+            apply_otel_config(&auth_manager, &agent_config.ezer_com_config);
             let handle_io = spawn_agent_local(
                 agent_config,
                 auth_manager,
@@ -316,15 +316,15 @@ pub async fn run_headless(
         BYOK users should use `ezer -p` or `ezer agent stdio` with ~/.ezer/config.toml. \
         Optional browser login: `ezer login` (EZER_ENABLE_XAI_LOGIN=1).";
     xai_file_utils::queue::cleanup_orphaned_uploads(
-        &grok_home::grok_home(),
+        &ezer_home::ezer_home(),
         xai_file_utils::queue::DEFAULT_MAX_AGE,
     );
     let mut agent_config = agent_config.clone();
     agent_config.mode = crate::agent::config::AgentMode::Headless;
-    let ctx = &agent_config.grok_com_config;
+    let ctx = &agent_config.ezer_com_config;
     let (mut auth, did_browser_flow) = if reauthenticate {
         let auth_manager = Arc::new(AuthManager::new_with_proxy_base_url(
-            &grok_home::grok_home(),
+            &ezer_home::ezer_home(),
             ctx.clone(),
             crate::agent::config::EndpointsConfig::from_effective_config().proxy_url(),
         ));
@@ -341,7 +341,7 @@ pub async fn run_headless(
         .await?
     } else {
         let auth_manager = Arc::new(AuthManager::new_with_proxy_base_url(
-            &grok_home::grok_home(),
+            &ezer_home::ezer_home(),
             ctx.clone(),
             crate::agent::config::EndpointsConfig::from_effective_config().proxy_url(),
         ));
@@ -396,9 +396,9 @@ pub async fn run_headless(
     else {
         anyhow::bail!("{HEADLESS_NO_SESSION}");
     };
-    let relay_console_url = format!("{}/build", ctx.grok_ws_origin);
-    // Do not send BYOK users to grok.com/build. Only advertise a custom relay origin.
-    let advertise_console = !ctx.grok_ws_origin.contains("grok.com");
+    let relay_console_url = format!("{}/build", ctx.ezer_ws_origin);
+    // Do not send BYOK users to ezer.com/build. Only advertise a custom relay origin.
+    let advertise_console = !ctx.ezer_ws_origin.contains("example.test");
     let on_first_connect: Box<dyn FnOnce() + Send + 'static> = Box::new(move || {
         if !did_browser_flow && advertise_console {
             eprintln!();
@@ -533,7 +533,7 @@ pub async fn run_headless(
 /// Whether the relay's shared [`AuthManager`] should be (re)seeded with the startup-resolved `session`. Staleness is compared by `create_time`, which is always present and bumped on every mint/refresh/login.
 /// The narrow "seed only when empty" predicate was insufficient. On a read-only disk, login's `update()` falls back to in-memory-only.
 /// The freshly constructed manager can then load an *older* scope entry from disk that login could not overwrite. Seeding only when empty would pin the manager (and relay 401 recovery) to that stale snapshot. Never clobbers an equal-or-fresher token: the same key (already in sync) or a token whose `create_time` is newer.
-fn should_seed_shared_session(existing: Option<&GrokAuth>, session: &GrokAuth) -> bool {
+fn should_seed_shared_session(existing: Option<&EzerAuth>, session: &EzerAuth) -> bool {
     match existing {
         None => true,
         Some(existing) => {
@@ -545,7 +545,7 @@ fn should_seed_shared_session(existing: Option<&GrokAuth>, session: &GrokAuth) -
 /// A manager without a refresher can only adopt sibling tokens from disk. Relay 401 recovery then dead-ends whenever no other refresher is alive (sleep/wake, auth.json loss), even with a valid refresh token in memory.
 /// Sharing also puts relay recovery behind the same in-process `refresh_lock` and `permanent_failure` cache as every other consumer. Concurrent recovery paths therefore cannot double-spend a refresh token.
 fn relay_config_for_session(
-    auth: Option<&GrokAuth>,
+    auth: Option<&EzerAuth>,
     agent_config: &AgentConfig,
     shared_auth_manager: &Arc<AuthManager>,
 ) -> Option<crate::agent::relay::RelayConfig> {
@@ -555,14 +555,14 @@ fn relay_config_for_session(
     }
     crate::agent::relay::RelayConfig::for_session(
         session,
-        &agent_config.grok_com_config,
+        &agent_config.ezer_com_config,
         agent_config.endpoints.alpha_test_key.clone(),
         Some(shared_auth_manager.clone()),
     )
 }
 /// A bare leader has no local IPC clients; remote prompts arrive *through* the relay, so it must be up before any demand signal could exist.
 /// Gating it on headless registration is a chicken-and-egg deadlock: the agent never registers and tooling reports "No online agents". A leader serving only TUI-dashboard / IDE clients never opens the relay.
-/// It then never pays the per-message clone/parse/log/TLS duplication of mirroring every agent message to grok.com. Until the relay starts, `agent_to_ws_tx` stays `None`, so the outbound bridge skips the relay clone entirely. Must be called within a `LocalSet` (uses `spawn_local`).
+/// It then never pays the per-message clone/parse/log/TLS duplication of mirroring every agent message to ezer.com. Until the relay starts, `agent_to_ws_tx` stays `None`, so the outbound bridge skips the relay clone entirely. Must be called within a `LocalSet` (uses `spawn_local`).
 fn spawn_leader_relay(
     slot: Rc<std::cell::RefCell<Option<crate::agent::relay::RelayHandle>>>,
     relay_config: crate::agent::relay::RelayConfig,
@@ -600,7 +600,7 @@ fn spawn_leader_relay(
         *slot_for_task.borrow_mut() = Some(handle);
     });
 }
-/// Everything needed to arm the leader's grok.com relay *after* startup. A leader that boots without auth used to disable the relay forever: the decision was made once in [`run_leader`] and never revisited.
+/// Everything needed to arm the leader's ezer.com relay *after* startup. A leader that boots without auth used to disable the relay forever: the decision was made once in [`run_leader`] and never revisited.
 /// On devboxes that turned a transient mint-provider outage at provision time into a permanently invisible box.
 /// The external auth provider succeeded minutes later and the config watcher hot-reloaded the token into the leader. But the relay never connected, the agent never registered, and tooling reported the (healthy) box as "not found online" for its whole lifetime.
 struct DeferredRelayArm {
@@ -611,23 +611,23 @@ struct DeferredRelayArm {
     cancel: tokio_util::sync::CancellationToken,
     /// Shared with [`run_leader`]'s shutdown path, which drains it to stop the relay explicitly.
     slot: Rc<std::cell::RefCell<Option<crate::agent::relay::RelayHandle>>>,
-    grok_com_config: ezer_login::GrokComConfig,
+    ezer_com_config: ezer_login::EzerComConfig,
     alpha_test_key: Option<String>,
 }
 impl DeferredRelayArm {
     /// Arm the relay for a hot-reloaded session if it is relay-eligible. Consumes the parts and returns `None` when the relay was armed.
     /// Returns `Some(self)` when the session is not relay-eligible, so a later eligible token can still arm.
     /// Ineligible means BYOK / non-x.ai issuer; see [`RelayConfig::for_session`](crate::agent::relay::RelayConfig::for_session). Must be called within a `LocalSet` (delegates to [`spawn_leader_relay`]).
-    fn arm_if_eligible(self, session: &GrokAuth, auth_manager: &Arc<AuthManager>) -> Option<Self> {
+    fn arm_if_eligible(self, session: &EzerAuth, auth_manager: &Arc<AuthManager>) -> Option<Self> {
         let Some(relay_config) = crate::agent::relay::RelayConfig::for_session(
             session,
-            &self.grok_com_config,
+            &self.ezer_com_config,
             self.alpha_test_key.clone(),
             Some(auth_manager.clone()),
         ) else {
             return Some(self);
         };
-        info!("Relay-eligible auth token appeared after startup — arming grok.com relay");
+        info!("Relay-eligible auth token appeared after startup — arming ezer.com relay");
         spawn_leader_relay(
             self.slot,
             relay_config,
@@ -646,13 +646,13 @@ pub fn suppress_otel() {
 }
 /// Startup external-OTEL gate for an in-process (embedded) agent.
 /// Mirrors the leader startup gate so the pager process is fail-closed by construction at the agent boundary.
-pub fn apply_otel_config(auth_manager: &AuthManager, grok_com_config: &GrokComConfig) {
+pub fn apply_otel_config(auth_manager: &AuthManager, ezer_com_config: &EzerComConfig) {
     suppress_otel();
     let has_session = auth_manager.current().is_some() || auth_manager.read_disk_auth().is_some();
     if crate::agent::otel_gate::should_open_at_startup(crate::agent::otel_gate::StartupGate {
         channel: crate::agent::otel_gate::resolved_policy_channel(),
         has_session,
-        session_pending: crate::agent::otel_gate::is_session_pending(has_session, grok_com_config),
+        session_pending: crate::agent::otel_gate::is_session_pending(has_session, ezer_com_config),
     }) {
         crate::agent::otel_gate::open_at_startup();
     }
@@ -661,7 +661,7 @@ pub fn apply_otel_config(auth_manager: &AuthManager, grok_com_config: &GrokComCo
 pub struct LeaderRunOptions {
     /// Keep serving after the last IPC client disconnects (devbox / systemd leaders).
     pub no_exit_on_disconnect: bool,
-    /// Defer the grok.com relay until the first headless client registers.
+    /// Defer the ezer.com relay until the first headless client registers.
     pub relay_on_demand: bool,
     pub auto_update_check: Option<LeaderAutoUpdateConfig>,
     pub memory_config: Option<crate::config::MemoryConfig>,
@@ -669,7 +669,7 @@ pub struct LeaderRunOptions {
     /// Inert on a build without worker support.
     pub cursor_worker: Option<CursorWorkerStartArgs>,
 }
-/// Run the agent in leader mode, accepting IPC connections from multiple clients. When a grok.com session is present, the leader connects to the websocket relay after startup (post-auth, post-prefetch).
+/// Run the agent in leader mode, accepting IPC connections from multiple clients. When a ezer.com session is present, the leader connects to the websocket relay after startup (post-auth, post-prefetch).
 /// BYOK / no-session leaders start serving clients over IPC only. A relay-eligible token hot-reloaded later arms the relay via [`DeferredRelayArm`]. IPC server started (`tokio::spawn`); socket bound HERE, before auth.
 /// Bounded non-interactive auth (no blocking model/settings prefetch; those stream in after readiness). `None` (BYOK / no session) is not an error: the relay stays off and a background cold-mint / re-login can start it later.
 #[tracing::instrument(level = "debug", skip_all)]
@@ -695,13 +695,13 @@ pub async fn run_leader(
     ezer_telemetry::unified_log::set_version(ezer_version::VERSION);
     tokio::task::spawn_blocking(|| {
         xai_file_utils::queue::cleanup_orphaned_uploads(
-            &grok_home::grok_home(),
+            &ezer_home::ezer_home(),
             xai_file_utils::queue::DEFAULT_MAX_AGE,
         );
     });
     let mut agent_config = agent_config.clone();
     agent_config.mode = crate::agent::config::AgentMode::Leader;
-    let ws_url = &agent_config.grok_com_config.grok_ws_url;
+    let ws_url = &agent_config.ezer_com_config.ezer_ws_url;
     let mut lock = LeaderLock::new(ws_url);
     let socket_path = lock.socket_path().clone();
     match lock.try_acquire() {
@@ -774,7 +774,7 @@ pub async fn run_leader(
     .with_cursor_worker(
         agent_config.cursor_worker.clone(),
         agent_config.hub.url.clone(),
-        grok_home::grok_home(),
+        ezer_home::ezer_home(),
         external_roster.clone(),
     );
     let workspace_control = control_state.workspace.clone();
@@ -818,9 +818,9 @@ pub async fn run_leader(
     }
     debug!("IPC socket created");
     let _lock = lock;
-    let ctx = &agent_config.grok_com_config;
+    let ctx = &agent_config.ezer_com_config;
     suppress_otel();
-    let auth: Option<GrokAuth> =
+    let auth: Option<EzerAuth> =
         ezer_login::try_noninteractive_auth_no_mint(ctx, agent_config.endpoints.proxy_url())
             .await;
     let has_session = auth.is_some()
@@ -829,7 +829,7 @@ pub async fn run_leader(
             .read_disk_auth()
             .is_some();
     let session_pending =
-        crate::agent::otel_gate::is_session_pending(has_session, &agent_config.grok_com_config);
+        crate::agent::otel_gate::is_session_pending(has_session, &agent_config.ezer_com_config);
     let policy_channel =
         crate::agent::otel_gate::policy_channel_for(&agent_config.endpoints.proxy_url());
     if crate::agent::otel_gate::should_open_at_startup(crate::agent::otel_gate::StartupGate {
@@ -1051,7 +1051,7 @@ pub async fn run_leader(
                 );
             } else {
                 info!(
-                    "Relay not started: no grok.com session token \
+                    "Relay not started: no ezer.com session token \
                      (BYOK / local-only leader); will arm if an eligible \
                      token is hot-reloaded"
                 );
@@ -1062,7 +1062,7 @@ pub async fn run_leader(
                     agent_to_ws_tx: agent_to_ws_tx.clone(),
                     cancel: cancel_clone.clone(),
                     slot: relay_handle_slot.clone(),
-                    grok_com_config: agent_config.grok_com_config.clone(),
+                    ezer_com_config: agent_config.ezer_com_config.clone(),
                     alpha_test_key: agent_config.endpoints.alpha_test_key.clone(),
                 });
             }
@@ -1095,8 +1095,8 @@ pub async fn run_leader(
             if let Some(home) = xai_dirs::home_dir() {
                 watch_paths.push(home.join(".claude.json"));
             }
-            let auth_scope = agent_config.grok_com_config.auth_scope();
-            let initial_auth_key_hash = ezer_config::user_grok_home()
+            let auth_scope = agent_config.ezer_com_config.auth_scope();
+            let initial_auth_key_hash = ezer_config::user_ezer_home()
                 .map(|g| g.join("auth.json"))
                 .and_then(|auth_path| ezer_login::read_auth_json(&auth_path).ok())
                 .and_then(|store| {
@@ -1110,7 +1110,7 @@ pub async fn run_leader(
             let watcher_cwd = recursive_config_watch_enabled
                 .then_some(cwd_for_watcher.as_path());
             let _config_watcher = if let Some((watcher, events_rx)) = crate::config::watcher::ConfigFileWatcher::start(
-                &grok_home::grok_home(),
+                &ezer_home::ezer_home(),
                 &watch_paths,
                 watcher_cwd,
                 None,
@@ -1135,7 +1135,7 @@ pub async fn run_leader(
                 let initial_config = crate::config::load_from_disk()
                     .unwrap_or_else(|_| toml::Value::Table(toml::map::Map::new()));
                 let reloader = crate::config::reloader::ConfigReloader::new(
-                    grok_home::grok_home(),
+                    ezer_home::ezer_home(),
                     initial_auth_key_hash,
                     initial_config,
                     auth_scope,
@@ -1295,7 +1295,7 @@ pub async fn run_leader(
                             info!("UI config change detected by watcher");
                             let notification = serde_json::json!({
                                 "jsonrpc": "2.0",
-                                "method": "x.ai/config_changed",
+                                "method": "ezer/config_changed",
                                 "params": {
                                     "section": "ui",
                                     "changes": {
@@ -1360,15 +1360,15 @@ mod tests {
             }),
         }
     }
-    fn oidc_session(key: &str, create_time: chrono::DateTime<chrono::Utc>) -> GrokAuth {
-        GrokAuth {
+    fn oidc_session(key: &str, create_time: chrono::DateTime<chrono::Utc>) -> EzerAuth {
+        EzerAuth {
             key: key.into(),
             auth_mode: AuthMode::Oidc,
             oidc_issuer: Some(ezer_login::XAI_OAUTH2_ISSUER.to_string()),
             refresh_token: Some(format!("rt-{key}")),
             create_time,
             expires_at: Some(create_time + chrono::Duration::minutes(15)),
-            ..GrokAuth::test_default()
+            ..EzerAuth::test_default()
         }
     }
     #[test]
@@ -1426,14 +1426,14 @@ mod tests {
     }
     /// A `RelayConfig` built via the production constructor (`for_session`) with a relay-eligible x.ai OIDC session.
     fn test_relay_config(addr: std::net::SocketAddr) -> crate::agent::relay::RelayConfig {
-        let auth = GrokAuth {
+        let auth = EzerAuth {
             auth_mode: AuthMode::Oidc,
             oidc_issuer: Some(ezer_login::XAI_OAUTH2_ISSUER.to_string()),
-            ..GrokAuth::test_default()
+            ..EzerAuth::test_default()
         };
-        let cfg = ezer_login::GrokComConfig {
-            grok_ws_url: format!("ws://{addr}"),
-            grok_ws_origin: format!("http://{addr}"),
+        let cfg = ezer_login::EzerComConfig {
+            ezer_ws_url: format!("ws://{addr}"),
+            ezer_ws_origin: format!("http://{addr}"),
             ..Default::default()
         };
         crate::agent::relay::RelayConfig::for_session(&auth, &cfg, None, None)
@@ -1477,21 +1477,21 @@ mod tests {
             legacy: std::env::var_os(LEGACY_XAI_API_KEY_ENV_VAR),
             proxy: std::env::var_os(PROXY_ENV_VAR),
         };
-        let cfg = GrokComConfig::default();
+        let cfg = EzerComConfig::default();
         unsafe {
             std::env::set_var(XAI_API_KEY_ENV_VAR, "test-key");
             std::env::remove_var(LEGACY_XAI_API_KEY_ENV_VAR);
             std::env::remove_var(PROXY_ENV_VAR);
         }
-        let session = GrokAuth {
+        let session = EzerAuth {
             expires_at: chrono::DateTime::from_timestamp(9_999_999_999, 0),
             auth_mode: AuthMode::Oidc,
             oidc_issuer: Some(ezer_login::XAI_OAUTH2_ISSUER.to_string()),
-            ..GrokAuth::test_default()
+            ..EzerAuth::test_default()
         };
         let with_session = {
             let dir = tempfile::tempdir().unwrap();
-            let am = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
+            let am = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
             am.hot_swap(session);
             am
         };
@@ -1513,7 +1513,7 @@ mod tests {
             tokio::time::sleep(Duration::from_millis(25)).await;
         }
     }
-    /// Regression test for the bare-leader relay gating bug. A bare `ezer agent leader` (devbox/systemd: no local IPC clients, `relay_on_demand == false`) must connect the grok.com relay eagerly.
+    /// Regression test for the bare-leader relay gating bug. A bare `ezer agent leader` (devbox/systemd: no local IPC clients, `relay_on_demand == false`) must connect the ezer.com relay eagerly.
     /// Remote prompts arrive *through* the relay, so on such a leader no headless-registration demand signal can ever fire.
     /// Gating the relay on it means the agent never registers with the backend ("No online agents") even though the box is healthy.
     #[tokio::test]
@@ -1602,13 +1602,13 @@ mod tests {
             Rc::new(Mutex::new(None));
         let (_demand_tx, demand_rx) = watch::channel(false);
         let slot = Rc::new(std::cell::RefCell::new(None));
-        let grok_com_config = ezer_login::GrokComConfig {
-            grok_ws_url: format!("ws://{addr}"),
-            grok_ws_origin: format!("http://{addr}"),
+        let ezer_com_config = ezer_login::EzerComConfig {
+            ezer_ws_url: format!("ws://{addr}"),
+            ezer_ws_origin: format!("http://{addr}"),
             ..Default::default()
         };
         let tmp = tempfile::tempdir().unwrap();
-        let auth_manager = Arc::new(AuthManager::new(tmp.path(), grok_com_config.clone()));
+        let auth_manager = Arc::new(AuthManager::new(tmp.path(), ezer_com_config.clone()));
         let arm = DeferredRelayArm {
             relay_on_demand: false,
             relay_demand_rx: demand_rx,
@@ -1616,13 +1616,13 @@ mod tests {
             agent_to_ws_tx: agent_to_ws_tx.clone(),
             cancel: cancel.clone(),
             slot: slot.clone(),
-            grok_com_config,
+            ezer_com_config,
             alpha_test_key: None,
         };
         let local = tokio::task::LocalSet::new();
         local
             .run_until(async {
-                let ineligible = GrokAuth::test_default();
+                let ineligible = EzerAuth::test_default();
                 let arm = arm
                     .arm_if_eligible(&ineligible, &auth_manager)
                     .expect("non-eligible token must hand the parts back");
@@ -1632,10 +1632,10 @@ mod tests {
                     0,
                     "non-eligible token must not connect the relay"
                 );
-                let eligible = GrokAuth {
+                let eligible = EzerAuth {
                     auth_mode: AuthMode::Oidc,
                     oidc_issuer: Some(ezer_login::XAI_OAUTH2_ISSUER.to_string()),
-                    ..GrokAuth::test_default()
+                    ..EzerAuth::test_default()
                 };
                 assert!(
                     arm.arm_if_eligible(&eligible, &auth_manager).is_none(),
@@ -1661,17 +1661,17 @@ mod tests {
     async fn cold_mint_auth_write_arms_deferred_relay() {
         use crate::config::reloader::{ConfigReloader, ConfigUpdate, hash_auth_key};
         let (addr, _count) = spawn_mock_relay_server().await;
-        let grok_com_config = ezer_login::GrokComConfig {
-            grok_ws_url: format!("ws://{addr}"),
-            grok_ws_origin: format!("http://{addr}"),
+        let ezer_com_config = ezer_login::EzerComConfig {
+            ezer_ws_url: format!("ws://{addr}"),
+            ezer_ws_origin: format!("http://{addr}"),
             ..Default::default()
         };
         let tmp = tempfile::tempdir().unwrap();
         let scope = "https://test.example.com".to_string();
-        let session = GrokAuth {
+        let session = EzerAuth {
             auth_mode: AuthMode::Oidc,
             oidc_issuer: Some(ezer_login::XAI_OAUTH2_ISSUER.to_string()),
-            ..GrokAuth::test_default()
+            ..EzerAuth::test_default()
         };
         let mut store = std::collections::BTreeMap::new();
         store.insert(scope.clone(), session);
@@ -1697,7 +1697,7 @@ mod tests {
         else {
             panic!("expected ConfigUpdate::Auth");
         };
-        let auth_manager = Arc::new(AuthManager::new(tmp.path(), grok_com_config.clone()));
+        let auth_manager = Arc::new(AuthManager::new(tmp.path(), ezer_com_config.clone()));
         let (ws_to_agent_tx, _ws_to_agent_rx) = mpsc::unbounded_channel();
         let agent_to_ws_tx: Rc<Mutex<Option<mpsc::UnboundedSender<String>>>> =
             Rc::new(Mutex::new(None));
@@ -1712,7 +1712,7 @@ mod tests {
             agent_to_ws_tx,
             cancel: cancel.clone(),
             slot: slot.clone(),
-            grok_com_config,
+            ezer_com_config,
             alpha_test_key: None,
         };
         let local = tokio::task::LocalSet::new();
@@ -1742,7 +1742,7 @@ mod tests {
         let msg: serde_json::Value = serde_json::from_str(line.trim_end()).unwrap();
         assert_eq!(
             msg.get("method").and_then(|v| v.as_str()),
-            Some("_x.ai/internal/reload_models"),
+            Some("_ezer/internal/reload_models"),
             "wire method must carry the `_` ext prefix or the ACP decoder \
              rejects it with method_not_found"
         );
@@ -1771,7 +1771,7 @@ mod tests {
         let msg: serde_json::Value = serde_json::from_str(line.trim_end()).unwrap();
         assert_eq!(
             msg.get("method").and_then(|v| v.as_str()),
-            Some("_x.ai/internal/auth_cleared")
+            Some("_ezer/internal/auth_cleared")
         );
     }
     #[tokio::test]

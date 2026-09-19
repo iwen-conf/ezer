@@ -91,7 +91,7 @@ async fn run() -> Result<ExitCode> {
         );
     }
 
-    // The pager child resolves GROK_SCROLL_LOG against ITS cwd (the harness's temp workspace)
+    // The pager child resolves EZER_SCROLL_LOG against ITS cwd (the harness's temp workspace)
     // A relative artifacts dir (including the default) would scatter captures there and starve the finalize wait
     // Absolutize against the invoking cwd
     let artifacts = std::path::absolute(&cli.artifacts)

@@ -1,4 +1,4 @@
-//! `x.ai/plugins/*` extension handlers, backing the pager's hooks/plugins modal.
+//! `ezer/plugins/*` extension handlers, backing the pager's hooks/plugins modal.
 
 use agent_client_protocol as acp;
 use serde::Deserialize;
@@ -75,9 +75,9 @@ fn origin_to_dto(origin: &ezer_agent::plugins::PluginOrigin) -> PluginOrigin {
     use ezer_agent::plugins::PluginOrigin as AgentOrigin;
     match origin {
         AgentOrigin::CliOverride => PluginOrigin::CliOverride,
-        AgentOrigin::ProjectGrok => PluginOrigin::ProjectGrok,
+        AgentOrigin::ProjectEzer => PluginOrigin::ProjectEzer,
         AgentOrigin::ProjectClaude => PluginOrigin::ProjectClaude,
-        AgentOrigin::UserGrok => PluginOrigin::UserGrok,
+        AgentOrigin::UserEzer => PluginOrigin::UserEzer,
         AgentOrigin::UserClaude => PluginOrigin::UserClaude,
         AgentOrigin::ClaudeMarketplace { marketplace } => PluginOrigin::ClaudeMarketplace {
             marketplace: marketplace.clone(),
@@ -126,7 +126,7 @@ fn marketplace_source_label(origin: &PluginOrigin) -> Option<String> {
 
 pub async fn handle(agent: &MvpAgent, args: &acp::ExtRequest) -> ExtResult {
     match args.method.as_ref() {
-        "x.ai/plugins/list" => {
+        "ezer/plugins/list" => {
             let req: ListRequest = super::parse_params(args)?;
 
             // A known session answers from its own registry, which includes `_meta.pluginDirs` plugins
@@ -156,7 +156,7 @@ pub async fn handle(agent: &MvpAgent, args: &acp::ExtRequest) -> ExtResult {
             };
             super::to_ext_response(Ok::<_, anyhow::Error>(response))
         }
-        "x.ai/plugins/action" => {
+        "ezer/plugins/action" => {
             let req: xai_hooks_plugins_types::PluginsActionRequest = super::parse_params(args)?;
             let sid = acp::SessionId::new(req.session_id);
 
@@ -166,7 +166,7 @@ pub async fn handle(agent: &MvpAgent, args: &acp::ExtRequest) -> ExtResult {
                 .ok_or_else(|| anyhow::anyhow!("session not found"));
             super::to_ext_response(result)
         }
-        "x.ai/plugins/notify-updates" => {
+        "ezer/plugins/notify-updates" => {
             // Broadcast a PluginUpdatesInstalled notification to the session.
             #[derive(serde::Deserialize)]
             #[serde(rename_all = "camelCase")]

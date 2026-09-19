@@ -637,8 +637,8 @@ pub(super) fn dispatch_dump_input_log(app: &mut AppView) -> Vec<Effect> {
         }
     };
 
-    let grok_home = ezer_tools::util::grok_home::grok_home();
-    let logs_dir = grok_home.join("logs");
+    let ezer_home = ezer_tools::util::ezer_home::ezer_home();
+    let logs_dir = ezer_home.join("logs");
     let _ = std::fs::create_dir_all(&logs_dir);
     let ts = now.format("%Y%m%d-%H%M%S");
     let path = logs_dir.join(format!("input-debug-{ts}.json"));
@@ -825,7 +825,7 @@ pub(super) fn handle_skills_toggle_done(
             }
         }
     }
-    // The toggle effect already called x.ai/skills/refresh-baseline
+    // The toggle effect already called ezer/skills/refresh-baseline
     // That triggers the session to reload skills and push an AvailableCommandsUpdate notification with the updated list
     vec![]
 }

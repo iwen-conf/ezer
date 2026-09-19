@@ -118,7 +118,7 @@ impl MvpAgent {
         let (disable_api_key_auth, alpha_test_key, client_version) = {
             let cfg = self.cfg.borrow();
             (
-                cfg.grok_com_config.api_key_auth_disabled(),
+                cfg.ezer_com_config.api_key_auth_disabled(),
                 cfg.endpoints.alpha_test_key.clone(),
                 cfg.client_version.clone(),
             )
@@ -169,7 +169,7 @@ impl MvpAgent {
     /// Publish model-owned credentials for voice/tools static fallthrough.
     /// Only [`ModelEntry::own_credential`], not `sampling_config.api_key` (which may be a session JWT).
     pub(crate) fn sync_process_static_api_key(&self, preferred_model_id: Option<&str>) {
-        if self.cfg.borrow().grok_com_config.api_key_auth_disabled() {
+        if self.cfg.borrow().ezer_com_config.api_key_auth_disabled() {
             self.auth_manager.set_process_static_api_key(None);
             return;
         }
@@ -181,7 +181,7 @@ impl MvpAgent {
             );
     }
     /// Return auth for sync config construction.
-    pub(super) fn current_or_buffered_auth(&self) -> Option<ezer_login::GrokAuth> {
+    pub(super) fn current_or_buffered_auth(&self) -> Option<ezer_login::EzerAuth> {
         self.auth_manager
             .current()
             .or_else(|| {
@@ -405,7 +405,7 @@ impl MvpAgent {
     /// Inputs for a registry build scoped to `cwd`: a fresh real-remote trust verdict, then
     /// `[plugins]` from disk. Self-free so callers can run it on a blocking thread.
     /// `cfg.plugins` is boot-time state that `config.toml` edits never refresh, so a snapshot built
-    /// from it reports stale `enabled` flags to session-less `x.ai/plugins/list` / `x.ai/skills/list`.
+    /// from it reports stale `enabled` flags to session-less `ezer/plugins/list` / `ezer/skills/list`.
     /// Order is load-bearing: the disk read consults the folder-trust gate, whose cold-key backstop
     /// resolves remote-less and records a durable verdict that would make an org kill-switch
     /// unliftable for the process; resolving first (recording, with the real `RemoteSettings`) makes
@@ -435,7 +435,7 @@ impl MvpAgent {
     /// [`Self::ensure_plugin_registry`] for async callers: the trust gather, config read and
     /// discovery walk run on a blocking thread so a pre-session pull never stalls the runtime. The
     /// result is published back on the runtime, and only if nothing else (a concurrent explicit
-    /// `x.ai/plugins/reload`) initialized the registry meanwhile — the newer build wins.
+    /// `ezer/plugins/reload`) initialized the registry meanwhile — the newer build wins.
     pub(crate) async fn ensure_plugin_registry_async(&self) {
         if self.plugin_registry_initialized.get() {
             return;
@@ -466,7 +466,7 @@ impl MvpAgent {
             }
         }
     }
-    /// Plugin registry for a pre-session pull (`x.ai/skills/*`, `x.ai/commands/list`) scoped to
+    /// Plugin registry for a pre-session pull (`ezer/skills/*`, `ezer/commands/list`) scoped to
     /// `cwd`: a fresh, non-shared build for that cwd when one is given — the launch dir is unrelated
     /// to the user's workspace in desktop-to-docker and ssh setups — else the shared launch-dir
     /// snapshot, built on demand. Trust is resolved before the disk read either way, and the walks
@@ -718,7 +718,7 @@ impl MvpAgent {
     pub(crate) fn workspaces_client(&self) -> crate::remote::WorkspacesClient {
         crate::remote::WorkspacesClient::new(self.auth_manager.clone())
     }
-    /// Pre-session command availability snapshot. Used by the `x.ai/commands/list` ext method and the `InitializeResponse._meta` path (`builtin_commands()`). Both fire before any session exists.
+    /// Pre-session command availability snapshot. Used by the `ezer/commands/list` ext method and the `InitializeResponse._meta` path (`builtin_commands()`). Both fire before any session exists.
     /// The eventual agent's toolset is unknown (it depends on the model the user picks). So runtime/tool-dependent gates (`/flush`, `/loop`, `/memory`, …) fail closed.
     /// The session-scoped `available_commands_update` in `acp_session.rs` fills in the real per-model gating as soon as a session starts.
     pub(crate) fn command_availability(
@@ -759,8 +759,8 @@ impl MvpAgent {
     pub(crate) fn session_turn_number(&self, sid: &acp::SessionId) -> Option<u64> {
         self.session_registry.turn_number(sid)
     }
-    /// Return the current GrokAuth credentials, if authenticated and not expired.
-    pub(crate) fn current_auth(&self) -> Option<ezer_login::GrokAuth> {
+    /// Return the current EzerAuth credentials, if authenticated and not expired.
+    pub(crate) fn current_auth(&self) -> Option<ezer_login::EzerAuth> {
         self.auth_manager.current()
     }
     /// Shared plugin registry handle used by extensions for snapshot/reload.
@@ -1112,7 +1112,7 @@ impl MvpAgent {
                     .data(
                         serde_json::json!({
                 "code": "local_workspace_intent_missing",
-                "message": "x.ai/local_workspace intent required for mid-session add",
+                "message": "ezer/local_workspace intent required for mid-session add",
             }),
                     ),
             );
@@ -1329,7 +1329,7 @@ impl MvpAgent {
     }
     #[cfg(feature = "local-workspace")]
     /// After chat+local stamp, wait for handshake success.
-    /// Only fail-closed for `x.ai/local_workspace` intent (not generic GatewayAttach).
+    /// Only fail-closed for `ezer/local_workspace` intent (not generic GatewayAttach).
     /// Handshake errors propagate; the session and bridge are reaped on failure / timeout.
     pub(crate) async fn await_existing_workspace_handshake(
         &self,
@@ -1449,15 +1449,15 @@ impl MvpAgent {
             xai_chat_state::AuthType::ApiKey
         }
     }
-    /// Fall through to `xai.api_key` if the startup probe still allows it, else `grok.com`.
+    /// Fall through to `xai.api_key` if the startup probe still allows it, else `ezer.com`.
     /// `None` when `preferred_method` is pinned.
     pub(super) fn cached_token_fallthrough_method_id(
         &self,
     ) -> Option<acp::AuthMethodId> {
-        let preferred = self.cfg.borrow().grok_com_config.preferred_method;
+        let preferred = self.cfg.borrow().ezer_com_config.preferred_method;
         let id = auth_method::method_id_after_cached_token_unavailable(
             auth_method::should_advertise_xai_api_key_with_env_ok(
-                self.cfg.borrow().grok_com_config.api_key_auth_disabled(),
+                self.cfg.borrow().ezer_com_config.api_key_auth_disabled(),
                 self.models_manager.models().values(),
                 self.auth_manager.first_party_env_api_key_ok(),
             ),
@@ -1465,14 +1465,14 @@ impl MvpAgent {
         )?;
         Some(acp::AuthMethodId::new(id))
     }
-    /// Shared exit for missing/expired/legacy `cached_token`: fall through with `use_oauth` only when the target is interactive `grok.com`.
+    /// Shared exit for missing/expired/legacy `cached_token`: fall through with `use_oauth` only when the target is interactive `ezer.com`.
     /// When `preferred_method` is pinned, fail instead of falling through.
     pub(super) async fn authenticate_after_cached_token_unavailable(
         &self,
         arguments: acp::AuthenticateRequest,
     ) -> Result<AuthenticateResponse, acp::Error> {
         let Some(method_id) = self.cached_token_fallthrough_method_id() else {
-            let preferred = self.cfg.borrow().grok_com_config.preferred_method;
+            let preferred = self.cfg.borrow().ezer_com_config.preferred_method;
             let msg = match preferred {
                 Some(ezer_login::PreferredAuthMethod::ApiKey) => {
                     auth_method::PREFERRED_API_KEY_UNAVAILABLE
@@ -1511,7 +1511,7 @@ impl MvpAgent {
     pub(crate) fn deployment_key(&self) -> Option<String> {
         self.cfg.borrow().endpoints.deployment_key.clone()
     }
-    /// Apply settings side effects and push `x.ai/settings/update` to clients.
+    /// Apply settings side effects and push `ezer/settings/update` to clients.
     /// Shared tail for every settings-arrival site.
     pub(super) fn on_remote_settings_changed(&self) {
         self.sync_memory_config_from_agent_config();
@@ -1559,7 +1559,7 @@ impl MvpAgent {
             let task = tokio_util::task::AbortOnDropHandle::new(
                 tokio::task::spawn_blocking(|| {
                     crate::extensions::marketplace::ensure_official_marketplace_source(
-                        &crate::util::grok_home::grok_home(),
+                        &crate::util::ezer_home::ezer_home(),
                     );
                 }),
             );
@@ -1603,14 +1603,14 @@ impl MvpAgent {
     /// accept a warm disk cache. `Rejected` is preserved for 401 self-heal.
     async fn fetch_settings(
         &self,
-        auth: &ezer_login::GrokAuth,
+        auth: &ezer_login::EzerAuth,
     ) -> crate::remote::SettingsFetch {
         let (origin, alpha, auth_config) = {
             let cfg = self.cfg.borrow();
             (
                 cfg.endpoints.proxy_url(),
                 cfg.endpoints.alpha_test_key.clone(),
-                cfg.grok_com_config.clone(),
+                cfg.ezer_com_config.clone(),
             )
         };
         let query = crate::agent::remote_config::settings_get::SettingsQuery::from_parts(
@@ -1625,7 +1625,7 @@ impl MvpAgent {
     /// That returns the settings only on a successful fetch for the still-live identity. Both post-auth callers funnel through here. [`OtelGate::resolve`]: crate::agent::otel_gate::OtelGate::resolve
     pub(super) async fn fetch_settings_resolving_gate(
         &self,
-        auth: &ezer_login::GrokAuth,
+        auth: &ezer_login::EzerAuth,
     ) -> Option<crate::util::config::RemoteSettings> {
         let identity = auth.user_id.clone();
         let channel = {
@@ -1648,7 +1648,7 @@ impl MvpAgent {
     /// On timeout or error the original `Rejected` stands.
     async fn fetch_settings_self_healing_401(
         &self,
-        auth: &ezer_login::GrokAuth,
+        auth: &ezer_login::EzerAuth,
     ) -> crate::remote::SettingsFetch {
         let outcome = self.fetch_settings(auth).await;
         if matches!(outcome, crate::remote::SettingsFetch::Rejected) {
@@ -1665,7 +1665,7 @@ impl MvpAgent {
         }
         outcome
     }
-    /// Drop xAI/X-sourced UI notices unless the user opted into grok.com login.
+    /// Drop xAI/X-sourced UI notices unless the user opted into ezer.com login.
     fn strip_xai_ui_notices(
         mut settings: crate::util::config::RemoteSettings,
     ) -> crate::util::config::RemoteSettings {
@@ -1685,7 +1685,7 @@ impl MvpAgent {
         settings.allow_access = None;
         settings.consent_gate = None;
         settings.campaigns.clear();
-        settings.grok_oauth_enabled = None;
+        settings.ezer_oauth_enabled = None;
         settings
     }
 
@@ -1715,9 +1715,9 @@ impl MvpAgent {
         self.store_remote_settings(settings);
         self.on_remote_settings_changed();
     }
-    /// Re-fetch remote settings, re-init the telemetry client, apply side effects, and push `x.ai/settings/update` to clients. Called from both auth handlers (first install and reauth/account switch).
+    /// Re-fetch remote settings, re-init the telemetry client, apply side effects, and push `ezer/settings/update` to clients. Called from both auth handlers (first install and reauth/account switch).
     /// Agent-level fields resolved at startup (`worktree_type`, `restore_code`) are NOT re-resolved here. That requires a broader refactor of the init path.
-    pub(super) async fn refresh_remote_settings(&self, auth: &ezer_login::GrokAuth) {
+    pub(super) async fn refresh_remote_settings(&self, auth: &ezer_login::EzerAuth) {
         if !crate::util::config::resolve_remote_fetch_enabled() {
             tracing::debug!("post-auth settings refresh skipped: remote_fetch disabled");
             return;
@@ -1737,8 +1737,8 @@ impl MvpAgent {
         let (
             telemetry_config,
             telemetry_mode,
-            grok_user_id,
-            grok_team_id,
+            ezer_user_id,
+            ezer_team_id,
             deployment_key,
             subscription_tier,
         ) = {
@@ -1753,8 +1753,8 @@ impl MvpAgent {
                 trace_upload = %trace_upload,
                 "post-auth data capture config re-resolved",
             );
-            let grok_user_id = is_xai.then(|| user_id.clone());
-            let grok_team_id = is_xai.then(|| team_id.clone()).flatten();
+            let ezer_user_id = is_xai.then(|| user_id.clone());
+            let ezer_team_id = is_xai.then(|| team_id.clone()).flatten();
             let telemetry_config = cfg.telemetry.clone();
             let deployment_key = cfg.endpoints.deployment_key.clone();
             let subscription_tier_display = cfg
@@ -1764,8 +1764,8 @@ impl MvpAgent {
             (
                 telemetry_config,
                 telemetry_mode.value,
-                grok_user_id,
-                grok_team_id,
+                ezer_user_id,
+                ezer_team_id,
                 deployment_key,
                 subscription_tier_display,
             )
@@ -1777,8 +1777,8 @@ impl MvpAgent {
         ezer_telemetry::client::init(
             telemetry_config,
             telemetry_mode,
-            grok_user_id,
-            grok_team_id,
+            ezer_user_id,
+            ezer_team_id,
             deployment_key,
             self.origin_client_info_from_meta(None),
             ezer_version::VERSION.to_owned(),
@@ -1795,7 +1795,7 @@ impl MvpAgent {
     /// Extends [`refresh_remote_settings`] by also re-running [`resolve_runtime_fields`] with the fresh settings. In-flight sessions are unaffected; they snapshot config at creation.
     pub(super) async fn refresh_settings_and_reapply(
         &self,
-        auth: &ezer_login::GrokAuth,
+        auth: &ezer_login::EzerAuth,
     ) {
         self.refresh_remote_settings(auth).await;
         {
@@ -1872,8 +1872,8 @@ impl MvpAgent {
         }
     }
     /// Resolve post-auth remote settings in the background. A slow or hung `/settings` then can't gate `authenticate` (and thus the client's first draw).
-    /// The external-OTEL gate stays fail-closed until this resolves; the result reaches clients via `x.ai/settings/update`. Its own guard keeps an in-flight reapply from coalescing away the authenticated identity.
-    pub(super) fn spawn_post_auth_settings(&self, auth: ezer_login::GrokAuth) {
+    /// The external-OTEL gate stays fail-closed until this resolves; the result reaches clients via `ezer/settings/update`. Its own guard keeps an in-flight reapply from coalescing away the authenticated identity.
+    pub(super) fn spawn_post_auth_settings(&self, auth: ezer_login::EzerAuth) {
         let agent_ref = LocalRef::new(self);
         let _spawned = self
             .spawn_coalesced_settings_task(
@@ -1890,8 +1890,8 @@ impl MvpAgent {
                 .set(self.post_auth_settings_spawn_count.get() + 1);
         }
     }
-    /// Formerly spawned a periodic xAI `/v1/settings` poll that pushed `x.ai/announcements/update`.
-    /// BYOK builds never start that client: leftover grok.com credentials must not fetch or surface xAI banners.
+    /// Formerly spawned a periodic xAI `/v1/settings` poll that pushed `ezer/announcements/update`.
+    /// BYOK builds never start that client: leftover ezer.com credentials must not fetch or surface xAI banners.
     pub(super) fn spawn_announcements_refresh(&self) {
         if !ezer_env::xai_login_enabled() {
             let _ = self.announcements_refresh_started.replace(true);
@@ -1965,13 +1965,13 @@ impl MvpAgent {
             &stored.accept_request_encodings,
         );
     }
-    /// The single announcements push gate. BYOK: never emit `x.ai/announcements/update`.
-    /// Leftover grok.com credentials and stored remote lists must not reach the TUI.
+    /// The single announcements push gate. BYOK: never emit `ezer/announcements/update`.
+    /// Leftover ezer.com credentials and stored remote lists must not reach the TUI.
     pub(super) fn emit_announcements(&self, mode: AnnouncementsPushMode) {
         let _ = mode;
         tracing::debug!("announcements push skipped: xAI announcement clients are disabled");
     }
-    /// Next generation for an `x.ai/announcements/update` push.
+    /// Next generation for an `ezer/announcements/update` push.
     /// Strictly increasing within the process, and seeded from unix-epoch seconds.
     /// So a restarted leader's pushes still clear pager watermarks that survived re-election (`AppView.announcements_last_gen` outlives the agent).
     pub(super) fn next_announcements_gen(&self) -> u64 {
@@ -1987,7 +1987,7 @@ impl MvpAgent {
     /// Callers own their miss logging; the apply halves deliberately stay separate (full reapply vs announcements-only).
     pub(super) async fn fetch_remote_settings(
         &self,
-        auth: ezer_login::GrokAuth,
+        auth: ezer_login::EzerAuth,
     ) -> Option<crate::util::config::RemoteSettings> {
         if !crate::util::config::resolve_remote_fetch_enabled() {
             tracing::debug!("settings fetch skipped: remote_fetch disabled");
@@ -2031,7 +2031,7 @@ impl MvpAgent {
             let _ = self
                 .gateway
                 .ext_notification(
-                    acp::ExtNotification::new("x.ai/session_notification", params.into()),
+                    acp::ExtNotification::new("ezer/session_notification", params.into()),
                 )
                 .await;
         }
@@ -2072,7 +2072,7 @@ impl MvpAgent {
         model: &ModelEntry,
         origin_client: Option<crate::http::OriginClientInfo>,
     ) -> SamplingConfig {
-        let preferred = self.cfg.borrow().grok_com_config.preferred_method;
+        let preferred = self.cfg.borrow().ezer_com_config.preferred_method;
         let prefers_oidc = preferred == Some(PreferredAuthMethod::Oidc);
         let is_session_based_auth = self.is_session_based_auth();
         let session = match preferred {
@@ -2093,7 +2093,7 @@ impl MvpAgent {
         }
         crate::agent::config::enforce_disable_api_key_auth(
             &mut credentials,
-            self.cfg.borrow().grok_com_config.api_key_auth_disabled(),
+            self.cfg.borrow().ezer_com_config.api_key_auth_disabled(),
             session.as_ref().map(|a| a.key.as_str()),
         );
         if !has_session_key && credentials.auth_type == xai_chat_state::AuthType::ApiKey
@@ -2192,8 +2192,8 @@ impl MvpAgent {
         );
         (id.clone(), new_config)
     }
-    /// Whether the current session is a personal grok.com account on a gated tier (free / X Basic). The Imagine tools stay advertised to the model but are flagged tier-restricted.
-    /// They then short-circuit at call time with the SuperGrok upsell prose (see `ImageGenConfig`/`VideoGenConfig`'s `tier_restricted`).
+    /// Whether the current session is a personal ezer.com account on a gated tier (free / X Basic). The Imagine tools stay advertised to the model but are flagged tier-restricted.
+    /// They then short-circuit at call time with the MaxTier upsell prose (see `ImageGenConfig`/`VideoGenConfig`'s `tier_restricted`).
     /// Fails **open** (returns `false`) whenever we can't positively confirm a restricted personal tier. So this client gate is a UX optimization (a clean in-chat upsell instead of a doomed request), never the security boundary. The only difference is the absent-tier policy (the pager hides on `None`, we fail open on `None`).
     fn is_tier_restricted_capability(&self) -> bool {
         let Some(auth) = self.auth_manager.current() else {
@@ -2312,7 +2312,7 @@ impl MvpAgent {
             &model_id,
             &models,
             session.as_ref().map(|a| a.key.as_str()),
-            self.cfg.borrow().grok_com_config.api_key_auth_disabled(),
+            self.cfg.borrow().ezer_com_config.api_key_auth_disabled(),
             alpha_test_key.clone(),
             client_version,
             &self.cfg.borrow().endpoints,
@@ -2383,7 +2383,7 @@ impl MvpAgent {
     ) -> Self {
         models_manager.set_gateway(gateway.clone());
         let sampling_config = models_manager.sampling_config();
-        if !cfg.grok_com_config.api_key_auth_disabled() {
+        if !cfg.ezer_com_config.api_key_auth_disabled() {
             let models = models_manager.models();
             let current = models_manager.current_model_id();
             auth_manager
@@ -2558,7 +2558,7 @@ impl MvpAgent {
         instance
             .auth_manager
             .configure_refresher(
-                instance.cfg.borrow().grok_com_config.auth_provider_command.clone(),
+                instance.cfg.borrow().ezer_com_config.auth_provider_command.clone(),
                 instance.diagnostic_upload_config(),
             );
         ezer_login::credential_provider::wire_otel_auth_manager(
@@ -2895,7 +2895,7 @@ impl MvpAgent {
             Err("session not found".to_string())
         }
     }
-    /// Cancel a subagent by id, returning a typed outcome that backs the pager's `x.ai/subagent/cancel`.
+    /// Cancel a subagent by id, returning a typed outcome that backs the pager's `ezer/subagent/cancel`.
     /// Active/pending becomes cancelled (a finish follows); already-finished returns its terminal status; an unknown id returns `NotFound`.
     pub(crate) async fn cancel_subagent(
         &self,
@@ -3037,7 +3037,7 @@ impl MvpAgent {
         let cfg = self.cfg.borrow();
         let relay_config = crate::agent::relay::RelayConfig::for_session(
             &auth,
-            &cfg.grok_com_config,
+            &cfg.ezer_com_config,
             cfg.endpoints.alpha_test_key.clone(),
             None,
         )?;
@@ -3088,7 +3088,7 @@ impl MvpAgent {
                 };
                 if let Ok(params) = serde_json::value::to_raw_value(&notification) {
                     let ext_notification = acp::ExtNotification::new(
-                        "x.ai/session_notification",
+                        "ezer/session_notification",
                         params.into(),
                     );
                     let _ = gateway.ext_notification(ext_notification).await;
@@ -3109,7 +3109,7 @@ impl MvpAgent {
     ) -> Option<crate::session::SessionHandle> {
         self.resident_handle(session_id)
     }
-    /// Get hooks list for a session (for `x.ai/hooks/list` extension).
+    /// Get hooks list for a session (for `ezer/hooks/list` extension).
     pub(crate) async fn list_hooks(
         &self,
         session_id: &acp::SessionId,
@@ -3117,7 +3117,7 @@ impl MvpAgent {
         let handle = self.get_session_handle(session_id)?;
         handle.get_hooks_list().await
     }
-    /// Execute a hooks management action (for `x.ai/hooks/action`).
+    /// Execute a hooks management action (for `ezer/hooks/action`).
     pub(crate) async fn execute_hooks_action(
         &self,
         session_id: &acp::SessionId,
@@ -3133,7 +3133,7 @@ impl MvpAgent {
         let handle = self.get_session_handle(session_id)?;
         handle.execute_hooks_action(action).await
     }
-    /// Execute a plugins management action (for `x.ai/plugins/action`).
+    /// Execute a plugins management action (for `ezer/plugins/action`).
     pub(crate) async fn execute_plugins_action(
         &self,
         session_id: &acp::SessionId,
@@ -3151,7 +3151,7 @@ impl MvpAgent {
         }
         outcome
     }
-    /// Get a snapshot of the shared plugin registry (for `x.ai/plugins/list`).
+    /// Get a snapshot of the shared plugin registry (for `ezer/plugins/list`).
     pub(crate) fn plugin_registry_snapshot(
         &self,
     ) -> Option<std::sync::Arc<ezer_agent::plugins::PluginRegistry>> {
@@ -3243,7 +3243,7 @@ impl MvpAgent {
         use crate::upload::turn::TraceUploadReason;
         if self.is_data_collection_disabled() {
             crate::upload::trace::spawn_startup_spill_reconcile(
-                crate::util::grok_home::grok_home(),
+                crate::util::ezer_home::ezer_home(),
                 None,
             );
             return (None, TraceUploadReason::ZdrTeam);
@@ -3470,8 +3470,8 @@ impl MvpAgent {
         }
     }
     /// Insert the per-session `_meta` keys shared by `new_session` and `load_session`.
-    /// The keys are `x.ai/sessionConfig`, `x.ai/sessionDetail`,
-    /// and `x.ai/memoryMode`.
+    /// The keys are `ezer/sessionConfig`, `ezer/sessionDetail`,
+    /// and `ezer/memoryMode`.
     /// Keeping both response paths on this one builder stops them drifting.
     pub(super) fn insert_session_config_meta(
         &self,
@@ -3482,17 +3482,17 @@ impl MvpAgent {
         model_state: &acp::SessionModelState,
     ) {
         let config_options = self.session_config_options(Some(session_id), model_state);
-        let detail = session_config::GrokSessionDetail::build(
+        let detail = session_config::EzerSessionDetail::build(
             session_id.0.to_string(),
             cwd,
             model_state.current_model_id.0.to_string(),
             title,
         );
         meta.insert(
-            "x.ai/sessionConfig".to_string(),
+            "ezer/sessionConfig".to_string(),
             serde_json::json!({ "options": config_options }),
         );
-        meta.insert("x.ai/sessionDetail".to_string(), serde_json::json!(detail));
+        meta.insert("ezer/sessionDetail".to_string(), serde_json::json!(detail));
         if let Some(memory_mode) = self
             .resident_handle(session_id)
             .and_then(|handle| handle.spawn_snapshot.memory_mode)
@@ -3892,15 +3892,15 @@ impl MvpAgent {
         let queue = session_handle
             .upload_queue
             .get_or_init(|| {
-                let grok_home = crate::util::grok_home::grok_home();
+                let ezer_home = crate::util::ezer_home::ezer_home();
                 let queue = crate::upload::trace::spawn_upload_queue(
-                    &grok_home,
+                    &ezer_home,
                     &gcs_config,
                     Some(ezer_version::VERSION),
                     self.auth_manager.clone(),
                 );
                 crate::upload::trace::spawn_startup_spill_reconcile(
-                    grok_home,
+                    ezer_home,
                     Some(queue.clone()),
                 );
                 session_handle
@@ -3937,13 +3937,13 @@ impl MvpAgent {
         model_agent_type: Option<&str>,
     ) -> ezer_agent::AgentDefinition {
         use ezer_agent::AgentDefinition;
-        let grok_agent_env_set = std::env::var("EZER_AGENT")
+        let ezer_agent_env_set = std::env::var("EZER_AGENT")
             .ok()
             .is_some_and(|s| !s.trim().is_empty());
         let config_agent_explicitly_set = agent_config.name.is_some();
         let model_requires_strict_harness = model_agent_type
             .is_some_and(ezer_agent::config::is_strict_harness_agent_type);
-        if !grok_agent_env_set && !config_agent_explicitly_set
+        if !ezer_agent_env_set && !config_agent_explicitly_set
             && model_requires_strict_harness && let Some(required) = model_agent_type
             && let Some(def) = ezer_agent::discovery::by_name_in_cwd(required, cwd)
         {
@@ -4037,7 +4037,7 @@ impl MvpAgent {
             }
             None => AgentDefinition::ezer_build_plan(),
         };
-        if !grok_agent_env_set && !config_agent_explicitly_set
+        if !ezer_agent_env_set && !config_agent_explicitly_set
             && model_requires_strict_harness && let Some(required) = model_agent_type
             && resolved.name != required
         {
@@ -4224,7 +4224,7 @@ impl MvpAgent {
             .client_capabilities
             .meta
             .as_ref()
-            .and_then(|m| m.get("x.ai/fs_notify"))
+            .and_then(|m| m.get("ezer/fs_notify"))
             .and_then(|v| {
                 use crate::session::{ClientFsConfig, ClientFsMode};
                 use xai_fsnotify::FsConfig;
@@ -4290,7 +4290,7 @@ impl MvpAgent {
                 .client_capabilities
                 .meta
                 .as_ref()
-                .and_then(|m| m.get("x.ai/hunkTracker"))
+                .and_then(|m| m.get("ezer/hunkTracker"))
                 .and_then(|v| v.get("mode"))
                 .and_then(|v| v.as_str()),
         );
@@ -4298,14 +4298,14 @@ impl MvpAgent {
             .client_capabilities
             .meta
             .as_ref()
-            .and_then(|m| m.get("x.ai/incrementalBashOutput"))
+            .and_then(|m| m.get("ezer/incrementalBashOutput"))
             .and_then(|v| v.as_bool())
             .unwrap_or(false);
         let no_color = init
             .client_capabilities
             .meta
             .as_ref()
-            .and_then(|m| m.get("x.ai/bashOutputNoColor"))
+            .and_then(|m| m.get("ezer/bashOutputNoColor"))
             .and_then(|v| v.as_bool())
             .unwrap_or(false);
         let hunk_tracking_enabled = hunk_plan.enabled();
@@ -4627,7 +4627,7 @@ impl MvpAgent {
             );
             tool_ctx.lsp_server_names = servers.keys().cloned().collect();
             if servers.is_empty() {
-                let user_path = ezer_tools::util::grok_home::grok_home()
+                let user_path = ezer_tools::util::ezer_home::ezer_home()
                     .join("lsp.json");
                 let project_path = tool_ctx.cwd.as_path().join(".ezer").join("lsp.json");
                 tracing::debug!(
@@ -4858,7 +4858,7 @@ impl MvpAgent {
                 .client_capabilities
                 .meta
                 .as_ref()
-                .and_then(|m| m.get("x.ai/gitHeadChanged"))
+                .and_then(|m| m.get("ezer/gitHeadChanged"))
                 .and_then(|v| v.as_bool());
             let client_caps = crate::session::notifications::SessionClientCaps::new(
                 Self::resolve_status_line_capability(session_meta, init),

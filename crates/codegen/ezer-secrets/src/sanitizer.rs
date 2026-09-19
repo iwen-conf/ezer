@@ -334,7 +334,7 @@ mod tests {
             redact_secrets("just a normal log line"),
             Cow::Borrowed(_)
         ));
-        assert!(matches!(redact_secrets("model=grok-3"), Cow::Borrowed(_)));
+        assert!(matches!(redact_secrets("model=test-model-3"), Cow::Borrowed(_)));
     }
 
     /// Joins fixture fragments at runtime so realistic-looking fake tokens never appear whole in the source text.

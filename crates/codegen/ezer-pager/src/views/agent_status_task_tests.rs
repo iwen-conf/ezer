@@ -13,13 +13,13 @@ fn line_text(line: &Line<'_>) -> String {
 
 #[test]
 fn hidden_for_zero_counts() {
-    let theme = Theme::groknight();
+    let theme = Theme::ezernight();
     assert!(task_status_line(TaskStatusCounts::default(), &theme, false).is_none());
 }
 
 #[test]
 fn running_is_a_static_diamond_not_a_spinner() {
-    let theme = Theme::groknight();
+    let theme = Theme::ezernight();
     let counts = TaskStatusCounts {
         running: 2,
         paused_workflows: 0,
@@ -65,7 +65,7 @@ fn paused_is_static_warning_styled_and_hover_bold() {
 
 #[test]
 fn mixed_uses_separate_styles_and_neither_animates() {
-    let theme = Theme::groknight();
+    let theme = Theme::ezernight();
     let counts = TaskStatusCounts {
         running: 1,
         paused_workflows: 2,

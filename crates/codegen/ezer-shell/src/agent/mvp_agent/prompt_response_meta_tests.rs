@@ -26,7 +26,7 @@ fn args<'a>(
 
 #[test]
 fn includes_baseline_keys_without_usage() {
-    let meta = build_prompt_response_meta(args("sess-1", "prompt-1", 42_000, "grok-4.5"));
+    let meta = build_prompt_response_meta(args("sess-1", "prompt-1", 42_000, "test-model-4.5"));
     assert_eq!(
         meta.get("sessionId").and_then(|v| v.as_str()),
         Some("sess-1")
@@ -45,7 +45,7 @@ fn includes_baseline_keys_without_usage() {
     );
     assert_eq!(
         meta.get("modelId").and_then(|v| v.as_str()),
-        Some("grok-4.5")
+        Some("test-model-4.5")
     );
     // No per-turn keys when usage is absent.
     assert!(meta.get("inputTokens").is_none());
@@ -65,7 +65,7 @@ fn enriches_meta_with_camelcase_token_keys() {
     };
     let meta = build_prompt_response_meta(PromptResponseMetaArgs {
         last_turn_usage: Some(&usage),
-        ..args("sess-1", "prompt-1", 1_700, "grok-4.5")
+        ..args("sess-1", "prompt-1", 1_700, "test-model-4.5")
     });
     // Bot's _META_TOKEN_KEY_MAP expects exactly these camelCase keys.
     assert_eq!(meta.get("inputTokens").and_then(|v| v.as_u64()), Some(1500));

@@ -1,6 +1,6 @@
 //! Agent spawning — creates the agent process and ACP channels.
 //!
-//! Simplified to only support GrokShell (in-process) mode.
+//! Simplified to only support EzerShell (in-process) mode.
 //! Subprocess and remote modes can be added later if needed.
 
 use std::io::{IsTerminal, Write};
@@ -21,7 +21,7 @@ use ezer_login::AuthManager;
 use ezer_shell::{
     agent::{MvpAgent, activity::SESSION_FLUSH_GRACE, config::Config as AgentConfig},
     config::watcher::{DiscoveryChange, SkillsFileWatcher},
-    util::grok_home::grok_home,
+    util::ezer_home::ezer_home,
 };
 
 /// Extra slack when joining the agent OS thread after cancel so the flush
@@ -246,7 +246,7 @@ fn panic_message(payload: Box<dyn std::any::Any + Send>) -> String {
 }
 
 /// Auth manager for the embedded shell: construction and refresher wiring
-/// only. The proactive refresh loop starts in [`spawn_grok_shell`]'s body on
+/// only. The proactive refresh loop starts in [`spawn_ezer_shell`]'s body on
 /// `agent_cancel`, so a failed spawn cannot leak it.
 pub(super) fn boot_auth_manager(
     home: &std::path::Path,
@@ -254,23 +254,23 @@ pub(super) fn boot_auth_manager(
 ) -> std::sync::Arc<AuthManager> {
     let auth_manager = std::sync::Arc::new(AuthManager::new_with_proxy_base_url(
         home,
-        agent_config.grok_com_config.clone(),
+        agent_config.ezer_com_config.clone(),
         agent_config.endpoints.proxy_url(),
     ));
     auth_manager.configure_refresher(
-        agent_config.grok_com_config.auth_provider_command.clone(),
+        agent_config.ezer_com_config.auth_provider_command.clone(),
         None,
     );
     auth_manager
 }
 
-/// Spawn a GrokShell agent in a background thread.
-pub async fn spawn_grok_shell(
+/// Spawn a EzerShell agent in a background thread.
+pub async fn spawn_ezer_shell(
     agent_config: AgentConfig,
     cancel: &CancellationToken,
     memory_config: Option<ezer_shell::config::MemoryConfig>,
 ) -> Result<SpawnedAgent> {
-    let auth_manager = boot_auth_manager(&grok_home(), &agent_config);
+    let auth_manager = boot_auth_manager(&ezer_home(), &agent_config);
     // Pause token refreshes across system sleep so an OIDC refresh can't
     // straddle a suspend (which can revoke the refresh token and force
     // re-login). No-op where the OS listener is unavailable.
@@ -287,7 +287,7 @@ pub async fn spawn_grok_shell(
     // guard cancels the prewarm and the refresh loop instead.
     let cancel_auth_tasks_unless_spawned = agent_cancel.clone().drop_guard();
 
-    ezer_shell::agent::app::apply_otel_config(&auth_manager, &agent_config.grok_com_config);
+    ezer_shell::agent::app::apply_otel_config(&auth_manager, &agent_config.ezer_com_config);
 
     // Policy repair must finish before any authenticated settings load.
     ezer_shell::managed_config::ensure_managed_policy_present(&auth_manager).await;
@@ -565,7 +565,7 @@ mod tests {
     }
 
     /// The embedded-shell path has no leader process to own token refresh: a parked 401 turn can only self-heal
-    /// in-process through this loop. It starts in `spawn_grok_shell`'s body on `agent_cancel`, so a `?` exit before the
+    /// in-process through this loop. It starts in `spawn_ezer_shell`'s body on `agent_cancel`, so a `?` exit before the
     /// spawn succeeds (drop-guard fires) must cancel it instead of leaking a refresh loop until process teardown.
     #[tokio::test]
     async fn spawn_drop_guard_cancels_proactive_refresh_loop() {
@@ -580,7 +580,7 @@ mod tests {
         // loop task's own Arc is the +1 on top of it.
         let baseline = std::sync::Arc::strong_count(&am);
 
-        // Mirror spawn_grok_shell's wiring: loop on agent_cancel, guarded until
+        // Mirror spawn_ezer_shell's wiring: loop on agent_cancel, guarded until
         // ownership transfers to SpawnedAgent.
         let cancel = CancellationToken::new();
         let agent_cancel = cancel.child_token();

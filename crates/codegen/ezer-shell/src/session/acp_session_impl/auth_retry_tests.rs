@@ -238,14 +238,14 @@ fn expired_manager_for_pace() -> (
     let dir = tempfile::tempdir().expect("tempdir");
     let am = std::sync::Arc::new(ezer_login::AuthManager::new(
         dir.path(),
-        ezer_login::GrokComConfig::default(),
+        ezer_login::EzerComConfig::default(),
     ));
-    am.hot_swap(ezer_login::GrokAuth {
+    am.hot_swap(ezer_login::EzerAuth {
         key: "expired-key".into(),
         auth_mode: ezer_login::AuthMode::Oidc,
         refresh_token: Some("rt".into()),
         expires_at: Some(chrono::Utc::now() - chrono::Duration::hours(1)),
-        ..ezer_login::GrokAuth::test_default()
+        ..ezer_login::EzerAuth::test_default()
     });
     (dir, am)
 }
@@ -260,11 +260,11 @@ async fn pace_early_wake_on_token_landing_returns_promptly() {
     let waker = am.clone();
     tokio::spawn(async move {
         tokio::time::sleep(Duration::from_millis(100)).await;
-        waker.hot_swap(ezer_login::GrokAuth {
+        waker.hot_swap(ezer_login::EzerAuth {
             key: "fresh-key".into(),
             auth_mode: ezer_login::AuthMode::Oidc,
             expires_at: Some(chrono::Utc::now() + chrono::Duration::hours(1)),
-            ..ezer_login::GrokAuth::test_default()
+            ..ezer_login::EzerAuth::test_default()
         });
         waker.refresh_notifier().notify_waiters();
     });
@@ -292,12 +292,12 @@ async fn pace_release_matches_resolver_authority_predicate() {
     let (_dir, am) = expired_manager_for_pace();
     // A cursor.com issuer keeps `current_wire_valid()` `Some` under both builds,
     // so only the authority predicate separates the branches.
-    am.hot_swap(ezer_login::GrokAuth {
+    am.hot_swap(ezer_login::EzerAuth {
         key: "fresh-key".into(),
         auth_mode: ezer_login::AuthMode::Oidc,
         oidc_issuer: Some("https://cursor.com".into()),
         expires_at: Some(chrono::Utc::now() + chrono::Duration::hours(1)),
-        ..ezer_login::GrokAuth::test_default()
+        ..ezer_login::EzerAuth::test_default()
     });
     let started = tokio::time::Instant::now();
     super::pace_uncharged_resubmit(
@@ -330,11 +330,11 @@ async fn pace_wakes_on_token_adopted_without_notify() {
     tokio::spawn(async move {
         tokio::time::sleep(Duration::from_millis(100)).await;
         // No notify: what the disk-adoption and config-watcher paths do.
-        waker.hot_swap(ezer_login::GrokAuth {
+        waker.hot_swap(ezer_login::EzerAuth {
             key: "adopted-key".into(),
             auth_mode: ezer_login::AuthMode::Oidc,
             expires_at: Some(chrono::Utc::now() + chrono::Duration::hours(1)),
-            ..ezer_login::GrokAuth::test_default()
+            ..ezer_login::EzerAuth::test_default()
         });
     });
     let started = tokio::time::Instant::now();
@@ -365,15 +365,15 @@ async fn pace_adopts_token_written_to_auth_json_mid_park() {
     use ezer_login::backend::{ActiveAuthBackend, AuthBackend};
     let (_dir, am) = expired_manager_for_pace();
     let path = am.auth_json_path().to_path_buf();
-    let scope = ActiveAuthBackend::default().scope_key(&ezer_login::GrokComConfig::default());
+    let scope = ActiveAuthBackend::default().scope_key(&ezer_login::EzerComConfig::default());
     tokio::spawn(async move {
         tokio::time::sleep(Duration::from_millis(100)).await;
         // Disk write only — no hot_swap, no notify — what an external login does.
-        let landed = ezer_login::GrokAuth {
+        let landed = ezer_login::EzerAuth {
             key: "disk-landed-key".into(),
             auth_mode: ezer_login::AuthMode::Oidc,
             expires_at: Some(chrono::Utc::now() + chrono::Duration::hours(1)),
-            ..ezer_login::GrokAuth::test_default()
+            ..ezer_login::EzerAuth::test_default()
         };
         let store = std::collections::BTreeMap::from([(scope, landed)]);
         std::fs::write(&path, serde_json::to_string(&store).expect("serialize"))

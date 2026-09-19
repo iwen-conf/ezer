@@ -112,10 +112,10 @@ fn format_acp_error_rate_limit_surfaces_detail_or_fallback() {
         ));
     assert_eq!(format_acp_error(&capacity, false), cap_body);
     assert_eq!(format_acp_error(&capacity, true), cap_body);
-    let rpm_body = "You are sending requests too quickly. Please slow down, or upgrade to a ezer subscription for higher limits: https://grok.com/supergrok";
+    let rpm_body = "You are sending requests too quickly. Please slow down, or upgrade to a ezer subscription for higher limits: https://example.test/upgrade";
     let rpm = acp::Error::new(RATE_LIMITED_ERROR_CODE, "Rate limited")
         .data(format!("API error (status 429 Too Many Requests): {rpm_body}"));
-    assert!(format_acp_error(&rpm, false).contains("grok.com/supergrok"));
+    assert!(format_acp_error(&rpm, false).contains("ezer.com/upgrade"));
     assert_eq!(format_acp_error(&rpm, true), RATE_LIMITED_USER_MESSAGE_API_KEY);
     let empty = acp::Error::new(RATE_LIMITED_ERROR_CODE, "Rate limited");
     assert_eq!(format_acp_error(&empty, false), RATE_LIMITED_USER_MESSAGE_OAUTH);
@@ -176,7 +176,7 @@ fn prompt_request_meta_omits_screen_mode_when_unset() {
     let meta = prompt_request_meta("p-2", None);
     assert_eq!(meta, serde_json::json!({ "promptId": "p-2" }));
 }
-/// Text-only interjections must omit the `content` key entirely; the legacy `x.ai/interject` wire shape stays byte-identical.
+/// Text-only interjections must omit the `content` key entirely; the legacy `ezer/interject` wire shape stays byte-identical.
 #[test]
 fn interject_params_omit_content_when_no_blocks() {
     let sid = acp::SessionId::new("s1");
@@ -956,7 +956,7 @@ async fn persist_setting_type_mismatch_errors_simple_mode() {
 }
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
-/// Spawn a fake ACP agent that counts `x.ai/yolo_mode_changed` notifications.
+/// Spawn a fake ACP agent that counts `ezer/yolo_mode_changed` notifications.
 /// Exits when the channel closes.
 fn spawn_fake_acp_agent(
     mut rx: tokio::sync::mpsc::UnboundedReceiver<xai_acp_lib::AcpAgentMessage>,
@@ -966,7 +966,7 @@ fn spawn_fake_acp_agent(
     tokio::spawn(async move {
         while let Some(msg) = rx.recv().await {
             if let xai_acp_lib::AcpAgentMessage::ExtNotification(args) = msg {
-                if args.request.method.as_ref() == "x.ai/yolo_mode_changed" {
+                if args.request.method.as_ref() == "ezer/yolo_mode_changed" {
                     counter_clone.fetch_add(1, Ordering::SeqCst);
                 }
                 let _ = args.response_tx.send(Ok(()));
@@ -975,11 +975,11 @@ fn spawn_fake_acp_agent(
     });
     counter
 }
-/// Redirect `GROK_HOME` to a tempdir for test isolation.
-fn setup_grok_home_in_tempdir() -> tempfile::TempDir {
+/// Redirect `EZER_HOME` to a tempdir for test isolation.
+fn setup_ezer_home_in_tempdir() -> tempfile::TempDir {
     let tmp = tempfile::tempdir().expect("tempdir creation");
     unsafe {
-        std::env::set_var("GROK_HOME", tmp.path());
+        std::env::set_var("EZER_HOME", tmp.path());
     }
     tmp
 }
@@ -1061,7 +1061,7 @@ fn unregister_best_effort_swallows_io_error() {
 #[tokio::test]
 async fn persist_permission_mode_acp_notification_fires_once_on_best_effort() {
     use agent_client_protocol as acp;
-    let _guard = setup_grok_home_in_tempdir();
+    let _guard = setup_ezer_home_in_tempdir();
     let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
     let counter = spawn_fake_acp_agent(rx);
     let session_id = Some(acp::SessionId::new(Arc::from("test-session")));
@@ -1077,7 +1077,7 @@ async fn persist_permission_mode_acp_notification_fires_once_on_best_effort() {
     assert_eq!(
             counter.load(Ordering::SeqCst),
             1,
-            "ACP `x.ai/yolo_mode_changed` notification must fire exactly once \
+            "ACP `ezer/yolo_mode_changed` notification must fire exactly once \
              on BestEffort path (regardless of disk outcome)",
         );
     assert!(
@@ -1094,7 +1094,7 @@ async fn persist_permission_mode_acp_notification_fires_once_on_best_effort() {
 #[tokio::test]
 async fn persist_permission_mode_acp_notification_gated_on_disk_for_with_rollback() {
     use agent_client_protocol as acp;
-    let _guard = setup_grok_home_in_tempdir();
+    let _guard = setup_ezer_home_in_tempdir();
     let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
     let counter = spawn_fake_acp_agent(rx);
     let session_id = Some(acp::SessionId::new(Arc::from("test-session")));
@@ -1130,7 +1130,7 @@ async fn persist_permission_mode_acp_notification_gated_on_disk_for_with_rollbac
 /// `session_id: None` suppresses ACP notification unconditionally.
 #[tokio::test]
 async fn persist_permission_mode_no_session_id_suppresses_acp() {
-    let _guard = setup_grok_home_in_tempdir();
+    let _guard = setup_ezer_home_in_tempdir();
     let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
     let counter = spawn_fake_acp_agent(rx);
     let _result = persist_permission_mode_and_notify(
@@ -1152,7 +1152,7 @@ async fn persist_permission_mode_no_session_id_suppresses_acp() {
 /// BestEffort with a disk failure must not return `SettingPersisted`.
 #[tokio::test]
 async fn persist_permission_mode_best_effort_failure_returns_dedicated_variant() {
-    let _guard = setup_grok_home_in_tempdir();
+    let _guard = setup_ezer_home_in_tempdir();
     let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
     let _counter = spawn_fake_acp_agent(rx);
     let result = persist_permission_mode_and_notify(
@@ -1402,7 +1402,7 @@ async fn check_marketplace_updates_dispatches_update_and_skips_failed_notificati
         while let Some(msg) = rx.recv().await {
             if let AcpAgentMessage::ExtMethod(args) = msg {
                 match args.request.method.as_ref() {
-                    "x.ai/marketplace/list" => {
+                    "ezer/marketplace/list" => {
                         let response = serde_json::json!({
                                 "result": {
                                     "sources": [{
@@ -1436,7 +1436,7 @@ async fn check_marketplace_updates_dispatches_update_and_skips_failed_notificati
                             .response_tx
                             .send(Ok(acp::ExtResponse::new(Arc::from(raw))));
                     }
-                    "x.ai/marketplace/action" => {
+                    "ezer/marketplace/action" => {
                         action_calls_for_task.fetch_add(1, Ordering::SeqCst);
                         let req: xai_hooks_plugins_types::MarketplaceActionRequest = serde_json::from_str(
                                 args.request.params.get(),
@@ -1469,7 +1469,7 @@ async fn check_marketplace_updates_dispatches_update_and_skips_failed_notificati
                             .response_tx
                             .send(Ok(acp::ExtResponse::new(Arc::from(raw))));
                     }
-                    "x.ai/plugins/notify-updates" => {
+                    "ezer/plugins/notify-updates" => {
                         saw_success_notification_for_task.store(true, Ordering::SeqCst);
                         let raw = serde_json::value::RawValue::from_string("{}".into())
                             .expect("serialize notify response");
@@ -1529,7 +1529,7 @@ async fn foreign_scan_task_echoes_sequence_without_enabled_sources() {
         Effect::ScanForeignSessions {
             cwd: PathBuf::from("/path/that/must/not/be-read"),
             compat: ezer_foreign_sessions::EnabledForeignSessionSources::default(),
-            grok_home: PathBuf::from("/path/that/must/not/be-read"),
+            ezer_home: PathBuf::from("/path/that/must/not/be-read"),
             coordinator: app_coordinator.clone(),
             seq: 41,
         },
@@ -1582,7 +1582,7 @@ async fn foreign_resume_detection_runs_as_task_result() {
         Effect::DetectForeignResumeHint {
             canonical_cwd: canonical_cwd.clone(),
             compat: ezer_foreign_sessions::EnabledForeignSessionSources::default(),
-            grok_home: PathBuf::from("/path/that/must/not-be-read"),
+            ezer_home: PathBuf::from("/path/that/must/not-be-read"),
             launch_token: 8,
         },
         &mut tasks,
@@ -1605,7 +1605,7 @@ async fn foreign_resume_detection_runs_as_task_result() {
         other => panic!("expected ForeignResumeHintDetected, got {other:?}"),
     }
 }
-/// `FetchSessionList` wire shape: search sends `query` (no `allowRelax`); browse opts into `allowRelax` and parses `x.ai/listScope`.
+/// `FetchSessionList` wire shape: search sends `query` (no `allowRelax`); browse opts into `allowRelax` and parses `ezer/listScope`.
 /// All outcomes echo `seq` and `query`.
 #[tokio::test]
 async fn fetch_session_list_pushes_query_and_echoes_seq() {
@@ -1617,7 +1617,7 @@ async fn fetch_session_list_pushes_query_and_echoes_seq() {
     tokio::spawn(async move {
         while let Some(msg) = rx.recv().await {
             if let AcpAgentMessage::ExtMethod(args) = msg {
-                assert_eq!(args.request.method.as_ref(), "x.ai/session/list");
+                assert_eq!(args.request.method.as_ref(), "ezer/session/list");
                 let params: serde_json::Value = serde_json::from_str(
                         args.request.params.get(),
                     )
@@ -1632,7 +1632,7 @@ async fn fetch_session_list_pushes_query_and_echoes_seq() {
                     serde_json::json!({
                             "result": {
                                 "sessions": [],
-                                "_meta": { "x.ai/listScope": "repo" },
+                                "_meta": { "ezer/listScope": "repo" },
                             }
                         })
                 } else {
@@ -1704,7 +1704,7 @@ async fn fetch_session_list_pushes_query_and_echoes_seq() {
             assert_eq!(query, None);
             assert!(
                     scope.is_relaxed(),
-                    "_meta[\"x.ai/listScope\"] must parse into the task result"
+                    "_meta[\"ezer/listScope\"] must parse into the task result"
                 );
         }
         other => panic!("expected SessionListLoaded, got {other:?}"),
@@ -1785,7 +1785,7 @@ async fn fetch_dashboard_sessions_explicitly_excludes_headless() {
     tokio::spawn(async move {
         while let Some(msg) = rx.recv().await {
             if let AcpAgentMessage::ExtMethod(args) = msg {
-                assert_eq!(args.request.method.as_ref(), "x.ai/session/list");
+                assert_eq!(args.request.method.as_ref(), "ezer/session/list");
                 let params = serde_json::from_str(args.request.params.get())
                     .expect("params JSON");
                 *captured_for_task.lock().unwrap() = Some(params);
@@ -1861,7 +1861,7 @@ async fn fetch_session_list_sends_kind_facet_filter() {
     let captured = captured.lock().unwrap();
     assert_eq!(captured.len(), 1);
     assert_eq!(
-            j(j(j(nth(&captured, 0), "_meta"), "x.ai/facetFilters"), "kind"),
+            j(j(j(nth(&captured, 0), "_meta"), "ezer/facetFilters"), "kind"),
             &serde_json::json!(["build"])
         );
 }
@@ -1875,7 +1875,7 @@ async fn fetch_workflows_list_sends_session_id() {
     tokio::spawn(async move {
         while let Some(msg) = rx.recv().await {
             if let AcpAgentMessage::ExtMethod(args) = msg {
-                assert_eq!(args.request.method.as_ref(), "x.ai/workflows/list");
+                assert_eq!(args.request.method.as_ref(), "ezer/workflows/list");
                 let params: serde_json::Value = serde_json::from_str(
                         args.request.params.get(),
                     )
@@ -2004,7 +2004,7 @@ async fn deep_search_sessions_echoes_routing_and_policy() {
     }
     let captured = captured.lock().unwrap();
     assert_eq!(captured.len(), 1);
-    assert_eq!(nth(&captured, 0).0, "x.ai/session/search");
+    assert_eq!(nth(&captured, 0).0, "ezer/session/search");
     assert_eq!(j(&nth(&captured, 0).1, "headless"), "only");
 }
 /// The card-detail executor must echo host, generation, seq, and the row identity verbatim; a session missing on disk zeroes the stats.
@@ -2146,15 +2146,15 @@ fn subagents_without_plan_produces_no_profile() {
 /// Neutralize `EZER_AGENT` for the profile-matrix tests below.
 /// The tests would then assert the wrong branch.
 /// Callers must be `#[serial_test::serial(EZER_AGENT)]` (process-global env).
-fn without_grok_agent() -> crate::test_util::EnvVarGuard {
+fn without_ezer_agent() -> crate::test_util::EnvVarGuard {
     crate::test_util::EnvVarGuard::set("EZER_AGENT", "")
 }
 /// At the runtime defaults every `--no-*` flag is false, so every `SessionFlags` bool is true via `!args.no_*`.
 /// `to_meta()` then reflects the full plan profile and no separate `askUserQuestion` toggle.
-#[serial_test::serial(GROK_AGENT)]
+#[serial_test::serial(EZER_AGENT)]
 #[test]
 fn runtime_default_flags_produce_plan_meta() {
-    let _env = without_grok_agent();
+    let _env = without_ezer_agent();
     let flags = SessionFlags {
         plan_mode: true,
         subagents: true,
@@ -2167,10 +2167,10 @@ fn runtime_default_flags_produce_plan_meta() {
     assert_eq!(j(&meta, "yoloMode"), false);
 }
 /// --plan alone produces meta with `agentProfile` only and a `askUserQuestion: false` since `ask_user` is off here.
-#[serial_test::serial(GROK_AGENT)]
+#[serial_test::serial(EZER_AGENT)]
 #[test]
 fn plan_only_meta() {
-    let _env = without_grok_agent();
+    let _env = without_ezer_agent();
     let flags = SessionFlags {
         plan_mode: true,
         subagents: false,
@@ -2183,10 +2183,10 @@ fn plan_only_meta() {
     assert_eq!(j(&meta, "yoloMode"), false);
 }
 /// --plan --subagents selects the full plan profile.
-#[serial_test::serial(GROK_AGENT)]
+#[serial_test::serial(EZER_AGENT)]
 #[test]
 fn plan_with_subagents_meta() {
-    let _env = without_grok_agent();
+    let _env = without_ezer_agent();
     let flags = SessionFlags {
         plan_mode: true,
         subagents: true,
@@ -2199,10 +2199,10 @@ fn plan_with_subagents_meta() {
     assert_eq!(j(&meta, "yoloMode"), false);
 }
 /// --ask-user alone selects the ezer-build-ask-user profile.
-#[serial_test::serial(GROK_AGENT)]
+#[serial_test::serial(EZER_AGENT)]
 #[test]
 fn ask_user_alone_meta() {
-    let _env = without_grok_agent();
+    let _env = without_ezer_agent();
     let flags = SessionFlags {
         plan_mode: false,
         subagents: false,
@@ -2215,10 +2215,10 @@ fn ask_user_alone_meta() {
     assert_eq!(j(&meta, "yoloMode"), false);
 }
 /// --plan --ask-user: plan already includes ask-user; profile is plan.
-#[serial_test::serial(GROK_AGENT)]
+#[serial_test::serial(EZER_AGENT)]
 #[test]
 fn plan_with_ask_user_uses_plan_profile() {
-    let _env = without_grok_agent();
+    let _env = without_ezer_agent();
     let flags = SessionFlags {
         plan_mode: true,
         subagents: false,
@@ -2246,10 +2246,10 @@ fn subagents_alone_emits_only_ask_user_question_disable() {
     assert_eq!(j(&meta, "askUserQuestion"), false);
 }
 /// All three flags on at the runtime default produce ezer-build-plan and no `askUserQuestion` field.
-#[serial_test::serial(GROK_AGENT)]
+#[serial_test::serial(EZER_AGENT)]
 #[test]
 fn all_flags_meta() {
-    let _env = without_grok_agent();
+    let _env = without_ezer_agent();
     let flags = SessionFlags {
         plan_mode: true,
         subagents: true,
@@ -2362,7 +2362,7 @@ fn to_meta_chat_mode_stamps_kind_and_omits_agent_profile() {
         ..Default::default()
     };
     let meta = flags.to_meta().expect("chat_mode must emit meta");
-    assert_eq!(j(j(&meta, "x.ai/session"), "kind"), "chat");
+    assert_eq!(j(j(&meta, "ezer/session"), "kind"), "chat");
     assert!(
             meta.get("agentProfile").is_none(),
             "K12: chat mode must omit Build agentProfile"
@@ -2388,7 +2388,7 @@ fn load_meta_chat_kind_alone_stamps_kind_and_strips_profile() {
         scrub_chat_workspace_bind_meta(&mut meta);
     }
     let meta = meta.expect("chat_kind must produce meta");
-    assert_eq!(j(j(&meta, "x.ai/session"), "kind"), "chat");
+    assert_eq!(j(j(&meta, "ezer/session"), "kind"), "chat");
     assert!(
             meta.get("agentProfile").is_none(),
             "entry chat_kind must strip Build agentProfile"
@@ -2407,7 +2407,7 @@ fn assert_chat_meta_has_no_workspace_bind_keys(meta: &serde_json::Value) {
             );
     }
     assert!(
-            meta.get("x.ai/cloud_existing_workspace").is_none(),
+            meta.get("ezer/cloud_existing_workspace").is_none(),
             "chat meta without attach must not include existing workspace: {meta}"
         );
 }
@@ -2421,7 +2421,7 @@ fn chat_create_meta_never_includes_workspace_bind_keys_when_cloud_fields_set() {
     apply_chat_kind_meta(&mut meta);
     scrub_chat_workspace_bind_meta(&mut meta);
     let meta = meta.expect("chat create must emit meta");
-    assert_eq!(j(j(&meta, "x.ai/session"), "kind"), "chat");
+    assert_eq!(j(j(&meta, "ezer/session"), "kind"), "chat");
     assert_chat_meta_has_no_workspace_bind_keys(
         &serde_json::Value::Object(meta.clone()),
     );
@@ -2434,9 +2434,9 @@ fn chat_load_meta_never_includes_workspace_bind_keys() {
     {
         let obj = meta.get_or_insert_with(acp::Meta::new);
         obj.insert("envId".into(), serde_json::json!("env-poison"));
-        obj.insert("x.ai/cloud_server_id".into(), serde_json::json!("srv-poison"));
+        obj.insert("ezer/cloud_server_id".into(), serde_json::json!("srv-poison"));
         obj.insert(
-            "x.ai/cloud_existing_workspace".into(),
+            "ezer/cloud_existing_workspace".into(),
             serde_json::json!({
                     "server_id": "srv-poison",
                     "cwd": "/ws",
@@ -2445,7 +2445,7 @@ fn chat_load_meta_never_includes_workspace_bind_keys() {
     }
     scrub_chat_workspace_bind_meta(&mut meta);
     let meta = meta.expect("chat load must emit meta");
-    assert_eq!(j(j(&meta, "x.ai/session"), "kind"), "chat");
+    assert_eq!(j(j(&meta, "ezer/session"), "kind"), "chat");
     assert_chat_meta_has_no_workspace_bind_keys(
         &serde_json::Value::Object(meta.clone()),
     );
@@ -2459,17 +2459,17 @@ fn scrub_chat_workspace_matrix_attach_exception() {
     {
         let obj = meta.as_mut().unwrap();
         obj.insert("envId".into(), serde_json::json!("env-x"));
-        obj.insert("x.ai/cloud_server_id".into(), serde_json::json!("hub-x"));
+        obj.insert("ezer/cloud_server_id".into(), serde_json::json!("hub-x"));
         obj.insert(
-            "x.ai/cloud_existing_workspace".into(),
+            "ezer/cloud_existing_workspace".into(),
             serde_json::json!({"server_id": "srv-x", "cwd": "/ws"}),
         );
     }
     scrub_chat_workspace_bind_meta(&mut meta);
     let scrubbed = meta.as_ref().unwrap();
     assert!(scrubbed.get("envId").is_none());
-    assert!(scrubbed.get("x.ai/cloud_server_id").is_none());
-    assert!(scrubbed.get("x.ai/cloud_existing_workspace").is_none());
+    assert!(scrubbed.get("ezer/cloud_server_id").is_none());
+    assert!(scrubbed.get("ezer/cloud_existing_workspace").is_none());
     let mut meta = Some(acp::Meta::new());
     apply_local_workspace_meta(
         &mut meta,
@@ -2482,22 +2482,22 @@ fn scrub_chat_workspace_matrix_attach_exception() {
     {
         let obj = meta.as_mut().unwrap();
         obj.insert("envId".into(), serde_json::json!("env-must-go"));
-        obj.insert("x.ai/cloud_server_id".into(), serde_json::json!("hub-must-go"));
+        obj.insert("ezer/cloud_server_id".into(), serde_json::json!("hub-must-go"));
     }
     scrub_chat_workspace_bind_meta(&mut meta);
     let scrubbed = meta.as_ref().unwrap();
     assert!(scrubbed.get("envId").is_none(), "envId must stay scrubbed");
     assert!(
-            scrubbed.get("x.ai/cloud_server_id").is_none(),
+            scrubbed.get("ezer/cloud_server_id").is_none(),
             "Direct hub must stay scrubbed"
         );
     assert_eq!(
-            j(j(&scrubbed, "x.ai/cloud_existing_workspace"), "server_id"),
+            j(j(&scrubbed, "ezer/cloud_existing_workspace"), "server_id"),
             "srv-dogfood"
         );
-    assert_eq!(j(j(&scrubbed, "x.ai/local_workspace"), "mode"), "attach");
-    assert_eq!(j(j(&scrubbed, "x.ai/local_workspace"), "server_id"), "srv-dogfood");
-    assert_eq!(j(j(&scrubbed, "x.ai/local_workspace"), "cwd"), "/tmp/repo");
+    assert_eq!(j(j(&scrubbed, "ezer/local_workspace"), "mode"), "attach");
+    assert_eq!(j(j(&scrubbed, "ezer/local_workspace"), "server_id"), "srv-dogfood");
+    assert_eq!(j(j(&scrubbed, "ezer/local_workspace"), "cwd"), "/tmp/repo");
 }
 #[cfg(feature = "local-workspace")]
 #[test]
@@ -2513,11 +2513,11 @@ fn to_meta_chat_attach_stamps_local_and_existing() {
         ..Default::default()
     };
     let meta = flags.to_meta().expect("meta");
-    assert_eq!(j(j(&meta, "x.ai/session"), "kind"), "chat");
-    assert_eq!(j(j(&meta, "x.ai/local_workspace"), "mode"), "attach");
-    assert_eq!(j(j(&meta, "x.ai/cloud_existing_workspace"), "server_id"), "srv-1");
+    assert_eq!(j(j(&meta, "ezer/session"), "kind"), "chat");
+    assert_eq!(j(j(&meta, "ezer/local_workspace"), "mode"), "attach");
+    assert_eq!(j(j(&meta, "ezer/cloud_existing_workspace"), "server_id"), "srv-1");
     assert!(meta.get("envId").is_none());
-    assert!(meta.get("x.ai/cloud_server_id").is_none());
+    assert!(meta.get("ezer/cloud_server_id").is_none());
 }
 #[cfg(feature = "local-workspace")]
 #[test]
@@ -2533,11 +2533,11 @@ fn to_meta_chat_own_stamps_intent_without_existing() {
         ..Default::default()
     };
     let meta = flags.to_meta().expect("meta");
-    assert_eq!(j(j(&meta, "x.ai/local_workspace"), "mode"), "own");
-    assert_eq!(j(j(&meta, "x.ai/local_workspace"), "cwd"), "/tmp/repo-own");
-    assert!(j(&meta, "x.ai/local_workspace").get("server_id").is_none());
+    assert_eq!(j(j(&meta, "ezer/local_workspace"), "mode"), "own");
+    assert_eq!(j(j(&meta, "ezer/local_workspace"), "cwd"), "/tmp/repo-own");
+    assert!(j(&meta, "ezer/local_workspace").get("server_id").is_none());
     assert!(
-            meta.get("x.ai/cloud_existing_workspace").is_none(),
+            meta.get("ezer/cloud_existing_workspace").is_none(),
             "own must not stamp existing; shell mints server_id"
         );
     assert!(meta.get("envId").is_none());
@@ -2580,9 +2580,9 @@ fn finalize_chat_session_meta_stamps_attach_on_worktree_path() {
     let mut meta = flags.to_meta();
     finalize_chat_session_meta(&mut meta, true, &flags);
     let meta = meta.expect("meta");
-    assert_eq!(j(j(&meta, "x.ai/session"), "kind"), "chat");
-    assert_eq!(j(j(&meta, "x.ai/local_workspace"), "mode"), "attach");
-    assert_eq!(j(j(&meta, "x.ai/cloud_existing_workspace"), "server_id"), "srv-wt");
+    assert_eq!(j(j(&meta, "ezer/session"), "kind"), "chat");
+    assert_eq!(j(j(&meta, "ezer/local_workspace"), "mode"), "attach");
+    assert_eq!(j(j(&meta, "ezer/cloud_existing_workspace"), "server_id"), "srv-wt");
     assert!(meta.get("envId").is_none());
 }
 #[test]
@@ -2669,7 +2669,7 @@ fn format_session_info_api_key_without_env() {
             "{text}"
         );
     assert!(text.contains("BYOK"), "{text}");
-    assert!(!text.contains("grok.com"), "{text}");
+    assert!(!text.contains("example.test"), "{text}");
 }
 #[test]
 fn format_session_info_api_key_auth_suggests_optional_login() {
@@ -2684,7 +2684,7 @@ fn format_session_info_api_key_auth_suggests_optional_login() {
     assert!(text.contains("BYOK"), "{text}");
     assert!(!text.contains("Also present: XAI_API_KEY"), "{text}");
     assert!(!text.contains("console.x.ai"), "{text}");
-    assert!(!text.contains("grok.com"), "{text}");
+    assert!(!text.contains("example.test"), "{text}");
 }
 #[test]
 fn format_session_info_session_only_shows_oauth() {
@@ -2706,16 +2706,16 @@ fn format_session_info_shows_conversation_id_when_present() {
 }
 #[test]
 fn format_session_info_shows_resolved_when_enabled_and_different() {
-    let info = make_session_info("grok-4.5", Some("grok-4.3"), 1000, 10000);
+    let info = make_session_info("test-model-4.5", Some("test-model-4.3"), 1000, 10000);
     let text = format_session_info(&info, None, true, false, false);
-    assert!(text.contains("Model: grok-4.5 (grok-4.3)"));
+    assert!(text.contains("Model: test-model-4.5 (test-model-4.3)"));
 }
 #[test]
 fn format_session_info_hides_resolved_when_disabled() {
-    let info = make_session_info("grok-4.5", Some("grok-4.3"), 1000, 10000);
+    let info = make_session_info("test-model-4.5", Some("test-model-4.3"), 1000, 10000);
     let text = format_session_info(&info, None, false, false, false);
-    assert!(text.contains("Model: grok-4.5"));
-    assert!(!text.contains("grok-4.3"));
+    assert!(text.contains("Model: test-model-4.5"));
+    assert!(!text.contains("test-model-4.3"));
 }
 /// The (cwd, id)-derived summary path resolves and `generated_title` wins.
 #[tokio::test]
@@ -2725,7 +2725,7 @@ async fn lookup_session_title_loads_single_summary_by_cwd() {
     let dir = root
         .path()
         .join("sessions")
-        .join(ezer_shell::util::grok_home::encode_cwd_dirname(cwd))
+        .join(ezer_shell::util::ezer_home::encode_cwd_dirname(cwd))
         .join("sess-1");
     std::fs::create_dir_all(&dir).unwrap();
     std::fs::write(
@@ -2748,10 +2748,10 @@ async fn lookup_session_title_loads_single_summary_by_cwd() {
 }
 #[test]
 fn format_session_info_no_parens_when_resolved_matches_requested() {
-    let info = make_session_info("grok-4.5", Some("grok-4.5"), 1000, 10000);
+    let info = make_session_info("test-model-4.5", Some("test-model-4.5"), 1000, 10000);
     let text = format_session_info(&info, None, true, false, false);
-    assert!(text.contains("Model: grok-4.5"));
-    assert!(!text.contains("(grok-4.5)"));
+    assert!(text.contains("Model: test-model-4.5"));
+    assert!(!text.contains("(test-model-4.5)"));
 }
 #[test]
 fn format_session_info_shows_model_hash_when_catalog_flag_set() {
@@ -2771,7 +2771,7 @@ fn format_session_info_hides_model_hash_for_noncoding_without_flag() {
 }
 #[test]
 fn format_session_info_hides_model_hash_for_coding_slug_without_flag() {
-    let mut info = make_session_info("grok-4.6", None, 1000, 10000);
+    let mut info = make_session_info("test-model-4.6", None, 1000, 10000);
     info.data.model_fingerprint = Some("abc123".into());
     info.data.show_model_fingerprint = false;
     let text = format_session_info(&info, None, false, false, false);

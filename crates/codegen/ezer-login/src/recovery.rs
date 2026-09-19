@@ -9,7 +9,7 @@
 //! 3. **Done**: all recovery strategies exhausted.
 use crate::error::{AuthError, RefreshTokenError, RefreshTokenFailedReason};
 use crate::manager::AuthManager;
-use crate::model::GrokAuth;
+use crate::model::EzerAuth;
 use crate::token_type::TokenType;
 use std::sync::Arc;
 use ezer_telemetry::events::{AuthTokenKind, ManualAuth, ManualAuthReason, ManualAuthSurface};
@@ -84,7 +84,7 @@ pub struct RejectedAuth {
     rejected_token_id: String,
 }
 impl RejectedAuth {
-    pub fn capture(auth: Option<&GrokAuth>) -> Self {
+    pub fn capture(auth: Option<&EzerAuth>) -> Self {
         Self {
             principal: auth.map(|a| a.user_id.clone()).filter(|id| !id.is_empty()),
             token_kind: TokenType::from_auth(auth).telemetry_kind(),
@@ -193,7 +193,7 @@ impl UnauthorizedRecovery {
     /// `rejected` is the credential the server rejected: its key drives recovery and (for user-facing sources) its identity is the KPI attribution.
     pub fn new(
         auth_manager: Arc<AuthManager>,
-        rejected: Option<GrokAuth>,
+        rejected: Option<EzerAuth>,
         source: RecoverySource,
     ) -> Self {
         let rejected_token = rejected.as_ref().map(|a| a.key.clone()).unwrap_or_default();
@@ -216,7 +216,7 @@ impl UnauthorizedRecovery {
         skip(self),
         fields(step = ?self.step, token_type = tracing::field::Empty),
     )]
-    pub async fn next(&mut self) -> Result<GrokAuth, AuthError> {
+    pub async fn next(&mut self) -> Result<EzerAuth, AuthError> {
         let span = tracing::Span::current();
         if !span.is_disabled() {
             span.record(
@@ -232,7 +232,7 @@ impl UnauthorizedRecovery {
         result
     }
     /// Walk the recovery steps and apply the team-pin policy gate.
-    async fn resolve_next(&mut self) -> Result<GrokAuth, AuthError> {
+    async fn resolve_next(&mut self) -> Result<EzerAuth, AuthError> {
         let auth = self.next_step_loop().await?;
         if let Some(e) = self.auth_manager.cached_token_policy_error(&auth) {
             self.auth_manager.reject_and_clear(&e);
@@ -240,7 +240,7 @@ impl UnauthorizedRecovery {
         }
         Ok(auth)
     }
-    async fn next_step_loop(&mut self) -> Result<GrokAuth, AuthError> {
+    async fn next_step_loop(&mut self) -> Result<EzerAuth, AuthError> {
         loop {
             match self.step {
                 RecoveryStep::ReloadFromDisk => {
@@ -279,7 +279,7 @@ impl UnauthorizedRecovery {
         }
     }
     /// Re-read `auth.json` from disk. Accept the token only if it differs from the one that was rejected.
-    async fn try_reload_from_disk(&self) -> Option<GrokAuth> {
+    async fn try_reload_from_disk(&self) -> Option<EzerAuth> {
         let _lock = self
             .auth_manager
             .try_lock_auth_file_async(
@@ -332,7 +332,7 @@ impl UnauthorizedRecovery {
     /// Return the live token instead of refreshing when its mint age is within ±[`FRESH_MINT_GUARD_SECS`]. Anything outside (including a clock that stepped far back) falls through to a normal refresh.
     /// A 401 moments after a successful mint is a stale rejection or validation lag on the new key. A stale rejection was sent with the previous key and mis-attributed; see `is_stale_snapshot`.
     /// Re-minting fixes neither, and a crash between the IdP grant and persisting the response orphans the replacement RT (forced re-login). Lives here, not in `refresh_chain`, so paywall claims re-mints that call `refresh_chain(ServerRejected)` directly are unaffected.
-    fn fresh_mint_guard(&self) -> Option<GrokAuth> {
+    fn fresh_mint_guard(&self) -> Option<EzerAuth> {
         let auth = self.auth_manager.current()?;
         let mint_age_seconds = auth.mint_age_seconds();
         if !(-FRESH_MINT_GUARD_SECS..FRESH_MINT_GUARD_SECS).contains(&mint_age_seconds) {
@@ -357,7 +357,7 @@ impl UnauthorizedRecovery {
     /// Dispatch to the correct refresh chain based on the current `TokenType`. Per-variant outcome: **OidcSession / ExternalBinary**: full refresh chain via the authority.
     /// Skipped when the live token is inside the fresh-mint guard window ([`Self::fresh_mint_guard`]). **LegacySession / ApiKey**: no refresh authority for these types.
     /// We've already tried `ReloadFromDisk` (the previous recovery step), so the server's 401 stands. Surface [`AuthError::ServerRejectedNoRecovery`], *not* `TokenExpiredNoRefresh`. The trigger here is the server rejecting the token; it may not have aged past any local TTL (ApiKey in particular has no expiry).
-    async fn try_refresh_from_authority(&self) -> Result<GrokAuth, AuthError> {
+    async fn try_refresh_from_authority(&self) -> Result<EzerAuth, AuthError> {
         let tt = self.auth_manager.token_type();
         match tt {
             TokenType::OidcSession | TokenType::ExternalBinary => {
@@ -405,7 +405,7 @@ impl UnauthorizedRecovery {
         }
     }
     /// Check if a candidate token is different from the rejected one.
-    fn is_different_token(&self, candidate: &GrokAuth) -> bool {
+    fn is_different_token(&self, candidate: &EzerAuth) -> bool {
         candidate.key != self.rejected_token
     }
 }
@@ -415,18 +415,18 @@ mod tests {
     //! `next()` exhaustion (`Done` surfaces `RecoveryExhausted`). Fresh-mint guard: ±window bounds, ExternalBinary, verdict grace, policy-hidden fall-through (fail closed).
     //! These tests use the same in-process `AuthManager` that production does. They inject a counting refresher so we can observe whether the authority was consulted.
     use super::*;
-    use crate::config::GrokComConfig;
+    use crate::config::EzerComConfig;
     use crate::error::{RefreshTokenError, RefreshTokenFailedReason};
-    use crate::model::{AuthMode, GrokAuth};
+    use crate::model::{AuthMode, EzerAuth};
     use crate::refresh::{RefreshOutcome, TokenRefresher};
     use crate::storage::{read_auth_json, write_auth_json};
     use chrono::{Duration, Utc};
     use std::sync::atomic::{AtomicU32, Ordering};
     /// The rejected wire bearer these tests seed into the manager.
-    fn rejected_cred() -> Option<GrokAuth> {
-        Some(GrokAuth {
+    fn rejected_cred() -> Option<EzerAuth> {
+        Some(EzerAuth {
             key: "rejected-tok".into(),
-            ..GrokAuth::test_default()
+            ..EzerAuth::test_default()
         })
     }
     /// Refresher fake: returns Success with a fresh token on every call.
@@ -437,12 +437,12 @@ mod tests {
     impl TokenRefresher for OkRefresher {
         async fn refresh(&self, _reason: crate::manager::RefreshReason) -> RefreshOutcome {
             self.calls.fetch_add(1, Ordering::SeqCst);
-            RefreshOutcome::Success(Box::new(GrokAuth {
+            RefreshOutcome::Success(Box::new(EzerAuth {
                 key: "fresh-from-authority".into(),
                 auth_mode: AuthMode::Oidc,
                 refresh_token: Some("rt-new".into()),
                 expires_at: Some(Utc::now() + Duration::hours(1)),
-                ..GrokAuth::test_default()
+                ..EzerAuth::test_default()
             }))
         }
     }
@@ -459,16 +459,16 @@ mod tests {
     }
     fn mgr() -> (tempfile::TempDir, Arc<AuthManager>) {
         let dir = tempfile::tempdir().unwrap();
-        let m = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
+        let m = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
         (dir, m)
     }
     fn seed(mgr: &AuthManager, mode: AuthMode, refresh_token: Option<&str>) {
-        let auth = GrokAuth {
+        let auth = EzerAuth {
             key: "rejected-tok".into(),
             auth_mode: mode,
             refresh_token: refresh_token.map(str::to_string),
             expires_at: Some(Utc::now() - Duration::hours(1)),
-            ..GrokAuth::test_default()
+            ..EzerAuth::test_default()
         };
         mgr.hot_swap(auth);
     }
@@ -500,17 +500,17 @@ mod tests {
     }
     /// Seed a *valid* (unexpired) in-memory token whose `create_time` lies `mint_age` in the past (negative means the clock stepped back since mint).
     fn seed_valid(mgr: &AuthManager, mode: AuthMode, mint_age: Duration) {
-        mgr.hot_swap(GrokAuth {
+        mgr.hot_swap(EzerAuth {
             key: "rejected-tok".into(),
             auth_mode: mode,
             refresh_token: Some("rt".into()),
             create_time: Utc::now() - mint_age,
             expires_at: Some(Utc::now() + Duration::hours(1)),
-            ..GrokAuth::test_default()
+            ..EzerAuth::test_default()
         });
     }
     /// Run one recovery against a counting refresher; return the outcome and how many times the authority was consulted.
-    async fn recover_with_ok_refresher(m: &Arc<AuthManager>) -> (Result<GrokAuth, AuthError>, u32) {
+    async fn recover_with_ok_refresher(m: &Arc<AuthManager>) -> (Result<EzerAuth, AuthError>, u32) {
         let calls = Arc::new(AtomicU32::new(0));
         m.set_refresher(Arc::new(OkRefresher {
             calls: calls.clone(),
@@ -597,18 +597,18 @@ mod tests {
     #[tokio::test]
     async fn fresh_mint_guard_never_returns_policy_hidden_token() {
         let dir = tempfile::tempdir().unwrap();
-        let cfg = GrokComConfig {
+        let cfg = EzerComConfig {
             force_login_team_uuid: Some(crate::config::ForceLoginTeam::Single("team-good".into())),
-            ..GrokComConfig::default()
+            ..EzerComConfig::default()
         };
         let m = Arc::new(AuthManager::new(dir.path(), cfg));
-        m.hot_swap(GrokAuth {
+        m.hot_swap(EzerAuth {
             key: team_jwt("team-wrong"),
             auth_mode: AuthMode::Oidc,
             refresh_token: Some("rt".into()),
             create_time: Utc::now(),
             expires_at: Some(Utc::now() + Duration::hours(1)),
-            ..GrokAuth::test_default()
+            ..EzerAuth::test_default()
         });
         let calls = Arc::new(AtomicU32::new(0));
         m.set_refresher(Arc::new(OkRefresher {
@@ -674,13 +674,13 @@ mod tests {
     async fn reload_from_disk_picks_up_different_token() {
         let (dir, m) = mgr();
         seed(&m, AuthMode::Oidc, Some("rt"));
-        let scope = m.grok_com_config().auth_scope();
-        let fresh = GrokAuth {
+        let scope = m.ezer_com_config().auth_scope();
+        let fresh = EzerAuth {
             key: "fresh-from-disk".into(),
             auth_mode: AuthMode::Oidc,
             refresh_token: Some("rt-new".into()),
             expires_at: Some(Utc::now() + Duration::hours(1)),
-            ..GrokAuth::test_default()
+            ..EzerAuth::test_default()
         };
         let mut store = read_auth_json(&dir.path().join("auth.json")).unwrap_or_default();
         store.insert(scope, fresh);
@@ -696,13 +696,13 @@ mod tests {
     async fn reload_from_disk_skips_same_token_then_proceeds_to_authority() {
         let (dir, m) = mgr();
         seed(&m, AuthMode::Oidc, Some("rt"));
-        let scope = m.grok_com_config().auth_scope();
-        let same = GrokAuth {
+        let scope = m.ezer_com_config().auth_scope();
+        let same = EzerAuth {
             key: "rejected-tok".into(),
             auth_mode: AuthMode::Oidc,
             refresh_token: Some("rt".into()),
             expires_at: Some(Utc::now() + Duration::hours(1)),
-            ..GrokAuth::test_default()
+            ..EzerAuth::test_default()
         };
         let mut store = read_auth_json(&dir.path().join("auth.json")).unwrap_or_default();
         store.insert(scope, same);
@@ -868,13 +868,13 @@ mod tests {
     async fn reload_from_disk_rejects_expired_different_token() {
         let (dir, m) = mgr();
         seed(&m, AuthMode::Oidc, Some("rt"));
-        let scope = m.grok_com_config().auth_scope();
-        let expired_different = GrokAuth {
+        let scope = m.ezer_com_config().auth_scope();
+        let expired_different = EzerAuth {
             key: "different-but-expired".into(),
             auth_mode: AuthMode::Oidc,
             refresh_token: Some("rt-new".into()),
             expires_at: Some(Utc::now() - Duration::hours(1)),
-            ..GrokAuth::test_default()
+            ..EzerAuth::test_default()
         };
         let mut store = read_auth_json(&dir.path().join("auth.json")).unwrap_or_default();
         store.insert(scope, expired_different);
@@ -895,12 +895,12 @@ mod tests {
     #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
     async fn manual_auth_record_dedups_concurrent_same_credential() {
         let tracker = Arc::new(ManualAuthTracker::default());
-        let auth = GrokAuth {
+        let auth = EzerAuth {
             key: "rejected".into(),
             auth_mode: AuthMode::Oidc,
             refresh_token: Some("rt".into()),
             user_id: "user-1".into(),
-            ..GrokAuth::test_default()
+            ..EzerAuth::test_default()
         };
         let snapshot = Arc::new(RejectedAuth::capture(Some(&auth)));
         let err = Arc::new(AuthError::permanent(
@@ -944,9 +944,9 @@ mod tests {
     #[tokio::test]
     async fn recovery_rejects_wrong_team_adopted_disk_token() {
         let dir = tempfile::tempdir().unwrap();
-        let cfg = GrokComConfig {
+        let cfg = EzerComConfig {
             force_login_team_uuid: Some(crate::config::ForceLoginTeam::Single("team-good".into())),
-            ..GrokComConfig::default()
+            ..EzerComConfig::default()
         };
         let scope = cfg.auth_scope();
         let m = Arc::new(AuthManager::new(dir.path(), cfg));
@@ -954,12 +954,12 @@ mod tests {
         let mut store = read_auth_json(&dir.path().join("auth.json")).unwrap_or_default();
         store.insert(
             scope,
-            GrokAuth {
+            EzerAuth {
                 key: team_jwt("team-wrong"),
                 auth_mode: AuthMode::Oidc,
                 refresh_token: Some("rt-sibling".into()),
                 expires_at: Some(Utc::now() + Duration::hours(1)),
-                ..GrokAuth::test_default()
+                ..EzerAuth::test_default()
             },
         );
         write_auth_json(&dir.path().join("auth.json"), &store).unwrap();

@@ -116,9 +116,9 @@ async fn client_hooks_fire_without_file_registry() {
                 .try_recv()
                 .expect("client hook must fire with no file registry");
             let xai_acp_lib::AcpClientMessage::ExtNotification(args) = msg else {
-                panic!("expected an x.ai/hooks/event ext notification");
+                panic!("expected an ezer/hooks/event ext notification");
             };
-            assert_eq!(args.request.method.as_ref(), "x.ai/hooks/event");
+            assert_eq!(args.request.method.as_ref(), "ezer/hooks/event");
             let params: serde_json::Value =
                 serde_json::from_str(args.request.params.get()).unwrap();
             assert_eq!(
@@ -365,7 +365,7 @@ async fn post_tool_use_and_failure_never_double_fire() {
     local
         .run_until(async {
             let (actor, mut gateway_rx, _persistence_rx) = test_actor().await;
-            *actor.agent.borrow_mut() = test_grok_build_agent_with_todo().await;
+            *actor.agent.borrow_mut() = test_ezer_build_agent_with_todo().await;
 
             let mut client_hooks = crate::extensions::hooks::ClientHooks::new();
             for event in [
@@ -399,7 +399,7 @@ async fn post_tool_use_and_failure_never_double_fire() {
             let mut failure_events = Vec::new();
             while let Ok(msg) = gateway_rx.try_recv() {
                 if let xai_acp_lib::AcpClientMessage::ExtNotification(args) = msg
-                    && args.request.method.as_ref() == "x.ai/hooks/event"
+                    && args.request.method.as_ref() == "ezer/hooks/event"
                 {
                     let params: serde_json::Value =
                         serde_json::from_str(args.request.params.get()).unwrap();
@@ -424,7 +424,7 @@ async fn post_tool_use_and_failure_never_double_fire() {
                 while let Some(msg) = gateway_rx.recv().await {
                     match msg {
                         xai_acp_lib::AcpClientMessage::ExtMethod(args) => {
-                            if args.request.method.as_ref() == "x.ai/hooks/run" {
+                            if args.request.method.as_ref() == "ezer/hooks/run" {
                                 let params: serde_json::Value =
                                     serde_json::from_str(args.request.params.get()).unwrap();
                                 if let Some(name) = params
@@ -442,7 +442,7 @@ async fn post_tool_use_and_failure_never_double_fire() {
                             let _ = args.response_tx.send(Ok(acp::ExtResponse::new(empty)));
                         }
                         xai_acp_lib::AcpClientMessage::ExtNotification(args) => {
-                            if args.request.method.as_ref() == "x.ai/hooks/event" {
+                            if args.request.method.as_ref() == "ezer/hooks/event" {
                                 let params: serde_json::Value =
                                     serde_json::from_str(args.request.params.get()).unwrap();
                                 if let Some(name) = params
@@ -538,7 +538,7 @@ async fn mcp_error_result_fires_only_failure_and_delivers_original_output() {
     local
         .run_until(async {
             let (actor, mut gateway_rx, _persistence_rx) = test_actor().await;
-            *actor.agent.borrow_mut() = test_grok_build_agent_with_todo().await;
+            *actor.agent.borrow_mut() = test_ezer_build_agent_with_todo().await;
             let bridge = actor.agent.borrow().tool_bridge().clone();
             bridge
                 .register_mcp_tools(
@@ -570,7 +570,7 @@ async fn mcp_error_result_fires_only_failure_and_delivers_original_output() {
                 while let Some(msg) = gateway_rx.recv().await {
                     match msg {
                         xai_acp_lib::AcpClientMessage::ExtMethod(args) => {
-                            if args.request.method.as_ref() == "x.ai/hooks/run" {
+                            if args.request.method.as_ref() == "ezer/hooks/run" {
                                 let params: serde_json::Value =
                                     serde_json::from_str(args.request.params.get()).unwrap();
                                 if let Some(name) = params.pointer("/hookEventName").unwrap_or(&serde_json::Value::Null).as_str() {
@@ -584,7 +584,7 @@ async fn mcp_error_result_fires_only_failure_and_delivers_original_output() {
                             let _ = args.response_tx.send(Ok(acp::ExtResponse::new(empty)));
                         }
                         xai_acp_lib::AcpClientMessage::ExtNotification(args) => {
-                            if args.request.method.as_ref() == "x.ai/hooks/event" {
+                            if args.request.method.as_ref() == "ezer/hooks/event" {
                                 let params: serde_json::Value =
                                     serde_json::from_str(args.request.params.get()).unwrap();
                                 if let Some(name) = params.pointer("/hookEventName").unwrap_or(&serde_json::Value::Null).as_str() {
@@ -651,7 +651,7 @@ async fn post_tool_use_failure_additional_context_reaches_model() {
     local
         .run_until(async {
             let (mut actor, _gateway_rx, _persistence_rx) = test_actor().await;
-            *actor.agent.borrow_mut() = test_grok_build_agent_with_todo().await;
+            *actor.agent.borrow_mut() = test_ezer_build_agent_with_todo().await;
 
             // A file PostToolUseFailure hook feeds additionalContext (context-only).
             install_pre_tool_use_hooks(
@@ -704,7 +704,7 @@ async fn pre_tool_use_deny_feeds_reason_back_and_continues_turn() {
     local
         .run_until(async {
             let (actor, gateway_rx, _persistence_rx) = test_actor().await;
-            *actor.agent.borrow_mut() = test_grok_build_agent_with_todo().await;
+            *actor.agent.borrow_mut() = test_ezer_build_agent_with_todo().await;
 
             install_client_hook(
                 &actor,
@@ -1152,7 +1152,7 @@ async fn file_force_stop_skips_client_gate_but_notifies() {
                 while let Some(msg) = gateway_rx.recv().await {
                     match msg {
                         xai_acp_lib::AcpClientMessage::ExtMethod(args) => {
-                            if args.request.method.as_ref() == "x.ai/hooks/run" {
+                            if args.request.method.as_ref() == "ezer/hooks/run" {
                                 runs.set(runs.get() + 1);
                             }
                             let empty: Arc<serde_json::value::RawValue> =
@@ -1162,7 +1162,7 @@ async fn file_force_stop_skips_client_gate_but_notifies() {
                             let _ = args.response_tx.send(Ok(acp::ExtResponse::new(empty)));
                         }
                         xai_acp_lib::AcpClientMessage::ExtNotification(args) => {
-                            if args.request.method.as_ref() == "x.ai/hooks/event" {
+                            if args.request.method.as_ref() == "ezer/hooks/event" {
                                 observes.set(observes.get() + 1);
                             }
                         }

@@ -4408,7 +4408,7 @@ mod toast_fit_tests {
     }
     #[test]
     fn long_message_truncates_with_ellipsis_instead_of_vanishing() {
-        let msg = "Copied via OSC 52 — also saved to /tmp/grok-0/last-copy.txt. If paste fails, hold Shift (or Fn) and drag to select & copy natively.";
+        let msg = "Copied via OSC 52 — also saved to /tmp/ezer-0/last-copy.txt. If paste fails, hold Shift (or Fn) and drag to select & copy natively.";
         let fitted = fit_toast_text(msg, 60).expect("must render truncated");
         assert!(fitted.chars().count() <= 58);
         assert!(fitted.ends_with("… "));

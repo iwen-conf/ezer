@@ -1,14 +1,14 @@
 use super::*;
 use serde::Deserialize;
 
-/// Handle `x.ai/models/update`: the model list changed (etag-triggered refresh).
+/// Handle `ezer/models/update`: the model list changed (etag-triggered refresh).
 pub(super) fn handle_models_update(notif: &acp::ExtNotification, app: &mut AppView) -> bool {
     if let Ok(model_state) = serde_json::from_str::<acp::SessionModelState>(notif.params.get()) {
         use crate::acp::model_state::ModelState;
         let new_models = ModelState::from(Some(model_state));
         tracing::info!(
             count = new_models.available.len(),
-            "models updated via x.ai/models/update"
+            "models updated via ezer/models/update"
         );
 
         app.models.update_catalog(new_models.available.clone());
@@ -38,15 +38,15 @@ pub(super) fn handle_models_update(notif: &acp::ExtNotification, app: &mut AppVi
         }
         true
     } else {
-        tracing::warn!("Failed to parse x.ai/models/update");
+        tracing::warn!("Failed to parse ezer/models/update");
         false
     }
 }
 
-/// Handle `x.ai/settings/update`: remote settings refreshed on `/new`.
+/// Handle `ezer/settings/update`: remote settings refreshed on `/new`.
 pub(super) fn handle_settings_update(notif: &acp::ExtNotification, app: &mut AppView) -> bool {
     let Ok(update) = serde_json::from_str::<PagerSettingsUpdate>(notif.params.get()) else {
-        tracing::warn!("Failed to parse x.ai/settings/update");
+        tracing::warn!("Failed to parse ezer/settings/update");
         return false;
     };
 
@@ -55,7 +55,7 @@ pub(super) fn handle_settings_update(notif: &acp::ExtNotification, app: &mut App
     // Reseed this process's remote-campaign cache
     // Without this reseed a remote campaign stays invisible to `resolve_dismissable_campaigns`
     // A `/model` pick then never records its dismissal and the leader re-nudges every new session
-    // BYOK: drop xAI/X campaign nudges unless grok.com login is opted in.
+    // BYOK: drop xAI/X campaign nudges unless ezer.com login is opted in.
     if xai_ui && let Some(campaigns) = update.campaigns.clone() {
         let rs = ezer_shell::util::config::RemoteSettings {
             campaigns,
@@ -135,7 +135,7 @@ pub(super) fn handle_settings_update(notif: &acp::ExtNotification, app: &mut App
         }
     }
     // Tier before voice: the same payload may set "API Key" and voice_mode_enabled=false
-    // Always recompute is_api_key_auth from the tier so a later Free/SuperGrok stamp does not leave the API-key bypass or a hidden billing surface stuck
+    // Always recompute is_api_key_auth from the tier so a later Free/MaxTier stamp does not leave the API-key bypass or a hidden billing surface stuck
     if let Some(v) = update.subscription_tier_display {
         let was_api_key = app.is_api_key_auth;
         let is_key = super::super::app_view::is_api_key_label(&v);
@@ -331,8 +331,8 @@ pub(super) fn handle_settings_update(notif: &acp::ExtNotification, app: &mut App
             None,
         );
         if !app.tips.is_empty() {
-            let grok_home = ezer_tools::util::grok_home::grok_home();
-            app.tip = ezer_shell::util::tips::pick_and_advance(&app.tips, &grok_home);
+            let ezer_home = ezer_tools::util::ezer_home::ezer_home();
+            app.tip = ezer_shell::util::tips::pick_and_advance(&app.tips, &ezer_home);
         } else {
             app.tip = None;
         }
@@ -350,7 +350,7 @@ pub(super) fn handle_settings_update(notif: &acp::ExtNotification, app: &mut App
             resolve_slash_command_tags(tags_config, remote_tags.as_ref());
     }
 
-    tracing::info!("settings updated via x.ai/settings/update");
+    tracing::info!("settings updated via ezer/settings/update");
     true
 }
 
@@ -396,7 +396,7 @@ pub(super) fn notify_sessions_leave_auto(app: &AppView, session_ids: &[acp::Sess
         "permission_mode": "ask",
     });
     let notification = acp::ExtNotification::new(
-        "x.ai/yolo_mode_changed",
+        "ezer/yolo_mode_changed",
         serde_json::value::to_raw_value(&params)
             .expect("serialize yolo_mode_changed params")
             .into(),
@@ -409,11 +409,11 @@ pub(super) fn notify_sessions_leave_auto(app: &AppView, session_ids: &[acp::Sess
     let _ = app.acp_tx.send(args.into());
 }
 
-/// Handle `x.ai/sessions/changed`: the leader broadcasts roster upserts/removals to all clients (FleetView dashboard).
+/// Handle `ezer/sessions/changed`: the leader broadcasts roster upserts/removals to all clients (FleetView dashboard).
 pub(super) fn handle_sessions_changed(notif: &acp::ExtNotification, app: &mut AppView) -> bool {
     let Ok(changed) = serde_json::from_str::<crate::app::roster::RosterChanged>(notif.params.get())
     else {
-        tracing::warn!("Failed to parse x.ai/sessions/changed");
+        tracing::warn!("Failed to parse ezer/sessions/changed");
         return false;
     };
     let mut affected = false;
@@ -439,7 +439,7 @@ pub(super) fn handle_announcements_update(notif: &acp::ExtNotification, app: &mu
         return false;
     }
 
-    // Re-merge local config layers like startup does. Remote xAI / grok.com lists are ignored.
+    // Re-merge local config layers like startup does. Remote xAI / ezer.com lists are ignored.
     // A wholesale replace would drop requirements/user/managed announcements and let the prune erase their persisted hide keys
     // The settings handler performs the same disk reads; pushes are rare
     let requirements = ezer_shell::config::load_merged_requirements();
@@ -466,7 +466,7 @@ pub(super) fn apply_announcements_update(
     user_config: Option<&toml::Value>,
     managed_config: Option<&toml::Value>,
 ) {
-    // BYOK: ignore xAI / grok.com announcement payloads. Re-merge local config layers only.
+    // BYOK: ignore xAI / ezer.com announcement payloads. Re-merge local config layers only.
     let _ = remote;
     let merged = ezer_shell::util::config::resolve_announcements(
         requirements,
@@ -510,7 +510,7 @@ pub(super) fn pick_random_announcement(
     announcements.get(idx).cloned()
 }
 
-/// Deserialization type for the `x.ai/settings/update` notification payload.
+/// Deserialization type for the `ezer/settings/update` notification payload.
 /// This side derives `Deserialize` and consumes only the fields the TUI uses.
 /// Separate structs keep the pager decoupled from shell internals (a shell-only field needs no pager change).
 #[derive(serde::Deserialize)]
@@ -539,7 +539,7 @@ pub(super) struct PagerSettingsUpdate {
     #[serde(default, deserialize_with = "deserialize_settings_update_tags")]
     slash_command_tags: Option<Option<std::collections::BTreeMap<String, String>>>,
     // `announcements` is deliberately NOT consumed here
-    // Every shell writer of remote_settings also emits gen-ordered `x.ai/announcements/update` (emit_announcements_if_changed)
+    // Every shell writer of remote_settings also emits gen-ordered `ezer/announcements/update` (emit_announcements_if_changed)
     // `None`/omitted (settings-less push, older shell) must leave this process's campaign cache untouched.
     #[serde(default)]
     campaigns: Option<Vec<ezer_shell::util::config::CampaignOverride>>,

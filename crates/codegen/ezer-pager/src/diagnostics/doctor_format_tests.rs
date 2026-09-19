@@ -543,7 +543,7 @@ fn runtime_startup_findings_are_visible_with_useful_doctor_content() {
     assert!(output.contains("ezer is using the terminal bell"));
     assert!(output.contains("If the bell works for you"));
     assert!(output.contains("may not report focus changes"));
-    assert!(output.contains(&crate::util::display_user_grok_path("config.toml")));
+    assert!(output.contains(&crate::util::display_user_ezer_path("config.toml")));
     assert_eq!(output.matches("notifications.protocol-fallback").count(), 1);
     assert_eq!(
         output

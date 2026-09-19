@@ -12,8 +12,8 @@
 use std::sync::Arc;
 
 use super::flow::{report_signed_in, run_external_auth_provider};
-use super::{AuthManager, GrokAuth, GrokComConfig, try_ensure_fresh_auth};
-use ezer_shell_base::util::grok_home;
+use super::{AuthManager, EzerAuth, EzerComConfig, try_ensure_fresh_auth};
+use ezer_shell_base::util::ezer_home;
 
 /// Whether the pager should attempt a pre-TUI provider login.
 /// Fresh-credential and `--force-login` checks are async and live in [`maybe_run_pre_tui_external_login`].
@@ -28,25 +28,25 @@ pub enum PreTuiLoginOutcome {
     /// The gate did not pass, or a usable cached credential already exists.
     Skipped,
     /// Provider minted a session credential; `auth.json` is written.
-    SignedIn(Box<GrokAuth>),
+    SignedIn(Box<EzerAuth>),
 }
 
 /// Run `auth_provider_command` on the real terminal when the interactive pager needs a sign-in. Call **before** `redirect_native_stderr` and raw mode. On provider failure this returns `Err` (no OIDC/device fallthrough).
 /// The pager should exit before taking over the TTY.
 pub async fn maybe_run_pre_tui_external_login(
-    grok_com_config: &GrokComConfig,
+    ezer_com_config: &EzerComConfig,
     proxy_base_url: String,
     force_login: bool,
     stdin_is_tty: bool,
 ) -> anyhow::Result<PreTuiLoginOutcome> {
-    let Some(cmd) = grok_com_config.auth_provider_command.as_deref() else {
+    let Some(cmd) = ezer_com_config.auth_provider_command.as_deref() else {
         return Ok(PreTuiLoginOutcome::Skipped);
     };
     if !should_attempt_pre_tui_external_login(true, stdin_is_tty) {
         return Ok(PreTuiLoginOutcome::Skipped);
     }
     if !force_login
-        && try_ensure_fresh_auth(grok_com_config, proxy_base_url.clone())
+        && try_ensure_fresh_auth(ezer_com_config, proxy_base_url.clone())
             .await
             .is_some()
     {
@@ -54,8 +54,8 @@ pub async fn maybe_run_pre_tui_external_login(
     }
 
     let auth_manager = Arc::new(AuthManager::new_with_proxy_base_url(
-        &grok_home::grok_home(),
-        grok_com_config.clone(),
+        &ezer_home::ezer_home(),
+        ezer_com_config.clone(),
         proxy_base_url,
     ));
     auth_manager.configure_refresher(Some(cmd.to_owned()), None);
@@ -63,7 +63,7 @@ pub async fn maybe_run_pre_tui_external_login(
 }
 
 /// Runs the provider and persists the result.
-/// The `AuthManager` is injected so tests can use a temp ezer-home instead of the process-cached [`grok_home::grok_home`].
+/// The `AuthManager` is injected so tests can use a temp ezer-home instead of the process-cached [`ezer_home::ezer_home`].
 pub async fn run_pre_tui_external_login_with(
     auth_manager: &Arc<AuthManager>,
     command: &str,
@@ -79,7 +79,7 @@ pub async fn run_pre_tui_external_login_with(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::GrokAuth;
+    use crate::EzerAuth;
 
     fn dead_proxy_url() -> String {
         let port = {
@@ -91,9 +91,9 @@ mod tests {
 
     fn isolated_manager(cmd: Option<&str>) -> (tempfile::TempDir, Arc<AuthManager>) {
         let dir = tempfile::tempdir().unwrap();
-        let cfg = GrokComConfig {
+        let cfg = EzerComConfig {
             auth_provider_command: cmd.map(str::to_owned),
-            ..GrokComConfig::default()
+            ..EzerComConfig::default()
         };
         let mgr =
             Arc::new(AuthManager::new(dir.path(), cfg).with_proxy_base_url(&dead_proxy_url()));
@@ -109,13 +109,13 @@ mod tests {
 
     #[tokio::test]
     async fn maybe_run_skips_without_provider_or_tty() {
-        let cfg = GrokComConfig::default();
+        let cfg = EzerComConfig::default();
         let skipped = maybe_run_pre_tui_external_login(&cfg, dead_proxy_url(), false, true).await;
         assert!(matches!(skipped, Ok(PreTuiLoginOutcome::Skipped)));
 
-        let cfg = GrokComConfig {
+        let cfg = EzerComConfig {
             auth_provider_command: Some("printf '%s' token".into()),
-            ..GrokComConfig::default()
+            ..EzerComConfig::default()
         };
         let skipped = maybe_run_pre_tui_external_login(&cfg, dead_proxy_url(), false, false).await;
         assert!(matches!(skipped, Ok(PreTuiLoginOutcome::Skipped)));
@@ -124,10 +124,10 @@ mod tests {
     #[tokio::test]
     async fn force_login_re_runs_provider_over_cached_token() {
         let (_dir, mgr) = isolated_manager(Some("printf '%s' should-not-run"));
-        mgr.hot_swap(GrokAuth {
+        mgr.hot_swap(EzerAuth {
             key: "cached-token".into(),
             expires_at: Some(chrono::Utc::now() + chrono::Duration::hours(1)),
-            ..GrokAuth::test_default()
+            ..EzerAuth::test_default()
         });
         assert!(mgr.current().is_some());
 

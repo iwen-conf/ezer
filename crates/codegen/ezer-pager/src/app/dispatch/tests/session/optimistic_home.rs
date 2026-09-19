@@ -668,13 +668,13 @@ fn forward_lands_in_the_welcome_composer_when_the_action_leaves_welcome_up() {
 /// an ACK opens the y/N prompt. The forwarded `y` must not confirm it.
 #[cfg(feature = "local-workspace")]
 #[test]
-#[serial_test::serial(GROK_CHAT_LOCAL_WORKSPACE_ACK)]
+#[serial_test::serial(EZER_CHAT_LOCAL_WORKSPACE_ACK)]
 fn leave_home_into_local_workspace_ack_keeps_the_keystroke_as_a_draft() {
     let _ack = ezer_test_support::EnvGuard::unset(
         crate::app::session_startup::EZER_CHAT_LOCAL_WORKSPACE_ACK_ENV,
     );
     let home = tempfile::tempdir().unwrap();
-    let _home = ezer_test_support::EnvGuard::set("GROK_HOME", home.path().to_str().unwrap());
+    let _home = ezer_test_support::EnvGuard::set("EZER_HOME", home.path().to_str().unwrap());
     crate::app::session_startup::set_active_local_workspace(None).unwrap();
     let tmp = tempfile::tempdir().unwrap();
     let mut app = test_app();
@@ -723,8 +723,8 @@ fn leave_home_is_a_no_op_behind_the_startup_gate() {
 fn typing_on_a_gated_welcome_does_not_leave_home() {
     let mut app = test_app();
     app.gate = Some(ezer_shell::auth::GateInfo {
-        message: "SuperGrok subscription required".into(),
-        url: Some("https://grok.com/supergrok".into()),
+        message: "MaxTier subscription required".into(),
+        url: Some("https://example.test/upgrade".into()),
         label: Some("Subscribe".into()),
     });
     app.welcome_prompt_focused = true;

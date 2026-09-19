@@ -3,7 +3,7 @@ name = "ezer-pager-bin"
 version = "1.0.35"
 edition.workspace = true
 license = "Apache-2.0"
-authors = ["xAI"]
+authors = ["ezer contributors"]
 default-run = "ezer"
 
 # Composition-root binary. Ships as `ezer`.

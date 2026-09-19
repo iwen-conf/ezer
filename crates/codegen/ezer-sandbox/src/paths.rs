@@ -2,18 +2,18 @@
 
 use std::path::{Path, PathBuf};
 
-// ── Grok state directory ────────────────────────────────────────────────────
+// ── Ezer state directory ────────────────────────────────────────────────────
 
 /// ezer state directory (`$EZER_HOME` or `~/.ezer`).
-pub(crate) fn grok_home() -> PathBuf {
-    ezer_config::grok_home()
+pub(crate) fn ezer_home() -> PathBuf {
+    ezer_config::ezer_home()
 }
 
 /// On-disk JSONL audit log under the sessions directory.
 ///
 /// Strict writes it via the sessions directory grant (not a file grant on the ezer home parent, which would follow a planted symlink).
 pub(crate) fn sandbox_events_log_path() -> PathBuf {
-    grok_home().join("sessions").join("sandbox-events.jsonl")
+    ezer_home().join("sessions").join("sandbox-events.jsonl")
 }
 
 // ── Device files & directories ──────────────────────────────────────────────
@@ -69,18 +69,18 @@ pub(crate) fn temp_writable_paths() -> Vec<PathBuf> {
 
 // ── Essential writable paths ────────────────────────────────────────────────
 
-/// Writable directory paths for the workspace profile (full `grok_home()` and temp).
+/// Writable directory paths for the workspace profile (full `ezer_home()` and temp).
 /// Device files are handled separately via `allow_file` in `to_capability_set_with_config`.
 pub(crate) fn essential_writable_paths(workspace: &Path) -> Vec<PathBuf> {
-    let mut paths = vec![workspace.to_path_buf(), grok_home()];
+    let mut paths = vec![workspace.to_path_buf(), ezer_home()];
     paths.extend(temp_writable_paths());
     paths
 }
 
-/// Writable directory paths for the strict profile (workspace, sessions, and temp). Strict may read `grok_home()` but
+/// Writable directory paths for the strict profile (workspace, sessions, and temp). Strict may read `ezer_home()` but
 /// must not write the parent. Events JSONL lives under `sessions/`.
 pub(crate) fn essential_writable_paths_strict(workspace: &Path) -> Vec<PathBuf> {
-    let mut paths = vec![workspace.to_path_buf(), grok_home().join("sessions")];
+    let mut paths = vec![workspace.to_path_buf(), ezer_home().join("sessions")];
     paths.extend(temp_writable_paths());
     paths
 }
@@ -88,7 +88,7 @@ pub(crate) fn essential_writable_paths_strict(workspace: &Path) -> Vec<PathBuf> 
 /// Writable directory paths for the read-only profile (minimal: just ~/.ezer + temp).
 /// Device files are handled separately via `allow_file` in `to_capability_set_with_config`.
 pub(crate) fn essential_writable_paths_minimal() -> Vec<PathBuf> {
-    let mut paths = vec![grok_home()];
+    let mut paths = vec![ezer_home()];
     paths.extend(temp_writable_paths());
     paths
 }

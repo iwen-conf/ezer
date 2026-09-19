@@ -96,14 +96,14 @@ impl ConfigFileWatcher {
     /// `cwd`, when `Some`, adds two non-recursive watches: `<cwd>/` and `<cwd>/.ezer/`.
     /// Use [`Self::watch_path`] later to register additional project cwds for sessions that open in previously-unwatched directories.
     pub fn start(
-        grok_home: &Path,
+        ezer_home: &Path,
         extra_paths: &[PathBuf],
         cwd: Option<&Path>,
         debounce: Option<Duration>,
     ) -> Option<(Self, mpsc::UnboundedReceiver<ConfigChangeEvent>)> {
         let debounce = debounce.unwrap_or(DEFAULT_DEBOUNCE);
         let (tx, rx) = mpsc::unbounded_channel();
-        let grok_home_buf = grok_home.to_path_buf();
+        let ezer_home_buf = ezer_home.to_path_buf();
         // `~/.claude.json` is consumed by **every** session (see `load_claude_json_mcp_servers_as_configs`)
         // A write to it must broadcast through the unit `McpServersChanged` arm, NOT the per-cwd `ProjectMcpServersChanged { cwd: $HOME }` arm `cwd_matches` would silently filter the per-cwd arm for sessions outside `$HOME`
         // We snapshot `$HOME` here so the closure can tell `<home>/.claude.json` apart from a project-level `<cwd>/.claude.json` purely by path Canonicalize `$HOME` ONCE up front. `notify` backends may deliver canonicalized event paths. macOS FSEvents resolves symlinks, returning `/private/var/...` where `xai_dirs::home_dir()` returned `/var/...`
@@ -111,7 +111,7 @@ impl ConfigFileWatcher {
             xai_dirs::home_dir().map(|h| dunce::canonicalize(&h).unwrap_or(h));
         // Follow dest may live outside `$EZER_HOME`. Classify against the live
         // dest (not a startup snapshot) so A→B retargets still match B writes.
-        let dest_watch = FollowDestWatch::start(&grok_home_buf, tx.clone());
+        let dest_watch = FollowDestWatch::start(&ezer_home_buf, tx.clone());
 
         let dest_watch_for_events = dest_watch.clone();
         let mut debouncer = new_filtered_debouncer(debounce, move |res: DebounceEventResult| {
@@ -119,16 +119,16 @@ impl ConfigFileWatcher {
 
             let mut saw_slot = false;
             let mut batch_events: Vec<ConfigChangeEvent> = Vec::new();
-            let live_dest = resolve_global_config_dest(&grok_home_buf);
+            let live_dest = resolve_global_config_dest(&ezer_home_buf);
             for event in events {
                 if event.path.file_name().and_then(|n| n.to_str()) == Some("config.toml")
-                    && event.path.parent() == Some(grok_home_buf.as_path())
+                    && event.path.parent() == Some(ezer_home_buf.as_path())
                 {
                     saw_slot = true;
                 }
                 if let Some(evt) = classify_watched_path(
                     &event.path,
-                    &grok_home_buf,
+                    &ezer_home_buf,
                     live_dest.as_deref(),
                     user_home_buf.as_deref(),
                 ) && !batch_events.contains(&evt)
@@ -148,10 +148,10 @@ impl ConfigFileWatcher {
 
         debouncer
             .watcher()
-            .watch(grok_home, RecursiveMode::NonRecursive)
+            .watch(ezer_home, RecursiveMode::NonRecursive)
             .map_err(|e| {
                 tracing::warn!(
-                    path = %grok_home.display(),
+                    path = %ezer_home.display(),
                     error = %e,
                     "failed to watch ezer home directory"
                 )
@@ -171,7 +171,7 @@ impl ConfigFileWatcher {
         }
 
         // Add the two narrow non-recursive cwd watches. Both are non-fatal. A missing directory just means the corresponding files don't exist yet; `watch_path` picks them up on the next session opening in this cwd
-        // The leader's own cwd may also be covered by `extra_paths` `find_project_configs(cwd)` already includes `<cwd>/.grok/config.toml`, so the loop above watches `<cwd>/.grok/`
+        // The leader's own cwd may also be covered by `extra_paths` `find_project_configs(cwd)` already includes `<cwd>/.ezer/config.toml`, so the loop above watches `<cwd>/.ezer/`
         // The call below then installs a duplicate watch on the same directory `notify` dedupes silently in its `RecommendedWatcher` (last-write-wins for the recursion mode), so this is cosmetic Both additions remain non-recursive, so events are not amplified
         let mut watched_cwds = HashSet::new();
         if let Some(cwd) = cwd {
@@ -180,7 +180,7 @@ impl ConfigFileWatcher {
         }
 
         tracing::info!(
-            grok_home = %grok_home.display(),
+            ezer_home = %ezer_home.display(),
             extra_paths = extra_paths.len(),
             cwd = ?cwd,
             debounce_ms = debounce.as_millis(),
@@ -223,8 +223,8 @@ impl ConfigFileWatcher {
 }
 
 /// Snapshot the follow dest of `$EZER_HOME/config.toml`. Canonicalize for notify path match.
-fn resolve_global_config_dest(grok_home: &Path) -> Option<PathBuf> {
-    let slot = grok_home.join("config.toml");
+fn resolve_global_config_dest(ezer_home: &Path) -> Option<PathBuf> {
+    let slot = ezer_home.join("config.toml");
     ezer_config::fs_atomic::resolve_atomic_destination(&slot)
         .ok()
         .map(|p| dunce::canonicalize(&p).unwrap_or(p))
@@ -237,7 +237,7 @@ struct FollowDestWatch {
 
 struct FollowDestWatchInner {
     watcher: AccessFilteredWatcher,
-    grok_home: PathBuf,
+    ezer_home: PathBuf,
     dest_parent: Option<PathBuf>,
 }
 
@@ -250,14 +250,14 @@ impl Clone for FollowDestWatch {
 }
 
 impl FollowDestWatch {
-    fn start(grok_home: &Path, tx: mpsc::UnboundedSender<ConfigChangeEvent>) -> Option<Self> {
-        let grok_home_buf = grok_home.to_path_buf();
+    fn start(ezer_home: &Path, tx: mpsc::UnboundedSender<ConfigChangeEvent>) -> Option<Self> {
+        let ezer_home_buf = ezer_home.to_path_buf();
         let watcher = AccessFilteredWatcher::new(
             move |res: notify::Result<notify::Event>| {
                 let Ok(event) = res else { return };
-                let dest = resolve_global_config_dest(&grok_home_buf);
+                let dest = resolve_global_config_dest(&ezer_home_buf);
                 for path in &event.paths {
-                    if classify_watched_path(path, &grok_home_buf, dest.as_deref(), None)
+                    if classify_watched_path(path, &ezer_home_buf, dest.as_deref(), None)
                         == Some(ConfigChangeEvent::GlobalConfigChanged)
                     {
                         let _ = tx.send(ConfigChangeEvent::GlobalConfigChanged);
@@ -272,7 +272,7 @@ impl FollowDestWatch {
         Some(Self {
             inner: std::sync::Arc::new(std::sync::Mutex::new(FollowDestWatchInner {
                 watcher,
-                grok_home: grok_home.to_path_buf(),
+                ezer_home: ezer_home.to_path_buf(),
                 dest_parent: None,
             })),
         })
@@ -282,11 +282,11 @@ impl FollowDestWatch {
         let Ok(mut inner) = self.inner.lock() else {
             return;
         };
-        let dest = resolve_global_config_dest(&inner.grok_home);
+        let dest = resolve_global_config_dest(&inner.ezer_home);
         let parent = dest
             .as_deref()
             .and_then(Path::parent)
-            .filter(|p| !paths_equal(p, &inner.grok_home))
+            .filter(|p| !paths_equal(p, &inner.ezer_home))
             .map(Path::to_path_buf);
         if parent == inner.dest_parent {
             return;
@@ -306,7 +306,7 @@ impl FollowDestWatch {
 
 fn classify_watched_path(
     path: &Path,
-    grok_home: &Path,
+    ezer_home: &Path,
     global_config_dest: Option<&Path>,
     user_home: Option<&Path>,
 ) -> Option<ConfigChangeEvent> {
@@ -316,11 +316,11 @@ fn classify_watched_path(
     let name = path.file_name().and_then(|n| n.to_str());
     let parent = path.parent();
     match name {
-        Some("auth.json") if parent == Some(grok_home) => Some(ConfigChangeEvent::AuthChanged),
-        Some("config.toml") if parent == Some(grok_home) => {
+        Some("auth.json") if parent == Some(ezer_home) => Some(ConfigChangeEvent::AuthChanged),
+        Some("config.toml") if parent == Some(ezer_home) => {
             Some(ConfigChangeEvent::GlobalConfigChanged)
         }
-        Some("models_cache.json") if parent == Some(grok_home) => {
+        Some("models_cache.json") if parent == Some(ezer_home) => {
             Some(ConfigChangeEvent::ModelsCacheChanged)
         }
         Some("config.toml") => Some(ConfigChangeEvent::ProjectConfigChanged {
@@ -353,10 +353,10 @@ fn watch_cwd_dirs(debouncer: &mut Debouncer<AccessFilteredWatcher>, cwd: &Path) 
     if let Err(e) = debouncer.watcher().watch(cwd, RecursiveMode::NonRecursive) {
         log_watch_error(&e, "failed to watch project cwd (non-recursive)");
     }
-    let grok_dir = cwd.join(".ezer");
+    let ezer_dir = cwd.join(".ezer");
     if let Err(e) = debouncer
         .watcher()
-        .watch(&grok_dir, RecursiveMode::NonRecursive)
+        .watch(&ezer_dir, RecursiveMode::NonRecursive)
     {
         log_watch_error(
             &e,
@@ -371,8 +371,8 @@ fn unwatch_cwd_dirs(debouncer: &mut Debouncer<AccessFilteredWatcher>, cwd: &Path
     if let Err(e) = debouncer.watcher().unwatch(cwd) {
         tracing::debug!(error = %e, "failed to unwatch project cwd");
     }
-    let grok_dir = cwd.join(".ezer");
-    if let Err(e) = debouncer.watcher().unwatch(&grok_dir) {
+    let ezer_dir = cwd.join(".ezer");
+    if let Err(e) = debouncer.watcher().unwatch(&ezer_dir) {
         tracing::debug!(error = %e, "failed to unwatch project .ezer directory");
     }
 }
@@ -430,9 +430,9 @@ const VENDOR_CONFIG_ROOT_NAMES: &[&str] = &[".ezer", ".agents", ".claude", ".cur
 /// `bundled` is the synced bundle root in ezer home, so its appearance means skills changed.
 const SKILL_DISCOVERY_BASENAMES: &[&str] = &["skills", "commands", "SKILL.md", "bundled"];
 
-/// Vendor roots (by name or `grok_home`) must use scoped watches; they can contain large non-skill trees (`worktrees/`, etc.).
-fn is_vendor_config_root(dir: &Path, grok_home: &Path) -> bool {
-    if paths_equal(dir, grok_home) {
+/// Vendor roots (by name or `ezer_home`) must use scoped watches; they can contain large non-skill trees (`worktrees/`, etc.).
+fn is_vendor_config_root(dir: &Path, ezer_home: &Path) -> bool {
+    if paths_equal(dir, ezer_home) {
         return true;
     }
     dir.file_name()
@@ -464,10 +464,10 @@ fn vendor_skill_refresh_dirs(config_dir: &Path) -> [(PathBuf, RecursiveMode); 3]
     ]
 }
 
-fn project_grok_refresh_dirs(project_root: &Path) -> Vec<(PathBuf, RecursiveMode)> {
-    let project_grok = project_root.join(".ezer");
-    let mut dirs = vec![(project_grok.clone(), RecursiveMode::NonRecursive)];
-    dirs.extend(vendor_skill_refresh_dirs(&project_grok));
+fn project_ezer_refresh_dirs(project_root: &Path) -> Vec<(PathBuf, RecursiveMode)> {
+    let project_ezer = project_root.join(".ezer");
+    let mut dirs = vec![(project_ezer.clone(), RecursiveMode::NonRecursive)];
+    dirs.extend(vendor_skill_refresh_dirs(&project_ezer));
     dirs
 }
 
@@ -534,7 +534,7 @@ struct SkillsWatchPlan {
 /// Pure function: classifies discovery roots and seeds mid-session refresh targets.
 fn plan_skills_watch_targets(
     dirs_to_watch: &[PathBuf],
-    grok_home: &Path,
+    ezer_home: &Path,
     project_root: Option<&Path>,
 ) -> SkillsWatchPlan {
     let mut vendor_roots = Vec::new();
@@ -542,7 +542,7 @@ fn plan_skills_watch_targets(
     let mut refresh_dirs = Vec::new();
 
     for dir in dirs_to_watch {
-        if is_vendor_config_root(dir, grok_home) {
+        if is_vendor_config_root(dir, ezer_home) {
             vendor_roots.push(dir.clone());
             refresh_dirs.extend(vendor_skill_refresh_dirs(dir));
         } else {
@@ -586,27 +586,27 @@ pub(crate) struct ProjectDiscoveryWatcher {
 impl ProjectDiscoveryWatcher {
     pub(crate) fn start(
         cwd: &Path,
-        grok_home: &Path,
+        ezer_home: &Path,
     ) -> Option<(Self, mpsc::UnboundedReceiver<DiscoveryChange>)> {
         let project_root = crate::session::workflow::registry::project_root(cwd);
-        let project_grok = project_root.join(".ezer");
-        // Grok home's root sees constant unrelated writes from every grok process
-        if paths_equal(&project_grok, grok_home) {
+        let project_ezer = project_root.join(".ezer");
+        // Ezer home's root sees constant unrelated writes from every ezer process
+        if paths_equal(&project_ezer, ezer_home) {
             tracing::debug!(
-                project_grok = %project_grok.display(),
+                project_ezer = %project_ezer.display(),
                 "project .ezer is ezer home; skills watcher owns it"
             );
             return None;
         }
         let (tx, rx) = mpsc::unbounded_channel();
-        let project_grok_for_events = project_grok.clone();
+        let project_ezer_for_events = project_ezer.clone();
         let mut debouncer =
             new_filtered_debouncer(SKILLS_DEBOUNCE, move |res: DebounceEventResult| {
                 let Ok(events) = res else { return };
                 let mut change = None;
                 for next in events
                     .iter()
-                    .filter(|event| event.path.starts_with(&project_grok_for_events))
+                    .filter(|event| event.path.starts_with(&project_ezer_for_events))
                     .filter_map(|event| discovery_change_for_path(&event.path))
                 {
                     if next == DiscoveryChange::Skills {
@@ -622,8 +622,8 @@ impl ProjectDiscoveryWatcher {
             .map_err(|error| tracing::warn!(%error, "failed to create project workflow watcher"))
             .ok()?;
 
-        let initial = if project_grok.is_dir() {
-            project_grok.clone()
+        let initial = if project_ezer.is_dir() {
+            project_ezer.clone()
         } else {
             project_root.clone()
         };
@@ -634,7 +634,7 @@ impl ProjectDiscoveryWatcher {
             log_watch_error(&error, "failed to watch project workflow parent");
             return None;
         }
-        let refresh_dirs = project_grok_refresh_dirs(&project_root);
+        let refresh_dirs = project_ezer_refresh_dirs(&project_root);
         let mut refreshed_dirs = HashSet::from([initial]);
         attach_new_refresh_dirs(
             &mut debouncer,
@@ -679,20 +679,20 @@ impl SkillsFileWatcher {
         monorepo_user_dir: Option<&Path>,
         config_paths: &[String],
     ) -> Option<(Self, mpsc::UnboundedReceiver<DiscoveryChange>)> {
-        let grok_home = ezer_tools::util::grok_home::grok_home();
+        let ezer_home = ezer_tools::util::ezer_home::ezer_home();
         // Watch the full superset of vendor dirs (all-on compat) This watcher is shared by the whole leader; per-session compat isn't resolved here, and the discovery gating happens downstream
         // Watching a currently-disabled vendor dir is harmless: a change just re-runs the gated discovery It also avoids ever missing a watch if a toggle flips
         let dirs_to_watch = ezer_agent::prompt::skills::collect_skill_config_dirs(
             cwd,
             monorepo_user_dir,
-            &grok_home,
+            &ezer_home,
             config_paths,
             ezer_tools::types::compat::CompatConfig::default(),
         );
         let project_root = cwd.map(crate::session::workflow::registry::project_root);
         let (mut watcher, rx) =
-            Self::start_with_dirs(&dirs_to_watch, &grok_home, project_root.as_deref())?;
-        // In-process bundle sync re-advertises itself; this catches a sync by another grok process
+            Self::start_with_dirs(&dirs_to_watch, &ezer_home, project_root.as_deref())?;
+        // In-process bundle sync re-advertises itself; this catches a sync by another ezer process
         // The `bundled` basename rule sees the root appear; the root watch sees its subdirs appear
         let bundled_root = crate::bundle::bundled_root();
         watcher
@@ -710,7 +710,7 @@ impl SkillsFileWatcher {
     /// After a [`DiscoveryChange`], call [`Self::refresh_new_discovery_dirs`].
     pub fn start_with_dirs(
         dirs_to_watch: &[PathBuf],
-        grok_home: &Path,
+        ezer_home: &Path,
         project_root: Option<&Path>,
     ) -> Option<(Self, mpsc::UnboundedReceiver<DiscoveryChange>)> {
         let (tx, rx) = mpsc::unbounded_channel();
@@ -736,7 +736,7 @@ impl SkillsFileWatcher {
             .map_err(|e| tracing::warn!(error = %e, "failed to create skills file watcher"))
             .ok()?;
 
-        let plan = plan_skills_watch_targets(dirs_to_watch, grok_home, project_root);
+        let plan = plan_skills_watch_targets(dirs_to_watch, ezer_home, project_root);
 
         let mut watched = 0;
         let mut refreshed_dirs = HashSet::new();
@@ -846,26 +846,26 @@ mod tests {
     fn is_vendor_config_root_matches_known_names_at_any_tier() {
         let home = TempDir::new().unwrap();
         let home = home.path();
-        let grok_home = home.join(".ezer");
+        let ezer_home = home.join(".ezer");
 
-        assert!(is_vendor_config_root(&grok_home, &grok_home));
-        assert!(is_vendor_config_root(&home.join(".claude"), &grok_home));
-        assert!(is_vendor_config_root(&home.join(".cursor"), &grok_home));
-        assert!(is_vendor_config_root(&home.join(".agents"), &grok_home));
+        assert!(is_vendor_config_root(&ezer_home, &ezer_home));
+        assert!(is_vendor_config_root(&home.join(".claude"), &ezer_home));
+        assert!(is_vendor_config_root(&home.join(".cursor"), &ezer_home));
+        assert!(is_vendor_config_root(&home.join(".agents"), &ezer_home));
         assert!(is_vendor_config_root(
             &home.join("repo").join(".ezer"),
-            &grok_home
+            &ezer_home
         ));
         assert!(is_vendor_config_root(
             &home.join("repo").join(".claude"),
-            &grok_home
+            &ezer_home
         ));
 
-        assert!(!is_vendor_config_root(&home.join("my-skills"), &grok_home));
-        assert!(!is_vendor_config_root(&home.join(".config"), &grok_home));
+        assert!(!is_vendor_config_root(&home.join("my-skills"), &ezer_home));
+        assert!(!is_vendor_config_root(&home.join(".config"), &ezer_home));
         assert!(!is_vendor_config_root(
             &home.join("repo").join("my-skills"),
-            &grok_home
+            &ezer_home
         ));
 
         let custom_home = home.join("custom-ezer-home");
@@ -886,26 +886,26 @@ mod tests {
     }
 
     #[test]
-    fn project_grok_refresh_dirs_matches_vendor_layout() {
+    fn project_ezer_refresh_dirs_matches_vendor_layout() {
         let project = Path::new("/tmp/repo");
-        let grok = project.join(".ezer");
-        let dirs = project_grok_refresh_dirs(project);
+        let ezer = project.join(".ezer");
+        let dirs = project_ezer_refresh_dirs(project);
 
         assert_eq!(dirs.len(), 4);
         let [first, rest @ ..] = dirs.as_slice() else {
             panic!("expected four refresh dirs: {dirs:?}");
         };
-        assert_eq!(first, &(grok.clone(), RecursiveMode::NonRecursive));
+        assert_eq!(first, &(ezer.clone(), RecursiveMode::NonRecursive));
         assert_eq!(
             rest,
             [
-                (grok.join("skills"), RecursiveMode::Recursive),
-                (grok.join("commands"), RecursiveMode::NonRecursive),
-                (grok.join("workflows"), RecursiveMode::NonRecursive),
+                (ezer.join("skills"), RecursiveMode::Recursive),
+                (ezer.join("commands"), RecursiveMode::NonRecursive),
+                (ezer.join("workflows"), RecursiveMode::NonRecursive),
             ]
             .as_slice()
         );
-        assert_eq!(rest, vendor_skill_refresh_dirs(&grok).as_slice());
+        assert_eq!(rest, vendor_skill_refresh_dirs(&ezer).as_slice());
     }
 
     #[test]
@@ -1001,15 +1001,15 @@ mod tests {
     fn start_with_dirs_keeps_parent_only_watch() {
         let tmp = TempDir::new().unwrap();
         let project = tmp.path();
-        let grok_home = project.join("home-ezer");
-        fs::create_dir_all(&grok_home).unwrap();
+        let ezer_home = project.join("home-ezer");
+        fs::create_dir_all(&ezer_home).unwrap();
 
-        let plan = plan_skills_watch_targets(&[], &grok_home, Some(project));
+        let plan = plan_skills_watch_targets(&[], &ezer_home, Some(project));
         assert!(plan.vendor_roots.is_empty());
         assert!(plan.recursive_roots.is_empty());
         assert_eq!(plan.project_parent_watch.as_deref(), Some(project));
 
-        let (watcher, _rx) = SkillsFileWatcher::start_with_dirs(&[], &grok_home, Some(project))
+        let (watcher, _rx) = SkillsFileWatcher::start_with_dirs(&[], &ezer_home, Some(project))
             .expect("parent-only watch must start when no discovery roots exist yet");
         assert!(
             path_set_contains(&watcher.refreshed_dirs, project),
@@ -1025,20 +1025,20 @@ mod tests {
     fn plan_skills_watch_targets_scopes_vendors_and_seeds_refresh() {
         let tmp = TempDir::new().unwrap();
         let project = tmp.path();
-        let grok_home = project.join("home-ezer");
+        let ezer_home = project.join("home-ezer");
         let project_claude = project.join(".claude");
-        let project_grok = project.join(".ezer");
+        let project_ezer = project.join(".ezer");
         let custom = project.join("my-skills");
         fs::create_dir_all(&project_claude).unwrap();
-        fs::create_dir_all(&project_grok).unwrap();
+        fs::create_dir_all(&project_ezer).unwrap();
         fs::create_dir_all(&custom).unwrap();
 
-        let dirs = vec![project_claude.clone(), project_grok.clone(), custom.clone()];
-        let plan = plan_skills_watch_targets(&dirs, &grok_home, Some(project));
+        let dirs = vec![project_claude.clone(), project_ezer.clone(), custom.clone()];
+        let plan = plan_skills_watch_targets(&dirs, &ezer_home, Some(project));
 
         assert_eq!(
             plan.vendor_roots,
-            vec![project_claude.clone(), project_grok.clone()]
+            vec![project_claude.clone(), project_ezer.clone()]
         );
         assert_eq!(plan.recursive_roots, vec![custom]);
         assert_eq!(plan.project_parent_watch.as_deref(), Some(project));
@@ -1046,7 +1046,7 @@ mod tests {
         let mut expected_refresh: Vec<(PathBuf, RecursiveMode)> =
             vendor_skill_refresh_dirs(&project_claude)
                 .into_iter()
-                .chain(vendor_skill_refresh_dirs(&project_grok))
+                .chain(vendor_skill_refresh_dirs(&project_ezer))
                 .collect();
         for name in [".agents", ".cursor"] {
             let root = project.join(name);
@@ -1058,10 +1058,10 @@ mod tests {
 
     #[test]
     fn plan_skills_watch_targets_multi_vendor_refresh_fanout() {
-        let grok_home = PathBuf::from("/home/u/.ezer");
+        let ezer_home = PathBuf::from("/home/u/.ezer");
         let a = PathBuf::from("/repo/.claude");
         let b = PathBuf::from("/repo/.agents");
-        let plan = plan_skills_watch_targets(&[a.clone(), b.clone()], &grok_home, None);
+        let plan = plan_skills_watch_targets(&[a.clone(), b.clone()], &ezer_home, None);
 
         assert_eq!(plan.vendor_roots, vec![a.clone(), b.clone()]);
         assert!(plan.recursive_roots.is_empty());
@@ -1087,8 +1087,8 @@ mod tests {
     fn plan_skills_watch_targets_seeds_all_missing_project_vendor_roots() {
         let tmp = TempDir::new().unwrap();
         let project = tmp.path();
-        let grok_home = project.join("elsewhere").join(".ezer");
-        let plan = plan_skills_watch_targets(&[], &grok_home, Some(project));
+        let ezer_home = project.join("elsewhere").join(".ezer");
+        let plan = plan_skills_watch_targets(&[], &ezer_home, Some(project));
 
         assert_eq!(plan.project_parent_watch.as_deref(), Some(project));
         assert!(plan.vendor_roots.is_empty());
@@ -1117,7 +1117,7 @@ mod tests {
     fn plan_skills_watch_targets_does_not_double_seed_present_vendor_roots() {
         let tmp = TempDir::new().unwrap();
         let project = tmp.path();
-        let grok_home = project.join("home-ezer");
+        let ezer_home = project.join("home-ezer");
         let present: Vec<PathBuf> = VENDOR_CONFIG_ROOT_NAMES
             .iter()
             .map(|name| project.join(name))
@@ -1126,7 +1126,7 @@ mod tests {
             fs::create_dir_all(root).unwrap();
         }
 
-        let plan = plan_skills_watch_targets(&present, &grok_home, Some(project));
+        let plan = plan_skills_watch_targets(&present, &ezer_home, Some(project));
 
         assert_eq!(plan.vendor_roots, present);
         assert!(plan.project_parent_watch.is_none());
@@ -1158,13 +1158,13 @@ mod tests {
     fn plan_skills_watch_targets_partial_vendors_seed_only_missing() {
         let tmp = TempDir::new().unwrap();
         let project = tmp.path();
-        let grok_home = project.join("home-ezer");
+        let ezer_home = project.join("home-ezer");
         let project_claude = project.join(".claude");
         fs::create_dir_all(&project_claude).unwrap();
 
         let plan = plan_skills_watch_targets(
             std::slice::from_ref(&project_claude),
-            &grok_home,
+            &ezer_home,
             Some(project),
         );
 
@@ -1186,25 +1186,25 @@ mod tests {
     }
 
     #[test]
-    fn plan_skills_watch_targets_parent_watches_project_when_grok_present_siblings_missing() {
+    fn plan_skills_watch_targets_parent_watches_project_when_ezer_present_siblings_missing() {
         let tmp = TempDir::new().unwrap();
         let project = tmp.path();
-        let grok_home = project.join("home-ezer");
-        let project_grok = project.join(".ezer");
-        fs::create_dir_all(&project_grok).unwrap();
+        let ezer_home = project.join("home-ezer");
+        let project_ezer = project.join(".ezer");
+        fs::create_dir_all(&project_ezer).unwrap();
 
         let plan = plan_skills_watch_targets(
-            std::slice::from_ref(&project_grok),
-            &grok_home,
+            std::slice::from_ref(&project_ezer),
+            &ezer_home,
             Some(project),
         );
 
-        assert_eq!(plan.vendor_roots, vec![project_grok.clone()]);
+        assert_eq!(plan.vendor_roots, vec![project_ezer.clone()]);
         assert_eq!(plan.project_parent_watch.as_deref(), Some(project));
         assert!(
             !plan
                 .refresh_dirs
-                .contains(&(project_grok.clone(), RecursiveMode::NonRecursive))
+                .contains(&(project_ezer.clone(), RecursiveMode::NonRecursive))
         );
         for name in [".agents", ".claude", ".cursor"] {
             let root = project.join(name);
@@ -1334,9 +1334,9 @@ mod tests {
 
     #[test]
     fn workflow_change_classifies_missing_directory_creation() {
-        let grok = Path::new("/tmp/project/.ezer");
+        let ezer = Path::new("/tmp/project/.ezer");
         assert_eq!(
-            discovery_change_for_path(grok),
+            discovery_change_for_path(ezer),
             Some(DiscoveryChange::Skills)
         );
         assert_eq!(
@@ -1344,65 +1344,65 @@ mod tests {
             Some(DiscoveryChange::Skills)
         );
         assert_eq!(
-            discovery_change_for_path(&grok.join("skills")),
+            discovery_change_for_path(&ezer.join("skills")),
             Some(DiscoveryChange::Skills)
         );
         assert_eq!(
-            discovery_change_for_path(&grok.join("commands")),
+            discovery_change_for_path(&ezer.join("commands")),
             Some(DiscoveryChange::Skills)
         );
         assert_eq!(
-            discovery_change_for_path(&grok.join("workflows")),
+            discovery_change_for_path(&ezer.join("workflows")),
             Some(DiscoveryChange::Workflows)
         );
         assert_eq!(
-            discovery_change_for_path(&grok.join("workflows/review.rhai")),
+            discovery_change_for_path(&ezer.join("workflows/review.rhai")),
             Some(DiscoveryChange::Workflows)
         );
         assert_eq!(
-            discovery_change_for_path(&grok.join("skills/review/SKILL.md")),
+            discovery_change_for_path(&ezer.join("skills/review/SKILL.md")),
             Some(DiscoveryChange::Skills)
         );
         assert_eq!(
-            discovery_change_for_path(&grok.join("bundled")),
+            discovery_change_for_path(&ezer.join("bundled")),
             Some(DiscoveryChange::Skills)
         );
         assert_eq!(
-            discovery_change_for_path(&grok.join("bundled/manifest.json")),
+            discovery_change_for_path(&ezer.join("bundled/manifest.json")),
             None
         );
     }
 
     #[test]
-    fn project_discovery_watcher_skips_project_grok_equal_to_grok_home() {
+    fn project_discovery_watcher_skips_project_ezer_equal_to_ezer_home() {
         let tmp = TempDir::new().unwrap();
         let project = tmp.path();
         git2::Repository::init(project).unwrap();
-        let project_grok = project.join(".ezer");
-        fs::create_dir_all(project_grok.join("workflows")).unwrap();
-        // Nested cwd: the guard must compare the discovered git root's .grok, not cwd's
+        let project_ezer = project.join(".ezer");
+        fs::create_dir_all(project_ezer.join("workflows")).unwrap();
+        // Nested cwd: the guard must compare the discovered git root's .ezer, not cwd's
         let cwd = project.join("sub");
         fs::create_dir(&cwd).unwrap();
 
-        assert!(ProjectDiscoveryWatcher::start(&cwd, &project_grok).is_none());
+        assert!(ProjectDiscoveryWatcher::start(&cwd, &project_ezer).is_none());
         assert!(ProjectDiscoveryWatcher::start(&cwd, &project.join("other-home")).is_some());
     }
 
     #[test]
     #[cfg(target_os = "linux")]
-    fn project_discovery_watcher_ignores_unclassified_files_under_project_grok() {
+    fn project_discovery_watcher_ignores_unclassified_files_under_project_ezer() {
         let tmp = TempDir::new().unwrap();
         let project = tmp.path();
         git2::Repository::init(project).unwrap();
-        let project_grok = project.join(".ezer");
-        fs::create_dir_all(project_grok.join("workflows")).unwrap();
+        let project_ezer = project.join(".ezer");
+        fs::create_dir_all(project_ezer.join("workflows")).unwrap();
 
         let (_w, mut rx) = ProjectDiscoveryWatcher::start(project, &project.join("other-home"))
             .expect("project watcher should start");
 
         // Batch-mode debounce delivers about SKILLS_DEBOUNCE after the first raw event
         let settle = SKILLS_DEBOUNCE + Duration::from_millis(500);
-        fs::write(project_grok.join("ezer-leader.log"), "leader").unwrap();
+        fs::write(project_ezer.join("ezer-leader.log"), "leader").unwrap();
         std::thread::sleep(settle);
         assert!(
             rx.try_recv().is_err(),
@@ -1410,7 +1410,7 @@ mod tests {
         );
 
         fs::write(
-            project_grok.join("workflows").join("a.rhai"),
+            project_ezer.join("workflows").join("a.rhai"),
             "complete(\"ok\");",
         )
         .unwrap();
@@ -1624,10 +1624,10 @@ mod tests {
     /// Bookkeeping-only (no OS event delivery, so deterministic on every platform): `watch_path` records the cwd in `watched_cwds` and is idempotent; `unwatch_path` removes it and is a no-op for an unknown cwd. Guards the set that backs `unwatch_path` and the `watch_path` de-dup.
     #[test]
     fn watch_and_unwatch_path_bookkeeping() {
-        let grok_home = TempDir::new().unwrap();
+        let ezer_home = TempDir::new().unwrap();
         let cwd = TempDir::new().unwrap();
         let Some((mut watcher, _rx)) = ConfigFileWatcher::start(
-            grok_home.path(),
+            ezer_home.path(),
             &[],
             None,
             Some(Duration::from_millis(100)),
@@ -1662,21 +1662,21 @@ mod tests {
     /// An external `config.toml` referent must classify as global, not project.
     #[test]
     fn classify_external_config_toml_referent_as_global() {
-        let grok_home = Path::new("/home/u/.ezer");
+        let ezer_home = Path::new("/home/u/.ezer");
         let dest = Path::new("/home/u/dotfiles/config.toml");
         assert_eq!(
-            classify_watched_path(dest, grok_home, Some(dest), None),
+            classify_watched_path(dest, ezer_home, Some(dest), None),
             Some(ConfigChangeEvent::GlobalConfigChanged)
         );
         assert_eq!(
-            classify_watched_path(dest, grok_home, None, None),
+            classify_watched_path(dest, ezer_home, None, None),
             Some(ConfigChangeEvent::ProjectConfigChanged {
                 path: dest.to_path_buf()
             })
         );
-        let slot = grok_home.join("config.toml");
+        let slot = ezer_home.join("config.toml");
         assert_eq!(
-            classify_watched_path(&slot, grok_home, Some(dest), None),
+            classify_watched_path(&slot, ezer_home, Some(dest), None),
             Some(ConfigChangeEvent::GlobalConfigChanged)
         );
     }
@@ -1685,14 +1685,14 @@ mod tests {
     #[test]
     #[cfg(target_os = "linux")]
     fn watcher_emits_global_change_for_external_config_toml_referent() {
-        let grok = TempDir::new().unwrap();
+        let ezer = TempDir::new().unwrap();
         let repo = TempDir::new().unwrap();
         let dest = repo.path().join("config.toml");
         fs::write(&dest, "a = 1").unwrap();
-        std::os::unix::fs::symlink(&dest, grok.path().join("config.toml")).unwrap();
+        std::os::unix::fs::symlink(&dest, ezer.path().join("config.toml")).unwrap();
 
         let (_w, mut rx) =
-            ConfigFileWatcher::start(grok.path(), &[], None, Some(Duration::from_millis(50)))
+            ConfigFileWatcher::start(ezer.path(), &[], None, Some(Duration::from_millis(50)))
                 .expect("watcher should start");
         wait_ms(150);
         while rx.try_recv().is_ok() {}
@@ -1715,17 +1715,17 @@ mod tests {
     #[test]
     #[cfg(target_os = "linux")]
     fn watcher_emits_global_change_after_referent_retarget() {
-        let grok = TempDir::new().unwrap();
+        let ezer = TempDir::new().unwrap();
         let repo = TempDir::new().unwrap();
         let a = repo.path().join("a.toml");
         let b = repo.path().join("b.toml");
         fs::write(&a, "a = 1").unwrap();
         fs::write(&b, "b = 1").unwrap();
-        let slot = grok.path().join("config.toml");
+        let slot = ezer.path().join("config.toml");
         std::os::unix::fs::symlink(&a, &slot).unwrap();
 
         let (_w, mut rx) =
-            ConfigFileWatcher::start(grok.path(), &[], None, Some(Duration::from_millis(50)))
+            ConfigFileWatcher::start(ezer.path(), &[], None, Some(Duration::from_millis(50)))
                 .expect("watcher should start");
         wait_ms(150);
         while rx.try_recv().is_ok() {}

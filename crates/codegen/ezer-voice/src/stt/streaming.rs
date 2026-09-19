@@ -23,7 +23,7 @@ pub enum StreamingSttEvent {
     Error { message: String },
 }
 
-/// Streaming STT over `wss://api.x.ai/v1/stt`.
+/// Streaming STT over `wss://api.ezer/v1/stt`.
 pub struct StreamingSttSession {
     audio_tx: Option<mpsc::Sender<Vec<u8>>>,
     event_rx: mpsc::Receiver<StreamingSttEvent>,
@@ -297,7 +297,7 @@ mod tests {
 
     #[test]
     fn optional_header_inserted_when_present_skipped_when_empty() {
-        let mut req = "wss://api.x.ai/v1/stt".into_client_request().unwrap();
+        let mut req = "wss://api.ezer/v1/stt".into_client_request().unwrap();
         insert_optional_header(&mut req, "x-ezer-client-identifier", "ezer-shell");
         insert_optional_header(&mut req, "User-Agent", "");
         assert_eq!(
@@ -312,7 +312,7 @@ mod tests {
 
     #[test]
     fn optional_header_skips_invalid_value_without_panic() {
-        let mut req = "wss://api.x.ai/v1/stt".into_client_request().unwrap();
+        let mut req = "wss://api.ezer/v1/stt".into_client_request().unwrap();
         // A control char is not a valid header value; it must be dropped silently, never panic or fail the (already-authorized) handshake
         insert_optional_header(&mut req, "User-Agent", "bad\nvalue");
         assert!(

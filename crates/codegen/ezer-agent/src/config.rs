@@ -174,7 +174,7 @@ pub fn api_backed_tool_ids() -> Vec<String> {
     ids
 }
 /// Toolset for the `ezer-computer` (workspace/sandbox) preset.
-fn grok_computer_toolset() -> ToolServerConfig {
+fn ezer_computer_toolset() -> ToolServerConfig {
     #[allow(unused_mut)]
     let mut tools = vec![
         bash_tool_config(),
@@ -205,7 +205,7 @@ fn native_toolset_presets() -> Vec<(&'static str, ToolServerConfig)> {
         ("codex", codex_toolset()),
         ("explore", explore_toolset()),
         ("plan", plan_toolset()),
-        ("ezer-computer", grok_computer_toolset()),
+        ("ezer-computer", ezer_computer_toolset()),
     ]
 }
 /// Every named **public** toolset preset (native and externally registered public presets), as `(name, config)` pairs.
@@ -389,7 +389,7 @@ fn plan_toolset() -> ToolServerConfig {
 fn ezer_build_plan_toolset() -> ToolServerConfig {
     ToolServerConfig {
         tools: vec![
-            // Standard grok-build tools
+            // Standard ezer-build tools
             bash_tool_config(),
             (&ezer_build::ReadFileTool).into(),
             (&ezer_build::SearchReplaceTool).into(),
@@ -467,7 +467,7 @@ fn orchestrator_toolset() -> ToolServerConfig {
 fn ezer_build_plan_no_subagents_toolset() -> ToolServerConfig {
     ToolServerConfig {
         tools: vec![
-            // Standard grok-build tools, minus TaskTool only
+            // Standard ezer-build tools, minus TaskTool only
             // KillTaskTool and TaskOutputTool are kept because BashTool's background mode requires them
             bash_tool_config(),
             (&ezer_build::ReadFileTool).into(),
@@ -646,15 +646,15 @@ where
 #[strum(serialize_all = "kebab-case")]
 pub enum BuiltinAgentName {
     #[strum(serialize = "ezer-build")]
-    GrokBuild,
+    EzerBuild,
     #[strum(serialize = "ezer-build-concise")]
-    GrokBuildConcise,
+    EzerBuildConcise,
     #[strum(serialize = "ezer-build-plan")]
-    GrokBuildPlan,
+    EzerBuildPlan,
     #[strum(serialize = "ezer-build-plan-no-subagents")]
-    GrokBuildPlanNoSubagents,
+    EzerBuildPlanNoSubagents,
     #[strum(serialize = "ezer-build-ask-user")]
-    GrokBuildAskUser,
+    EzerBuildAskUser,
     Codex,
     Opencode,
     GeneralPurpose,
@@ -662,7 +662,7 @@ pub enum BuiltinAgentName {
     Plan,
     BrowserUse,
     #[strum(serialize = "ezer-build-orchestrator")]
-    GrokBuildOrchestrator,
+    EzerBuildOrchestrator,
 }
 /// Resolves via `BuiltinAgentName` and delegates to [`AgentDefinition::is_strict_harness`].
 /// Unknown names return `false`: never enforce a harness we can't verify.
@@ -676,18 +676,18 @@ pub fn is_strict_harness_agent_type(name: &str) -> bool {
 impl BuiltinAgentName {
     pub fn definition(self) -> AgentDefinition {
         match self {
-            Self::GrokBuild => AgentDefinition::default_ezer_build(),
-            Self::GrokBuildConcise => AgentDefinition::ezer_build_concise(),
-            Self::GrokBuildPlan => AgentDefinition::ezer_build_plan(),
-            Self::GrokBuildPlanNoSubagents => AgentDefinition::ezer_build_plan_no_subagents(),
-            Self::GrokBuildAskUser => AgentDefinition::ezer_build_ask_user(),
+            Self::EzerBuild => AgentDefinition::default_ezer_build(),
+            Self::EzerBuildConcise => AgentDefinition::ezer_build_concise(),
+            Self::EzerBuildPlan => AgentDefinition::ezer_build_plan(),
+            Self::EzerBuildPlanNoSubagents => AgentDefinition::ezer_build_plan_no_subagents(),
+            Self::EzerBuildAskUser => AgentDefinition::ezer_build_ask_user(),
             Self::Codex => AgentDefinition::codex(),
             Self::Opencode => AgentDefinition::opencode(),
             Self::GeneralPurpose => AgentDefinition::general_purpose(),
             Self::Explore => AgentDefinition::explore(),
             Self::Plan => AgentDefinition::plan(),
             Self::BrowserUse => AgentDefinition::browser_use(),
-            Self::GrokBuildOrchestrator => AgentDefinition::ezer_build_orchestrator(),
+            Self::EzerBuildOrchestrator => AgentDefinition::ezer_build_orchestrator(),
         }
     }
     /// Built-in agents available as subagents via the Task tool.
@@ -1085,7 +1085,7 @@ impl MemoryScope {
     pub fn resolve_dir(self, agent_name: &str, project_cwd: &std::path::Path) -> ResolvedMemoryDir {
         match self {
             Self::User => ResolvedMemoryDir {
-                path: ezer_config::grok_home()
+                path: ezer_config::ezer_home()
                     .join("agent-memory")
                     .join(agent_name),
                 is_project_scoped: false,
@@ -1301,7 +1301,7 @@ impl AgentDefinition {
     }
     fn scope_from_path(path: &Path) -> AgentScope {
         let path_str = path.to_string_lossy();
-        let ezer = ezer_config::user_grok_home();
+        let ezer = ezer_config::user_ezer_home();
         let home = xai_dirs::home_dir();
         for (dir, scope) in crate::discovery::user_agent_dirs(home.as_deref(), ezer.as_deref()) {
             if path.starts_with(&dir) {
@@ -1357,7 +1357,7 @@ impl AgentDefinition {
     pub fn include_browser_verification(&self) -> bool {
         matches!(
             self.builtin_name,
-            Some(BuiltinAgentName::GrokBuildPlan | BuiltinAgentName::GrokBuildPlanNoSubagents)
+            Some(BuiltinAgentName::EzerBuildPlan | BuiltinAgentName::EzerBuildPlanNoSubagents)
         )
     }
     /// True iff this agent's wire format is non-interchangeable with the stock harness.
@@ -1450,7 +1450,7 @@ impl AgentDefinition {
         Self {
             tool_config: default_ezer_build_toolset(),
             ..Self::base(
-                BuiltinAgentName::GrokBuild,
+                BuiltinAgentName::EzerBuild,
                 "ezer agent for software engineering tasks.",
             )
         }
@@ -1461,7 +1461,7 @@ impl AgentDefinition {
             tool_config: ezer_build_concise_toolset(),
             agents_md: false,
             ..Self::base(
-                BuiltinAgentName::GrokBuildConcise,
+                BuiltinAgentName::EzerBuildConcise,
                 "ezer agent with concise output format.",
             )
         }
@@ -1470,7 +1470,7 @@ impl AgentDefinition {
         Self {
             tool_config: ezer_build_plan_toolset(),
             ..Self::base(
-                BuiltinAgentName::GrokBuildPlan,
+                BuiltinAgentName::EzerBuildPlan,
                 "ezer agent with plan mode support.",
             )
         }
@@ -1479,7 +1479,7 @@ impl AgentDefinition {
         Self {
             tool_config: ezer_build_plan_no_subagents_toolset(),
             ..Self::base(
-                BuiltinAgentName::GrokBuildPlanNoSubagents,
+                BuiltinAgentName::EzerBuildPlanNoSubagents,
                 "ezer agent with plan mode (no subagents).",
             )
         }
@@ -1488,7 +1488,7 @@ impl AgentDefinition {
         Self {
             tool_config: ezer_build_ask_user_toolset(),
             ..Self::base(
-                BuiltinAgentName::GrokBuildAskUser,
+                BuiltinAgentName::EzerBuildAskUser,
                 "ezer agent with ask-user-question tool.",
             )
         }
@@ -1566,7 +1566,7 @@ impl AgentDefinition {
             inject_default_tools: false,
             prompt_body: Some(ORCHESTRATOR_PROMPT_BODY.to_string()),
             ..Self::base(
-                BuiltinAgentName::GrokBuildOrchestrator,
+                BuiltinAgentName::EzerBuildOrchestrator,
                 "Ezer orchestrator that delegates coding to specialized subagents",
             )
         }
@@ -1661,7 +1661,7 @@ mod tests {
         let id = feedback_tool_id();
         config.tools.iter().any(|tool| tool.id == id)
     }
-    fn grok_computer_exclusive_ids() -> Vec<String> {
+    fn ezer_computer_exclusive_ids() -> Vec<String> {
         #[allow(unused_mut)]
         let mut ids: Vec<String> = vec![
             ToolConfig::from(&ezer_build::GetTerminalCommandOutputTool).id,
@@ -1688,18 +1688,18 @@ mod tests {
         }
         for builtin in BuiltinAgentName::iter() {
             let expected = match builtin {
-                BuiltinAgentName::GrokBuild => true,
-                BuiltinAgentName::GrokBuildConcise
-                | BuiltinAgentName::GrokBuildPlan
-                | BuiltinAgentName::GrokBuildPlanNoSubagents
-                | BuiltinAgentName::GrokBuildAskUser
+                BuiltinAgentName::EzerBuild => true,
+                BuiltinAgentName::EzerBuildConcise
+                | BuiltinAgentName::EzerBuildPlan
+                | BuiltinAgentName::EzerBuildPlanNoSubagents
+                | BuiltinAgentName::EzerBuildAskUser
                 | BuiltinAgentName::Codex
                 | BuiltinAgentName::Opencode
                 | BuiltinAgentName::GeneralPurpose
                 | BuiltinAgentName::Explore
                 | BuiltinAgentName::Plan
                 | BuiltinAgentName::BrowserUse
-                | BuiltinAgentName::GrokBuildOrchestrator => false,
+                | BuiltinAgentName::EzerBuildOrchestrator => false,
             };
             assert_eq!(
                 contains_feedback(&builtin.definition().tool_config),
@@ -1748,12 +1748,12 @@ mod tests {
         assert!(!contains_feedback(&acp.tool_config));
     }
     #[test]
-    fn grok_computer_preset_is_curated_ezer_build_subset() {
+    fn ezer_computer_preset_is_curated_ezer_build_subset() {
         let gc = toolset_for_preset("ezer-computer").unwrap();
         let gb = toolset_for_preset("ezer-build").unwrap();
         let gb_ids: std::collections::HashSet<&str> =
             gb.tools.iter().map(|t| t.id.as_str()).collect();
-        let exclusive_ids = grok_computer_exclusive_ids();
+        let exclusive_ids = ezer_computer_exclusive_ids();
         assert!(!gc.tools.is_empty());
         for t in &gc.tools {
             if exclusive_ids.contains(&t.id) {
@@ -1771,7 +1771,7 @@ mod tests {
         );
     }
     #[test]
-    fn grok_computer_uses_subagent_free_background_task_tools() {
+    fn ezer_computer_uses_subagent_free_background_task_tools() {
         let gc = toolset_for_preset("ezer-computer").unwrap();
         let ids: std::collections::HashSet<&str> = gc.tools.iter().map(|t| t.id.as_str()).collect();
         assert!(
@@ -1803,7 +1803,7 @@ mod tests {
     /// Guards against `search_replace` being the only file-mutation path.
     /// With the empty-old_string overwrite guard enabled, that path has no single-tool full rewrite.
     #[test]
-    fn grok_computer_preset_includes_write_tool() {
+    fn ezer_computer_preset_includes_write_tool() {
         let gc = toolset_for_preset("ezer-computer").unwrap();
         let write_id = ToolConfig::from(&opencode::OpenCodeWriteTool).id;
         assert!(
@@ -1812,7 +1812,7 @@ mod tests {
         );
     }
     #[test]
-    fn grok_computer_preset_excludes_plan_and_lsp() {
+    fn ezer_computer_preset_excludes_plan_and_lsp() {
         let gc = toolset_for_preset("ezer-computer").unwrap();
         let gc_ids: std::collections::HashSet<&str> =
             gc.tools.iter().map(|t| t.id.as_str()).collect();
@@ -1843,12 +1843,12 @@ mod tests {
     /// Exhaustive match, so adding a new `BuiltinAgentName` won't compile until classified.
     fn expected_strict_harness(name: BuiltinAgentName) -> bool {
         match name {
-            BuiltinAgentName::Codex | BuiltinAgentName::GrokBuildOrchestrator => true,
-            BuiltinAgentName::GrokBuild
-            | BuiltinAgentName::GrokBuildConcise
-            | BuiltinAgentName::GrokBuildPlan
-            | BuiltinAgentName::GrokBuildPlanNoSubagents
-            | BuiltinAgentName::GrokBuildAskUser
+            BuiltinAgentName::Codex | BuiltinAgentName::EzerBuildOrchestrator => true,
+            BuiltinAgentName::EzerBuild
+            | BuiltinAgentName::EzerBuildConcise
+            | BuiltinAgentName::EzerBuildPlan
+            | BuiltinAgentName::EzerBuildPlanNoSubagents
+            | BuiltinAgentName::EzerBuildAskUser
             | BuiltinAgentName::GeneralPurpose
             | BuiltinAgentName::Explore
             | BuiltinAgentName::Plan
@@ -2043,8 +2043,8 @@ Agent.
     fn test_model_override_display_shows_id() {
         assert_eq!(ModelOverride::Inherit.to_string(), "inherit");
         assert_eq!(
-            ModelOverride::Override("grok-3-fast".to_string()).to_string(),
-            "grok-3-fast"
+            ModelOverride::Override("test-model-3-fast".to_string()).to_string(),
+            "test-model-3-fast"
         );
     }
     #[test]
@@ -2058,7 +2058,7 @@ isolation: worktree
 background: true
 color: blue
 initialPrompt: "hello world"
-model: grok-3
+model: test-model-3
 ---
 
 Agent body.
@@ -2070,7 +2070,7 @@ Agent body.
         assert_eq!(def.background, Some(true));
         assert_eq!(def.color, Some(AgentColor::Blue));
         assert_eq!(def.initial_prompt.as_deref(), Some("hello world"));
-        assert_eq!(def.model, ModelOverride::Override("grok-3".to_string()));
+        assert_eq!(def.model, ModelOverride::Override("test-model-3".to_string()));
     }
     #[test]
     fn test_parse_minimal_definition() {
@@ -2111,13 +2111,13 @@ description: Minimal agent
         let proj = MemoryScope::Project.resolve_dir("a", cwd);
         assert_eq!(
             proj.path,
-            std::path::PathBuf::from("/project/.grok/agent-memory/a")
+            std::path::PathBuf::from("/project/.ezer/agent-memory/a")
         );
         assert!(proj.is_project_scoped);
         let local = MemoryScope::Local.resolve_dir("a", cwd);
         assert_eq!(
             local.path,
-            std::path::PathBuf::from("/project/.grok/agent-memory-local/a")
+            std::path::PathBuf::from("/project/.ezer/agent-memory-local/a")
         );
         assert!(local.is_project_scoped);
     }
@@ -2305,7 +2305,7 @@ description: Test default tool config
         let bundled = tmp
             .path()
             .join("nested")
-            .join(".grok")
+            .join(".ezer")
             .join("bundled")
             .join("agents")
             .join("bundled-agent.md");
@@ -2337,7 +2337,7 @@ description: Test default tool config
     #[test]
     fn same_name_acp_definition_does_not_enable_browser_verification() {
         let def = AgentDefinition::from_json(&serde_json::json!({
-            "name": "grok-build-plan",
+            "name": "ezer-build-plan",
             "description": "Custom plan agent"
         }))
         .unwrap();
@@ -2348,7 +2348,7 @@ description: Test default tool config
     #[test]
     fn test_from_json_has_default_toolset_with_task_tool() {
         let json = serde_json::json!({
-            "name": "grok-build",
+            "name": "ezer-build",
             "description": "Multi-surface coding agent.",
             "promptMode": "extend",
             "permissionMode": "dontAsk",
@@ -2457,9 +2457,9 @@ description: Test default tool config
     }
     #[test]
     fn test_model_override_serde_explicit_model_id() {
-        let yaml = "\"grok-3-fast\"";
+        let yaml = "\"test-model-3-fast\"";
         let m: ModelOverride = serde_yaml::from_str(yaml).unwrap();
-        assert_eq!(m, ModelOverride::Override("grok-3-fast".to_string()));
+        assert_eq!(m, ModelOverride::Override("test-model-3-fast".to_string()));
     }
     #[test]
     fn test_model_override_serialize_inherit() {
@@ -2469,17 +2469,17 @@ description: Test default tool config
     }
     #[test]
     fn test_model_override_serialize_override() {
-        let m = ModelOverride::Override("grok-3-fast".to_string());
+        let m = ModelOverride::Override("test-model-3-fast".to_string());
         let s = serde_json::to_string(&m).unwrap();
-        assert_eq!(s, "\"grok-3-fast\"");
+        assert_eq!(s, "\"test-model-3-fast\"");
     }
     #[test]
     fn test_model_override_in_frontmatter() {
-        let content = "---\nname: test\ndescription: Test\nmodel: grok-3-fast\n---\n";
+        let content = "---\nname: test\ndescription: Test\nmodel: test-model-3-fast\n---\n";
         let def = AgentDefinition::parse(content).unwrap();
         assert_eq!(
             def.model,
-            ModelOverride::Override("grok-3-fast".to_string())
+            ModelOverride::Override("test-model-3-fast".to_string())
         );
     }
     #[test]
@@ -2511,9 +2511,9 @@ description: Test default tool config
     fn test_builtin_agent_name_strum_round_trip() {
         use std::str::FromStr;
         for (s, expected) in [
-            ("ezer-build", BuiltinAgentName::GrokBuild),
-            ("ezer-build-concise", BuiltinAgentName::GrokBuildConcise),
-            ("ezer-build-ask-user", BuiltinAgentName::GrokBuildAskUser),
+            ("ezer-build", BuiltinAgentName::EzerBuild),
+            ("ezer-build-concise", BuiltinAgentName::EzerBuildConcise),
+            ("ezer-build-ask-user", BuiltinAgentName::EzerBuildAskUser),
             ("codex", BuiltinAgentName::Codex),
             ("opencode", BuiltinAgentName::Opencode),
             ("general-purpose", BuiltinAgentName::GeneralPurpose),

@@ -639,15 +639,15 @@ pub struct ConversationRequest {
     /// Top-p sampling
     pub top_p: Option<f32>,
     /// Custom headers for xAI tracking
-    pub x_grok_conv_id: Option<String>,
-    pub x_grok_req_id: Option<String>,
-    pub x_grok_session_id: Option<String>,
-    pub x_grok_turn_idx: Option<String>,
+    pub x_ezer_conv_id: Option<String>,
+    pub x_ezer_req_id: Option<String>,
+    pub x_ezer_session_id: Option<String>,
+    pub x_ezer_turn_idx: Option<String>,
     /// Turn-level resubmit attempt (absent on first submissions); sent as `x-ezer-transient-retry` so the proxy can count retry traffic.
-    pub x_grok_transient_retry: Option<String>,
-    pub x_grok_agent_id: Option<String>,
-    pub x_grok_deployment_id: Option<String>,
-    pub x_grok_user_id: Option<String>,
+    pub x_ezer_transient_retry: Option<String>,
+    pub x_ezer_agent_id: Option<String>,
+    pub x_ezer_deployment_id: Option<String>,
+    pub x_ezer_user_id: Option<String>,
     /// Optional opaque tracing context (e.g., where to persist the finalized request payload).
     /// Consumers downcast via `trace.as_ref().unwrap().as_any().downcast_ref::<T>()`.
     pub trace: Option<Box<dyn TraceContext>>,
@@ -658,7 +658,7 @@ pub struct ConversationRequest {
     pub reasoning_effort: Option<crate::ReasoningEffort>,
     /// JSON Schema for structured output (strict mode).
     pub json_schema: Option<serde_json::Value>,
-    /// Sticky routing key for prompt-cache reuse; overrides `x_grok_conv_id` for routing.
+    /// Sticky routing key for prompt-cache reuse; overrides `x_ezer_conv_id` for routing.
     pub prompt_cache_key: Option<String>,
     /// What the sampler does when the response stops with `Length`.
     pub length_policy: LengthPolicy,
@@ -1352,12 +1352,12 @@ impl ConversationItem {
 }
 
 // Shared-compaction L1 bridge: `CompactionItem` / `CompactionItemFactory`
-// Lets the shared engine in `crates/common/ezer-compaction` operate over grok-build's `ConversationItem` without depending on this crate
+// Lets the shared engine in `crates/common/ezer-compaction` operate over ezer-build's `ConversationItem` without depending on this crate
 // That preserves the `SyntheticReason` tags the replay / spawn-time idempotence guards rely on
 impl ezer_compaction::CompactionItem for ConversationItem {
     fn role(&self) -> ezer_compaction::CompactionRole {
         use ezer_compaction::CompactionRole;
-        // grok-build has no distinct `Developer` role; everything maps onto the four `Role` variants `ConversationItem::role()` already returns
+        // ezer-build has no distinct `Developer` role; everything maps onto the four `Role` variants `ConversationItem::role()` already returns
         match self.role() {
             Role::System => CompactionRole::System,
             Role::User => CompactionRole::User,
@@ -1377,16 +1377,16 @@ impl ezer_compaction::CompactionItem for ConversationItem {
     }
 
     fn is_compaction_summary(&self) -> bool {
-        // grok-build has no structural marker that uniquely identifies a prior compaction summary
+        // ezer-build has no structural marker that uniquely identifies a prior compaction summary
         // Returning `false` is safe for the full-replace path, which does not consult this (it summarizes the whole conversation)
-        // Revisit (add a dedicated marker) before routing grok-build history through the shared `history`/`inter` filter
+        // Revisit (add a dedicated marker) before routing ezer-build history through the shared `history`/`inter` filter
         false
     }
 
     fn attachment_refs(&self) -> Vec<ezer_compaction::CompactionFileRef> {
-        // grok-build `UserItem`s carry only `Text`/`Image { url }` content parts
-        // There is no id-and-name attachment-ref concept like the chat harness's `GrokTurn` has
-        // The full-replace path does not read this; revisit if image attachments need to survive into the `<grok_user_queries>` preamble
+        // ezer-build `UserItem`s carry only `Text`/`Image { url }` content parts
+        // There is no id-and-name attachment-ref concept like the chat harness's `EzerTurn` has
+        // The full-replace path does not read this; revisit if image attachments need to survive into the `<ezer_user_queries>` preamble
         Vec::new()
     }
 }
@@ -1693,13 +1693,13 @@ impl ConversationRequest {
 
     /// Set conversation ID header
     pub fn with_conv_id(mut self, conv_id: impl Into<String>) -> Self {
-        self.x_grok_conv_id = Some(conv_id.into());
+        self.x_ezer_conv_id = Some(conv_id.into());
         self
     }
 
     /// Set request ID header
     pub fn with_req_id(mut self, req_id: impl Into<String>) -> Self {
-        self.x_grok_req_id = Some(req_id.into());
+        self.x_ezer_req_id = Some(req_id.into());
         self
     }
 
@@ -2195,7 +2195,7 @@ mod compaction_item_bridge_tests {
 
     #[test]
     fn metadata_accessors_are_conservative() {
-        // grok-build has no structural compaction-summary marker and no id-and-name attachment refs, so both return empty/false
+        // ezer-build has no structural compaction-summary marker and no id-and-name attachment refs, so both return empty/false
         assert!(!CompactionItem::is_compaction_summary(
             &ConversationItem::user("u")
         ));
@@ -3012,7 +3012,7 @@ mod tests {
     fn test_transform_cwd_worktree_to_root_syncback() {
         // End-to-end sync-back scenario: worktree paths become root paths
         // This simulates what happens when a forked session's worktree contents are synced back to the original root path
-        let worktree = "/home/user/.grok/worktrees/myproject/fork-a";
+        let worktree = "/home/user/.ezer/worktrees/myproject/fork-a";
         let root = "/home/user/myproject";
 
         let mut items = vec![
@@ -3116,7 +3116,7 @@ mod tests {
         // Forward direction: root to worktree (forking)
         // Tool call arguments are transformed so the fork session's history has consistent worktree paths everywhere
         let root = "/home/user/myproject";
-        let worktree = "/home/user/.grok/worktrees/myproject/fork-a";
+        let worktree = "/home/user/.ezer/worktrees/myproject/fork-a";
 
         let mut items = vec![
             ConversationItem::system(format!("Working in {root}.")),
@@ -3235,7 +3235,7 @@ mod tests {
     #[test]
     fn test_transform_cwd_assistant_only_tool_calls_no_content() {
         // Assistant message with empty content but tool calls containing paths
-        let worktree = "/home/user/.grok/worktrees/proj/fork-a";
+        let worktree = "/home/user/.ezer/worktrees/proj/fork-a";
         let root = "/home/user/proj";
 
         let mut items = vec![ConversationItem::assistant_tool_calls(vec![
@@ -3411,15 +3411,15 @@ mod tests {
 
     #[test]
     fn test_conversation_item_with_model_id() {
-        let item = ConversationItem::assistant("Hello").with_model_id("grok-3");
+        let item = ConversationItem::assistant("Hello").with_model_id("test-model-3");
 
         let ConversationItem::Assistant(a) = item else {
             panic!("Expected Assistant");
         };
-        assert_eq!(a.model_id, Some("grok-3".to_string()));
+        assert_eq!(a.model_id, Some("test-model-3".to_string()));
 
         // Non-assistant should be unchanged
-        let user = ConversationItem::user("Hi").with_model_id("grok-3");
+        let user = ConversationItem::user("Hi").with_model_id("test-model-3");
         assert_matches!(user, ConversationItem::User(_));
     }
 
@@ -4635,7 +4635,7 @@ mod tests {
     }
 
     // upgrade_legacy_reasoning: legacy in-memory reconstruction
-    // Three legacy on-disk shapes that the on-read upgrader must lift to sibling Reasoning / BackendToolCall items: v1 assistant with `raw_output: Vec<OutputItem>` (backend-search era); v1 assistant with singular `reasoning: ReasoningContent` (earlier grok-build / chat-completions written as v1); v0 `ChatRequestMessage` with top-level `reasoning_content`.
+    // Three legacy on-disk shapes that the on-read upgrader must lift to sibling Reasoning / BackendToolCall items: v1 assistant with `raw_output: Vec<OutputItem>` (backend-search era); v1 assistant with singular `reasoning: ReasoningContent` (earlier ezer-build / chat-completions written as v1); v0 `ChatRequestMessage` with top-level `reasoning_content`.
     // Idempotent (current-format rows produce zero siblings); verified by `upgrade_is_idempotent_on_post_pr_rows`
 
     #[test]

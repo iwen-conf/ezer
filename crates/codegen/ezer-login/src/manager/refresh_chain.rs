@@ -4,7 +4,7 @@
 use std::sync::Arc;
 
 use crate::error::AuthError;
-use crate::model::GrokAuth;
+use crate::model::EzerAuth;
 use crate::refresh::{RefreshReason, TokenRefresher};
 use crate::storage::AuthFileLock;
 
@@ -16,7 +16,7 @@ use super::{AuthManager, LOCK_TIMEOUT_WAIT, REFRESH_LOCK_TIMEOUT, TokenType};
 /// `Adopted` is a sibling's freshly rotated token; return it without refreshing.
 pub(super) enum LockOutcome {
     Held(AuthFileLock),
-    Adopted(Box<GrokAuth>),
+    Adopted(Box<EzerAuth>),
 }
 
 enum LockFailure {
@@ -32,7 +32,7 @@ enum RefreshStep {
     DeferForPowerState(ActiveRefresh),
     RevalidateLock(ActiveRefresh),
     Exchange(ActiveRefresh),
-    Refreshed(Box<GrokAuth>),
+    Refreshed(Box<EzerAuth>),
     Failed(AuthError),
 }
 
@@ -60,7 +60,7 @@ impl AuthManager {
         self: &Arc<Self>,
         token_type: TokenType,
         reason: RefreshReason,
-    ) -> Result<GrokAuth, AuthError> {
+    ) -> Result<EzerAuth, AuthError> {
         // Checked before the refresh lock so a backed-off chain doesn't block traffic.
         if let Some(err) = self.permanent_failure() {
             if let Some(refreshed) = self.try_adopt_disk_token(
@@ -166,7 +166,7 @@ impl AuthManager {
         self: &Arc<Self>,
         active: ActiveRefresh,
         reason: RefreshReason,
-    ) -> Result<GrokAuth, AuthError> {
+    ) -> Result<EzerAuth, AuthError> {
         let ActiveRefresh {
             file_lock,
             refresher,

@@ -71,7 +71,7 @@ pub fn seed_fake_oauth_coding_data_opted_out(content: &ContentController, user: 
 }
 
 /// Like [`seed_fake_oauth_coding_data_opted_out`], but on a Zero Data Retention team.
-/// `team_blocked_reasons` carries `BLOCKED_REASON_NO_LOGS`, the shell's `GrokAuth::is_zdr_team` trigger.
+/// `team_blocked_reasons` carries `BLOCKED_REASON_NO_LOGS`, the shell's `EzerAuth::is_zdr_team` trigger.
 /// This locks the settings modal's `coding_data_sharing` row to `ZDR` and suppresses the privacy banner.
 pub fn seed_fake_oauth_zdr_team(content: &ContentController, user: &str) {
     seed_fake_oauth_raw(
@@ -100,17 +100,17 @@ fn seed_fake_oauth_with_opt_out(content: &ContentController, user: &str, opted_o
 
 /// Shared auth.json template writer.
 /// `team_fields` is a raw JSON fragment spliced after `coding_data_retention_opt_out` (empty means no team).
-/// Field names must match the shell's `GrokAuth` serde names in `ezer-shell/src/auth/model.rs`.
+/// Field names must match the shell's `EzerAuth` serde names in `ezer-shell/src/auth/model.rs`.
 fn seed_fake_oauth_raw(
     content: &ContentController,
     user: &str,
     opted_out: bool,
     team_fields: &str,
 ) {
-    let grok_home = content.home().join(".ezer");
-    std::fs::create_dir_all(&grok_home).expect("create temp .ezer");
+    let ezer_home = content.home().join(".ezer");
+    std::fs::create_dir_all(&ezer_home).expect("create temp .ezer");
     std::fs::write(
-        grok_home.join("auth.json"),
+        ezer_home.join("auth.json"),
         format!(
             r#"{{
   "https://auth.x.ai::b1a00492-073a-47ea-816f-4c329264a828": {{

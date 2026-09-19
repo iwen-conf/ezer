@@ -399,7 +399,7 @@ fn sandbox_profile_conflict_warning_from(conflicts: Vec<String>) -> Option<Termi
             "ezer is using the user profile. Compare `.ezer/sandbox.toml` with {}, then rename \
              or remove the conflicting project profile. Project settings can add profile names \
              but can't redefine a user profile.",
-            crate::util::display_user_grok_path(ezer_config::SANDBOX_CONFIG_FILENAME)
+            crate::util::display_user_ezer_path(ezer_config::SANDBOX_CONFIG_FILENAME)
         )),
     })
 }
@@ -534,7 +534,7 @@ pub(crate) fn collect_notification_warnings_with_method(
             "If the bell works for you, no change is needed. Otherwise, set `method` in \
              `[ui.notifications]` in {} to a protocol your terminal supports. Set it to `none` \
              to turn off terminal notifications.",
-            crate::util::display_user_grok_path(ezer_config::USER_CONFIG_FILENAME)
+            crate::util::display_user_ezer_path(ezer_config::USER_CONFIG_FILENAME)
         ));
         warnings.push(warning);
     }
@@ -566,7 +566,7 @@ pub(crate) fn collect_notification_warnings_with_method(
             WarningCategory::FocusTrackingUnavailable,
             "This terminal may not report focus changes, so notifications set to `unfocused` may not appear",
             Some("condition = \"always\" in [ui.notifications]"),
-            Some(&crate::util::display_user_grok_path(
+            Some(&crate::util::display_user_ezer_path(
                 ezer_config::USER_CONFIG_FILENAME,
             )),
         );
@@ -1967,7 +1967,7 @@ mod tests {
         assert!(w.note.as_deref().is_some_and(|note| {
             note.contains("rename or remove")
                 && note.contains(".ezer/sandbox.toml")
-                && note.contains(&crate::util::display_user_grok_path(
+                && note.contains(&crate::util::display_user_ezer_path(
                     ezer_config::SANDBOX_CONFIG_FILENAME,
                 ))
                 && note.contains("can't redefine")
@@ -2348,7 +2348,7 @@ mod tests {
                     remediation.fix.contains("condition = \"always\"")
                         && remediation.config_path.as_deref()
                             == Some(
-                                crate::util::display_user_grok_path(
+                                crate::util::display_user_ezer_path(
                                     ezer_config::USER_CONFIG_FILENAME,
                                 )
                                 .as_str(),
@@ -2771,7 +2771,7 @@ mod tests {
     #[test]
     fn notification_none_protocol_no_warnings() {
         let ctx = TerminalContext {
-            brand: TerminalName::GrokDesktop,
+            brand: TerminalName::EzerDesktop,
             ..Default::default()
         };
         let query = FakeTmuxQuery::healthy_modern();
@@ -2796,7 +2796,7 @@ mod tests {
         assert!(supports_focus_tracking(TerminalName::Terminator));
         assert!(supports_focus_tracking(TerminalName::WarpTerminal));
         assert!(supports_focus_tracking(TerminalName::VsCode));
-        assert!(supports_focus_tracking(TerminalName::GrokDesktop));
+        assert!(supports_focus_tracking(TerminalName::EzerDesktop));
         assert!(!supports_focus_tracking(TerminalName::AppleTerminal));
         assert!(!supports_focus_tracking(TerminalName::Unknown));
         assert!(!supports_focus_tracking(TerminalName::Otty));

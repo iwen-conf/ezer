@@ -14,7 +14,7 @@
 //!   The artifact server and fake `gh` count downloads so the skip is asserted, not assumed.
 //! - **Race integrity** (`install_internal_from_base` run concurrently): the same-instant race is accepted as rare.
 //!   These tests pin the property that makes it acceptable: concurrent installs (same or *different* versions) never corrupt the active binary.
-//!   Before per-attempt temp names, every `0.1.x` download shared one `grok-0.1.tmp` (`with_extension("tmp")` eats everything after the last dot).
+//!   Before per-attempt temp names, every `0.1.x` download shared one `ezer-0.1.tmp` (`with_extension("tmp")` eats everything after the last dot).
 //!   Racer A could atomically rename racer B's half-written file into place.
 
 #![cfg(unix)]
@@ -66,7 +66,7 @@ fn assert_active_binary(home: &Path, version: &str, platform: &str, expected_con
     assert!(ran_ok, "active ezer must pass the smoke-test");
 }
 
-/// Lay down what `install_internal_from_base` produces in the test GROK_HOME: `bin/ezer -> ../downloads/ezer-<version>-<platform>`.
+/// Lay down what `install_internal_from_base` produces in the test EZER_HOME: `bin/ezer -> ../downloads/ezer-<version>-<platform>`.
 fn fake_managed_install(version: &str) {
     let home = test_home();
     let downloads = home.join("downloads");
@@ -168,7 +168,7 @@ async fn ensure_latest_downloads_once_then_converges_without_redownload() {
     );
 }
 
-// Convergence: explicit `grok update` (the Ctrl+U fallback path) finds the binary another process already installed and
+// Convergence: explicit `ezer update` (the Ctrl+U fallback path) finds the binary another process already installed and
 // skips the download. It still returns the target version so stale leaders get signalled
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -227,7 +227,7 @@ async fn run_update_force_still_redownloads_when_disk_current() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────. Installer gating: the disk-version
-// probe must only be trusted for installers that actually maintain the managed `~/.grok/bin/grok` symlink (internal,
+// probe must only be trusted for installers that actually maintain the managed `~/.ezer/bin/ezer` symlink (internal,
 // gh-release). For npm, a symlink left over from a previous internal install LIES about the npm install's version.
 
 fn setup_npm(running_version: &str) -> FakeBinGuard {
@@ -316,7 +316,7 @@ async fn disk_probe_preserves_prerelease_versions() {
 #[tokio::test]
 #[serial]
 async fn disk_probe_rejects_dangling_symlink() {
-    // If the symlink survives but its target binary was deleted (manual ~/.grok/downloads cleanup), the probe must report
+    // If the symlink survives but its target binary was deleted (manual ~/.ezer/downloads cleanup), the probe must report
     // None — otherwise every updater would claim "already up to date" forever while no runnable binary exists, and nothing
     // would ever repair the install.
     let home = test_home();
@@ -327,7 +327,7 @@ async fn disk_probe_rejects_dangling_symlink() {
 
     std::fs::remove_file(
         home.join("downloads")
-            .join(format!("grok-0.2.7-{platform}")),
+            .join(format!("ezer-0.2.7-{platform}")),
     )
     .unwrap();
 
@@ -354,7 +354,7 @@ async fn ensure_latest_repairs_dangling_symlink_by_downloading() {
     fake_managed_install("0.2.7");
     std::fs::remove_file(
         home.join("downloads")
-            .join(format!("grok-0.2.7-{platform}")),
+            .join(format!("ezer-0.2.7-{platform}")),
     )
     .unwrap();
     let cfg = make_update_config("stable");
@@ -438,7 +438,7 @@ async fn concurrent_different_version_installs_do_not_corrupt_each_other() {
     let server = ArtifactServer::start(artifact.clone());
     server.set_slow(true);
 
-    // Pre-fix, BOTH of these wrote to downloads/grok-0.1.tmp concurrently (with_extension("tmp") truncates at the last dot)
+    // Pre-fix, BOTH of these wrote to downloads/ezer-0.1.tmp concurrently (with_extension("tmp") truncates at the last dot)
     // One racer could rename the other's partial file into its own versioned path
     let results = run_concurrent_installs(&server, &["0.1.181", "0.1.182"]).await;
     for r in results {
@@ -467,7 +467,7 @@ async fn concurrent_different_version_installs_do_not_corrupt_each_other() {
     );
 
     assert!(
-        !home.join("downloads").join("grok-0.1.tmp").exists(),
+        !home.join("downloads").join("ezer-0.1.tmp").exists(),
         "the pre-fix shared temp name must not exist"
     );
 }

@@ -537,7 +537,7 @@ mod tests {
             "terminal-theme label must be dimmed, got {label:?}"
         );
 
-        crate::theme::cache::set(crate::theme::ThemeKind::GrokNight);
+        crate::theme::cache::set(crate::theme::ThemeKind::EzerNight);
         let buf = render_hints(&hints);
         let label = buf.cell((label_x, 0)).unwrap().style();
         assert_eq!(label.fg, Some(Theme::current().gray), "RGB keeps gray");

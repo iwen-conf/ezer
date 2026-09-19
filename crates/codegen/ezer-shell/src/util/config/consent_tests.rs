@@ -40,10 +40,10 @@ account = "other@example.com"
 }
 
 #[tokio::test]
-#[serial_test::serial(GROK_HOME)]
+#[serial_test::serial(EZER_HOME)]
 async fn set_consent_answer_is_monotonic_per_account() {
     let home = tempfile::tempdir().expect("home");
-    let _guard = ezer_test_support::env::EnvGuard::set("GROK_HOME", home.path());
+    let _guard = ezer_test_support::env::EnvGuard::set("EZER_HOME", home.path());
 
     let answers = || {
         // Persist writes live `$EZER_HOME`. Read that dest; `load_from_disk` must

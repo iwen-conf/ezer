@@ -4,11 +4,11 @@
 #[test]
 fn cli_marketplace_remove_fails_closed_when_init_flock_held() {
     // One #[test] per binary: the env is process-global.
-    let grok_home = tempfile::tempdir().expect("ezer home");
+    let ezer_home = tempfile::tempdir().expect("ezer home");
     // SAFETY: no other threads are running yet.
-    unsafe { std::env::set_var("GROK_HOME", grok_home.path()) };
+    unsafe { std::env::set_var("EZER_HOME", ezer_home.path()) };
 
-    let config_path = grok_home.path().join("config.toml");
+    let config_path = ezer_home.path().join("config.toml");
     std::fs::write(
         &config_path,
         "[[marketplace.sources]]\nname = \"a\"\ngit = \"https://example.com/a.git\"\n",
@@ -16,7 +16,7 @@ fn cli_marketplace_remove_fails_closed_when_init_flock_held() {
     .unwrap();
 
     let _flock =
-        ezer_shell::util::config::acquire_init_lock(grok_home.path()).expect("init flock");
+        ezer_shell::util::config::acquire_init_lock(ezer_home.path()).expect("init flock");
 
     let result = tokio::runtime::Builder::new_current_thread()
         .enable_all()

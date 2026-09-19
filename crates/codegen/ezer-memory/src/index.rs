@@ -902,7 +902,7 @@ mod tests {
 
     #[test]
     fn test_open_or_create_uses_wal_on_local_fs() {
-        // GROK_SQLITE_JOURNAL_MODE overrides the journal-mode decision; skip when it is set
+        // EZER_SQLITE_JOURNAL_MODE overrides the journal-mode decision; skip when it is set
         if std::env::var("EZER_SQLITE_JOURNAL_MODE").is_ok() {
             return;
         }
@@ -1319,7 +1319,7 @@ mod tests {
         // Delete the file; now it is orphaned in the index
         std::fs::remove_file(&file).unwrap();
 
-        // Simulate `grok memory reindex` Phase 1: compare indexed vs current.
+        // Simulate `ezer memory reindex` Phase 1: compare indexed vs current.
         let current: std::collections::BTreeSet<String> = vec![].into_iter().collect(); // Empty means no files exist.
         let indexed = idx.all_indexed_paths().unwrap();
         for path in &indexed {
@@ -1381,7 +1381,7 @@ mod tests {
             "claim must be set before Phase 3"
         );
 
-        // Simulate `grok memory reindex` Phase 3: release the claim.
+        // Simulate `ezer memory reindex` Phase 3: release the claim.
         idx.release_claim();
 
         assert_eq!(

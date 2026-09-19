@@ -103,23 +103,23 @@ struct FieldFill {
 }
 /// A reshaping of a call's arguments a table of renames cannot express.
 type Shape = fn(Map<String, Value>) -> Map<String, Value>;
-struct GrokBuildRow {
+struct EzerBuildRow {
     /// `None` for the MCP resource kinds, and for an MCP call, whose name is built from
     /// the server and tool.
     name: Option<&'static str>,
     fills: &'static [FieldFill],
     shape: Option<Shape>,
 }
-impl GrokBuildRow {
+impl EzerBuildRow {
     const fn new(name: &'static str) -> Self {
-        GrokBuildRow {
+        EzerBuildRow {
             name: Some(name),
             fills: &[],
             shape: None,
         }
     }
     const fn without_ezer_build_name() -> Self {
-        GrokBuildRow {
+        EzerBuildRow {
             name: None,
             fills: &[],
             shape: None,
@@ -141,48 +141,48 @@ impl Tool {
             tool: tool.into(),
         }
     }
-    fn row(&self) -> GrokBuildRow {
+    fn row(&self) -> EzerBuildRow {
         match self {
-            Tool::Shell => GrokBuildRow::new("run_terminal_command").with_fills(&[FieldFill {
+            Tool::Shell => EzerBuildRow::new("run_terminal_command").with_fills(&[FieldFill {
                 field: "description",
                 source: "command",
             }]),
-            Tool::Read => GrokBuildRow::new("read_file"),
-            Tool::Edit => GrokBuildRow::new("search_replace"),
-            Tool::Write => GrokBuildRow::new("write"),
-            Tool::Grep => GrokBuildRow::new("grep"),
-            Tool::Glob => GrokBuildRow::new("glob"),
-            Tool::List => GrokBuildRow::new("list_dir"),
-            Tool::MemorySearch => GrokBuildRow::new("memory_search"),
-            Tool::MemoryGet => GrokBuildRow::new("memory_get"),
-            Tool::Task => GrokBuildRow::new("spawn_subagent").with_fills(&[FieldFill {
+            Tool::Read => EzerBuildRow::new("read_file"),
+            Tool::Edit => EzerBuildRow::new("search_replace"),
+            Tool::Write => EzerBuildRow::new("write"),
+            Tool::Grep => EzerBuildRow::new("grep"),
+            Tool::Glob => EzerBuildRow::new("glob"),
+            Tool::List => EzerBuildRow::new("list_dir"),
+            Tool::MemorySearch => EzerBuildRow::new("memory_search"),
+            Tool::MemoryGet => EzerBuildRow::new("memory_get"),
+            Tool::Task => EzerBuildRow::new("spawn_subagent").with_fills(&[FieldFill {
                 field: "description",
                 source: "prompt",
             }]),
-            Tool::Skill => GrokBuildRow::new("skill"),
-            Tool::SendMessage => GrokBuildRow::new("send_subagent_message"),
-            Tool::EnterPlanMode => GrokBuildRow::new("enter_plan_mode"),
-            Tool::ExitPlanMode => GrokBuildRow::new("exit_plan_mode"),
-            Tool::WebFetch => GrokBuildRow::new("web_fetch"),
-            Tool::WebSearch => GrokBuildRow::new("web_search"),
-            Tool::Question => GrokBuildRow::new("ask_user_question").with_shape(describe_options),
-            Tool::Todo => GrokBuildRow::new("todo_write").with_shape(default_todos_to_pending),
-            Tool::SearchTool => GrokBuildRow::new("search_tool"),
-            Tool::KillTask => GrokBuildRow::new("kill_command_or_subagent"),
-            Tool::SchedulerCreate => GrokBuildRow::new("scheduler_create"),
-            Tool::SchedulerList => GrokBuildRow::new("scheduler_list"),
-            Tool::SchedulerDelete => GrokBuildRow::new("scheduler_delete"),
-            Tool::Workflow => GrokBuildRow::new("workflow"),
-            Tool::Lsp => GrokBuildRow::new("lsp"),
+            Tool::Skill => EzerBuildRow::new("skill"),
+            Tool::SendMessage => EzerBuildRow::new("send_subagent_message"),
+            Tool::EnterPlanMode => EzerBuildRow::new("enter_plan_mode"),
+            Tool::ExitPlanMode => EzerBuildRow::new("exit_plan_mode"),
+            Tool::WebFetch => EzerBuildRow::new("web_fetch"),
+            Tool::WebSearch => EzerBuildRow::new("web_search"),
+            Tool::Question => EzerBuildRow::new("ask_user_question").with_shape(describe_options),
+            Tool::Todo => EzerBuildRow::new("todo_write").with_shape(default_todos_to_pending),
+            Tool::SearchTool => EzerBuildRow::new("search_tool"),
+            Tool::KillTask => EzerBuildRow::new("kill_command_or_subagent"),
+            Tool::SchedulerCreate => EzerBuildRow::new("scheduler_create"),
+            Tool::SchedulerList => EzerBuildRow::new("scheduler_list"),
+            Tool::SchedulerDelete => EzerBuildRow::new("scheduler_delete"),
+            Tool::Workflow => EzerBuildRow::new("workflow"),
+            Tool::Lsp => EzerBuildRow::new("lsp"),
             Tool::TaskCreate => {
-                GrokBuildRow::new("todo_write").with_shape(todo_write_from_created_task)
+                EzerBuildRow::new("todo_write").with_shape(todo_write_from_created_task)
             }
-            Tool::TaskUpdate => GrokBuildRow::new("todo_write").with_shape(todo_write_from_task),
+            Tool::TaskUpdate => EzerBuildRow::new("todo_write").with_shape(todo_write_from_task),
             Tool::CronCreate => {
-                GrokBuildRow::new("scheduler_create").with_shape(fill_cron_interval)
+                EzerBuildRow::new("scheduler_create").with_shape(fill_cron_interval)
             }
             Tool::McpListResources | Tool::McpReadResource | Tool::Mcp { .. } => {
-                GrokBuildRow::without_ezer_build_name()
+                EzerBuildRow::without_ezer_build_name()
             }
         }
     }

@@ -109,7 +109,7 @@ mod remember_tool_approvals_gate_tests {
     use super::*;
     use crate::agent::config::ConfigSource;
 
-    // `GROK_REMEMBER_TOOL_APPROVALS` is process-global
+    // `EZER_REMEMBER_TOOL_APPROVALS` is process-global
     // Serialize and force it unset at the top of each test so a developer's shell value can't make these flaky
     static ENV_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
     fn guard() -> std::sync::MutexGuard<'static, ()> {

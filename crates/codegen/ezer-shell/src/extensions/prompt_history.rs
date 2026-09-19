@@ -1,4 +1,4 @@
-//! `x.ai/prompt_history` extension handler.
+//! `ezer/prompt_history` extension handler.
 //!
 //! Returns the user-prompt history for a given cwd. Three paths:
 //! - **fast path** (no ids): reads the per-CWD `prompt_history.jsonl` file directly so Ctrl+R is instant; returns all sessions, most-recent-first.
@@ -41,7 +41,7 @@ struct PromptHistoryResponse {
 #[tracing::instrument(skip_all, fields(method = %args.method))]
 pub async fn handle(_agent: &MvpAgent, args: &acp::ExtRequest) -> ExtResult {
     match args.method.as_ref() {
-        "x.ai/prompt_history" => handle_prompt_history(args).await,
+        "ezer/prompt_history" => handle_prompt_history(args).await,
         _ => Err(acp::Error::method_not_found()),
     }
 }
@@ -114,7 +114,7 @@ async fn load_session_prompts(
     summaries.sort_by(|a, b| a.updated_at.cmp(&b.updated_at));
 
     // Load only user prompts via load_prompts_only, which avoids loading full session data
-    let root_dir = crate::util::grok_home::grok_home();
+    let root_dir = crate::util::ezer_home::ezer_home();
     let storage = JsonlStorageAdapter::with_root(root_dir);
 
     // Load prompts from sessions with bounded concurrency using stream

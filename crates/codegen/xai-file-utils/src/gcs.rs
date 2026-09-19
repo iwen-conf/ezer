@@ -12,14 +12,14 @@ use anyhow::Context;
 use crate::UploadMethod;
 use ezer_auth::{AuthCredentialProvider, StaticAuthCredentialProvider};
 
-use crate::storage_client::{Auth401AttributionCallback, StaticGrokAuth, StorageClient};
+use crate::storage_client::{Auth401AttributionCallback, StaticEzerAuth, StorageClient};
 
 /// Threshold for switching to multipart upload (50 MB).
 /// Larger files use signed-URL multipart (parts go directly to storage) instead of streaming through the proxy.
 pub const MULTIPART_UPLOAD_THRESHOLD: u64 = 50 * 1024 * 1024;
 
 /// Construct a `StorageClient` for proxy-mode uploads.
-/// Uses caller-provided refresh-aware credentials, else a `StaticGrokAuth` from inline keys.
+/// Uses caller-provided refresh-aware credentials, else a `StaticEzerAuth` from inline keys.
 /// Optional `http_client` lets the caller pass a shell-tuned client; `None` falls back to `Client::new()`.
 fn build_proxy_client_with_fallback(
     proxy_base_url: &str,
@@ -30,7 +30,7 @@ fn build_proxy_client_with_fallback(
     http_client: Option<reqwest::Client>,
 ) -> StorageClient {
     let provider = credentials.unwrap_or_else(|| {
-        let mut creds = StaticGrokAuth::new(Some(user_token.to_owned()));
+        let mut creds = StaticEzerAuth::new(Some(user_token.to_owned()));
         creds.deployment_key = deployment_key;
         let bearer = creds.wire_bearer();
         Arc::new(StaticAuthCredentialProvider::new(Box::new(creds), bearer))

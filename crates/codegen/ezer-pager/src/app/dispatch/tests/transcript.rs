@@ -438,7 +438,7 @@ fn plugins_list_response() -> xai_hooks_plugins_types::PluginsListResponse {
         plugins: vec![
             test_plugin_info(
                 "user-tool",
-                Some(xai_hooks_plugins_types::PluginOrigin::UserGrok),
+                Some(xai_hooks_plugins_types::PluginOrigin::UserEzer),
             ),
             test_plugin_info(
                 "claude-tool",

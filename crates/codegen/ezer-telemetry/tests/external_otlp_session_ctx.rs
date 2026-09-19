@@ -33,14 +33,14 @@ async fn ambient_ctx_injects_session_turn_and_prompt_id() {
         ezer_telemetry::session_ctx::begin_prompt_id();
         ezer_telemetry::log_event(ezer_telemetry::events::PromptSubmitted {
             prompt_length: 42,
-            model_id: "grok-4".into(),
+            model_id: "test-model-4".into(),
             client_identifier: None,
             screen_mode: None,
             prompt_text: None,
             command_name: None,
         });
         ezer_telemetry::log_event(ezer_telemetry::events::ModelResponseReceived {
-            model_id: "grok-4".into(),
+            model_id: "test-model-4".into(),
             duration_ms: 5,
             stop_reason: Some("stop".into()),
             prompt_tokens: Some(11),

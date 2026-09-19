@@ -3,7 +3,7 @@
 //! Success cells either start the daemon out of band or rely on
 //! `UnixArm::on_unreachable` to spawn it. `install_env` isolates
 //! so an auto-started daemon cannot share the host grove data dir.
-//! `run_agent_test` isolates `GROK_HOME`. Drop reaps whoever still holds
+//! `run_agent_test` isolates `EZER_HOME`. Drop reaps whoever still holds
 //! the unix socket (`lsof`/`fuser`); `ensure_daemon` argv has no sock path.
 
 #![cfg(unix)]
@@ -21,7 +21,7 @@ use serde_json::{Value, json};
 use tempfile::TempDir;
 use ezer_shell::util::config::{ENV_WORKTREE_TYPE, RemoteSettings};
 
-const CREATE_SYNC: &str = "x.ai/git/worktree/create_from_worktree_sync";
+const CREATE_SYNC: &str = "ezer/git/worktree/create_from_worktree_sync";
 const DAEMON_READY: Duration = Duration::from_secs(15);
 
 fn env_truthy(name: &str) -> bool {

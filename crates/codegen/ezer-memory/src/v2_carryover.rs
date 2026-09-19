@@ -74,7 +74,7 @@ pub enum V2CarryoverOutcome {
 
 /// `~/.ezer/memory/`, the root the legacy pipeline writes under.
 pub fn default_legacy_memory_root() -> PathBuf {
-    ezer_tools::util::grok_home::grok_home().join("memory")
+    ezer_tools::util::ezer_home::ezer_home().join("memory")
 }
 
 /// Path of the legacy curated file that corresponds to a v2 scope.

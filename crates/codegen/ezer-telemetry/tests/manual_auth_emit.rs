@@ -15,7 +15,7 @@ use ezer_telemetry::process_info::{
 };
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
-async fn manual_auth_posts_to_events_endpoint_as_grok_shell_manual_auth() {
+async fn manual_auth_posts_to_events_endpoint_as_ezer_shell_dir_manual_auth() {
     let bodies: Arc<Mutex<Vec<serde_json::Value>>> = Arc::new(Mutex::new(Vec::new()));
     let captured = bodies.clone();
     let app = axum::Router::new().route(

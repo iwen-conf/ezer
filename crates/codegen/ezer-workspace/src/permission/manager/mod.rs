@@ -2579,7 +2579,7 @@ mod tests {
 
     /// Spawn a manager whose prompter is wired to a live gateway receiver backed by `client`.
     /// Prompting then performs a real `request_permission` round-trip.
-    /// `client_type` selects the option set the prompter builds (e.g. the always-approve option is only offered for `GrokTUI | GrokPager | Desktop`).
+    /// `client_type` selects the option set the prompter builds (e.g. the always-approve option is only offered for `EzerTUI | EzerPager | Desktop`).
     fn manager_with_recording_client(
         cwd: &AbsPathBuf,
         config: Option<crate::permission::types::PermissionConfig>,
@@ -3638,10 +3638,10 @@ mod tests {
                         AccessKind::WebFetch("https://example.test/api".into()),
                     ];
                     let interactive = [
-                        ClientType::GrokPager,
+                        ClientType::EzerPager,
                         ClientType::Desktop,
                         ClientType::Extension,
-                        ClientType::GrokWeb,
+                        ClientType::EzerWeb,
                     ];
                     for client_type in interactive {
                         assert!(
@@ -4065,7 +4065,7 @@ mod tests {
                             &cwd,
                             None,
                             client,
-                            ClientType::GrokPager,
+                            ClientType::EzerPager,
                         );
                         mgr.set_auto_mode(true);
                         let (clf, seen) = capturing_classifier(ClassifierVerdict::Allow);
@@ -5075,8 +5075,8 @@ mod tests {
             .run_until(async {
                 for path in [
                     "/etc/hosts",
-                    "/home/user/.grok/hooks/evil.json",
-                    "/home/user/.grok/sandbox.toml",
+                    "/home/user/.ezer/hooks/evil.json",
+                    "/home/user/.ezer/sandbox.toml",
                 ] {
                     let mut auto = crate::permission::types::PermissionConfig::new(vec![]);
                     auto.prompt_policy = PromptPolicy::Auto;
@@ -5125,12 +5125,12 @@ mod tests {
         local
             .run_until(async {
                 let grant = std::path::PathBuf::from("/home/user")
-                    .join(".grok")
+                    .join(".ezer")
                     .join("sessions")
                     .join("ws")
-                    .join("permission_grok-pager.toml");
+                    .join("permission_ezer-pager.toml");
                 let grant_dir = std::path::PathBuf::from("/home/user")
-                    .join(".grok")
+                    .join(".ezer")
                     .join("sessions")
                     .join("ws");
                 let cmds = [
@@ -7264,7 +7264,7 @@ mod tests {
                 let client = RecordingClient::default();
                 let prompts = client.prompts.clone();
                 let (mgr, _e) =
-                    manager_with_recording_client(&cwd, None, client, ClientType::GrokPager);
+                    manager_with_recording_client(&cwd, None, client, ClientType::EzerPager);
                 mgr.set_auto_mode(true);
                 mgr.set_classifier(Some(LlmPermissionClassifier::with_fixed_model_text(
                     r#"{"thinking":"t","shouldBlock":true,"reason":"x"}"#,
@@ -7311,7 +7311,7 @@ mod tests {
                 let client = RecordingClient::default();
                 let prompts = client.prompts.clone();
                 let (mgr, _e) =
-                    manager_with_recording_client(&cwd, None, client, ClientType::GrokPager);
+                    manager_with_recording_client(&cwd, None, client, ClientType::EzerPager);
                 mgr.set_auto_mode(true);
                 mgr.set_classifier(Some(LlmPermissionClassifier::with_fixed_model_text(
                     r#"{"thinking":"t","shouldBlock":true,"reason":"x"}"#,
@@ -7356,7 +7356,7 @@ mod tests {
                 let client = RecordingClient::default();
                 let prompts = client.prompts.clone();
                 let (mgr, _e) =
-                    manager_with_recording_client(&cwd, None, client, ClientType::GrokPager);
+                    manager_with_recording_client(&cwd, None, client, ClientType::EzerPager);
                 mgr.set_auto_mode(true);
                 mgr.set_classifier(Some(LlmPermissionClassifier::with_fixed_model_text(
                     r#"{"thinking":"t","shouldBlock":true,"reason":"x"}"#,
@@ -7397,7 +7397,7 @@ mod tests {
                 let client = RecordingClient::default();
                 let prompts = client.prompts.clone();
                 let (mgr, _e) =
-                    manager_with_recording_client(&cwd, None, client, ClientType::GrokPager);
+                    manager_with_recording_client(&cwd, None, client, ClientType::EzerPager);
                 mgr.set_auto_mode(true);
                 mgr.set_classifier(Some(LlmPermissionClassifier::with_fixed_model_text(
                     r#"{"thinking":"t","shouldBlock":true,"reason":"x"}"#,
@@ -7438,7 +7438,7 @@ mod tests {
                 let client = RecordingClient::default();
                 let prompts = client.prompts.clone();
                 let (mgr, _e) =
-                    manager_with_recording_client(&cwd, None, client, ClientType::GrokPager);
+                    manager_with_recording_client(&cwd, None, client, ClientType::EzerPager);
                 mgr.set_auto_mode(true);
                 mgr.set_classifier(Some(LlmPermissionClassifier::with_fixed_model_text(
                     r#"{"thinking":"t","shouldBlock":true,"reason":"x"}"#,
@@ -7535,7 +7535,7 @@ mod tests {
                 let client = RecordingClient::default();
                 let prompts = client.prompts.clone();
                 let (mgr, _e) =
-                    manager_with_recording_client(&cwd, None, client, ClientType::GrokPager);
+                    manager_with_recording_client(&cwd, None, client, ClientType::EzerPager);
                 mgr.set_auto_mode(true);
                 mgr.set_classifier(Some(LlmPermissionClassifier::with_fixed_model_text(
                     r#"{"thinking":"t","shouldBlock":true,"reason":"x"}"#,
@@ -7577,7 +7577,7 @@ mod tests {
                 let client = RecordingClient::default();
                 let prompts = client.prompts.clone();
                 let (mgr, _e) =
-                    manager_with_recording_client(&cwd, None, client, ClientType::GrokPager);
+                    manager_with_recording_client(&cwd, None, client, ClientType::EzerPager);
                 mgr.set_auto_mode(true);
                 mgr.set_classifier(Some(LlmPermissionClassifier::with_fixed_model_text(
                     r#"{"thinking":"t","shouldBlock":true,"reason":"x"}"#,
@@ -7645,7 +7645,7 @@ mod tests {
                     &cwd,
                     None,
                     client,
-                    ClientType::GrokPager,
+                    ClientType::EzerPager,
                     true,
                 );
                 let access = || AccessKind::MCPTool {
@@ -7677,7 +7677,7 @@ mod tests {
                     &cwd,
                     None,
                     reload_client,
-                    ClientType::GrokPager,
+                    ClientType::EzerPager,
                 );
                 let d3 = decide(&reloaded, access(), tool_call()).await;
                 assert!(matches!(&d3, Decision::Reject(r) if r.contains("previously rejected")));
@@ -7700,7 +7700,7 @@ mod tests {
                     &cwd,
                     None,
                     client,
-                    ClientType::GrokPager,
+                    ClientType::EzerPager,
                     true,
                 );
                 let d = decide(
@@ -7732,7 +7732,7 @@ mod tests {
                 let reload_client = RecordingClient::default();
                 let reload_prompts = reload_client.prompts.clone();
                 let (reloaded, _e2) =
-                    manager_with_recording_client(&cwd, None, reload_client, ClientType::GrokPager);
+                    manager_with_recording_client(&cwd, None, reload_client, ClientType::EzerPager);
                 for url in [
                     "https://example.com/x",
                     "https://www.example.com/x",
@@ -7769,7 +7769,7 @@ mod tests {
                 let client = RecordingClient::default();
                 let prompts = client.prompts.clone();
                 let (mgr, _e) =
-                    manager_with_recording_client(&cwd, None, client, ClientType::GrokPager);
+                    manager_with_recording_client(&cwd, None, client, ClientType::EzerPager);
                 mgr.set_auto_mode(true);
                 mgr.set_classifier(Some(LlmPermissionClassifier::with_fixed_model_text(
                     r#"{"thinking":"t","shouldBlock":false,"reason":"x"}"#,
@@ -7815,7 +7815,7 @@ mod tests {
                 let client = RecordingClient::default();
                 let prompts = client.prompts.clone();
                 let (mgr, _e) =
-                    manager_with_recording_client(&cwd, None, client, ClientType::GrokPager);
+                    manager_with_recording_client(&cwd, None, client, ClientType::EzerPager);
                 mgr.set_auto_mode(true);
                 let (clf, seen) = capturing_classifier(ClassifierVerdict::Block);
                 mgr.set_classifier(Some(clf));

@@ -425,7 +425,7 @@ mod tests {
             serde_json::to_value(MemoryV2ControlsPinned::default()).unwrap(),
             serde_json::to_value(MemoryV2CaptureLifecycle {
                 usage: MemoryV2ModelUsage {
-                    model_id: Some("grok-4".to_owned()),
+                    model_id: Some("test-model-4".to_owned()),
                     prompt_tokens: Some(100),
                     ..Default::default()
                 },

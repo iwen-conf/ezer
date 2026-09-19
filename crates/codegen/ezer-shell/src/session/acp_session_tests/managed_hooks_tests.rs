@@ -2,7 +2,7 @@
 //!
 //! These tests drive the shipped `handle_hooks_action` with a real registry whose hook carries requirements provenance.
 //! The per-hook `Disable` action must be refused and the bulk `ToggleSource` must skip it, both before writing any disable state.
-//! The dispatcher-level exemption and the display predicate are covered with a sandboxed `GROK_HOME` in `ezer_hooks::dispatcher` tests.
+//! The dispatcher-level exemption and the display predicate are covered with a sandboxed `EZER_HOME` in `ezer_hooks::dispatcher` tests.
 
 use super::support::*;
 use super::*;
@@ -13,7 +13,7 @@ use tokio::sync::mpsc;
 const MANAGED_HOOK: &str = "requirements/system:pre_tool_use[0].hooks[0]";
 
 /// Snapshots and restores the disabled-hooks file wherever the process actually resolves it.
-/// A temp `GROK_HOME` alone cannot redirect it: `grok_home()` is `OnceLock`-cached and another test in this binary may have resolved it first.
+/// A temp `EZER_HOME` alone cannot redirect it: `ezer_home()` is `OnceLock`-cached and another test in this binary may have resolved it first.
 /// The guard lets the test assert nothing was written, and if the no-disable rule ever regresses it restores the developer's or CI's real file.
 struct DisabledHooksGuard {
     path: Option<std::path::PathBuf>,
@@ -22,7 +22,7 @@ struct DisabledHooksGuard {
 
 impl DisabledHooksGuard {
     fn capture() -> Self {
-        let path = ezer_config::user_grok_home().map(|home| home.join("disabled-hooks"));
+        let path = ezer_config::user_ezer_home().map(|home| home.join("disabled-hooks"));
         let before = path.as_ref().and_then(|p| std::fs::read_to_string(p).ok());
         Self { path, before }
     }

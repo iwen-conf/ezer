@@ -1,6 +1,6 @@
 //! Compaction result validation (text-level, harness-agnostic).
 //!
-//! The ezer chat's `validate_compaction_result(GrokMessage, …)` wrapper in
+//! The ezer chat's `validate_compaction_result(EzerMessage, …)` wrapper in
 //! the harness crate extracts the message text and delegates here.
 
 use super::types::CompactionStrategy;

@@ -390,11 +390,11 @@ pub struct BotUsageResult {
     /// The allowance is a live trial grant rather than a weekly bucket.
     pub trial: bool,
     pub is_team_seat: bool,
-    /// `supergrok-plus` / `supergrok-heavy` when the SuperGrok tier is the
+    /// `upgrade-plus` / `upgrade-heavy` when the MaxTier tier is the
     /// population funding the meter; absent when another plan funds it.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub funding_plan: Option<String>,
-    /// Server-owned meter label (e.g. `SuperGrok Heavy`, `ezer Bot Plan`).
+    /// Server-owned meter label (e.g. `highest tier`, `ezer Bot Plan`).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub plan_label: Option<String>,
     /// Where the caller manages on-demand usage for this meter.
@@ -1494,8 +1494,8 @@ mod tests {
             included_limit_zero: false,
             trial: false,
             is_team_seat: false,
-            funding_plan: Some("supergrok-heavy".to_owned()),
-            plan_label: Some("SuperGrok Heavy".to_owned()),
+            funding_plan: Some("upgrade-heavy".to_owned()),
+            plan_label: Some("highest tier".to_owned()),
             manage_url: "https://example.com/usage".to_owned(),
             on_demand_eligible: true,
             on_demand_enabled: false,
@@ -1511,8 +1511,8 @@ mod tests {
                 "includedLimitZero": false,
                 "trial": false,
                 "isTeamSeat": false,
-                "fundingPlan": "supergrok-heavy",
-                "planLabel": "SuperGrok Heavy",
+                "fundingPlan": "upgrade-heavy",
+                "planLabel": "highest tier",
                 "manageUrl": "https://example.com/usage",
                 "onDemandEligible": true,
                 "onDemandEnabled": false,

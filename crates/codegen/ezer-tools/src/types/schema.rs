@@ -2,9 +2,9 @@
 use serde::Deserialize;
 /// Schema helper for integers - produces clean integer schema without extra fields. By default
 /// schemars adds "format": "uint" and "minimum": 0.0 which we don't want. Use with `#[schemars(with
-/// = "GrokIntegerSchema")]` on `Option<usize>` fields.
-pub struct GrokIntegerSchema;
-impl schemars::JsonSchema for GrokIntegerSchema {
+/// = "EzerIntegerSchema")]` on `Option<usize>` fields.
+pub struct EzerIntegerSchema;
+impl schemars::JsonSchema for EzerIntegerSchema {
     fn schema_name() -> std::borrow::Cow<'static, str> {
         "ezer_integer_schema".into()
     }

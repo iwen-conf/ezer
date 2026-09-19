@@ -57,14 +57,14 @@ async fn cleanup_keeps_an_older_binary_marked_in_use() {
     for v in ["0.1.140", "0.1.141", "0.1.142", "0.1.143", "0.1.144"] {
         std::fs::write(d.join(format!("ezer-{v}-macos-aarch64")), v).unwrap();
     }
-    std::fs::write(d.join("grok-0.1.145-macos-aarch64"), "current").unwrap();
+    std::fs::write(d.join("ezer-0.1.145-macos-aarch64"), "current").unwrap();
     make_all_stale(d);
 
-    let live = d.join("grok-0.1.140-macos-aarch64");
+    let live = d.join("ezer-0.1.140-macos-aarch64");
     cleanup_old_downloads_with(d, "ezer", "0.1.145", |path| path == live).await;
 
-    assert!(d.join("grok-0.1.145-macos-aarch64").exists(), "current");
-    assert!(d.join("grok-0.1.144-macos-aarch64").exists(), "N-1");
+    assert!(d.join("ezer-0.1.145-macos-aarch64").exists(), "current");
+    assert!(d.join("ezer-0.1.144-macos-aarch64").exists(), "N-1");
     assert!(live.exists(), "in-use");
-    assert!(!d.join("grok-0.1.143-macos-aarch64").exists(), "idle");
+    assert!(!d.join("ezer-0.1.143-macos-aarch64").exists(), "idle");
 }

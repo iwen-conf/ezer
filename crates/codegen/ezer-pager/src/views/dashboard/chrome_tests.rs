@@ -173,7 +173,7 @@ fn header_location_renders_from_staged_cwd() {
 #[test]
 fn header_paints_cwd_then_choose_hint_with_design_colours() {
     // Fixed RGB palette: the colour tiers below collapse to `Reset` on the terminal theme
-    let theme = Theme::groknight();
+    let theme = Theme::ezernight();
     let area = Rect::new(0, 0, 200, 1);
     let mut state = DashboardState::new();
     state.cwd = std::path::PathBuf::from("/ezer-choose-hint-marker");
@@ -384,7 +384,7 @@ fn actions_row_drops_right_items_when_narrow() {
 /// so no `│` is left dangling. A cursor parked on the dropped button falls back to `+ New Agent` in the same frame, painted focused.
 #[test]
 fn actions_row_keeps_worktree_and_drops_open_previous_with_divider() {
-    let theme = Theme::groknight();
+    let theme = Theme::ezernight();
     let mut state = DashboardState::new();
     state.focus_open_session_button();
     // `+ New Agent` (11) + gap (2) + `Worktree Ctrl+w` (15) = 28 fits; adding ` │ Open Previous /resume` (24) does not
@@ -481,7 +481,7 @@ fn actions_row_right_items_follow_strict_priority_at_every_width() {
 /// The glyph carries the state colour and the `{count} {label}` text keeps each chip readable without colour.
 #[test]
 fn render_header_paints_label_and_state_chips() {
-    let theme = Theme::groknight();
+    let theme = Theme::ezernight();
     // Wide rect so the location label never truncates regardless of how deep the test machine's checkout path is
     let area = Rect::new(0, 0, 400, 1);
     let mut buf = Buffer::empty(area);
@@ -538,7 +538,7 @@ fn render_header_paints_label_and_state_chips() {
 /// Every state in the chip table renders when present, in priority order, with its own glyph colour and the shared gray count label.
 #[test]
 fn render_header_paints_every_state_chip_in_its_colour() {
-    let theme = Theme::groknight();
+    let theme = Theme::ezernight();
     let area = Rect::new(0, 0, 400, 1);
     let mut buf = Buffer::empty(area);
     let mut state = DashboardState::new();

@@ -58,7 +58,7 @@ impl SessionActor {
                 ok_end_turn(0, None)
             }
             // Prompt-turn path for clients without the pager-local `/flush` and `/dream`;
-            // the pager calls `x.ai/memory/flush` and `x.ai/memory/dream` instead.
+            // the pager calls `ezer/memory/flush` and `ezer/memory/dream` instead.
             BuiltinAction::FlushMemory => {
                 let response = self.memory_flush_command().await;
                 self.send_host_turn_slash_command_output(&response.summary())
@@ -135,7 +135,7 @@ impl SessionActor {
                     .await;
                 } else {
                     // CWE-427: Use shared add_hooks_path() which validates
-                    // paths are under ~/.grok/ to prevent hook path injection.
+                    // paths are under ~/.ezer/ to prevent hook path injection.
                     match crate::config::add_hooks_path(&path) {
                         Ok(()) => {
                             ezer_telemetry::session_ctx::log_event(

@@ -6,7 +6,7 @@ use std::time::Duration as StdDuration;
 use super::AuthManager;
 use super::lock::{Heartbeat, try_lock_auth_file_async};
 use crate::manager::AUTH_LOCK_TIMEOUT;
-use crate::model::{GrokAuth, UserInfo, lookup_auth};
+use crate::model::{EzerAuth, UserInfo, lookup_auth};
 use crate::storage::{read_auth_json, write_auth_json};
 
 /// Timeout for the `/user` fetch, shared by the inline (login) and background paths.
@@ -40,7 +40,7 @@ impl Drop for EnrichmentExitGuard {
     }
 }
 
-pub(super) fn spawn(manager: Arc<AuthManager>, auth: GrokAuth) {
+pub(super) fn spawn(manager: Arc<AuthManager>, auth: EzerAuth) {
     tokio::spawn(async move {
         let mut exit_guard = EnrichmentExitGuard {
             started: std::time::Instant::now(),
@@ -53,7 +53,7 @@ pub(super) fn spawn(manager: Arc<AuthManager>, auth: GrokAuth) {
 
 async fn fetch_user_info(manager: &AuthManager, key: &str, log_label: &str) -> Option<UserInfo> {
     let user_url = format!("{}/user", manager.proxy_base_url);
-    let token_header = &manager.grok_com_config.token_header;
+    let token_header = &manager.ezer_com_config.token_header;
     let started = std::time::Instant::now();
     let http_client = ezer_http::shared_client();
     let response = http_client
@@ -124,14 +124,14 @@ async fn fetch_user_info(manager: &AuthManager, key: &str, log_label: &str) -> O
 }
 
 /// Blocking enrichment at login: merges `/user` fields into `auth` before the first save.
-pub(super) async fn enrich_inline(manager: &AuthManager, auth: &mut GrokAuth) {
+pub(super) async fn enrich_inline(manager: &AuthManager, auth: &mut EzerAuth) {
     let Some(ui) = fetch_user_info(manager, &auth.key, "auth login enrichment").await else {
         return;
     };
     apply_user_info_enrichment(auth, ui);
 }
 
-async fn run_user_info_enrichment(manager: &AuthManager, auth: GrokAuth) {
+async fn run_user_info_enrichment(manager: &AuthManager, auth: EzerAuth) {
     let started = std::time::Instant::now();
     let Some(user_info) = fetch_user_info(manager, &auth.key, "auth update enrichment").await
     else {
@@ -221,7 +221,7 @@ async fn run_user_info_enrichment(manager: &AuthManager, auth: GrokAuth) {
 }
 
 /// Merge enrichment fields into disk auth. Does not touch token fields.
-pub(super) fn apply_user_info_enrichment(disk: &mut GrokAuth, user_info: UserInfo) {
+pub(super) fn apply_user_info_enrichment(disk: &mut EzerAuth, user_info: UserInfo) {
     disk.user_id = user_info.user_id;
     disk.first_name = user_info.first_name.or(disk.first_name.take());
     disk.last_name = user_info.last_name.or(disk.last_name.take());

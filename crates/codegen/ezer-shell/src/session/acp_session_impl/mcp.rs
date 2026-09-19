@@ -131,7 +131,7 @@ impl SessionActor {
             ui_tools_by_server,
         );
     }
-    /// Emit per-server `x.ai/mcp/tools_changed` notifications.
+    /// Emit per-server `ezer/mcp/tools_changed` notifications.
     /// Each emission carries the owning `sessionId` so the pager can route via `find_session_match` instead of falling back to `app.active_view`.
     /// Without that field, a background agent's push would silently land on the foregrounded agent's modal.
     pub(super) fn emit_mcp_tools_changed_notifications(
@@ -158,7 +158,7 @@ impl SessionActor {
             }
         }
     }
-    /// Handle explicit auth trigger from the client (x.ai/mcp/auth_trigger).
+    /// Handle explicit auth trigger from the client (ezer/mcp/auth_trigger).
     ///
     /// Runs force_reauth (browser flow), then re-initializes the server and registers its tools.
     pub(super) async fn handle_mcp_auth_trigger(&self, server_name: &str) -> Result<(), String> {
@@ -1130,7 +1130,7 @@ impl SessionActor {
             self.notifications
                 .gateway
                 .forward_fire_and_forget(acp::ExtNotification::new(
-                    "x.ai/mcp_initialized",
+                    "ezer/mcp_initialized",
                     params.into(),
                 ));
         }

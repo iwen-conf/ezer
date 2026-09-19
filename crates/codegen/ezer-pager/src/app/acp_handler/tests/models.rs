@@ -1,7 +1,7 @@
 #![cfg_attr(rustfmt, rustfmt::skip)]
     use super::*;
 
-    /// Regression: a machine-wide `x.ai/models/update` broadcast carries each model's static catalog-default effort (`high`).
+    /// Regression: a machine-wide `ezer/models/update` broadcast carries each model's static catalog-default effort (`high`).
     /// It does not carry the session's chosen `xhigh` and must not clobber that per-session choice.
     #[test]
     fn models_update_preserves_user_reasoning_effort() {
@@ -43,15 +43,15 @@
         let mut app = make_app_with_agent("sess-1");
 
         let agent = app.agents.get_mut(&AgentId(0)).unwrap();
-        let id_3 = acp::ModelId::new(std::sync::Arc::from("grok-3"));
+        let id_3 = acp::ModelId::new(std::sync::Arc::from("test-model-3"));
         agent
             .session
             .models
             .available
-            .insert(id_3.clone(), make_model_info("grok-3"));
+            .insert(id_3.clone(), make_model_info("test-model-3"));
         agent.session.models.current = Some(id_3);
 
-        let notif = make_models_update_notif("grok-4.3", &["grok-4.3", "grok-4.5"]);
+        let notif = make_models_update_notif("test-model-4.3", &["test-model-4.3", "test-model-4.5"]);
         handle_models_update(&notif, &mut app);
 
         let agent = app.agents.get(&AgentId(0)).unwrap();
@@ -62,7 +62,7 @@
                 .current
                 .as_ref()
                 .map(|id| id.0.as_ref()),
-            Some("grok-3"),
+            Some("test-model-3"),
             "catalog refresh must not change the displayed session model"
         );
         assert!(
@@ -70,7 +70,7 @@
                 .session
                 .models
                 .available
-                .contains_key(&acp::ModelId::new(std::sync::Arc::from("grok-4.5"))),
+                .contains_key(&acp::ModelId::new(std::sync::Arc::from("test-model-4.5"))),
             "the /model list should reflect the new catalog"
         );
     }
@@ -79,16 +79,16 @@
     fn models_update_keeps_app_current_when_still_in_catalog() {
         let (tx, _rx) = tokio::sync::mpsc::unbounded_channel();
         let mut app = AppView::new(tx, ModelState::default(), Vec::new(), crate::render::draw::EscapeWriter::disconnected());
-        let id = acp::ModelId::new(std::sync::Arc::from("grok-3"));
-        app.models.available.insert(id.clone(), make_model_info("grok-3"));
+        let id = acp::ModelId::new(std::sync::Arc::from("test-model-3"));
+        app.models.available.insert(id.clone(), make_model_info("test-model-3"));
         app.models.current = Some(id);
 
-        let notif = make_models_update_notif("grok-4", &["grok-3", "grok-4"]);
+        let notif = make_models_update_notif("test-model-4", &["test-model-3", "test-model-4"]);
         handle_models_update(&notif, &mut app);
 
         assert_eq!(
             app.models.current.as_ref().map(|id| id.0.as_ref()),
-            Some("grok-3"),
+            Some("test-model-3"),
             "app-level current stays if it is still in the new catalog"
         );
     }
@@ -101,12 +101,12 @@
         app.models.available.insert(old.clone(), make_model_info("opus"));
         app.models.current = Some(old);
 
-        let notif = make_models_update_notif("grok-4", &["grok-3", "grok-4"]);
+        let notif = make_models_update_notif("test-model-4", &["test-model-3", "test-model-4"]);
         handle_models_update(&notif, &mut app);
 
         assert_eq!(
             app.models.current.as_ref().map(|id| id.0.as_ref()),
-            Some("grok-4"),
+            Some("test-model-4"),
             "app-level current adopts the broadcast default when dropped from the catalog"
         );
     }
@@ -118,27 +118,27 @@
 
         {
             let agent_a = app.agents.get_mut(&AgentId(0)).unwrap();
-            let id_3 = acp::ModelId::new(std::sync::Arc::from("grok-3"));
+            let id_3 = acp::ModelId::new(std::sync::Arc::from("test-model-3"));
             agent_a
                 .session
                 .models
                 .available
-                .insert(id_3.clone(), make_model_info("grok-3"));
+                .insert(id_3.clone(), make_model_info("test-model-3"));
             agent_a.session.models.current = Some(id_3);
         }
 
         {
             let agent_b = app.agents.get_mut(&AgentId(1)).unwrap();
-            let id = acp::ModelId::new(std::sync::Arc::from("grok-4.5"));
+            let id = acp::ModelId::new(std::sync::Arc::from("test-model-4.5"));
             agent_b
                 .session
                 .models
                 .available
-                .insert(id.clone(), make_model_info("grok-4.5"));
+                .insert(id.clone(), make_model_info("test-model-4.5"));
             agent_b.session.models.current = Some(id);
         }
 
-        let notif = make_models_update_notif("grok-4", &["grok-3", "grok-4"]);
+        let notif = make_models_update_notif("test-model-4", &["test-model-3", "test-model-4"]);
         handle_models_update(&notif, &mut app);
 
         let agent_a = app.agents.get(&AgentId(0)).unwrap();
@@ -149,7 +149,7 @@
                 .current
                 .as_ref()
                 .map(|id| id.0.as_ref()),
-            Some("grok-3"),
+            Some("test-model-3"),
             "active agent's model must be preserved"
         );
 
@@ -161,7 +161,7 @@
                 .current
                 .as_ref()
                 .map(|id| id.0.as_ref()),
-            Some("grok-4.5"),
+            Some("test-model-4.5"),
             "inactive agent must keep its session model when the catalog drops it"
         );
     }
@@ -172,12 +172,12 @@
     fn model_changed_updates_state_silently_on_follower() {
         let mut app = make_app_with_agent("sess-1");
         let agent = app.agents.get_mut(&AgentId(0)).unwrap();
-        seed_models(agent, "grok-3", &["grok-3", "grok-4"]);
+        seed_models(agent, "test-model-3", &["test-model-3", "test-model-4"]);
         let scrollback_before = agent.scrollback.len();
         // Follower: no local switch in flight.
         assert!(!agent.session.model_switch_pending);
 
-        let notif = model_changed_ext("sess-1", "grok-4", None);
+        let notif = model_changed_ext("sess-1", "test-model-4", None);
         let changed = handle_ext_notification(&notif, &mut app);
         assert!(
             changed,
@@ -192,7 +192,7 @@
                 .current
                 .as_ref()
                 .map(|id| id.0.as_ref()),
-            Some("grok-4"),
+            Some("test-model-4"),
             "follower must mirror the remote switch into its local model state",
         );
         assert_eq!(
@@ -255,12 +255,12 @@
     fn model_changed_skipped_when_local_switch_in_flight() {
         let mut app = make_app_with_agent("sess-1");
         let agent = app.agents.get_mut(&AgentId(0)).unwrap();
-        seed_models(agent, "grok-3", &["grok-3", "grok-4"]);
+        seed_models(agent, "test-model-3", &["test-model-3", "test-model-4"]);
         // Invoker: a local switch is in flight (set by Action::SwitchModel or set_default_model before the SetSessionModelRequest is sent)
         agent.session.model_switch_pending = true;
         let scrollback_before = agent.scrollback.len();
 
-        let notif = model_changed_ext("sess-1", "grok-4", None);
+        let notif = model_changed_ext("sess-1", "test-model-4", None);
         let changed = handle_ext_notification(&notif, &mut app);
         assert!(
             !changed,
@@ -275,7 +275,7 @@
                 .current
                 .as_ref()
                 .map(|id| id.0.as_ref()),
-            Some("grok-3"),
+            Some("test-model-3"),
             "models.current must stay at the pre-response snapshot — \
              SwitchModelComplete owns the final apply + system message"
         );
@@ -297,9 +297,9 @@
     fn model_changed_dropped_when_model_unknown_to_catalog() {
         let mut app = make_app_with_agent("sess-1");
         let agent = app.agents.get_mut(&AgentId(0)).unwrap();
-        seed_models(agent, "grok-3", &["grok-3", "grok-4"]);
+        seed_models(agent, "test-model-3", &["test-model-3", "test-model-4"]);
 
-        let notif = model_changed_ext("sess-1", "grok-99-unknown", None);
+        let notif = model_changed_ext("sess-1", "ezer-99-unknown", None);
         let changed = handle_ext_notification(&notif, &mut app);
         assert!(
             !changed,
@@ -314,21 +314,21 @@
                 .current
                 .as_ref()
                 .map(|id| id.0.as_ref()),
-            Some("grok-3"),
+            Some("test-model-3"),
             "models.current must stay on the previously-known model"
         );
     }
 
     /// `reasoning_effort` round-trips through the broadcast: the follower applies it alongside the model id.
-    /// The prompt header and status bar then show the right effort without waiting for a later `x.ai/models/update`.
+    /// The prompt header and status bar then show the right effort without waiting for a later `ezer/models/update`.
     #[test]
     fn model_changed_applies_reasoning_effort_on_follower() {
         use ezer_shell::sampling::types::ReasoningEffort;
         let mut app = make_app_with_agent("sess-1");
         let agent = app.agents.get_mut(&AgentId(0)).unwrap();
-        seed_models(agent, "grok-3", &["grok-3", "grok-4"]);
+        seed_models(agent, "test-model-3", &["test-model-3", "test-model-4"]);
 
-        let notif = model_changed_ext("sess-1", "grok-4", Some("high"));
+        let notif = model_changed_ext("sess-1", "test-model-4", Some("high"));
         assert!(handle_ext_notification(&notif, &mut app));
 
         let agent = app.agents.get(&AgentId(0)).unwrap();
@@ -345,9 +345,9 @@
     fn model_changed_dropped_for_unknown_session_id() {
         let mut app = make_app_with_agent("sess-1");
         let agent = app.agents.get_mut(&AgentId(0)).unwrap();
-        seed_models(agent, "grok-3", &["grok-3", "grok-4"]);
+        seed_models(agent, "test-model-3", &["test-model-3", "test-model-4"]);
 
-        let notif = model_changed_ext("sess-OTHER", "grok-4", None);
+        let notif = model_changed_ext("sess-OTHER", "test-model-4", None);
         let changed = handle_ext_notification(&notif, &mut app);
         assert!(!changed);
 
@@ -359,7 +359,7 @@
                 .current
                 .as_ref()
                 .map(|id| id.0.as_ref()),
-            Some("grok-3"),
+            Some("test-model-3"),
             "unrelated-session broadcast must not touch this agent's model"
         );
     }

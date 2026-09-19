@@ -53,7 +53,7 @@ async fn plugin_refresh_reads_reconciled_trust_and_does_not_start_before_it() {
     let cwd = tempfile::tempdir().unwrap();
     git2::Repository::init(cwd.path()).unwrap();
     let home = tempfile::tempdir().unwrap();
-    let _home = EnvGuard::set("GROK_HOME", home.path());
+    let _home = EnvGuard::set("EZER_HOME", home.path());
 
     let (_allowed, scan) = folder_trust::gather_and_record(cwd.path(), None, false);
     let prefetch = SessionCreatePrefetch::launch_from_meta(

@@ -1,10 +1,10 @@
-//! The `ezer agent stdio` child that `GrokStdioClient` and `AcpTestClient` drive: the sandbox it runs in, what
+//! The `ezer agent stdio` child that `EzerStdioClient` and `AcpTestClient` drive: the sandbox it runs in, what
 //! is applied on top of the sandbox's hermetic baseline, and the spawn that hands the sandbox back together
 //! with the child.
 
 use std::path::Path;
 
-use crate::env::grok_binary;
+use crate::env::ezer_binary;
 use crate::mock_server::MockInferenceServer;
 use crate::process::{TestOutput, TestProcess, TestProcessConfig, TestStdin};
 use crate::sandbox::TestSandbox;
@@ -51,7 +51,7 @@ impl AgentProcessOptions {
             sandbox.remove_env(key);
         }
 
-        let binary = grok_binary();
+        let binary = ezer_binary();
         let mut cmd = tokio::process::Command::new(&binary);
         cmd.args(&leading_args)
             .args(["agent", "stdio"])

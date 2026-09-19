@@ -382,7 +382,7 @@ pub struct RemoteSettings {
     /// Enterprise OIDC (user's own IdP via `oidc` config) always wins.
     /// The `--oauth` CLI flag overrides it.
     #[serde(default)]
-    pub grok_oauth_enabled: Option<bool>,
+    pub ezer_oauth_enabled: Option<bool>,
     #[serde(default)]
     pub lsp_tools_enabled: Option<bool>,
     /// Remote kill-switch and default for the folder-trust gate.
@@ -611,7 +611,7 @@ pub struct RemoteSettings {
     pub image_description_model: Option<String>,
     /// Server-side pin for the next-prompt suggestion model (tab-autocomplete ghost text), from the `ezer_build_settings` remote settings flag.
     /// It sits below env (`EZER_PROMPT_SUGGESTIONS_MODEL`) and `[models] prompt_suggestion` in config.toml.
-    /// It sits above the client hint and the built-in `grok-4.6` default.
+    /// It sits above the client hint and the built-in `test-model-4.6` default.
     /// When the effective model is not in the shell's model catalog the suggestion request is skipped entirely; the session model is never used instead.
     /// See `ModelOverrideConfig::resolve` and `handle_suggest_prompt`.
     #[serde(default)]
@@ -726,7 +726,7 @@ pub struct RemoteSettings {
     pub sharing_enabled: Option<bool>,
     /// Voice mode (STT dictation). The client default is on when absent.
     /// `Some(false)` is a remote kill switch; `Some(true)` forces on.
-    /// `EZER_VOICE_MODE` overrides it locally. The free-tier SuperGrok upsell is a separate client tier gate.
+    /// `EZER_VOICE_MODE` overrides it locally. The free-tier MaxTier upsell is a separate client tier gate.
     #[serde(default)]
     pub voice_mode_enabled: Option<bool>,
     /// Consolidated panel dock above the prompt. Off when absent.
@@ -793,7 +793,7 @@ pub struct RemoteSettings {
     #[serde(default)]
     pub permission_mode: Option<String>,
     /// User's subscription tier from remote settings `ezer_build_access_gate`.
-    /// E.g. "free", "premium", "supergrok", "supergrok_heavy".
+    /// E.g. "free", "premium", "upgrade", "max_tier".
     /// It is stamped on analytics events and the user profile for filtering.
     #[serde(default)]
     pub subscription_tier: Option<String>,
@@ -815,7 +815,7 @@ pub struct RemoteSettings {
     #[serde(default)]
     pub allow_access: Option<bool>,
     /// User-friendly display name for the current subscription tier
-    /// (e.g. "SuperGrok", "X Premium+", "Free", "API Key"). Set by CCP
+    /// (e.g. "MaxTier", "X Premium+", "Free", "API Key"). Set by CCP
     /// from the JWT tier claim (OAuth) or credential kind (API key).
     /// Free/Invalid OAuth → `"Free"`; API keys → `"API Key"` (Mixpanel
     /// `api_key`, never free).
@@ -1041,7 +1041,7 @@ where
 /// The pair is the atomic configurable unit because a model is only guaranteed to work with a compatible harness (cursor vs ezer-build).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct GoalRoleModel {
-    /// Model id, e.g. "grok-4". It resolves against available models at spawn time; unknown or unauthorized fails open to the current model.
+    /// Model id, e.g. "test-model-4". It resolves against available models at spawn time; unknown or unauthorized fails open to the current model.
     pub model: String,
     /// Harness `agent_type` (e.g. "cursor", "ezer-build-plan") whose `AgentDefinition` decides the role subagent's harness flavor.
     /// The flavor (system prompt and cursor-vs-ezer-build toolset) applies regardless of the session or parent agent.
@@ -1228,18 +1228,18 @@ mod tests {
     }
     #[test]
     fn remote_settings_image_description_model_round_trip() {
-        let json = r#"{"image_description_model": "grok-4.6"}"#;
+        let json = r#"{"image_description_model": "test-model-4.6"}"#;
         let s: RemoteSettings = serde_json::from_str(json).unwrap();
-        assert_eq!(s.image_description_model.as_deref(), Some("grok-4.6"));
+        assert_eq!(s.image_description_model.as_deref(), Some("test-model-4.6"));
         let out = serde_json::to_string(&s).unwrap();
         let s2: RemoteSettings = serde_json::from_str(&out).unwrap();
         assert_eq!(s2.image_description_model, s.image_description_model);
     }
     #[test]
     fn remote_settings_prompt_suggestion_model_round_trip() {
-        let json = r#"{"prompt_suggestion_model": "grok-4.6"}"#;
+        let json = r#"{"prompt_suggestion_model": "test-model-4.6"}"#;
         let s: RemoteSettings = serde_json::from_str(json).unwrap();
-        assert_eq!(s.prompt_suggestion_model.as_deref(), Some("grok-4.6"));
+        assert_eq!(s.prompt_suggestion_model.as_deref(), Some("test-model-4.6"));
         let out = serde_json::to_string(&s).unwrap();
         let s2: RemoteSettings = serde_json::from_str(&out).unwrap();
         assert_eq!(s2.prompt_suggestion_model, s.prompt_suggestion_model);
@@ -1332,12 +1332,12 @@ mod tests {
     #[test]
     fn remote_settings_goal_planner_model_round_trip() {
         let json =
-            r#"{"goal_planner_model": {"model": "grok-4", "agent_type": "general-purpose"}}"#;
+            r#"{"goal_planner_model": {"model": "test-model-4", "agent_type": "general-purpose"}}"#;
         let s: RemoteSettings = serde_json::from_str(json).unwrap();
         assert_eq!(
             s.goal_planner_model,
             Some(GoalRoleModel {
-                model: "grok-4".to_string(),
+                model: "test-model-4".to_string(),
                 agent_type: "general-purpose".to_string(),
             })
         );
@@ -1348,19 +1348,19 @@ mod tests {
     #[test]
     fn remote_settings_goal_skeptic_models_fully_valid_pool_round_trips() {
         let json = r#"{"goal_skeptic_models": [
-            {"model": "grok-4", "agent_type": "general-purpose"},
-            {"model": "grok-3", "agent_type": "cursor"}
+            {"model": "test-model-4", "agent_type": "general-purpose"},
+            {"model": "test-model-3", "agent_type": "cursor"}
         ]}"#;
         let s: RemoteSettings = serde_json::from_str(json).unwrap();
         assert_eq!(
             s.goal_skeptic_models,
             vec![
                 GoalRoleModel {
-                    model: "grok-4".to_string(),
+                    model: "test-model-4".to_string(),
                     agent_type: "general-purpose".to_string(),
                 },
                 GoalRoleModel {
-                    model: "grok-3".to_string(),
+                    model: "test-model-3".to_string(),
                     agent_type: "cursor".to_string(),
                 },
             ]
@@ -1372,20 +1372,20 @@ mod tests {
     #[test]
     fn remote_settings_goal_skeptic_models_one_bad_item_does_not_poison_pool() {
         let json = r#"{"goal_skeptic_models": [
-            {"model": "grok-4", "agent_type": "general-purpose"},
+            {"model": "test-model-4", "agent_type": "general-purpose"},
             {"model": "ezer-broken"},
-            {"model": "grok-3", "agent_type": "cursor"}
+            {"model": "test-model-3", "agent_type": "cursor"}
         ]}"#;
         let s: RemoteSettings = serde_json::from_str(json).unwrap();
         assert_eq!(
             s.goal_skeptic_models,
             vec![
                 GoalRoleModel {
-                    model: "grok-4".to_string(),
+                    model: "test-model-4".to_string(),
                     agent_type: "general-purpose".to_string(),
                 },
                 GoalRoleModel {
-                    model: "grok-3".to_string(),
+                    model: "test-model-3".to_string(),
                     agent_type: "cursor".to_string(),
                 },
             ]
@@ -1420,13 +1420,13 @@ mod tests {
     fn remote_settings_goal_skeptic_models_missing_model_entry_dropped() {
         let json = r#"{"goal_skeptic_models": [
             {"agent_type": "general-purpose"},
-            {"model": "grok-3", "agent_type": "cursor"}
+            {"model": "test-model-3", "agent_type": "cursor"}
         ]}"#;
         let s: RemoteSettings = serde_json::from_str(json).unwrap();
         assert_eq!(
             s.goal_skeptic_models,
             vec![GoalRoleModel {
-                model: "grok-3".to_string(),
+                model: "test-model-3".to_string(),
                 agent_type: "cursor".to_string(),
             }]
         );
@@ -1435,14 +1435,14 @@ mod tests {
     fn remote_settings_goal_skeptic_models_wrong_typed_scalar_dropped() {
         let json = r#"{"goal_skeptic_models": [
             {"model": 123, "agent_type": "general-purpose"},
-            {"model": "grok-3", "agent_type": ["cursor"]},
-            {"model": "grok-4", "agent_type": "general-purpose"}
+            {"model": "test-model-3", "agent_type": ["cursor"]},
+            {"model": "test-model-4", "agent_type": "general-purpose"}
         ]}"#;
         let s: RemoteSettings = serde_json::from_str(json).unwrap();
         assert_eq!(
             s.goal_skeptic_models,
             vec![GoalRoleModel {
-                model: "grok-4".to_string(),
+                model: "test-model-4".to_string(),
                 agent_type: "general-purpose".to_string(),
             }]
         );
@@ -1450,13 +1450,13 @@ mod tests {
     #[test]
     fn remote_settings_goal_skeptic_models_extra_unknown_fields_kept() {
         let json = r#"{"goal_skeptic_models": [
-            {"model": "grok-4", "agent_type": "general-purpose", "reasoning_effort": "high"}
+            {"model": "test-model-4", "agent_type": "general-purpose", "reasoning_effort": "high"}
         ]}"#;
         let s: RemoteSettings = serde_json::from_str(json).unwrap();
         assert_eq!(
             s.goal_skeptic_models,
             vec![GoalRoleModel {
-                model: "grok-4".to_string(),
+                model: "test-model-4".to_string(),
                 agent_type: "general-purpose".to_string(),
             }]
         );
@@ -1496,28 +1496,28 @@ mod tests {
     fn remote_settings_goal_role_models_malformed_pair_does_not_drop_other_fields() {
         let json = r#"{
             "goal_planner_model": {"model": "broken"},
-            "goal_strategist_model": {"model": "grok-4.5", "agent_type": "cursor"},
-            "default_model": "grok-4"
+            "goal_strategist_model": {"model": "test-model-4.5", "agent_type": "cursor"},
+            "default_model": "test-model-4"
         }"#;
         let s: RemoteSettings = serde_json::from_str(json).unwrap();
         assert_eq!(s.goal_planner_model, None);
         assert_eq!(
             s.goal_strategist_model,
             Some(GoalRoleModel {
-                model: "grok-4.5".to_string(),
+                model: "test-model-4.5".to_string(),
                 agent_type: "cursor".to_string(),
             })
         );
-        assert_eq!(s.default_model.as_deref(), Some("grok-4"));
+        assert_eq!(s.default_model.as_deref(), Some("test-model-4"));
     }
     #[test]
     fn remote_settings_goal_role_model_extra_unknown_fields_kept_single_pair() {
-        let json = r#"{"goal_planner_model": {"model": "grok-4", "agent_type": "general-purpose", "future": true}}"#;
+        let json = r#"{"goal_planner_model": {"model": "test-model-4", "agent_type": "general-purpose", "future": true}}"#;
         let s: RemoteSettings = serde_json::from_str(json).unwrap();
         assert_eq!(
             s.goal_planner_model,
             Some(GoalRoleModel {
-                model: "grok-4".to_string(),
+                model: "test-model-4".to_string(),
                 agent_type: "general-purpose".to_string(),
             })
         );

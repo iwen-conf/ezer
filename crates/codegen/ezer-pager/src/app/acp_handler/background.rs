@@ -55,12 +55,12 @@ pub(super) fn route_bg_task_stdout(
     true // Consumed: don't pass to tracker
 }
 
-/// Handle `x.ai/task_backgrounded`: a bash command transitioned to background.
+/// Handle `ezer/task_backgrounded`: a bash command transitioned to background.
 /// Creates a `BgTaskState` in the central store and maps `tool_call_id` to `task_id` for stdout routing.
 /// Otherwise a fresh `BgTask` block is pushed.
 pub(super) fn handle_task_backgrounded(notif: &acp::ExtNotification, app: &mut AppView) -> bool {
     let Ok(session_notif) = serde_json::from_str::<SessionNotification>(notif.params.get()) else {
-        tracing::warn!("Failed to parse x.ai/task_backgrounded");
+        tracing::warn!("Failed to parse ezer/task_backgrounded");
         return false;
     };
 
@@ -228,7 +228,7 @@ pub(super) fn handle_task_backgrounded(notif: &acp::ExtNotification, app: &mut A
     is_active
 }
 
-/// Handle `x.ai/monitor_event`: a background task or monitor emitted new output.
+/// Handle `ezer/monitor_event`: a background task or monitor emitted new output.
 pub(super) fn handle_monitor_event(notif: &acp::ExtNotification, app: &mut AppView) -> bool {
     let Ok(session_notif) = serde_json::from_str::<SessionNotification>(notif.params.get()) else {
         return false;
@@ -504,7 +504,7 @@ pub(super) fn handle_git_head_changed(notif: &acp::ExtNotification, app: &mut Ap
 pub(super) fn handle_task_completed(notif: &acp::ExtNotification, app: &mut AppView) -> bool {
     // The payload is a SessionNotification wrapping TaskCompleted { task_snapshot }
     let Ok(session_notif) = serde_json::from_str::<SessionNotification>(notif.params.get()) else {
-        tracing::warn!("Failed to parse x.ai/task_completed");
+        tracing::warn!("Failed to parse ezer/task_completed");
         return false;
     };
 

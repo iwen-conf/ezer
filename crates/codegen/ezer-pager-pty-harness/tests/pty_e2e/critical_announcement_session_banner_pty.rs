@@ -50,7 +50,7 @@ fn info_override_json() -> String {
 fn spawn_with_announcements(content: &ContentController, override_json: &str) -> PtyHarness {
     let binary = pager_binary().expect("resolve pager binary");
     let overrides: Vec<(String, String)> = vec![(
-        "GROK_ANNOUNCEMENTS_OVERRIDE".into(),
+        "EZER_ANNOUNCEMENTS_OVERRIDE".into(),
         override_json.to_owned(),
     )];
     let env_refs: Vec<(&str, &str)> = overrides
@@ -662,7 +662,7 @@ async fn promo_cta_click_opens_link_and_hide_roundtrip() {
     // OSC 8 emission is gated on a Native-capable brand (`hyperlink_route`)
     // Pin WezTerm like the file-path hyperlink test so the byte-level OSC 8 assert below is meaningful
     let extra_env = [
-        ("GROK_TEST_OPEN_URL_FILE", url_file_str.as_str()),
+        ("EZER_TEST_OPEN_URL_FILE", url_file_str.as_str()),
         ("TERM_PROGRAM", "WezTerm"),
     ];
     let mut harness = spawn_polling_session_with_env(&content, "pty-announce-cta", &extra_env);
@@ -874,7 +874,7 @@ fn spawn_with_announcements_and_env(
     extra_env: &[(&str, &str)],
 ) -> PtyHarness {
     let binary = pager_binary().expect("resolve pager binary");
-    let announcement = ("GROK_ANNOUNCEMENTS_OVERRIDE", override_json);
+    let announcement = ("EZER_ANNOUNCEMENTS_OVERRIDE", override_json);
     let mut env_refs = vec![announcement];
     env_refs.extend_from_slice(extra_env);
     PtyHarness::spawn_with_content_env_in_dir(
@@ -898,7 +898,7 @@ async fn pinned_promo_multi_surface_and_ctrl_o_open() {
     let url_file = content.home().join("opened-urls.txt");
     let url_file_str = url_file.to_str().expect("utf8 url file path").to_owned();
     let extra_env = [
-        ("GROK_TEST_OPEN_URL_FILE", url_file_str.as_str()),
+        ("EZER_TEST_OPEN_URL_FILE", url_file_str.as_str()),
         ("TERM_PROGRAM", "WezTerm"),
     ];
     let mut harness =

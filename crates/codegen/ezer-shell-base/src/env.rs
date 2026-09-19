@@ -1,4 +1,4 @@
-//! GrokBuildEnvironment configuration for the shell crate family.
+//! EzerBuildEnvironment configuration for the shell crate family.
 //!
 //! The environment presets (per-environment endpoint URLs, the staging trust check, `EnvVarGuard`) live in the [`ezer_env`] leaf crate.
 //! Sibling crates (telemetry, tools, workspace) share them without depending on this crate.
@@ -7,13 +7,15 @@
 //! # Gateway-bridge mode (env-only)
 //! - `EZER_GATEWAY_URL` — when set to a valid URL, `MvpAgent` spawns a
 //!   per-session gateway bridge actor and routes prompts through it.
-//!   When unset, sessions created in gateway mode fall back to [`GrokBuildEnvironment::gateway_ws_url`] and everything else stays in local mode.
+//!   When unset, sessions created in gateway mode fall back to [`EzerBuildEnvironment::gateway_ws_url`] and everything else stays in local mode.
 pub use ezer_env::{
-    GrokBuildEnvironment, PROD_ASSET_SERVER_URL, PROD_CLI_CHAT_PROXY_BASE_URL, PROD_GATEWAY_WS_URL,
+    EzerBuildEnvironment, PROD_ASSET_SERVER_URL, PROD_CLI_CHAT_PROXY_BASE_URL, PROD_GATEWAY_WS_URL,
     PROD_RELAY_WS_URL, PROD_WS_ORIGIN, xai_login_enabled,
 };
 /// Public Computer Hub WebSocket URL used by the local-workspace supervisor (`workspace_server --hub-url`) when `agent_config.hub.url` is unset.
-pub const PROD_COMPUTER_HUB_WS_URL: &str = "wss://computer-hub.grok.com/v1/tools";
+/// Empty in BYOK builds. Set `EZER_PRODUCTION_GATEWAY_WS_URL` / workspace hub
+/// config when an operator truly needs a remote hub.
+pub const PROD_COMPUTER_HUB_WS_URL: &str = "";
 #[cfg(any(test, feature = "test-support"))]
 pub use ezer_env::EnvVarGuard;
 /// Env var that opts a process into gateway-bridge mode.

@@ -717,7 +717,7 @@ impl MockInferenceServer {
                     }
                 }),
             )
-            // The shell POSTs `{GROK_FEEDBACK_BASE_URL}/feedback`, and the sandbox points that base at `url()` (which ends in `/v1`)
+            // The shell POSTs `{EZER_FEEDBACK_BASE_URL}/feedback`, and the sandbox points that base at `url()` (which ends in `/v1`)
             // `/v1/feedback/{config,requests}` are deliberately unrouted: the shell treats their 404 as an old proxy
             .route(
                 "/v1/feedback",
@@ -729,7 +729,7 @@ impl MockInferenceServer {
                     }
                 }),
             )
-            // Product telemetry POSTs `GROK_TELEMETRY_EVENTS_URL` verbatim; tests point it at `{url()}/events`
+            // Product telemetry POSTs `EZER_TELEMETRY_EVENTS_URL` verbatim; tests point it at `{url()}/events`
             .route(
                 "/v1/events",
                 post({

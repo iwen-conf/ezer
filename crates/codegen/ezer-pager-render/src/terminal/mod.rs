@@ -89,7 +89,7 @@ pub enum TerminalName {
     JetBrains,
     /// ezer Desktop (Electron app).
     #[strum(to_string = "ezer Desktop")]
-    GrokDesktop,
+    EzerDesktop,
     /// VTE-based terminal (GNOME Terminal, kgx/GNOME Console, Tilix, etc.).
     #[strum(to_string = "VTE")]
     Vte,
@@ -124,7 +124,7 @@ impl TerminalName {
     pub fn is_xtermjs_embed(self) -> bool {
         matches!(
             self,
-            Self::VsCode | Self::Cursor | Self::Windsurf | Self::GrokDesktop
+            Self::VsCode | Self::Cursor | Self::Windsurf | Self::EzerDesktop
         )
     }
 
@@ -888,7 +888,7 @@ fn terminal_name_from_term_program(value: &str) -> Option<TerminalName> {
         "rio" => Some(TerminalName::Rio),
         "terminator" => Some(TerminalName::Terminator),
         "zed" => Some(TerminalName::Zed),
-        "grokdesktop" => Some(TerminalName::GrokDesktop),
+        "ezerdesktop" => Some(TerminalName::EzerDesktop),
         "windowsterminal" => Some(TerminalName::WindowsTerminal),
         "otty" => Some(TerminalName::Otty),
         _ => None,

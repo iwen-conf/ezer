@@ -5,7 +5,7 @@ use super::common::*;
 use super::scroll::*;
 
 // Env-forced scroll settings reach the live scroll config. Those overrides must price a 3-event
-// burst at exactly 3 rows, one row per event. Without GROK_SCROLL_LINES=1, Zed's wheel profile
+// burst at exactly 3 rows, one row per event. Without EZER_SCROLL_LINES=1, Zed's wheel profile
 // prices the burst at 3 lines per event, 9 rows total.
 
 /// 120 one-row markers overflow the 50-row PTY, so the early markers sit above the visible top.

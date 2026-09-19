@@ -1409,9 +1409,9 @@ mod tests {
     #[test]
     fn task_tool_input_model_parses_explicit() {
         let input: TaskToolInput =
-            serde_json::from_str(r#"{"description": "d", "prompt": "p", "model": "grok-3"}"#)
+            serde_json::from_str(r#"{"description": "d", "prompt": "p", "model": "test-model-3"}"#)
                 .unwrap();
-        assert_eq!(input.model.as_deref(), Some("grok-3"));
+        assert_eq!(input.model.as_deref(), Some("test-model-3"));
     }
 
     #[test]
@@ -1499,12 +1499,12 @@ mod tests {
     #[test]
     fn sanitize_optional_arg_moves_when_no_trim() {
         assert_eq!(
-            sanitize_optional_arg(Some("grok-3".into())).as_deref(),
-            Some("grok-3")
+            sanitize_optional_arg(Some("test-model-3".into())).as_deref(),
+            Some("test-model-3")
         );
         assert_eq!(
-            sanitize_optional_arg(Some("  grok-3  ".into())).as_deref(),
-            Some("grok-3")
+            sanitize_optional_arg(Some("  test-model-3  ".into())).as_deref(),
+            Some("test-model-3")
         );
         assert!(sanitize_optional_arg(Some("null".into())).is_none());
         assert!(sanitize_optional_arg(Some("  NULL  ".into())).is_none());

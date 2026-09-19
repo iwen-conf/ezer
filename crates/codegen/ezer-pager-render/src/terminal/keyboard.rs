@@ -102,7 +102,7 @@ fn macos_capabilities(brand: TerminalName) -> KeyboardCapabilities {
         // Apple Terminal: Cmd+Bsp is captured by the window manager
         // Opt+Bsp and modified Enter are dropped; CG can rescue both.
         TerminalName::AppleTerminal => (Unrecoverable, Dropped, Dropped),
-        TerminalName::GrokDesktop => (Unknown, Unknown, Unknown),
+        TerminalName::EzerDesktop => (Unknown, Unknown, Unknown),
         // VTE-based terminals (incl. Terminator) on macOS are unusual; classify when we have evidence rather than guessing.
         TerminalName::Vte | TerminalName::Terminator => (Unknown, Unknown, Unknown),
         // JetBrains JediTerm: no KKP, no CG rescue, and no way to probe capabilities at runtime (no TERM_FEATURES, XTVERSION leaks)
@@ -182,7 +182,7 @@ mod tests {
     fn unknown_brands_skip_rescue() {
         for brand in [
             TerminalName::Unknown,
-            TerminalName::GrokDesktop,
+            TerminalName::EzerDesktop,
             TerminalName::Vte,
             TerminalName::JetBrains,
         ] {

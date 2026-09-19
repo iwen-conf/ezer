@@ -4,8 +4,8 @@
 //! Everything here is generic over [`CompactionItem`](crate::CompactionItem)
 //! / [`CompactionItemBuilder`](crate::CompactionItemBuilder) or pure
 //! string/text manipulation. Harness-bound extraction (ezer chat's
-//! `GrokConversation` traversal, `ChatCompletionRequest` user-message
-//! extraction, `GrokMessage` assembly) stays in the harness crate.
+//! `EzerConversation` traversal, `ChatCompletionRequest` user-message
+//! extraction, `EzerMessage` assembly) stays in the harness crate.
 
 pub mod filter;
 pub mod prompt;

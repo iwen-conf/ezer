@@ -44,10 +44,10 @@ pub fn section_key(section: &McpSectionId) -> String {
     }
 }
 
-/// Display label for a section header, e.g. `"Managed by grok.com (3)"`.
+/// Display label for a section header, e.g. `"Managed remotely (3)"`.
 pub fn section_label(section: &McpSectionId, count: usize) -> String {
     match section {
-        McpSectionId::Managed => format!("Managed by grok.com ({count})"),
+        McpSectionId::Managed => format!("Managed remotely ({count})"),
         McpSectionId::Plugin(name) => format!("Plugin: {name} ({count})"),
         McpSectionId::Local => format!("Local ({count})"),
     }
@@ -57,8 +57,8 @@ pub fn section_label(section: &McpSectionId, count: usize) -> String {
 /// it so the list footer, the overlay footer, and telemetry cannot drift apart.
 pub const MCP_SERVERS_REFRESH_KEY: char = 'r';
 
-/// Base grok.com connectors URL (no team). Prefer [`managed_connectors_url`] when opening.
-pub const MANAGED_SECTION_CONNECTORS_URL: &str = "https://grok.com/connectors";
+/// Base ezer.com connectors URL (no team). Prefer [`managed_connectors_url`] when opening.
+pub const MANAGED_SECTION_CONNECTORS_URL: &str = "";
 
 /// Connectors deep link, appending percent-encoded `teamId` when the session is a team principal.
 pub fn managed_connectors_url(team_id: Option<&str>) -> String {
@@ -385,7 +385,7 @@ pub fn convert_list_response(resp: McpsListResponse) -> Vec<McpServerInfo> {
     servers
 }
 
-/// Patch a single server row in-place from an `x.ai/mcp/server_status` push. When duplicate names
+/// Patch a single server row in-place from an `ezer/mcp/server_status` push. When duplicate names
 /// exist, only the first occurrence is mutated.
 pub fn patch_server_row(
     servers: &mut [McpServerInfo],
@@ -523,7 +523,7 @@ mod tests {
             "should mention Ctrl+O shortcut: {first}"
         );
         // URL sits alone on the second line, scheme-stripped and bracket-highlighted.
-        assert_eq!(second, "[grok.com/connectors]");
+        assert_eq!(second, "[ezer.com/connectors]");
         assert!(
             !second.contains("https://"),
             "displayed URL should drop the scheme: {second}"
@@ -531,16 +531,16 @@ mod tests {
         let with_team = section_description_lines(&McpSectionId::Managed, Some("team-1"));
         assert_eq!(
             with_team.get(1).map(String::as_str),
-            Some("[grok.com/connectors?teamId=team-1]")
+            Some("[ezer.com/connectors?teamId=team-1]")
         );
     }
 
     #[test]
     fn managed_connectors_url_display_strips_scheme() {
-        assert_eq!(managed_connectors_url_display(None), "grok.com/connectors");
+        assert_eq!(managed_connectors_url_display(None), "ezer.com/connectors");
         assert_eq!(
             managed_connectors_url_display(Some("team-uuid-1")),
-            "grok.com/connectors?teamId=team-uuid-1"
+            "ezer.com/connectors?teamId=team-uuid-1"
         );
     }
 
@@ -581,8 +581,8 @@ mod tests {
     }
 
     #[test]
-    fn section_for_grok_com_local_name_is_local() {
-        let server = server_from_wire("grok_com_linear", Some("local"), None);
+    fn section_for_ezer_com_local_name_is_local() {
+        let server = server_from_wire("ezer_com_linear", Some("local"), None);
         assert_eq!(section_for(&server), McpSectionId::Local);
     }
 
@@ -608,8 +608,8 @@ mod tests {
     }
 
     #[test]
-    fn is_removable_allows_grok_com_local_name() {
-        let server = server_from_wire("grok_com_slack", Some("local"), None);
+    fn is_removable_allows_ezer_com_local_name() {
+        let server = server_from_wire("remote_slack", Some("local"), None);
         assert!(is_removable(&server));
     }
 
@@ -631,7 +631,7 @@ mod tests {
         );
         assert!(gateway.is_managed_gateway);
 
-        let legacy_managed = server_from_wire("grok_com_slack", Some("managed"), None);
+        let legacy_managed = server_from_wire("remote_slack", Some("managed"), None);
         assert!(!legacy_managed.is_managed_gateway);
     }
 

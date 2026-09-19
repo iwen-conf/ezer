@@ -8,7 +8,7 @@
 //! The mirror of phase 3 (a provider that blocks until it is killed, leaving no verdict behind) is a unit test (`auth::manager::remedy`).
 //! Driving it here would buy the same assertions for two more timeout budgets of wall clock.
 //!
-//! One `#[test]`: the phases share one process-global `GROK_HOME` and env, so nothing else may run concurrently.
+//! One `#[test]`: the phases share one process-global `EZER_HOME` and env, so nothing else may run concurrently.
 #![cfg(unix)]
 
 use std::path::Path;
@@ -35,7 +35,7 @@ const FRESH_TOKEN: &str = "fresh-token-the-provider-cannot-mint";
 const STALE_TOKEN: &str = "stale-external-token";
 const PROVIDER_LABEL: &str = "Acme SSO";
 
-/// Records `x.ai/session/update` payloads so a phase can read the terminal `retryState`.
+/// Records `ezer/session/update` payloads so a phase can read the terminal `retryState`.
 #[derive(Clone, Default)]
 struct Capture {
     updates: std::rc::Rc<std::cell::RefCell<Vec<serde_json::Value>>>,
@@ -115,7 +115,7 @@ impl acp::Client for QuietClient {
 }
 
 /// Written under the legacy scope key, which `lookup_auth` falls back to for any configured scope.
-fn seed_credential(grok_home: &Path, expires_at: chrono::DateTime<chrono::Utc>) {
+fn seed_credential(ezer_home: &Path, expires_at: chrono::DateTime<chrono::Utc>) {
     let auth = json!({
         "https://accounts.x.ai/sign-in": {
             "key": STALE_TOKEN,
@@ -126,9 +126,9 @@ fn seed_credential(grok_home: &Path, expires_at: chrono::DateTime<chrono::Utc>) 
             "expires_at": expires_at.to_rfc3339(),
         }
     });
-    std::fs::create_dir_all(grok_home).expect("create ezer home");
+    std::fs::create_dir_all(ezer_home).expect("create ezer home");
     std::fs::write(
-        grok_home.join("auth.json"),
+        ezer_home.join("auth.json"),
         serde_json::to_string_pretty(&auth).expect("serialize auth.json"),
     )
     .expect("write auth.json");
@@ -136,10 +136,10 @@ fn seed_credential(grok_home: &Path, expires_at: chrono::DateTime<chrono::Utc>) 
 
 /// A provider that can only sign the user in interactively.
 /// It prints its SSO link to stderr and exits non-zero, like a real device-code helper with no human at the keyboard.
-fn write_interactive_only_provider(grok_home: &Path) -> String {
+fn write_interactive_only_provider(ezer_home: &Path) -> String {
     use std::os::unix::fs::PermissionsExt;
 
-    let script = grok_home.join("acme-auth.sh");
+    let script = ezer_home.join("acme-auth.sh");
     std::fs::write(
         &script,
         "#!/bin/sh\n\
@@ -221,8 +221,8 @@ async fn connect(
     (client_conn, init)
 }
 
-fn provider_runs(grok_home: &Path) -> usize {
-    std::fs::read_to_string(grok_home.join("provider-runs"))
+fn provider_runs(ezer_home: &Path) -> usize {
+    std::fs::read_to_string(ezer_home.join("provider-runs"))
         .map(|s| s.lines().count())
         .unwrap_or(0)
 }
@@ -269,18 +269,18 @@ fn expired_external_credential_routes_to_the_provider_login_flow() {
         ))
         .expect("mock server");
 
-    let grok_home = TempDir::new().expect("ezer home");
+    let ezer_home = TempDir::new().expect("ezer home");
     let workdir = TempDir::new().expect("workdir");
     seed_credential(
-        grok_home.path(),
+        ezer_home.path(),
         chrono::Utc::now() - chrono::Duration::hours(1),
     );
-    let provider = write_interactive_only_provider(grok_home.path());
+    let provider = write_interactive_only_provider(ezer_home.path());
 
     // SAFETY: the only other live threads are the mock runtime's HTTP workers,
     // which never read the process environment.
     unsafe {
-        std::env::set_var("GROK_HOME", grok_home.path());
+        std::env::set_var("EZER_HOME", ezer_home.path());
         std::env::set_var("EZER_CLI_CHAT_PROXY_BASE_URL", server.url());
         std::env::set_var("EZER_XAI_API_BASE_URL", server.url());
         std::env::set_var("EZER_MODELS_BASE_URL", server.url());
@@ -311,7 +311,7 @@ fn expired_external_credential_routes_to_the_provider_login_flow() {
         let methods = advertised(&init);
         assert_eq!(
             methods.first().map(|(id, _)| id.as_str()),
-            Some("grok.com"),
+            Some("example.test"),
             "an expired credential the provider cannot renew must advertise the \
              login method first, not `cached_token`; got {methods:?}"
         );
@@ -325,7 +325,7 @@ fn expired_external_credential_routes_to_the_provider_login_flow() {
             "the dead bearer must not be offered at all; got {methods:?}"
         );
         // Startup makes several `auth()` calls in quick succession (the silent refresh, the login-method advertisement). Only the first runs the binary: a non-timeout failure is transient and the refresher's strike ladder puts every call inside the following cooldown on a no-run transient, so the budget is spent on the clock, not on the call rate.
-        let startup_runs = provider_runs(grok_home.path());
+        let startup_runs = provider_runs(ezer_home.path());
         assert_eq!(
             startup_runs, 1,
             "startup owes the provider exactly one headless attempt; the calls that \
@@ -333,7 +333,7 @@ fn expired_external_credential_routes_to_the_provider_login_flow() {
         );
 
         // Phase 2: parity with a launch that has no credential at all
-        std::fs::remove_file(grok_home.path().join("auth.json")).expect("remove auth.json");
+        std::fs::remove_file(ezer_home.path().join("auth.json")).expect("remove auth.json");
         let (_conn, init) = connect("external-auth-cold", Capture::default()).await;
         assert_eq!(
             advertised(&init),
@@ -341,7 +341,7 @@ fn expired_external_credential_routes_to_the_provider_login_flow() {
             "an expired credential must be treated exactly like no credential"
         );
         assert_eq!(
-            provider_runs(grok_home.path()),
+            provider_runs(ezer_home.path()),
             startup_runs,
             "with nothing to refresh there is no headless attempt to make; the \
              binary runs when the client starts the login flow"
@@ -349,7 +349,7 @@ fn expired_external_credential_routes_to_the_provider_login_flow() {
 
         // Phase 3: mid-session, a credential that has not locally expired but that the backend rejects
         seed_credential(
-            grok_home.path(),
+            ezer_home.path(),
             chrono::Utc::now() + chrono::Duration::hours(1),
         );
         let capture = Capture::default();

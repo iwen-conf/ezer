@@ -16,7 +16,7 @@ use super::{
 };
 use crate::agent::config::{self, ModelEntry, resolve_credentials, sampling_config_for_model};
 use crate::sampling::SamplerConfig as SamplingConfig;
-use ezer_login::{AuthManager, GrokAuth, GrokComConfig};
+use ezer_login::{AuthManager, EzerAuth, EzerComConfig};
 use ezer_sampling_types::{ReasoningEffort, ReasoningEffortOption};
 
 #[derive(Clone)]
@@ -132,10 +132,10 @@ impl Drop for FetchAttemptGuard {
 
 impl Default for ModelsManager {
     fn default() -> Self {
-        let grok_home = crate::util::grok_home::grok_home();
+        let ezer_home = crate::util::ezer_home::ezer_home();
         let auth_manager = Arc::new(AuthManager::new_with_proxy_base_url(
-            &grok_home,
-            GrokComConfig::default(),
+            &ezer_home,
+            EzerComConfig::default(),
             crate::agent::config::EndpointsConfig::from_effective_config().proxy_url(),
         ));
         Self::new(
@@ -729,7 +729,7 @@ impl ModelsManager {
                 acp::SessionModelState::new(current, available.values().cloned().collect());
             if let Ok(params) = serde_json::value::to_raw_value(&model_state) {
                 gw.forward_fire_and_forget(acp::ExtNotification::new(
-                    "x.ai/models/update",
+                    "ezer/models/update",
                     params.into(),
                 ));
             }
@@ -999,15 +999,15 @@ impl ModelsManager {
     }
 
     /// A hung IdP on a cold cache degrades to a session-less fetch instead of stalling boot; the catalog stays and the next refresh retries.
-    async fn bounded_startup_auth(auth_manager: &Arc<AuthManager>) -> Option<GrokAuth> {
+    async fn bounded_startup_auth(auth_manager: &Arc<AuthManager>) -> Option<EzerAuth> {
         Self::bounded_auth_refresh(async { auth_manager.auth().await.ok() }).await
     }
 
     /// Bounds an auth-refresh future to `STARTUP_AUTH_REFRESH_TIMEOUT`, yielding `None` on timeout.
     /// Split out so the timeout contract is unit-testable without a live IdP.
-    async fn bounded_auth_refresh<F>(fut: F) -> Option<GrokAuth>
+    async fn bounded_auth_refresh<F>(fut: F) -> Option<EzerAuth>
     where
-        F: std::future::Future<Output = Option<GrokAuth>>,
+        F: std::future::Future<Output = Option<EzerAuth>>,
     {
         match tokio::time::timeout(crate::http::STARTUP_AUTH_REFRESH_TIMEOUT, fut).await {
             Ok(auth) => auth,

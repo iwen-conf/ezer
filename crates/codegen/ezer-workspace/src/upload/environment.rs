@@ -59,7 +59,7 @@ impl WorkspaceIdentity {
     }
 
     /// The team id **iff** this is a team principal: `None` for `"User"` principals even if `principal_id` is populated (per the wire contract).
-    /// The standalone server's `AuthEntry` never carries the shell's separate `GrokAuth.team_id`, so `team_id` derives from `principal_id`.
+    /// The standalone server's `AuthEntry` never carries the shell's separate `EzerAuth.team_id`, so `team_id` derives from `principal_id`.
     /// For a Team principal `principal_id` *is* the team id.
     pub(crate) fn team_id(&self) -> Option<String> {
         self.is_team().then(|| self.principal_id.clone()).flatten()

@@ -355,28 +355,28 @@ struct SubagentMetaSlice {
 
 /// ezer home for the replay path (overridable in tests).
 #[cfg(not(test))]
-fn effective_grok_home() -> std::path::PathBuf {
-    ezer_shell::util::grok_home::grok_home()
+fn effective_ezer_home() -> std::path::PathBuf {
+    ezer_shell::util::ezer_home::ezer_home()
 }
 
 #[cfg(test)]
 thread_local! {
-    static REPLAY_GROK_HOME: std::cell::RefCell<Option<std::path::PathBuf>> =
+    static REPLAY_EZER_HOME: std::cell::RefCell<Option<std::path::PathBuf>> =
         const { std::cell::RefCell::new(None) };
 }
 
 /// Override ezer home for disk-replay unit tests (thread-local).
 #[cfg(test)]
-pub(crate) fn set_replay_grok_home_for_tests(home: Option<std::path::PathBuf>) {
-    REPLAY_GROK_HOME.with(|h| *h.borrow_mut() = home);
+pub(crate) fn set_replay_ezer_home_for_tests(home: Option<std::path::PathBuf>) {
+    REPLAY_EZER_HOME.with(|h| *h.borrow_mut() = home);
 }
 
 #[cfg(test)]
-fn effective_grok_home() -> std::path::PathBuf {
-    if let Some(home) = REPLAY_GROK_HOME.with(|h| h.borrow().clone()) {
+fn effective_ezer_home() -> std::path::PathBuf {
+    if let Some(home) = REPLAY_EZER_HOME.with(|h| h.borrow().clone()) {
         return home;
     }
-    ezer_shell::util::grok_home::grok_home()
+    ezer_shell::util::ezer_home::ezer_home()
 }
 
 /// Best-effort enrichment from the shell's on-disk `meta.json`.
@@ -385,16 +385,16 @@ pub(crate) fn enrich_from_meta(
     parent_cwd: &std::path::Path,
     parent_session_id: &str,
 ) {
-    enrich_from_meta_with_home(info, &effective_grok_home(), parent_cwd, parent_session_id);
+    enrich_from_meta_with_home(info, &effective_ezer_home(), parent_cwd, parent_session_id);
 }
 
 fn enrich_from_meta_with_home(
     info: &mut SubagentInfo,
-    grok_home: &std::path::Path,
+    ezer_home: &std::path::Path,
     parent_cwd: &std::path::Path,
     parent_session_id: &str,
 ) {
-    let meta_path = grok_home
+    let meta_path = ezer_home
         .join("sessions")
         .join(urlencoding::encode(&parent_cwd.to_string_lossy()).as_ref())
         .join(parent_session_id)
@@ -433,7 +433,7 @@ fn replay_inherited_updates(
     child_cwd: Option<&std::path::Path>,
     fallback: ReplayLookupFallback,
 ) -> std::io::Result<ReplayEmission> {
-    let home = effective_grok_home();
+    let home = effective_ezer_home();
     let hint = ReplayPathHint {
         parent_cwd: Some(parent_cwd),
         child_cwd,
@@ -834,7 +834,7 @@ pub(crate) fn evict_finished_child_view(
             fallback: ReplayLookupFallback::HintedOnly,
         };
         // Anything short of proof keeps the only copy as NeedsReplay, so a late flush is still picked up
-        if !replay_would_emit(child_sid, &effective_grok_home(), hint).unwrap_or(false) {
+        if !replay_would_emit(child_sid, &effective_ezer_home(), hint).unwrap_or(false) {
             return EvictOutcome::Retained;
         }
     }

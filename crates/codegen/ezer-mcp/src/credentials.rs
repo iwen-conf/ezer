@@ -211,7 +211,7 @@ impl McpCredentialStore {
 
     /// Default path: `$EZER_HOME/mcp_credentials.json`.
     fn default_path() -> Option<PathBuf> {
-        Some(ezer_config::user_grok_home()?.join(CREDENTIALS_FILENAME))
+        Some(ezer_config::user_ezer_home()?.join(CREDENTIALS_FILENAME))
     }
 }
 

@@ -1172,7 +1172,7 @@ pub enum IdleWithholdReason {
     PreviewAttached,
     /// Recent `Routed` preview traffic — a human loading the app.
     PreviewRouted,
-    /// Only the preview pane's own `/__grok-preview/status` liveness poll.
+    /// Only the preview pane's own `/__ezer-preview/status` liveness poll.
     PreviewStatusOnly,
     /// A recent client-driven mutation RPC (file write, git commit, …) — a
     /// human working on the workspace through its RPC surface rather than
@@ -1928,7 +1928,7 @@ mod tests {
             ".hidden",
             "trailing.",
             "Grove.Daemon",
-            "grok_files.occ",
+            "ezer_files.occ",
             "-lead.ing",
             "trail-.ing",
             "seg..empty",

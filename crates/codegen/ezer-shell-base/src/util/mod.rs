@@ -1,7 +1,7 @@
 pub mod changelog;
 pub mod dual_clock;
 pub mod event_id;
-pub mod grok_home;
+pub mod ezer_home;
 pub mod secure_file;
 pub mod subprocess;
 pub mod tips;
@@ -296,7 +296,7 @@ pub fn process_cmdline_args(pid: u32) -> Option<Vec<String>> {
 }
 /// True if `pid` is an ezer process; pairs with [`kill_process_by_pid`] to avoid killing a recycled PID.
 /// Best-effort on macOS/BSD (liveness-only via `kill -0`), exact on Linux (/proc cmdline) and Windows (image path).
-pub fn is_grok_process(pid: u32) -> bool {
+pub fn is_ezer_process(pid: u32) -> bool {
     #[cfg(target_os = "linux")]
     {
         let cmdline_path = format!("/proc/{pid}/cmdline");
@@ -349,9 +349,9 @@ pub fn is_grok_process(pid: u32) -> bool {
         cmd.status().is_ok_and(|s| s.success())
     }
 }
-/// Stricter [`is_grok_process`] for the path that auto-kills zombie leaders. On macOS/BSD it matches the name via `ps` instead of liveness-only, so it never SIGKILLs a recycled PID now owned by an unrelated process.
-/// Linux/Windows already match exactly, so this delegates there. Use the permissive [`is_grok_process`] for operator-driven `ezer leaders kill`.
-pub fn is_grok_process_strict(pid: u32) -> bool {
+/// Stricter [`is_ezer_process`] for the path that auto-kills zombie leaders. On macOS/BSD it matches the name via `ps` instead of liveness-only, so it never SIGKILLs a recycled PID now owned by an unrelated process.
+/// Linux/Windows already match exactly, so this delegates there. Use the permissive [`is_ezer_process`] for operator-driven `ezer leaders kill`.
+pub fn is_ezer_process_strict(pid: u32) -> bool {
     #[cfg(all(not(target_os = "linux"), not(windows)))]
     {
         let mut cmd = std::process::Command::new("ps");
@@ -375,7 +375,7 @@ pub fn is_grok_process_strict(pid: u32) -> bool {
     }
     #[cfg(any(target_os = "linux", windows))]
     {
-        is_grok_process(pid)
+        is_ezer_process(pid)
     }
 }
 #[cfg(test)]
@@ -384,7 +384,7 @@ mod tests {
     #[test]
     fn test_is_cli_chat_proxy_url_accepts_proxy_subpath() {
         assert!(is_cli_chat_proxy_url(
-            "https://cli-chat-proxy.grok.com/v1/chat/completions"
+            "https://proxy.example.test/v1/chat/completions"
         ));
     }
     #[test]
@@ -394,13 +394,13 @@ mod tests {
     #[test]
     fn test_is_cli_chat_proxy_url_rejects_spoofed_hostname() {
         assert!(!is_cli_chat_proxy_url(
-            "https://cli-chat-proxy.grok.com.evil.example/v1"
+            "https://proxy.example.test.evil.example/v1"
         ));
     }
     #[test]
     fn test_is_cli_chat_proxy_url_rejects_v11_prefix_confusion() {
         assert!(!is_cli_chat_proxy_url(
-            "https://cli-chat-proxy.grok.com/v11/chat/completions"
+            "https://proxy.example.test/v11/chat/completions"
         ));
     }
     #[test]
@@ -409,14 +409,14 @@ mod tests {
         assert!(is_xai_api_url("https://api.x.ai/v1/chat/completions"));
         assert!(is_xai_api_url("https://x.ai"));
         assert!(is_xai_api_url(
-            "https://cli-chat-proxy.grok.com/v1/chat/completions"
+            "https://proxy.example.test/v1/chat/completions"
         ));
         assert!(!is_xai_api_url("https://api.openai.com/v1"));
         assert!(!is_xai_api_url("https://api.anthropic.com/v1"));
         assert!(!is_xai_api_url("https://generativelanguage.googleapis.com"));
         assert!(!is_xai_api_url("https://api.x.ai.evil.example/v1"));
         assert!(!is_xai_api_url("https://evil-x.ai.attacker.com/v1"));
-        assert!(!is_xai_api_url("https://prefixx.ai/v1"));
+        assert!(!is_xai_api_url("https://prefixezer/v1"));
         assert!(!is_xai_api_url("not-a-url"));
         assert!(!is_xai_api_url(""));
         assert!(is_xai_api_url("http://api.x.ai/v1"));
@@ -478,14 +478,14 @@ mod tests {
         );
     }
     #[test]
-    fn is_grok_process_self_true_impossible_pid_false() {
-        assert!(is_grok_process(std::process::id()));
-        assert!(!is_grok_process(u32::MAX));
+    fn is_ezer_process_self_true_impossible_pid_false() {
+        assert!(is_ezer_process(std::process::id()));
+        assert!(!is_ezer_process(u32::MAX));
     }
     #[test]
-    fn is_grok_process_strict_self_true_impossible_pid_false() {
-        assert!(is_grok_process_strict(std::process::id()));
-        assert!(!is_grok_process_strict(u32::MAX));
+    fn is_ezer_process_strict_self_true_impossible_pid_false() {
+        assert!(is_ezer_process_strict(std::process::id()));
+        assert!(!is_ezer_process_strict(u32::MAX));
     }
     #[cfg(unix)]
     #[test]

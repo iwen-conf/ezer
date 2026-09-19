@@ -19,7 +19,7 @@ use ezer_workspace_daemon::preview_supervisor::{
 };
 /// OTLP `service.name` for this binary's exported traces/logs/metrics and direct-OTLP fastrace export.
 /// Single source so the call sites can't drift.
-const SERVICE_NAME: &str = "prod_grok_workspace";
+const SERVICE_NAME: &str = "prod_ezer_workspace";
 const EXIT_SERVER_ID_INVALID: i32 = 3;
 const INVALID_SERVER_ID_MARKER: &str = "workspace-server: invalid --server-id";
 const WORKSPACE_HUB_AUTH_FAILED_MARKER: &str = "workspace hub auth failed";
@@ -71,7 +71,7 @@ struct Args {
     /// Legacy binaries reject the unknown flag via clap (non-zero exit), giving the launcher a definitive feature probe.
     #[arg(long)]
     capabilities: bool,
-    #[arg(long, default_value = "wss://computer-hub.grok.com/v1/tools")]
+    #[arg(long, default_value = "")]
     hub_url: String,
     #[arg(long)]
     auth_config: Option<PathBuf>,
@@ -123,7 +123,7 @@ struct Args {
         action = clap::ArgAction::Set,
     )]
     project_lsp_trusted: bool,
-    /// Confine `x.ai/fs/*` resolution to the workspace root (reject `..`, absolute-outside-root, symlink escapes).
+    /// Confine `ezer/fs/*` resolution to the workspace root (reject `..`, absolute-outside-root, symlink escapes).
     /// On by default: the standalone server always backs a remote-sandbox workspace, a real tenant boundary.
     /// Override with `EZER_WORKSPACE_CONFINE_FS_TO_ROOT=false` (e.g. local dev).
     #[arg(
@@ -873,7 +873,7 @@ mod tests {
     }
     #[test]
     fn project_lsp_trust_defaults_off_and_is_opt_in() {
-        unsafe { std::env::remove_var("GROK_WORKSPACE_PROJECT_LSP_TRUSTED") };
+        unsafe { std::env::remove_var("EZER_WORKSPACE_PROJECT_LSP_TRUSTED") };
         let args = Args::try_parse_from(["xai-workspace-server"]).unwrap();
         assert!(!args.project_lsp_trusted);
         let args = Args::try_parse_from(["xai-workspace-server", "--project-lsp-trusted", "true"])
@@ -988,7 +988,7 @@ mod tests {
             "--preview-instance-suffix",
             ".inst.example",
             "--preview-auth-redirect",
-            "https://grok.com/preview-auth",
+            "https://example.test/preview-auth",
             "--preview-allow-public",
             "--preview-workspace-server-port",
             "8470",
@@ -1005,7 +1005,7 @@ mod tests {
         assert_eq!(cfg.instance_suffix.as_deref(), Some(".inst.example"));
         assert_eq!(
             cfg.auth_redirect.as_deref(),
-            Some("https://grok.com/preview-auth")
+            Some("https://example.test/preview-auth")
         );
         assert!(cfg.allow_public);
         assert_eq!(cfg.workspace_server_port, Some(8470));
@@ -1022,7 +1022,7 @@ mod tests {
                 "--instance-suffix",
                 ".inst.example",
                 "--auth-redirect",
-                "https://grok.com/preview-auth",
+                "https://example.test/preview-auth",
                 "--allow-public",
                 "--workspace-server-port",
                 "8470",

@@ -153,11 +153,11 @@ pub enum TraceUploadReason {
     ZdrTeam,
     /// `[telemetry] trace_upload = false` in config.
     FeatureOff,
-    /// No grok.com auth or deployment key.
+    /// No ezer.com auth or deployment key.
     NoCredentials,
     /// Direct-to-bucket S3 upload.
     DirectS3,
-    /// Proxy mode via grok.com auth.
+    /// Proxy mode via ezer.com auth.
     Proxy,
     /// Direct GCS with service account key.
     DirectGcs,
@@ -199,7 +199,7 @@ mod tests {
             max_exact_sequence_tokens: Some(42),
             max_exact_repeat_count: Some(3),
             recovery_attempts: 1,
-            model: "grok-4.6".to_string(),
+            model: "test-model-4.6".to_string(),
         })
         .unwrap();
         assert_eq!(
@@ -214,7 +214,7 @@ mod tests {
                 "max_exact_sequence_tokens": 42,
                 "max_exact_repeat_count": 3,
                 "recovery_attempts": 1,
-                "model": "grok-4.6",
+                "model": "test-model-4.6",
             })
         );
     }
@@ -229,7 +229,7 @@ mod tests {
         );
         let value = serde_json::to_value(super::SessionContextSnapshot {
             session_id: "s1".to_string(),
-            model_id: "grok-4".to_string(),
+            model_id: "test-model-4".to_string(),
             context_window: 1_000_000,
             used_tokens: 40_000,
             usage_pct: 4,
@@ -252,7 +252,7 @@ mod tests {
             value,
             serde_json::json!({
                 "session_id": "s1",
-                "model_id": "grok-4",
+                "model_id": "test-model-4",
                 "context_window": 1_000_000,
                 "used_tokens": 40_000,
                 "usage_pct": 4,
@@ -284,7 +284,7 @@ mod tests {
             attempts: 2,
             accepted_after_budget: true,
             top_trigger: Some("tail_repetition:4@thinking".to_string()),
-            model: "grok-4.5".to_string(),
+            model: "test-model-4.5".to_string(),
         })
         .unwrap();
         assert_eq!(
@@ -295,7 +295,7 @@ mod tests {
                 "attempts": 2,
                 "accepted_after_budget": true,
                 "top_trigger": "tail_repetition:4@thinking",
-                "model": "grok-4.5",
+                "model": "test-model-4.5",
             })
         );
         let no_trigger = serde_json::to_value(super::DoomLoopRecovery {
@@ -304,7 +304,7 @@ mod tests {
             attempts: 1,
             accepted_after_budget: false,
             top_trigger: None,
-            model: "grok-4.5".to_string(),
+            model: "test-model-4.5".to_string(),
         })
         .unwrap();
         assert!(no_trigger.get("top_trigger").is_none(), "None is omitted");

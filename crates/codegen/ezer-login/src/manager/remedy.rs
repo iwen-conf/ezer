@@ -2,7 +2,7 @@
 //! bounded unattended attempt the startup paths make before asking the user.
 use super::{AuthManager, RefreshReason};
 use crate::error::AuthError;
-use crate::model::GrokAuth;
+use crate::model::EzerAuth;
 use crate::token_type::TokenType;
 use std::sync::Arc;
 use std::time::Duration;
@@ -58,8 +58,8 @@ impl AuthRemedy {
 /// Forcing a second mint after a deadline only queues behind the detached exchange for up to another full budget.
 pub enum BoundedRefresh {
     /// The chain finished inside the budget with this result.
-    /// Boxed like [`SilentRefresh::Renewed`]: `GrokAuth` is large and the other variant is unit-sized.
-    Resolved(Box<Result<GrokAuth, AuthError>>),
+    /// Boxed like [`SilentRefresh::Renewed`]: `EzerAuth` is large and the other variant is unit-sized.
+    Resolved(Box<Result<EzerAuth, AuthError>>),
     /// The spawned chain outlived the budget and continues in the background (persisting and hot-swapping any minted token when it lands).
     DeadlineElapsed,
 }
@@ -69,7 +69,7 @@ pub enum SilentRefresh {
     /// The credential [`AuthManager::auth`] vouched for, the one the next request would carry.
     /// Carried, not re-read: `auth()` also succeeds on its grace arm, serving a token still wire-valid but inside the early-invalidation buffer. [`AuthManager::current`] hides exactly that token.
     /// A caller that answered `Renewed` with `current()` would reject the session this outcome just accepted. It would also disagree with the `Failed(SelfHealing)` arm on the very same credential.
-    Renewed(Box<GrokAuth>),
+    Renewed(Box<EzerAuth>),
     Failed(AuthRemedy),
 }
 impl AuthManager {
@@ -119,7 +119,7 @@ impl AuthManager {
         token_type: TokenType,
         reason: RefreshReason,
         budget: Duration,
-    ) -> Result<GrokAuth, AuthError> {
+    ) -> Result<EzerAuth, AuthError> {
         match self
             .refresh_chain_bounded_outcome(token_type, reason, budget)
             .await
@@ -192,7 +192,7 @@ impl AuthManager {
         match (user_must_act, provider_mints_sessions) {
             (false, _) => AuthRemedy::SelfHealing,
             (true, true) => AuthRemedy::ProviderLogin {
-                label: self.grok_com_config().auth_provider_label.clone(),
+                label: self.ezer_com_config().auth_provider_label.clone(),
             },
             (true, false) => AuthRemedy::ManualLogin,
         }
@@ -203,25 +203,25 @@ mod tests {
     use super::*;
     use crate::model::AuthMode;
     use crate::refresh::{RefreshOutcome, TokenRefresher};
-    use crate::{GrokComConfig, error::RefreshTokenFailedReason};
+    use crate::{EzerComConfig, error::RefreshTokenFailedReason};
     use chrono::{Duration, Utc};
-    fn external_provider_config() -> GrokComConfig {
-        GrokComConfig {
+    fn external_provider_config() -> EzerComConfig {
+        EzerComConfig {
             auth_provider_command: Some("acme-auth".to_owned()),
             auth_provider_label: Some("Acme SSO".to_owned()),
-            ..GrokComConfig::default()
+            ..EzerComConfig::default()
         }
     }
-    fn external_credential(expires_at: chrono::DateTime<Utc>) -> GrokAuth {
-        GrokAuth {
+    fn external_credential(expires_at: chrono::DateTime<Utc>) -> EzerAuth {
+        EzerAuth {
             key: "external".into(),
             auth_mode: AuthMode::External,
             expires_at: Some(expires_at),
-            ..GrokAuth::test_default()
+            ..EzerAuth::test_default()
         }
     }
     /// Wired as production wires it, so nothing here passes on the "no refresh authority" arm.
-    fn provider_manager(dir: &std::path::Path, credential: GrokAuth) -> Arc<AuthManager> {
+    fn provider_manager(dir: &std::path::Path, credential: EzerAuth) -> Arc<AuthManager> {
         let config = external_provider_config();
         let command = config.auth_provider_command.clone();
         let manager = Arc::new(AuthManager::new(dir, config));
@@ -282,12 +282,12 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let manager = provider_manager(
             dir.path(),
-            GrokAuth {
+            EzerAuth {
                 key: "expired-oidc".into(),
                 auth_mode: AuthMode::Oidc,
                 refresh_token: Some("rt-live".into()),
                 expires_at: Some(Utc::now() - Duration::hours(1)),
-                ..GrokAuth::test_default()
+                ..EzerAuth::test_default()
             },
         );
         assert_eq!(manager.auth_remedy(), AuthRemedy::SelfHealing);
@@ -296,7 +296,7 @@ mod tests {
     #[test]
     fn expired_credential_without_a_provider_command_needs_a_manual_login() {
         let dir = tempfile::tempdir().unwrap();
-        let manager = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
+        let manager = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
         manager.hot_swap(external_credential(Utc::now() - Duration::hours(1)));
         manager.configure_refresher(None, None);
         assert_eq!(manager.auth_remedy(), AuthRemedy::SelfHealing);
@@ -319,13 +319,13 @@ mod tests {
             }
         }
         let dir = tempfile::tempdir().unwrap();
-        let manager = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
-        manager.hot_swap(GrokAuth {
+        let manager = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
+        manager.hot_swap(EzerAuth {
             key: "wire-valid".into(),
             auth_mode: AuthMode::Oidc,
             refresh_token: Some("rt-live".into()),
             expires_at: Some(Utc::now() + Duration::minutes(1)),
-            ..GrokAuth::test_default()
+            ..EzerAuth::test_default()
         });
         manager.set_refresher(Arc::new(OfflineRefresher));
         assert!(manager.current().is_none(), "the buffer hides the token");
@@ -349,23 +349,23 @@ mod tests {
         #[async_trait::async_trait]
         impl TokenRefresher for RenewingRefresher {
             async fn refresh(&self, _reason: crate::manager::RefreshReason) -> RefreshOutcome {
-                RefreshOutcome::Success(Box::new(GrokAuth {
+                RefreshOutcome::Success(Box::new(EzerAuth {
                     key: "prewarmed".into(),
                     auth_mode: AuthMode::Oidc,
                     refresh_token: Some("rt-new".into()),
                     expires_at: Some(Utc::now() + Duration::hours(1)),
-                    ..GrokAuth::test_default()
+                    ..EzerAuth::test_default()
                 }))
             }
         }
         let dir = tempfile::tempdir().unwrap();
-        let manager = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
-        manager.hot_swap(GrokAuth {
+        let manager = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
+        manager.hot_swap(EzerAuth {
             key: "expired-oidc".into(),
             auth_mode: AuthMode::Oidc,
             refresh_token: Some("rt-live".into()),
             expires_at: Some(Utc::now() - Duration::hours(1)),
-            ..GrokAuth::test_default()
+            ..EzerAuth::test_default()
         });
         manager.set_refresher(Arc::new(RenewingRefresher));
         assert!(manager.current().is_none(), "the credential starts expired");
@@ -383,7 +383,7 @@ mod tests {
             "the renewed credential must be the one startup auth() will serve"
         );
     }
-    /// spawn_grok_shell's failure path drops a DropGuard before any agent owner exists; a cancel that precedes the task's first poll must stop the prewarm before it spends a refresh attempt. Iterated so a regression to an unbiased select fails outright instead of flaking.
+    /// spawn_ezer_shell's failure path drops a DropGuard before any agent owner exists; a cancel that precedes the task's first poll must stop the prewarm before it spends a refresh attempt. Iterated so a regression to an unbiased select fails outright instead of flaking.
     #[tokio::test]
     async fn cancel_before_first_poll_stops_the_prewarm_before_it_spends_a_refresh() {
         use std::sync::atomic::{AtomicU32, Ordering};
@@ -396,13 +396,13 @@ mod tests {
             }
         }
         let dir = tempfile::tempdir().unwrap();
-        let manager = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
-        manager.hot_swap(GrokAuth {
+        let manager = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
+        manager.hot_swap(EzerAuth {
             key: "expired-oidc".into(),
             auth_mode: AuthMode::Oidc,
             refresh_token: Some("rt-live".into()),
             expires_at: Some(Utc::now() - Duration::hours(1)),
-            ..GrokAuth::test_default()
+            ..EzerAuth::test_default()
         });
         let attempts = Arc::new(AtomicU32::new(0));
         manager.set_refresher(Arc::new(CountingRefresher(attempts.clone())));
@@ -434,13 +434,13 @@ mod tests {
             }
         }
         let dir = tempfile::tempdir().unwrap();
-        let manager = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
-        manager.hot_swap(GrokAuth {
+        let manager = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
+        manager.hot_swap(EzerAuth {
             key: "expired-oidc".into(),
             auth_mode: AuthMode::Oidc,
             refresh_token: Some("rt-live".into()),
             expires_at: Some(Utc::now() - Duration::hours(1)),
-            ..GrokAuth::test_default()
+            ..EzerAuth::test_default()
         });
         manager.set_refresher(Arc::new(PanickingRefresher));
         assert!(!manager.has_permanent_failure());

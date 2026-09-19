@@ -3203,7 +3203,7 @@ fn layer_login_env_vars(
 ) {
     if let Some(login) = login_env {
         for (key, value) in login {
-            // `var_os` reads grok's own env (not the possibly-cleared child env);
+            // `var_os` reads ezer's own env (not the possibly-cleared child env);
             // the policy filters the capture so an rc export cannot bypass it.
             if key != "PATH"
                 && std::env::var_os(key).is_none()
@@ -3260,7 +3260,7 @@ fn apply_child_env(
     layer_request_env(cmd, request_env, active_policy);
     cmd.envs(crate::util::pager_env());
     layer_login_path(cmd, login_env, active_policy);
-    crate::util::apply_grok_agent_marker(cmd);
+    crate::util::apply_ezer_agent_marker(cmd);
 }
 
 /// Attaches the child to a [`ProcessGroup`] for whole-tree teardown.
@@ -3326,16 +3326,16 @@ fn spawn_shell_command(
             .stderr(Stdio::piped())
             .kill_on_drop(true);
 
-        // Mirrors the unix `apply_child_env` order; `inv.env` is grok's trusted
+        // Mirrors the unix `apply_child_env` order; `inv.env` is ezer's trusted
         // shell setup, so it is not filtered.
         let active_policy = shell_env_policy.filter(|p| !p.is_noop());
         crate::util::shell_env_policy::install_policy_base_env(&mut cmd, active_policy);
         cmd.envs(inv.env);
         layer_request_env(&mut cmd, env, active_policy);
         cmd.envs(crate::util::pager_env());
-        crate::util::apply_grok_agent_marker(&mut cmd);
+        crate::util::apply_ezer_agent_marker(&mut cmd);
         // After the env layers so a policy PATH is prepended, not replaced. A
-        // policy base env replaced the inherited one; grok's own PATH must not
+        // policy base env replaced the inherited one; ezer's own PATH must not
         // come back through the prepend (`inherit = none`, an excluded PATH).
         let path_base = if active_policy.is_some() {
             xai_tty_utils::PathBase::ExplicitOnly

@@ -52,7 +52,7 @@ fn painted_actions_state(width: u16, workspace_dashboard_enabled: bool) -> Dashb
     render_actions_only(
         &mut buf,
         area,
-        &Theme::groknight(),
+        &Theme::ezernight(),
         &mut state,
         workspace_dashboard_enabled,
     );
@@ -231,7 +231,7 @@ fn esc_from_right_hand_item_returns_to_new_agent_before_exiting() {
 /// in the same frame.
 #[test]
 fn focused_worktree_toggle_is_green_and_falls_back_when_dropped() {
-    let theme = Theme::groknight();
+    let theme = Theme::ezernight();
     let mut state = painted_actions_state(120, true);
     state.focus_action(ActionsFocus::Worktree);
     let area = Rect::new(0, 0, 120, 1);

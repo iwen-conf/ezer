@@ -5,7 +5,7 @@
 //! `settings_cache`).
 
 use tokio::sync::watch;
-use ezer_login::GrokAuth;
+use ezer_login::EzerAuth;
 
 /// Coalesces concurrent mid-session settings refreshes onto one live fetch.
 #[derive(Default)]
@@ -19,8 +19,8 @@ struct CredentialIdentity {
     key: String,
 }
 
-impl From<&GrokAuth> for CredentialIdentity {
-    fn from(auth: &GrokAuth) -> Self {
+impl From<&EzerAuth> for CredentialIdentity {
+    fn from(auth: &EzerAuth) -> Self {
         Self {
             user_id: auth.user_id.clone(),
             key: auth.key.clone(),
@@ -60,7 +60,7 @@ impl SettingsRefresh {
     /// resolve the fail-closed OTEL gate on cancellation churn.
     pub(in crate::agent) async fn refresh<F, Fut>(
         &self,
-        auth: &GrokAuth,
+        auth: &EzerAuth,
         leader: F,
     ) -> Option<crate::remote::SettingsFetch>
     where
@@ -165,7 +165,7 @@ mod tests {
                 SettingsFetch::Fetched(Box::default())
             }
         };
-        let auth = ezer_login::GrokAuth::test_default();
+        let auth = ezer_login::EzerAuth::test_default();
 
         let cluster = (0..5).map(|_| refresh.refresh(&auth, leader()));
         let outcomes = futures::future::join_all(cluster).await;
@@ -188,7 +188,7 @@ mod tests {
     #[tokio::test(flavor = "current_thread")]
     async fn dropped_leader_refetches_instead_of_gate_opening_retry() {
         let refresh = SettingsRefresh::default();
-        let auth = ezer_login::GrokAuth::test_default();
+        let auth = ezer_login::EzerAuth::test_default();
 
         let mut leader = Box::pin(refresh.refresh(&auth, std::future::pending::<SettingsFetch>));
         tokio::select! {
@@ -228,7 +228,7 @@ mod tests {
     #[tokio::test(flavor = "current_thread")]
     async fn refresh_returns_none_after_repeated_leader_drops() {
         let refresh = SettingsRefresh::default();
-        let auth = ezer_login::GrokAuth::test_default();
+        let auth = ezer_login::EzerAuth::test_default();
 
         macro_rules! new_fetch {
             () => {

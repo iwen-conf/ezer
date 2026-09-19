@@ -245,7 +245,7 @@ Below are some potentially helpful/relevant pieces of information for figuring o
         if !context.is_empty() {
             context.push_str("\n\n");
         }
-        context.push_str(&render_resource_links_grok(resource_links));
+        context.push_str(&render_resource_links_ezer(resource_links));
     }
     (context, query)
 }
@@ -344,7 +344,7 @@ fn render_regular_links(links: &[&acp::ResourceLink]) -> String {
     s.trim_end_matches('\n').to_string()
 }
 /// ezer-format resource links: `<focused_files>` / `<open_files>` with metadata inside a `<system-reminder>` wrapper.
-fn render_resource_links_grok(resource_links: &[acp::ResourceLink]) -> String {
+fn render_resource_links_ezer(resource_links: &[acp::ResourceLink]) -> String {
     let mut regular_links = Vec::new();
     let mut focused_files = Vec::new();
     let mut open_files = Vec::new();
@@ -421,7 +421,7 @@ mod tests {
         }
     }
     /// Shorthand: render and assemble for ezer mode.
-    fn render_grok(
+    fn render_ezer(
         message: &str,
         embedded: Vec<String>,
         file_refs: Vec<String>,
@@ -614,13 +614,13 @@ mod tests {
         }
     }
     #[test]
-    fn test_grok_render_plain_message() {
-        let result = render_grok("hello", vec![], vec![], &[], false);
+    fn test_ezer_render_plain_message() {
+        let result = render_ezer("hello", vec![], vec![], &[], false);
         assert_eq!(result, "<user_query>\nhello\n</user_query>");
     }
     #[test]
-    fn test_grok_render_with_attachments_uses_system_reminder_wrapper() {
-        let result = render_grok(
+    fn test_ezer_render_with_attachments_uses_system_reminder_wrapper() {
+        let result = render_ezer(
             "check this",
             vec!["embedded content".into()],
             vec![],
@@ -639,11 +639,11 @@ mod tests {
         );
     }
     #[test]
-    fn test_grok_render_user_query_first() {
+    fn test_ezer_render_user_query_first() {
         let link = acp::ResourceLink::new("doc.md", "file:///doc.md")
             .title(Some("My Doc".into()))
             .size(Some(1024));
-        let result = render_grok("hello", vec![], vec![], &[link], false);
+        let result = render_ezer("hello", vec![], vec![], &[link], false);
         let uq_pos = result.find("<user_query>").unwrap();
         let rr_pos = result.find("Referenced resources:").unwrap();
         assert!(
@@ -653,7 +653,7 @@ mod tests {
         assert!(result.contains("<system-reminder>"));
     }
     #[test]
-    fn test_grok_render_resource_links_use_focused_files_format() {
+    fn test_ezer_render_resource_links_use_focused_files_format() {
         let links = vec![
             acp::ResourceLink::new("main.rs", "file:///project/src/main.rs").meta(
                 serde_json::json!({ "source" : "editor", "fileState" : "focused",
@@ -667,7 +667,7 @@ mod tests {
                     .cloned(),
             ),
         ];
-        let result = render_grok("hello", vec![], vec![], &links, false);
+        let result = render_ezer("hello", vec![], vec![], &links, false);
         assert!(result.contains("<system-reminder>"), "got: {result}");
         assert!(result.contains("<focused_files>"), "got: {result}");
         assert!(result.contains("<open_files>"), "got: {result}");

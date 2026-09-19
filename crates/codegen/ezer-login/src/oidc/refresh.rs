@@ -1,13 +1,13 @@
 //! Pure-data OIDC refresh: talks to the IdP and returns [`OidcRefreshResult`] without touching [`AuthManager`].
 
-use super::super::GrokAuth;
-use super::protocol::{OidcError, OidcUserInfo, build_grok_auth, discover, refresh_tokens};
+use super::super::EzerAuth;
+use super::protocol::{OidcError, OidcUserInfo, build_ezer_auth, discover, refresh_tokens};
 use crate::error::RefreshTokenFailedReason;
 
 /// Outcome of a pure OIDC token refresh (no AuthManager mutations).
 pub enum OidcRefreshResult {
     /// Fresh token obtained. Caller must persist.
-    Success(Box<GrokAuth>),
+    Success(Box<EzerAuth>),
     /// Terminal error from the IdP, already classified into a reason.
     TerminalError { reason: RefreshTokenFailedReason },
     /// Non-terminal failure (discovery failed, network error, etc.) `network_unreachable` is `true` when the failure never reached the IdP (DNS resolution, TCP connect, request timeout).
@@ -78,7 +78,7 @@ fn is_network_unreachable(err: &anyhow::Error) -> bool {
 /// Exchange a refresh_token for fresh tokens at the IdP.
 /// Pure data return, no `AuthManager` mutations; the caller (`OidcRefresher`) routes the result through `refresh_chain`.
 #[tracing::instrument(name = "auth.token_exchange", skip_all)]
-pub async fn oidc_token_exchange(auth: &GrokAuth) -> OidcRefreshResult {
+pub async fn oidc_token_exchange(auth: &EzerAuth) -> OidcRefreshResult {
     let has_rt = auth.refresh_token.is_some();
     let has_issuer = auth.oidc_issuer.is_some();
     let has_client_id = auth.oidc_client_id.is_some();
@@ -256,7 +256,7 @@ pub async fn oidc_token_exchange(auth: &GrokAuth) -> OidcRefreshResult {
         team_blocked_reasons: auth.team_blocked_reasons.clone(),
         coding_data_retention_opt_out: auth.coding_data_retention_opt_out,
     };
-    let mut new_auth = build_grok_auth(tokens, user_info, issuer, client_id);
+    let mut new_auth = build_ezer_auth(tokens, user_info, issuer, client_id);
     let idp_rotated = new_auth.refresh_token.is_some();
     // Keep old refresh token if IdP didn't rotate it
     if new_auth.refresh_token.is_none() {

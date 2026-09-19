@@ -27,7 +27,7 @@ pub(in crate::agent::remote_config) fn settings_cache_disabled() -> bool {
 #[derive(serde::Serialize, serde::Deserialize)]
 struct SettingsCache {
     fetched_at: DateTime<Utc>,
-    grok_version: String,
+    ezer_version: String,
     identity: String,
     origin: String,
     client: String,
@@ -61,14 +61,14 @@ pub(crate) struct SettingsCacheManager {
 impl SettingsCacheManager {
     pub(crate) fn new() -> Self {
         Self {
-            path: crate::util::grok_home::grok_home().join(SETTINGS_CACHE_FILE),
+            path: crate::util::ezer_home::ezer_home().join(SETTINGS_CACHE_FILE),
             ttl: SETTINGS_CACHE_TTL,
         }
     }
 
     pub(crate) fn load_or_fetch(
         &self,
-        auth: &ezer_login::GrokAuth,
+        auth: &ezer_login::EzerAuth,
         origin: &str,
         alpha_test_key: Option<&str>,
         fetch: impl FnOnce() -> Option<crate::util::config::RemoteSettings>,
@@ -104,7 +104,7 @@ impl SettingsCacheManager {
     /// the monotonic write. Does not read the cache for a value.
     pub(crate) fn write_through(
         &self,
-        auth: &ezer_login::GrokAuth,
+        auth: &ezer_login::EzerAuth,
         origin: &str,
         alpha_test_key: Option<&str>,
         settings: &crate::util::config::RemoteSettings,
@@ -124,7 +124,7 @@ impl SettingsCacheManager {
     /// across different IdPs cannot consume each other's cache. Hashed
     /// (SHA-256, stable across releases) so no credential lands on disk.
     pub(in crate::agent::remote_config) fn identity(
-        auth: &ezer_login::GrokAuth,
+        auth: &ezer_login::EzerAuth,
         alpha_test_key: Option<&str>,
     ) -> String {
         use sha2::{Digest, Sha256};
@@ -187,7 +187,7 @@ impl SettingsCacheManager {
         origin: &str,
     ) -> Result<CachedSettings, CacheLoadError> {
         let cache = self.load_raw()?;
-        if cache.grok_version != ezer_version::VERSION {
+        if cache.ezer_version != ezer_version::VERSION {
             return Err(CacheLoadError::VersionMismatch);
         }
         if cache.identity != identity {
@@ -231,7 +231,7 @@ impl SettingsCacheManager {
         }
         let cache = SettingsCache {
             fetched_at,
-            grok_version: ezer_version::VERSION.to_string(),
+            ezer_version: ezer_version::VERSION.to_string(),
             identity: identity.to_string(),
             origin: origin.to_string(),
             client: crate::http::process_client_identifier(),
@@ -326,7 +326,7 @@ mod settings_cache_tests {
     #[test]
     fn load_or_fetch_skips_the_fetch_on_a_warm_hit() {
         let (_dir, manager) = temp_manager(SETTINGS_CACHE_TTL);
-        let auth = ezer_login::GrokAuth::test_default();
+        let auth = ezer_login::EzerAuth::test_default();
         let (cold, write) = manager.load_or_fetch(&auth, ORIGIN, None, || Some(settings()));
         write.unwrap().commit();
         let (warm, warm_write) =
@@ -339,7 +339,7 @@ mod settings_cache_tests {
     #[test]
     fn load_or_fetch_defers_the_write_until_commit() {
         let (dir, manager) = temp_manager(SETTINGS_CACHE_TTL);
-        let auth = ezer_login::GrokAuth::test_default();
+        let auth = ezer_login::EzerAuth::test_default();
         let (_settings, write) = manager.load_or_fetch(&auth, ORIGIN, None, || Some(settings()));
         assert!(!dir.path().join(SETTINGS_CACHE_FILE).exists());
         write.unwrap().commit();
@@ -349,7 +349,7 @@ mod settings_cache_tests {
     #[test]
     fn load_or_fetch_misses_on_a_different_alpha_test_key() {
         let (_dir, manager) = temp_manager(SETTINGS_CACHE_TTL);
-        let auth = ezer_login::GrokAuth::test_default();
+        let auth = ezer_login::EzerAuth::test_default();
         let (_a, write) =
             manager.load_or_fetch(&auth, ORIGIN, Some("alpha-a"), || Some(settings()));
         write.unwrap().commit();
@@ -365,7 +365,7 @@ mod settings_cache_tests {
     #[test]
     fn load_or_fetch_does_not_persist_a_failed_fetch() {
         let (dir, manager) = temp_manager(SETTINGS_CACHE_TTL);
-        let auth = ezer_login::GrokAuth::test_default();
+        let auth = ezer_login::EzerAuth::test_default();
         let (result, write) = manager.load_or_fetch(&auth, ORIGIN, None, || None);
         assert!(result.is_none());
         assert!(write.is_none());
@@ -387,7 +387,7 @@ mod settings_cache_tests {
 
     #[test]
     fn identity_survives_token_rotation_and_scopes_by_tenant() {
-        let mut base = ezer_login::GrokAuth::test_default();
+        let mut base = ezer_login::EzerAuth::test_default();
         base.user_id = "user-1".into();
         base.key = "token-A".into();
 
@@ -415,7 +415,7 @@ mod settings_cache_tests {
         );
 
         // Keyless (API-key) auth has no user_id, so the key is the principal.
-        let mut keyless_a = ezer_login::GrokAuth::test_default();
+        let mut keyless_a = ezer_login::EzerAuth::test_default();
         keyless_a.user_id = String::new();
         keyless_a.key = "api-key-A".into();
         let mut keyless_b = keyless_a.clone();
@@ -445,7 +445,7 @@ mod settings_cache_tests {
     fn cache_file(fetched_at: DateTime<Utc>) -> SettingsCache {
         SettingsCache {
             fetched_at,
-            grok_version: ezer_version::VERSION.to_string(),
+            ezer_version: ezer_version::VERSION.to_string(),
             identity: "id".to_string(),
             origin: ORIGIN.to_string(),
             client: crate::http::process_client_identifier(),
@@ -467,7 +467,7 @@ mod settings_cache_tests {
         let write = |c: &SettingsCache| std::fs::write(&path, signed_cache_bytes(c)).unwrap();
 
         write(&SettingsCache {
-            grok_version: format!("{}-stale", ezer_version::VERSION),
+            ezer_version: format!("{}-stale", ezer_version::VERSION),
             ..base()
         });
         assert!(manager.load_fresh("id", ORIGIN).is_none());

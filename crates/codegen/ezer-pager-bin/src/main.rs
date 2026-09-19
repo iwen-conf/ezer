@@ -88,7 +88,7 @@ fn process_identity(command: Option<&Command>, is_interactive: bool) -> Option<P
         interactivity,
     })
 }
-/// True when this command later boots an agent (`spawn_grok_shell` / agent subcommand) that heals managed policy after `apply_sandbox`.
+/// True when this command later boots an agent (`spawn_ezer_shell` / agent subcommand) that heals managed policy after `apply_sandbox`.
 fn command_needs_pre_sandbox_policy_heal(command: Option<&Command>) -> bool {
     match command {
         None
@@ -125,11 +125,11 @@ use ezer_update::{UpdateConfig, auto_update, enforce_version_policy_or_exit};
 /// Apply headless args to an existing config, only overriding values that are explicitly set.
 /// Unset args leave the environment defaults in place.
 fn apply_headless_args_to_config(args: &HeadlessArgs, config: &mut AgentConfig) {
-    if let Some(v) = &args.grok_ws_origin {
-        config.grok_com_config.grok_ws_origin = v.clone();
+    if let Some(v) = &args.ezer_ws_origin {
+        config.ezer_com_config.ezer_ws_origin = v.clone();
     }
-    if let Some(v) = &args.grok_ws_url {
-        config.grok_com_config.grok_ws_url = v.clone();
+    if let Some(v) = &args.ezer_ws_url {
+        config.ezer_com_config.ezer_ws_url = v.clone();
     }
 }
 /// Apply global endpoint CLI args to an existing config.
@@ -354,7 +354,7 @@ async fn kill_leaders() -> Result<()> {
         let Some(pid) = leader_pid(d) else {
             continue;
         };
-        if !ezer_shell::util::is_grok_process(pid) {
+        if !ezer_shell::util::is_ezer_process(pid) {
             if let Some(ref lock) = d.lock_path {
                 eprintln!("  PID {pid} is not an ezer process, removing stale lock");
                 let _ = std::fs::remove_file(lock);
@@ -384,7 +384,7 @@ async fn kill_leaders() -> Result<()> {
 fn resolve_target(args: &LeaderTargetArgs) -> LeaderTarget {
     match args.pid {
         Some(pid) => LeaderTarget::Pid(pid),
-        None => LeaderTarget::Environment(ezer_shell::env::GrokBuildEnvironment::Production),
+        None => LeaderTarget::Environment(ezer_shell::env::EzerBuildEnvironment::Production),
     }
 }
 #[tracing::instrument(skip_all)]
@@ -512,9 +512,9 @@ fn env_flag_enabled(value: &str) -> bool {
     )
 }
 /// File and managed IdP for a settings query that runs before effective-config load.
-fn load_grok_com_config_for_settings() -> ezer_shell::auth::GrokComConfig {
+fn load_ezer_com_config_for_settings() -> ezer_shell::auth::EzerComConfig {
     ezer_shell::config::load_agent_config_disk_only()
-        .map(|cfg| cfg.grok_com_config)
+        .map(|cfg| cfg.ezer_com_config)
         .unwrap_or_default()
 }
 /// Async fetch of remote settings via the startup getter, capped at the
@@ -524,11 +524,11 @@ fn load_grok_com_config_for_settings() -> ezer_shell::auth::GrokComConfig {
 /// value, so it would fall open and let workspace refuse the command before the
 /// load could complete.
 async fn fetch_remote_settings(
-    grok_com_config: &ezer_shell::auth::GrokComConfig,
+    ezer_com_config: &ezer_shell::auth::EzerComConfig,
 ) -> Option<ezer_shell::util::config::RemoteSettings> {
     let query = ezer_shell::agent::remote_config::settings_get::SettingsQuery::resolve(
         None,
-        Some(grok_com_config.clone()),
+        Some(ezer_com_config.clone()),
     );
     let wait = ezer_shell::agent::remote_config::settings_get::await_startup_settings(
         query,
@@ -536,7 +536,7 @@ async fn fetch_remote_settings(
         &tokio_util::sync::CancellationToken::new(),
     )
     .await;
-    ezer_shell::agent::remote_config::settings_get::consume_wait(wait, None, grok_com_config)
+    ezer_shell::agent::remote_config::settings_get::consume_wait(wait, None, ezer_com_config)
 }
 #[tracing::instrument(level = "debug", skip_all)]
 async fn run_workspace_mgmt(args: WorkspaceMgmtArgs) -> Result<()> {
@@ -555,9 +555,9 @@ async fn run_workspace_mgmt(args: WorkspaceMgmtArgs) -> Result<()> {
         );
     }
     let env_override = workspace_command_env_override();
-    let grok_com_config = load_grok_com_config_for_settings();
+    let ezer_com_config = load_ezer_com_config_for_settings();
     let remote_settings = if env_override.is_none() {
-        fetch_remote_settings(&grok_com_config).await
+        fetch_remote_settings(&ezer_com_config).await
     } else {
         None
     };
@@ -581,14 +581,14 @@ async fn run_workspace_mgmt(args: WorkspaceMgmtArgs) -> Result<()> {
         WorkspaceMgmtCommand::Start(a) => {
             let settings = match remote_settings {
                 Some(settings) => Some(settings),
-                None => fetch_remote_settings(&grok_com_config).await,
+                None => fetch_remote_settings(&ezer_com_config).await,
             };
             workspace_start(a, false, settings).await
         }
         WorkspaceMgmtCommand::Restart(a) => {
             let settings = match remote_settings {
                 Some(settings) => Some(settings),
-                None => fetch_remote_settings(&grok_com_config).await,
+                None => fetch_remote_settings(&ezer_com_config).await,
             };
             workspace_start(a, true, settings).await
         }
@@ -628,7 +628,7 @@ async fn connect_leader_control(
         let (_descriptor, client) = connect_to_leader(target).await?;
         return Ok(client);
     }
-    let ws_url = &agent_config.grok_com_config.grok_ws_url;
+    let ws_url = &agent_config.ezer_com_config.ezer_ws_url;
     let socket = socket_path_for_ws_url(ws_url);
     LeaderClient::connect(
         socket,
@@ -677,14 +677,14 @@ async fn spawn_and_connect_leader(
         );
     }
     ensure_authenticated(
-        &agent_config.grok_com_config,
+        &agent_config.ezer_com_config,
         agent_config.login_device_flow,
         agent_config.endpoints.proxy_url(),
         false,
         Some("No cached credentials found. Set EZER_API_KEY or run `ezer login` first."),
     )
     .await?;
-    let env_urls = LeaderEnvUrls::from(&agent_config.grok_com_config);
+    let env_urls = LeaderEnvUrls::from(&agent_config.ezer_com_config);
     let capabilities = ClientCapabilities {
         client_version: Some(PAGER_CLIENT_VERSION.to_string()),
         ..Default::default()
@@ -814,7 +814,7 @@ struct StdioReplayState {
     /// Folded into `sessions` when the response carrying the assigned session id arrives.
     /// Never replayed while unconfirmed (the id is unknown; the client's own request died with the old leader and is its to retry).
     pending_new: Option<CachedSession>,
-    /// Most recently created/loaded session id, reported in `x.ai/leader_reconnected` as the primary restored session.
+    /// Most recently created/loaded session id, reported in `ezer/leader_reconnected` as the primary restored session.
     last_session_id: Option<String>,
 }
 impl StdioReplayState {
@@ -871,8 +871,8 @@ const CACHED_METHODS: &[&str] = &[
     "\"session/load\"",
     "\"session/resume\"",
     "\"session/close\"",
-    "\"x.ai/session/close\"",
-    "\"_x.ai/session/close\"",
+    "\"ezer/session/close\"",
+    "\"_ezer/session/close\"",
 ];
 fn cache_outgoing_acp_state(msg: &str, state: &std::sync::Mutex<StdioReplayState>) {
     if !CACHED_METHODS.iter().any(|m| msg.contains(m)) {
@@ -926,7 +926,7 @@ fn cache_outgoing_acp_state(msg: &str, state: &std::sync::Mutex<StdioReplayState
                     .and_then(|m| serde_json::to_string(m).ok()),
             });
         }
-        "session/close" | "x.ai/session/close" | "_x.ai/session/close" => {
+        "session/close" | "ezer/session/close" | "_ezer/session/close" => {
             if let Some(sid) = json
                 .get("params")
                 .and_then(|p| p.get("sessionId").or_else(|| p.get("session_id")))
@@ -957,7 +957,7 @@ fn cache_incoming_session_id(msg: &str, state: &std::sync::Mutex<StdioReplayStat
 }
 /// Synthetic JSON-RPC id for the `session/load` the bridge constructs itself (when the external client only ever sent `session/new`).
 /// A string id can never collide with a numeric id the external client may have in flight.
-const REPLAY_LOAD_REQUEST_ID: &str = "x.ai/leader-replay/session-load";
+const REPLAY_LOAD_REQUEST_ID: &str = "ezer/leader-replay/session-load";
 /// Max silence between two messages from the leader during a replayed request.
 /// A `session/load` streams replay notifications continuously once it starts.
 /// The phase before the replay (MCP resolution, session file reads) can be quiet for a while on large sessions.
@@ -1218,10 +1218,10 @@ async fn run_agent_command(
             }
         }
     }
-    let grok_com_config = load_grok_com_config_for_settings();
+    let ezer_com_config = load_ezer_com_config_for_settings();
     let settings_query = ezer_shell::agent::remote_config::settings_get::SettingsQuery::resolve(
         None,
-        Some(grok_com_config.clone()),
+        Some(ezer_com_config.clone()),
     );
     let had_prefetch =
         ezer_shell::agent::remote_config::settings_get::is_eligible(&settings_query);
@@ -1261,7 +1261,7 @@ async fn run_agent_command(
         ezer_shell::agent::remote_config::settings_get::consume_wait(
             wait,
             None,
-            &grok_com_config,
+            &ezer_com_config,
         )
     } else {
         None
@@ -1351,7 +1351,7 @@ async fn run_agent_command(
     });
     let managed_install = is_managed_install(
         std::env::current_exe().ok(),
-        &ezer_shell::util::grok_home::grok_home(),
+        &ezer_shell::util::ezer_home::ezer_home(),
     );
     if stdio_auto_update_enabled(
         is_stdio,
@@ -1388,7 +1388,7 @@ async fn run_agent_command(
             Some(AgentCmd::Headless(_)) | None => ClientMode::Headless,
             _ => ClientMode::Stdio,
         };
-        let env_urls = ezer_shell::leader::LeaderEnvUrls::from(&agent_config.grok_com_config);
+        let env_urls = ezer_shell::leader::LeaderEnvUrls::from(&agent_config.ezer_com_config);
         let default_model = agent_config
             .default_model_override
             .clone()
@@ -1501,7 +1501,7 @@ async fn run_agent_command(
                                             None => "{}".to_string(),
                                         };
                                         let notification = format!(
-                                            r#"{{"jsonrpc":"2.0","method":"x.ai/leader_reconnected","params":{params}}}"#
+                                            r#"{{"jsonrpc":"2.0","method":"ezer/leader_reconnected","params":{params}}}"#
                                         );
                                         let _ = stdout.write_all(notification.as_bytes()).await;
                                         let _ = stdout.write_all(b"\n").await;
@@ -1992,10 +1992,10 @@ fn main() {
         release: env!("VERSION_WITH_COMMIT"),
         disabled: ezer_shell::agent::config::is_error_reporting_disabled_sync(),
     });
-    ezer_pager::docs::extract_user_guide_docs(&ezer_shell::util::grok_home::grok_home());
+    ezer_pager::docs::extract_user_guide_docs(&ezer_shell::util::ezer_home::ezer_home());
     xai_crash_handler::install_terminal_restore_only();
     if ezer_shell::util::config::load_crash_handler_enabled_sync() {
-        let crash_dir = ezer_shell::util::grok_home::grok_home().join("crash");
+        let crash_dir = ezer_shell::util::ezer_home::ezer_home().join("crash");
         if let Some(report) = xai_crash_handler::check_previous_crash(&crash_dir) {
             eprintln!("ezer crashed during your last session.");
             eprintln!("  Signal:  {}", report.signal_name);
@@ -2058,7 +2058,7 @@ async fn async_main(mut args: PagerArgs) -> Result<()> {
         && args.prompt_json.is_none()
         && args.prompt_file.is_none();
     ezer_shell::http::set_client_name(if is_interactive {
-        ezer_workspace::permission::ClientType::GrokPager
+        ezer_workspace::permission::ClientType::EzerPager
     } else {
         ezer_workspace::permission::ClientType::Generic
     });
@@ -2094,12 +2094,12 @@ async fn async_main(mut args: PagerArgs) -> Result<()> {
             Ok(agent_cfg) => {
                 let auth_manager =
                     std::sync::Arc::new(ezer_login::AuthManager::new_with_proxy_base_url(
-                        &ezer_shell::util::grok_home::grok_home(),
-                        agent_cfg.grok_com_config.clone(),
+                        &ezer_shell::util::ezer_home::ezer_home(),
+                        agent_cfg.ezer_com_config.clone(),
                         agent_cfg.endpoints.proxy_url(),
                     ));
                 auth_manager.configure_refresher(
-                    agent_cfg.grok_com_config.auth_provider_command.clone(),
+                    agent_cfg.ezer_com_config.auth_provider_command.clone(),
                     None,
                 );
                 ezer_shell::managed_config::ensure_managed_policy_present(&auth_manager).await;
@@ -2244,8 +2244,8 @@ async fn async_main(mut args: PagerArgs) -> Result<()> {
                 return ezer_pager::trace_cmd::run(trace_args, &agent_config).await;
             }
             Command::Memory(memory_args) => {
-                let grok_com_config = load_grok_com_config_for_settings();
-                let remote_settings = fetch_remote_settings(&grok_com_config).await;
+                let ezer_com_config = load_ezer_com_config_for_settings();
+                let remote_settings = fetch_remote_settings(&ezer_com_config).await;
                 ezer_shell::util::config::set_remote_campaigns_from_settings(
                     remote_settings.as_ref(),
                 );
@@ -2296,7 +2296,7 @@ async fn async_main(mut args: PagerArgs) -> Result<()> {
                 let config = ezer_shell::config::load_agent_config_disk_only()
                     .map_err(|e| anyhow::anyhow!("Failed to create agent config: {e}"))?;
                 let authenticated = ezer_login::run_cli_login(
-                    config.grok_com_config.clone(),
+                    config.ezer_com_config.clone(),
                     config.login_device_flow,
                     config.endpoints.proxy_url(),
                     oauth,
@@ -2315,7 +2315,7 @@ async fn async_main(mut args: PagerArgs) -> Result<()> {
                 init_tracing_simple("cli");
                 let config = ezer_shell::config::load_agent_config_disk_only()
                     .map_err(|e| anyhow::anyhow!("Failed to create agent config: {e}"))?;
-                ezer_shell::agent::init::run_cli_logout(&config.grok_com_config)?;
+                ezer_shell::agent::init::run_cli_logout(&config.ezer_com_config)?;
                 ezer_shell::instrumentation::finalize_and_exit(0);
             }
             Command::Wrap(ref wrap_args) => {
@@ -2440,7 +2440,7 @@ async fn async_main(mut args: PagerArgs) -> Result<()> {
 }
 /// Build an [`UpdateConfig`] from the current environment and config files.
 fn build_update_config() -> UpdateConfig {
-    let environment = ezer_shell::env::GrokBuildEnvironment::from_flags(false, false);
+    let environment = ezer_shell::env::EzerBuildEnvironment::from_flags(false, false);
     let mut config = UpdateConfig::from_environment(&environment);
     cryptify::flow_stmt!({
         {
@@ -2480,17 +2480,17 @@ fn stdio_auto_update_enabled(
 ) -> bool {
     is_stdio && !use_leader && updates_enabled && managed_install
 }
-/// True when `exe` is the binary `<grok_home>/bin/ezer` resolves to, the install that adopts a staged update on
+/// True when `exe` is the binary `<ezer_home>/bin/ezer` resolves to, the install that adopts a staged update on
 /// respawn. Both sides are canonicalized; any failure reports unmanaged and skips the update. The npm shim
-/// hardcodes `~/.ezer`, so a custom `GROK_HOME` skips here too.
-fn is_managed_install(exe: Option<std::path::PathBuf>, grok_home: &std::path::Path) -> bool {
-    if grok_home.as_os_str().is_empty() {
+/// hardcodes `~/.ezer`, so a custom `EZER_HOME` skips here too.
+fn is_managed_install(exe: Option<std::path::PathBuf>, ezer_home: &std::path::Path) -> bool {
+    if ezer_home.as_os_str().is_empty() {
         return false;
     }
     let Some(exe) = exe else {
         return false;
     };
-    let managed = ezer_config::grok_application_in(grok_home);
+    let managed = ezer_config::ezer_application_in(ezer_home);
     match (dunce::canonicalize(&exe), dunce::canonicalize(&managed)) {
         (Ok(exe), Ok(managed)) => exe == managed,
         _ => false,
@@ -2562,8 +2562,8 @@ async fn run_update_command(
     if let Some(agent_cfg) = telemetry_cfg {
         let auth_manager =
             std::sync::Arc::new(ezer_login::AuthManager::new_with_proxy_base_url(
-                &ezer_shell::util::grok_home::grok_home(),
-                agent_cfg.grok_com_config.clone(),
+                &ezer_shell::util::ezer_home::ezer_home(),
+                agent_cfg.ezer_com_config.clone(),
                 agent_cfg.endpoints.proxy_url(),
             ));
         ezer_shell::agent::init::update_telemetry_config(&agent_cfg, &auth_manager);
@@ -2938,7 +2938,7 @@ mod tests {
     }
     #[cfg(unix)]
     #[test]
-    fn is_managed_install_matches_only_the_bin_grok_target() {
+    fn is_managed_install_matches_only_the_bin_ezer_target() {
         let home =
             std::env::temp_dir().join(format!("ezer-managed-install-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&home);
@@ -2953,7 +2953,7 @@ mod tests {
             Some(home.join("bin").join("ezer")),
             std::path::Path::new("")
         ));
-        let target = home.join("downloads").join("grok-1.2.3");
+        let target = home.join("downloads").join("ezer-1.2.3");
         std::fs::write(&target, b"binary").unwrap();
         std::os::unix::fs::symlink(&target, home.join("bin").join("ezer")).unwrap();
         assert!(is_managed_install(
@@ -2961,7 +2961,7 @@ mod tests {
             &home
         ));
         assert!(is_managed_install(Some(target.clone()), &home));
-        let pinned = home.join("bin").join("grok-9.9.9");
+        let pinned = home.join("bin").join("ezer-9.9.9");
         std::fs::write(&pinned, b"binary").unwrap();
         assert!(!is_managed_install(Some(pinned), &home));
         let _ = std::fs::remove_dir_all(&home);
@@ -3154,14 +3154,14 @@ mod tests {
             &state,
         );
         cache_outgoing_acp_state(
-            r#"{"jsonrpc":"2.0","id":3,"method":"_x.ai/session/close","params":{"sessionId":"s1"}}"#,
+            r#"{"jsonrpc":"2.0","id":3,"method":"_ezer/session/close","params":{"sessionId":"s1"}}"#,
             &state,
         );
         let s = state.lock().unwrap();
         assert!(s.sessions.is_empty(), "closed session must not be replayed");
         assert!(s.last_session_id.is_none());
     }
-    /// The standard close spelling must stop the replay exactly like the `x.ai/` extension spelling.
+    /// The standard close spelling must stop the replay exactly like the `ezer/` extension spelling.
     /// Adopting `session/close` without teaching the cache would resurrect closed sessions on every leader reconnect.
     #[test]
     fn cache_standard_session_close_stops_replaying_it() {
@@ -3478,7 +3478,7 @@ mod tests {
             let _init = leader_rx.recv().await.unwrap();
             response_tx
                 .send(
-                    r#"{"jsonrpc":"2.0","method":"x.ai/leader/version_mismatch","params":{}}"#
+                    r#"{"jsonrpc":"2.0","method":"ezer/leader/version_mismatch","params":{}}"#
                         .to_string(),
                 )
                 .unwrap();
@@ -3526,7 +3526,7 @@ mod tests {
         responder.await.unwrap();
     }
     /// A `session/load` rejected by the new leader (error response) must surface as a failed replay (`None`).
-    /// The bridge then emits `x.ai/leader_reconnected` with empty params and the external client knows to re-establish state itself.
+    /// The bridge then emits `ezer/leader_reconnected` with empty params and the external client knows to re-establish state itself.
     #[tokio::test]
     async fn replay_returns_none_when_load_is_rejected() {
         let (leader_tx, mut leader_rx) = tokio::sync::mpsc::unbounded_channel();

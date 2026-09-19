@@ -3,7 +3,7 @@ use super::*;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use tokio::sync::mpsc;
-use ezer_login::{AuthManager, AuthMode, GrokAuth, GrokComConfig};
+use ezer_login::{AuthManager, AuthMode, EzerAuth, EzerComConfig};
 
 /// Test refresher that returns a fresh token and records that it was invoked.
 /// Used to drive the auth-arm success path.
@@ -17,12 +17,12 @@ impl ezer_login::refresh::TokenRefresher for AlwaysSucceedRefresher {
         _reason: ezer_login::refresh::RefreshReason,
     ) -> ezer_login::refresh::RefreshOutcome {
         self.called.store(true, Ordering::SeqCst);
-        ezer_login::refresh::RefreshOutcome::Success(Box::new(GrokAuth {
+        ezer_login::refresh::RefreshOutcome::Success(Box::new(EzerAuth {
             key: "refreshed-test-token".to_string(),
             auth_mode: AuthMode::Oidc,
             refresh_token: Some("rt-new".into()),
             expires_at: Some(chrono::Utc::now() + chrono::Duration::hours(1)),
-            ..GrokAuth::test_default()
+            ..EzerAuth::test_default()
         }))
     }
 }
@@ -51,13 +51,13 @@ fn auth_manager_with_refresher(
     refresher: Arc<dyn ezer_login::refresh::TokenRefresher>,
 ) -> (tempfile::TempDir, Arc<AuthManager>) {
     let dir = tempfile::tempdir().expect("tempdir");
-    let am = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
-    am.hot_swap(GrokAuth {
+    let am = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
+    am.hot_swap(EzerAuth {
         key: "initial-test-key".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("rt".into()),
         expires_at: Some(chrono::Utc::now() - chrono::Duration::hours(1)),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     });
     am.set_refresher(refresher);
     (dir, am)
@@ -173,13 +173,13 @@ async fn make_actor_parts_with_method_and_credentials(
 /// The tempdir must outlive the manager (auth.json path).
 fn auth_manager_with_valid_token(key: &str) -> (tempfile::TempDir, Arc<AuthManager>) {
     let dir = tempfile::tempdir().expect("tempdir");
-    let am = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
-    am.hot_swap(GrokAuth {
+    let am = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
+    am.hot_swap(EzerAuth {
         key: key.into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("rt".into()),
         expires_at: Some(chrono::Utc::now() + chrono::Duration::hours(1)),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     });
     (dir, am)
 }
@@ -495,17 +495,17 @@ async fn credential_less_401_with_provider_authority_stays_terminal() {
             let dir = tempfile::tempdir().expect("tempdir");
             let am = Arc::new(AuthManager::new(
                 dir.path(),
-                GrokComConfig {
+                EzerComConfig {
                     auth_provider_command: Some("acme-auth".to_owned()),
                     auth_provider_label: Some("Acme SSO".to_owned()),
-                    ..GrokComConfig::default()
+                    ..EzerComConfig::default()
                 },
             ));
-            am.hot_swap(GrokAuth {
+            am.hot_swap(EzerAuth {
                 key: "expired-external".into(),
                 auth_mode: AuthMode::External,
                 expires_at: Some(chrono::Utc::now() - chrono::Duration::hours(1)),
-                ..GrokAuth::test_default()
+                ..EzerAuth::test_default()
             });
             am.set_refresher(Arc::new(AlwaysTransientFailRefresher {
                 called: Arc::new(AtomicBool::new(false)),
@@ -764,14 +764,14 @@ async fn pre_flight_soft_expired_transient_fail_retains_seed() {
                 AlwaysFail(call_count.clone())
             });
             let dir = tempfile::tempdir().expect("tempdir");
-            let am = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
+            let am = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
             // Inside the early-invalidation buffer but still hard-valid.
-            am.hot_swap(GrokAuth {
+            am.hot_swap(EzerAuth {
                 key: "buffered-test-key".into(),
                 auth_mode: AuthMode::Oidc,
                 refresh_token: Some("rt".into()),
                 expires_at: Some(chrono::Utc::now() + chrono::Duration::seconds(30)),
-                ..GrokAuth::test_default()
+                ..EzerAuth::test_default()
             });
             am.set_refresher(refresher);
             let (actor, _rx) = make_actor_with_auth_and_credentials(
@@ -823,12 +823,12 @@ async fn proactive_refresh_makes_per_turn_refresh_a_cache_hit() {
                         _: ezer_login::refresh::RefreshReason,
                     ) -> ezer_login::refresh::RefreshOutcome {
                         self.0.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
-                        ezer_login::refresh::RefreshOutcome::Success(Box::new(GrokAuth {
+                        ezer_login::refresh::RefreshOutcome::Success(Box::new(EzerAuth {
                             key: "proactive-fresh".into(),
                             auth_mode: AuthMode::Oidc,
                             refresh_token: Some("rt-new".into()),
                             expires_at: Some(chrono::Utc::now() + chrono::Duration::hours(1)),
-                            ..GrokAuth::test_default()
+                            ..EzerAuth::test_default()
                         }))
                     }
                 }
@@ -900,11 +900,11 @@ async fn legacy_auth_hint_on_404_model_not_found() {
     local
         .run_until(async {
             let dir = tempfile::tempdir().expect("tempdir");
-            let am = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
-            am.hot_swap(GrokAuth {
+            let am = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
+            am.hot_swap(EzerAuth {
                 key: "legacy-token".into(),
                 auth_mode: AuthMode::WebLogin,
-                ..GrokAuth::test_default()
+                ..EzerAuth::test_default()
             });
 
             let (actor, _rx) = make_actor_with_auth_manager(Some(am)).await;
@@ -959,7 +959,7 @@ async fn legacy_auth_hint_on_404_model_not_found() {
 fn unauthorized_401_error() -> ezer_sampler::SamplingErrorInfo {
     ezer_sampler::SamplingErrorInfo {
             kind: ezer_sampler::SamplingErrorKind::Api,
-            message: "Unauthorized (401) from https://cli-chat-proxy.grok.com/v1/responses: {\"error\":\"Invalid or expired credentials (auth_kind=bearer, x_xai_token_auth=ezer-cli, upstream=Unauthenticated, reason=no auth context)\"}".into(),
+            message: "Unauthorized (401) from https://proxy.example.test/v1/responses: {\"error\":\"Invalid or expired credentials (auth_kind=bearer, x_xai_token_auth=ezer-cli, upstream=Unauthenticated, reason=no auth context)\"}".into(),
             status_code: Some(401),
             is_retryable: false,
             retry_after_secs: None,
@@ -980,11 +980,11 @@ async fn legacy_auth_hint_on_401_unauthorized() {
     local
         .run_until(async {
             let dir = tempfile::tempdir().expect("tempdir");
-            let am = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
-            am.hot_swap(GrokAuth {
+            let am = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
+            am.hot_swap(EzerAuth {
                 key: "legacy-token".into(),
                 auth_mode: AuthMode::WebLogin,
-                ..GrokAuth::test_default()
+                ..EzerAuth::test_default()
             });
 
             let (actor, _rx) = make_actor_with_auth_manager(Some(am)).await;
@@ -1036,13 +1036,13 @@ async fn no_legacy_hint_on_401_for_oidc_auth() {
     local
         .run_until(async {
             let dir = tempfile::tempdir().expect("tempdir");
-            let am = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
-            am.hot_swap(GrokAuth {
+            let am = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
+            am.hot_swap(EzerAuth {
                 key: "oidc-token".into(),
                 auth_mode: AuthMode::Oidc,
                 refresh_token: Some("rt".into()),
                 expires_at: Some(chrono::Utc::now() + chrono::Duration::hours(1)),
-                ..GrokAuth::test_default()
+                ..EzerAuth::test_default()
             });
 
             let (actor, _rx) = make_actor_with_auth_manager(Some(am)).await;
@@ -1084,13 +1084,13 @@ async fn no_legacy_hint_for_oidc_auth() {
     local
         .run_until(async {
             let dir = tempfile::tempdir().expect("tempdir");
-            let am = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
-            am.hot_swap(GrokAuth {
+            let am = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
+            am.hot_swap(EzerAuth {
                 key: "oidc-token".into(),
                 auth_mode: AuthMode::Oidc,
                 refresh_token: Some("rt".into()),
                 expires_at: Some(chrono::Utc::now() + chrono::Duration::hours(1)),
-                ..GrokAuth::test_default()
+                ..EzerAuth::test_default()
             });
 
             let (actor, _rx) = make_actor_with_auth_manager(Some(am)).await;

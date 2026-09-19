@@ -22,12 +22,12 @@ fn register_kind(db: &WorktreeDb, id: &str, path: &std::path::Path, kind: Worktr
 
 #[test]
 fn register_worktree_writes_correct_fields() {
-    // Isolate GROK_HOME so register_worktree's open_default write lands
+    // Isolate EZER_HOME so register_worktree's open_default write lands
     // in our own DB (lock + private tmp + restore via the fixture).
-    let fx = crate::db::GrokHomeFixture::new();
+    let fx = crate::db::EzerHomeFixture::new();
 
     // Unique basename → unique id, so a concurrent open_default writer
-    // (GROK_HOME is process-global) can't INSERT-OR-REPLACE our row.
+    // (EZER_HOME is process-global) can't INSERT-OR-REPLACE our row.
     let wt_path = fx.home.join("register-fields-wt");
     std::fs::create_dir(&wt_path).unwrap();
     // register_worktree stores the canonical path (/var → /private/var on macOS).
@@ -392,7 +392,7 @@ fn gc_dry_run_missing_and_expired_counted_once() {
 /// behind.
 #[test]
 fn expired_path_that_will_not_remove_loses_its_record_and_keeps_its_bytes() {
-    let fx = crate::db::GrokHomeFixture::new();
+    let fx = crate::db::EzerHomeFixture::new();
     let db = WorktreeDb::open(&fx.home).unwrap();
     // A file, so the directory removal fails with ENOTDIR whoever runs
     // this, root included.
@@ -420,9 +420,9 @@ fn expired_path_that_will_not_remove_loses_its_record_and_keeps_its_bytes() {
 #[test]
 fn gc_removes_an_expired_path_with_no_repo_and_counts_it_apart() {
     // An overlay mount or btrfs snapshot needs no `.git`, and only
-    // `remove_worktree` reclaims either. GROK_HOME is the gc DB dir so
+    // `remove_worktree` reclaims either. EZER_HOME is the gc DB dir so
     // its unregister hits the DB holding the record.
-    let fx = crate::db::GrokHomeFixture::new();
+    let fx = crate::db::EzerHomeFixture::new();
     let db = WorktreeDb::open(&fx.home).unwrap();
 
     // What an unmounted overlay leaves: directories, no files.
@@ -451,7 +451,7 @@ fn gc_removes_an_expired_path_with_no_repo_and_counts_it_apart() {
 #[cfg(unix)]
 #[test]
 fn gc_removes_a_dangling_worktree_symlink() {
-    let fx = crate::db::GrokHomeFixture::new();
+    let fx = crate::db::EzerHomeFixture::new();
     let db = WorktreeDb::open(&fx.home).unwrap();
 
     let link = fx.home.join("dangling-wt");
@@ -480,7 +480,7 @@ fn gc_removes_a_dangling_worktree_symlink() {
 
 #[test]
 fn gc_keeps_an_expired_path_that_is_not_a_repository_but_holds_files() {
-    let fx = crate::db::GrokHomeFixture::new();
+    let fx = crate::db::EzerHomeFixture::new();
     let db = WorktreeDb::open(&fx.home).unwrap();
 
     let path = fx.home.join("no-repo-with-files");
@@ -587,7 +587,7 @@ fn db_record_survives_failed_removal() {
     // remove_worktree must keep the DB record when the on-disk removal
     // fails, so the worktree isn't lost from tracking while leaking on
     // disk (unregister only after a successful removal).
-    let fx = crate::db::GrokHomeFixture::new();
+    let fx = crate::db::EzerHomeFixture::new();
 
     // A regular file makes remove_dir_all fail (ENOTDIR) deterministically.
     let wt_path = fx.home.join("doomed-wt");
@@ -631,7 +631,7 @@ fn db_record_removed_after_successful_removal() {
     xai_test_utils::require_git!();
     use xai_test_utils::git::{git_commit_all, init_git_repo};
 
-    let fx = crate::db::GrokHomeFixture::new();
+    let fx = crate::db::EzerHomeFixture::new();
 
     // A real repo + a real worktree so remove_worktree succeeds on disk.
     let repo = fx.home.join("repo");
@@ -677,7 +677,7 @@ fn registry_home_registers_the_worktree_in_the_given_home_only() {
     use xai_test_utils::git::{git_commit_all, init_git_repo};
 
     // The default DB is the fixture's home; the builder is pointed at another one.
-    let fx = crate::db::GrokHomeFixture::new();
+    let fx = crate::db::EzerHomeFixture::new();
     let other_home = fx.home.join("other-home");
     let repo = fx.home.join("repo");
     std::fs::create_dir(&repo).unwrap();
@@ -715,9 +715,9 @@ fn gc_with_delegate_removes_expired_and_unregisters() {
     // so the mock's delete_snapshot is not called on this plain-dir path.
     use std::sync::atomic::{AtomicUsize, Ordering};
 
-    // GROK_HOME == the gc DB dir so remove_worktree's open_default
+    // EZER_HOME == the gc DB dir so remove_worktree's open_default
     // unregister hits the same DB the gc record lives in.
-    let fx = crate::db::GrokHomeFixture::new();
+    let fx = crate::db::EzerHomeFixture::new();
     let db = WorktreeDb::open(&fx.home).unwrap();
 
     let dir = deletable_linked_worktree(&fx.home, "expired-wt");

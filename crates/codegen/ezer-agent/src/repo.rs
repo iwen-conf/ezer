@@ -25,7 +25,7 @@ impl RepoDirChain {
             .ok()
             .and_then(|repo| repo.workdir().map(|p| p.to_path_buf()))
             // Home-is-a-git-repo: a walk up to $HOME must not treat the whole home subtree as one repo.
-            // Otherwise home-level `.grok`/plugins would look repo-local. Drop it so cwd is probed as no-repo.
+            // Otherwise home-level `.ezer`/plugins would look repo-local. Drop it so cwd is probed as no-repo.
             // Home is compared canonically to match the symlink handling below.
             .filter(|root| !is_home_dir(root));
 

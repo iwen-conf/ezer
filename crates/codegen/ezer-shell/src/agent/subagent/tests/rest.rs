@@ -465,7 +465,7 @@ fn snapshot_test_meta(id: &str) -> SubagentMeta {
         duration_ms: Some(1),
         tool_calls: Some(0),
         turns: Some(1),
-        worktree_path: Some("/tmp/grok-wt/subagent-x".into()),
+        worktree_path: Some("/tmp/ezer-wt/subagent-x".into()),
         ..base_meta()
     }
 }
@@ -481,7 +481,7 @@ fn update_subagent_meta_snapshot_ref_persists_to_disk() {
     assert!(
             update_subagent_meta_snapshot_ref(
                 dir.path(),
-                "refs/grok/subagents/sa-write",
+                "refs/ezer/subagents/sa-write",
                 "completed"
             ),
             "persisting the ref into an existing meta.json must report success"
@@ -490,12 +490,12 @@ fn update_subagent_meta_snapshot_ref_persists_to_disk() {
     let reread: SubagentMeta = serde_json::from_str(&data).unwrap();
     assert_eq!(
             reread.snapshot_ref.as_deref(),
-            Some("refs/grok/subagents/sa-write")
+            Some("refs/ezer/subagents/sa-write")
         );
     assert_eq!(reread.status, "completed");
     assert_eq!(
             reread.worktree_path.as_deref(),
-            Some("/tmp/grok-wt/subagent-x")
+            Some("/tmp/ezer-wt/subagent-x")
         );
 }
 /// With meta.json missing, the writer reports failure (it `warn!`s).
@@ -505,7 +505,7 @@ fn update_subagent_meta_snapshot_ref_reports_failure_when_meta_missing() {
     let dir = tempfile::TempDir::new().unwrap();
     assert!(!update_subagent_meta_snapshot_ref(
             dir.path(),
-            "refs/grok/subagents/sa-missing",
+            "refs/ezer/subagents/sa-missing",
             "completed"
         ));
 }
@@ -519,13 +519,13 @@ fn snapshot_ref_write_promotes_nonterminal_status_to_terminal() {
     assert!(write_subagent_meta(dir.path(), &meta));
     assert!(update_subagent_meta_snapshot_ref(
             dir.path(),
-            "refs/grok/subagents/x",
+            "refs/ezer/subagents/x",
             "completed"
         ));
     let data = std::fs::read_to_string(dir.path().join("meta.json")).unwrap();
     let reread: SubagentMeta = serde_json::from_str(&data).unwrap();
     assert_eq!(
-            Some("refs/grok/subagents/x"),
+            Some("refs/ezer/subagents/x"),
             reread.snapshot_ref.as_deref()
         );
     assert_eq!("completed", reread.status);
@@ -651,7 +651,7 @@ async fn disposed_linked_worktree_persists_the_pointer_then_removes_the_director
             "reclaim-1",
         )
         .await;
-    let snapshot_ref = "refs/grok/subagents/reclaim-1";
+    let snapshot_ref = "refs/ezer/subagents/reclaim-1";
     assert!(disposal.worktree_removed(), "the gate cleared, so it goes");
     assert!(!wt.exists(), "the worktree directory is still on disk");
     let meta: SubagentMeta = serde_json::from_str(
@@ -719,7 +719,7 @@ fn subagent_session_metadata_roundtrip() {
     };
     let session_meta = SubagentSessionMetadata::from_meta(
         &meta,
-        Some("grok-4.5"),
+        Some("test-model-4.5"),
         Some("/workspace"),
         Some("/tmp/worktree"),
         Some("worktree"),
@@ -734,7 +734,7 @@ fn subagent_session_metadata_roundtrip() {
     assert_eq!(session_meta.subagent_id, "sa-1");
     assert_eq!(session_meta.parent_session_id, "parent-1");
     assert_eq!(session_meta.description, "test task");
-    assert_eq!(session_meta.model_id.as_deref(), Some("grok-4.5"));
+    assert_eq!(session_meta.model_id.as_deref(), Some("test-model-4.5"));
     assert_eq!(session_meta.role.as_deref(), Some("rust-dev"));
     assert_eq!(session_meta.persona.as_deref(), Some("reviewer"));
     assert!(!session_meta.context_normalized);
@@ -817,7 +817,7 @@ fn upload_lifecycle_spawn_then_completion_preserves_fields() {
     };
     let spawn_gcs = SubagentSessionMetadata::from_meta(
         &spawn_meta,
-        Some("grok-4.5"),
+        Some("test-model-4.5"),
         Some("/workspace"),
         None,
         Some("worktree"),
@@ -830,7 +830,7 @@ fn upload_lifecycle_spawn_then_completion_preserves_fields() {
     assert_eq!(spawn_gcs.status, "running");
     assert!(spawn_gcs.completed_at.is_none());
     assert!(spawn_gcs.duration_ms.is_none());
-    assert_eq!(spawn_gcs.model_id.as_deref(), Some("grok-4.5"));
+    assert_eq!(spawn_gcs.model_id.as_deref(), Some("test-model-4.5"));
     assert_eq!(spawn_gcs.cwd.as_deref(), Some("/workspace"));
     assert_eq!(spawn_gcs.role.as_deref(), Some("rust-dev"));
     assert_eq!(spawn_gcs.parent_prompt_id.as_deref(), Some("prompt-42"));
@@ -843,7 +843,7 @@ fn upload_lifecycle_spawn_then_completion_preserves_fields() {
     completed_meta.turns = Some(3);
     let completion_gcs = SubagentSessionMetadata::from_meta(
         &completed_meta,
-        Some("grok-4.5"),
+        Some("test-model-4.5"),
         Some("/workspace"),
         Some("/tmp/worktree-1"),
         Some("worktree"),
@@ -858,7 +858,7 @@ fn upload_lifecycle_spawn_then_completion_preserves_fields() {
     assert_eq!(completion_gcs.duration_ms, Some(5000));
     assert_eq!(completion_gcs.tool_calls, Some(12));
     assert_eq!(completion_gcs.turns, Some(3));
-    assert_eq!(completion_gcs.model_id.as_deref(), Some("grok-4.5"));
+    assert_eq!(completion_gcs.model_id.as_deref(), Some("test-model-4.5"));
     assert_eq!(completion_gcs.cwd.as_deref(), Some("/workspace"));
     assert_eq!(completion_gcs.role.as_deref(), Some("rust-dev"));
     assert_eq!(
@@ -1004,7 +1004,7 @@ fn resume_source_worktree_reuse() {
         child_session_id: "child-wt".into(),
         child_cwd: "/tmp/worktree".into(),
         worktree_path: Some(
-            PathBuf::from("/home/user/.grok/worktrees/myrepo/subagent-sub-wt"),
+            PathBuf::from("/home/user/.ezer/worktrees/myrepo/subagent-sub-wt"),
         ),
         snapshot_ref: None,
         subagent_type: "general-purpose".into(),
@@ -1015,7 +1015,7 @@ fn resume_source_worktree_reuse() {
     assert_eq!(
             worktree.as_deref(),
             Some(Path::new(
-                "/home/user/.grok/worktrees/myrepo/subagent-sub-wt",
+                "/home/user/.ezer/worktrees/myrepo/subagent-sub-wt",
             )),
             "should reuse source worktree"
         );
@@ -1078,7 +1078,7 @@ fn resume_inherited_cwd_requires_existing_non_worktree_dir() {
             Some(existing.as_str())
         );
     let missing = ResumeSourceData {
-        child_cwd: "/no/such/dir/grok-missing".into(),
+        child_cwd: "/no/such/dir/ezer-missing".into(),
         ..present.clone()
     };
     assert_eq!(resume_inherited_cwd(Some(&missing)), None);
@@ -1097,7 +1097,7 @@ fn select_override_cwd_resume_never_falls_through_to_request_cwd() {
         child_session_id: "child-wt".into(),
         child_cwd: "/tmp/whatever".into(),
         worktree_path: Some(
-            PathBuf::from("/home/user/.grok/worktrees/repo/subagent-sub-wt"),
+            PathBuf::from("/home/user/.ezer/worktrees/repo/subagent-sub-wt"),
         ),
         snapshot_ref: None,
         subagent_type: "general-purpose".into(),
@@ -1191,7 +1191,7 @@ fn token_estimation_accounts_for_images() {
 #[test]
 fn durable_fallback_roundtrips_child_cwd_and_worktree() {
     let dir = std::env::temp_dir()
-        .join("grok-test-durable-resume")
+        .join("ezer-test-durable-resume")
         .join(uuid::Uuid::now_v7().to_string());
     let _ = std::fs::create_dir_all(&dir);
     let meta = SubagentMeta {
@@ -1207,22 +1207,22 @@ fn durable_fallback_roundtrips_child_cwd_and_worktree() {
         turns: Some(1),
         persona: Some("implementer".into()),
         child_cwd: Some("/workspace/project".into()),
-        worktree_path: Some("/tmp/grok-wt/sa-dur".into()),
-        effective_model_id: Some("grok-3".into()),
+        worktree_path: Some("/tmp/ezer-wt/sa-dur".into()),
+        effective_model_id: Some("test-model-3".into()),
         ..base_meta()
     };
     write_subagent_meta(&dir, &meta);
     let data = std::fs::read_to_string(dir.join("meta.json")).unwrap();
     let loaded: SubagentMeta = serde_json::from_str(&data).unwrap();
     assert_eq!(loaded.child_cwd.as_deref(), Some("/workspace/project"));
-    assert_eq!(loaded.worktree_path.as_deref(), Some("/tmp/grok-wt/sa-dur"));
+    assert_eq!(loaded.worktree_path.as_deref(), Some("/tmp/ezer-wt/sa-dur"));
     assert_eq!(loaded.status, "completed");
     let _ = std::fs::remove_dir_all(&dir);
 }
 #[test]
 fn durable_fallback_rejects_running_status() {
     let dir = std::env::temp_dir()
-        .join("grok-test-durable-status")
+        .join("ezer-test-durable-status")
         .join(uuid::Uuid::now_v7().to_string());
     let parent_dir = dir.join("subagents").join("sa-running");
     let _ = std::fs::create_dir_all(&parent_dir);
@@ -1287,7 +1287,7 @@ fn drain_cancelled_finish_broadcasts(
         let xai_acp_lib::AcpClientMessage::ExtNotification(args) = msg else {
             continue;
         };
-        assert_eq!(args.request.method.as_ref(), "x.ai/session_notification");
+        assert_eq!(args.request.method.as_ref(), "ezer/session_notification");
         let notification: SessionNotification = serde_json::from_str(
                 args.request.params.get(),
             )
@@ -1935,11 +1935,11 @@ fn resume_allows_matching_identity() {
         snapshot_ref: None,
         subagent_type: "general-purpose".into(),
         persona: Some("implementer".into()),
-        model_id: Some("grok-3".into()),
+        model_id: Some("test-model-3".into()),
     };
     assert_eq!("general-purpose", source.subagent_type);
     assert_eq!(Some("implementer"), source.persona.as_deref());
-    assert_eq!(Some("grok-3"), source.model_id.as_deref());
+    assert_eq!(Some("test-model-3"), source.model_id.as_deref());
 }
 #[test]
 fn resume_identity_does_not_gate_on_model() {
@@ -1951,7 +1951,7 @@ fn resume_identity_does_not_gate_on_model() {
         snapshot_ref: None,
         subagent_type: "general-purpose".into(),
         persona: None,
-        model_id: Some("grok-3".into()),
+        model_id: Some("test-model-3".into()),
     };
     assert!(
             ezer_subagent_resolution::validate_resume_identity(
@@ -1963,14 +1963,14 @@ fn resume_identity_does_not_gate_on_model() {
         );
     assert_eq!(
             source.model_id.as_deref(),
-            Some("grok-3"),
+            Some("test-model-3"),
             "source model remains available for pinning"
         );
 }
 #[test]
 fn durable_meta_roundtrips_effective_model_id() {
     let dir = std::env::temp_dir()
-        .join("grok-test-model-roundtrip")
+        .join("ezer-test-model-roundtrip")
         .join(uuid::Uuid::now_v7().to_string());
     let _ = std::fs::create_dir_all(&dir);
     let meta = SubagentMeta {
@@ -1983,7 +1983,7 @@ fn durable_meta_roundtrips_effective_model_id() {
         tool_calls: Some(1),
         turns: Some(1),
         child_cwd: Some("/workspace".into()),
-        effective_model_id: Some("grok-3".into()),
+        effective_model_id: Some("test-model-3".into()),
         ..base_meta()
     };
     write_subagent_meta(&dir, &meta);
@@ -1991,21 +1991,21 @@ fn durable_meta_roundtrips_effective_model_id() {
     let loaded: SubagentMeta = serde_json::from_str(&data).unwrap();
     assert_eq!(
             loaded.effective_model_id.as_deref(),
-            Some("grok-3"),
+            Some("test-model-3"),
             "model ID should round-trip through meta.json"
         );
     let _ = std::fs::remove_dir_all(&dir);
 }
 #[test]
 fn resume_model_pinning_overrides_default_resolution() {
-    let source_model = Some("grok-3".to_string());
-    let resolved_model = "grok-light";
+    let source_model = Some("test-model-3".to_string());
+    let resolved_model = "ezer-light";
     let needs_pin = source_model.as_deref() != Some(resolved_model);
     assert!(
             needs_pin,
             "resolved model differs from source — pinning should trigger"
         );
-    let resolved_same = "grok-3";
+    let resolved_same = "test-model-3";
     let no_pin = source_model.as_deref() == Some(resolved_same);
     assert!(no_pin, "same model — no pinning needed");
 }
@@ -2137,15 +2137,15 @@ fn ctx_with_parent_chat_state(
 #[tokio::test]
 async fn read_parent_sampling_config_keeps_catalog_threshold_when_routing_slug_is_also_key() {
     let mut models = indexmap::IndexMap::new();
-    let mut entry = test_model_entry("grok-4.5");
+    let mut entry = test_model_entry("test-model-4.5");
     entry.info.max_retries = Some(6);
     entry.info.rate_limit_retry_threshold = Some(6);
     models.insert("auto".to_string(), entry);
-    let mut competing_entry = test_model_entry("grok-4.5");
+    let mut competing_entry = test_model_entry("test-model-4.5");
     competing_entry.info.max_retries = Some(3);
     competing_entry.info.rate_limit_retry_threshold = Some(3);
-    models.insert("grok-4.5".to_string(), competing_entry);
-    let ctx = ctx_with_parent_chat_state("auto", "grok-4.5", "composer-2-fast", models);
+    models.insert("test-model-4.5".to_string(), competing_entry);
+    let ctx = ctx_with_parent_chat_state("auto", "test-model-4.5", "composer-2-fast", models);
     let expected_group = crate::sampling::derive_conversation_group_id(
         &ctx.parent_session_id,
     );
@@ -2159,7 +2159,7 @@ async fn read_parent_sampling_config_keeps_catalog_threshold_when_routing_slug_i
     parent_config.conversation_group_id = Some(expected_group.clone());
     ctx.parent_chat_state.as_ref().unwrap().update_sampling_config(parent_config);
     let (config, model_id) = read_parent_sampling_config(&ctx).await;
-    assert_eq!(config.model, "grok-4.5");
+    assert_eq!(config.model, "test-model-4.5");
     assert_eq!(model_id.0.as_ref(), "auto");
     assert_eq!(config.max_retries, Some(6));
     assert_eq!(config.rate_limit_retry_threshold, Some(6));
@@ -2171,20 +2171,20 @@ async fn read_parent_sampling_config_keeps_catalog_threshold_when_routing_slug_i
 #[serial_test::serial]
 #[serial_test::serial(remote_sig_disarm)]
 async fn read_parent_sampling_config_keeps_auto_when_catalog_has_slug_key_only() {
-    let _env = crate::env::EnvVarGuard::remove("GROK_REQUEST_COMPRESSION");
+    let _env = crate::env::EnvVarGuard::remove("EZER_REQUEST_COMPRESSION");
     let parent_base_url = "https://api.x.ai/v1";
     let mut models = indexmap::IndexMap::new();
-    let mut entry = test_model_entry("grok-4.5");
+    let mut entry = test_model_entry("test-model-4.5");
     entry.info.supports_backend_search = true;
-    models.insert("grok-4.5".to_string(), entry);
-    let ctx = ctx_with_parent_chat_state("auto", "grok-4.5", "auto", models);
+    models.insert("test-model-4.5".to_string(), entry);
+    let ctx = ctx_with_parent_chat_state("auto", "test-model-4.5", "auto", models);
     ctx.parent_chat_state
         .as_ref()
         .unwrap()
         .update_sampling_config(ezer_sampling_types::SamplingConfig {
             api_backend: crate::sampling::ApiBackend::Responses,
             base_url: parent_base_url.to_string(),
-            ..test_sampling_config("grok-4.5")
+            ..test_sampling_config("test-model-4.5")
         });
     crate::util::config::cache_remote_accept_request_encodings(
         parent_base_url,
@@ -2192,7 +2192,7 @@ async fn read_parent_sampling_config_keeps_auto_when_catalog_has_slug_key_only()
     );
     let (config, model_id) = read_parent_sampling_config(&ctx).await;
     crate::util::config::cache_remote_accept_request_encodings(parent_base_url, &[]);
-    assert_eq!(config.model, "grok-4.5");
+    assert_eq!(config.model, "test-model-4.5");
     assert_eq!(model_id.0.as_ref(), "auto");
     assert!(config.supports_backend_search);
     assert_eq!(config.extra_response_includes, ["no_inline_citations"]);
@@ -2247,7 +2247,7 @@ async fn read_parent_sampling_config_fallback_wires_bearer_resolver() {
     ctx.auth_method_id = acp::AuthMethodId::new(
         crate::agent::auth_method::CACHED_TOKEN_AUTH_METHOD_ID,
     );
-    ctx.sampling_config.model = "grok-4.5".to_string();
+    ctx.sampling_config.model = "test-model-4.5".to_string();
     ctx.sampling_config.base_url = "https://api.x.ai/v1".to_string();
     let (config, _) = read_parent_sampling_config(&ctx).await;
     assert!(config.bearer_resolver.is_some());
@@ -2261,7 +2261,7 @@ async fn read_parent_sampling_config_live_never_strips_a_fallback_key() {
         crate::agent::auth_method::CACHED_TOKEN_AUTH_METHOD_ID,
     );
     ctx.auth = None;
-    let chat = spawn_test_parent_chat_state("grok-4.5");
+    let chat = spawn_test_parent_chat_state("test-model-4.5");
     chat.update_credentials(xai_chat_state::Credentials {
         api_key: Some("xai-env-fallback".to_string()),
         auth_type: xai_chat_state::AuthType::SessionToken,
@@ -2286,7 +2286,7 @@ async fn read_parent_sampling_config_fallback_never_strips_a_fallback_key() {
         crate::agent::auth_method::CACHED_TOKEN_AUTH_METHOD_ID,
     );
     ctx.auth = None;
-    ctx.sampling_config.model = "grok-4.5".to_string();
+    ctx.sampling_config.model = "test-model-4.5".to_string();
     ctx.sampling_config.base_url = "https://api.x.ai/v1".to_string();
     ctx.sampling_config.api_key = Some("xai-env-fallback".to_string());
     let (config, _) = read_parent_sampling_config(&ctx).await;
@@ -2300,7 +2300,7 @@ async fn read_parent_sampling_config_fallback_no_resolver_for_api_key_method() {
     ctx.auth_method_id = acp::AuthMethodId::new(
         crate::agent::auth_method::XAI_API_KEY_METHOD_ID,
     );
-    ctx.sampling_config.model = "grok-4.5".to_string();
+    ctx.sampling_config.model = "test-model-4.5".to_string();
     ctx.sampling_config.base_url = "https://api.x.ai/v1".to_string();
     let (config, _) = read_parent_sampling_config(&ctx).await;
     assert!(config.bearer_resolver.is_none());
@@ -2310,15 +2310,15 @@ async fn read_parent_sampling_config_fallback_no_resolver_for_api_key_method() {
 #[test]
 fn resolve_model_override_wires_resolver_for_fresh_and_hard_expired_session_keys() {
     for auth in [
-        ezer_login::GrokAuth {
+        ezer_login::EzerAuth {
             key: "session-jwt".into(),
-            ..ezer_login::GrokAuth::test_default()
+            ..ezer_login::EzerAuth::test_default()
         },
-        ezer_login::GrokAuth {
+        ezer_login::EzerAuth {
             key: "hard-expired-session-jwt".into(),
             create_time: chrono::Utc::now() - chrono::Duration::hours(2),
             expires_at: Some(chrono::Utc::now() - chrono::Duration::hours(1)),
-            ..ezer_login::GrokAuth::test_default()
+            ..ezer_login::EzerAuth::test_default()
         },
     ] {
         let key = auth.key.clone();
@@ -2328,8 +2328,8 @@ fn resolve_model_override_wires_resolver_for_fresh_and_hard_expired_session_keys
         );
         ctx.auth = Some(auth);
         ctx.available_models
-            .insert("grok-4.5".to_string(), test_model_entry("grok-4.5"));
-        let (config, _) = resolve_model_override_to_config("grok-4.5", &ctx).unwrap();
+            .insert("test-model-4.5".to_string(), test_model_entry("test-model-4.5"));
+        let (config, _) = resolve_model_override_to_config("test-model-4.5", &ctx).unwrap();
         assert!(config.bearer_resolver.is_some(), "key={key}");
     }
 }
@@ -2342,8 +2342,8 @@ fn resolve_model_override_to_config_never_strips_a_fallback_key() {
         crate::agent::auth_method::CACHED_TOKEN_AUTH_METHOD_ID,
     );
     ctx.auth = None;
-    ctx.available_models.insert("grok-4.5".to_string(), test_model_entry("grok-4.5"));
-    let (config, _) = resolve_model_override_to_config("grok-4.5", &ctx).unwrap();
+    ctx.available_models.insert("test-model-4.5".to_string(), test_model_entry("test-model-4.5"));
+    let (config, _) = resolve_model_override_to_config("test-model-4.5", &ctx).unwrap();
     assert_eq!(
             config.bearer_resolver.is_some(),
             config.api_key.is_none(),
@@ -2366,11 +2366,11 @@ fn resolve_model_override_to_config_no_resolver_for_byok_model() {
 }
 #[tokio::test]
 async fn read_parent_sampling_config_resolves_backend_search_from_catalog() {
-    let mut entry = test_model_entry("grok-4.5");
+    let mut entry = test_model_entry("test-model-4.5");
     entry.info.supports_backend_search = true;
     let mut models = indexmap::IndexMap::new();
     models.insert("auto".to_string(), entry);
-    let mut ctx = ctx_with_parent_chat_state("auto", "grok-4.5", "auto", models);
+    let mut ctx = ctx_with_parent_chat_state("auto", "test-model-4.5", "auto", models);
     ctx.sampling_config.supports_backend_search = false;
     let (config, _model_id) = read_parent_sampling_config(&ctx).await;
     assert!(
@@ -2380,14 +2380,14 @@ async fn read_parent_sampling_config_resolves_backend_search_from_catalog() {
 }
 #[tokio::test]
 async fn read_parent_sampling_config_fallback_resolves_backend_search_from_catalog() {
-    let mut entry = test_model_entry("grok-4.5");
+    let mut entry = test_model_entry("test-model-4.5");
     entry.info.supports_backend_search = true;
     let mut models = indexmap::IndexMap::new();
-    models.insert("grok-4.5".to_string(), entry);
+    models.insert("test-model-4.5".to_string(), entry);
     let mut ctx = ctx_with_toggle(HashMap::new());
     ctx.model_id = acp::ModelId::new("auto");
     ctx.parent_chat_state = None;
-    ctx.sampling_config.model = "grok-4.5".to_string();
+    ctx.sampling_config.model = "test-model-4.5".to_string();
     ctx.sampling_config.api_backend = crate::sampling::ApiBackend::Responses;
     ctx.sampling_config.base_url = "https://api.x.ai/v1".to_string();
     ctx.sampling_config.supports_backend_search = false;
@@ -2406,11 +2406,11 @@ async fn read_parent_sampling_config_fallback_resolves_backend_search_from_catal
 #[tokio::test]
 async fn read_parent_sampling_config_resolves_compactions_remaining_from_catalog() {
     use ezer_sampling_types::CompactionsRemaining;
-    let mut entry = test_model_entry("grok-4.5");
+    let mut entry = test_model_entry("test-model-4.5");
     entry.info.compactions_remaining = Some(CompactionsRemaining::Dynamic(true));
     let mut models = indexmap::IndexMap::new();
-    models.insert("grok-4.5".to_string(), entry);
-    let mut ctx = ctx_with_parent_chat_state("auto", "grok-4.5", "auto", models);
+    models.insert("test-model-4.5".to_string(), entry);
+    let mut ctx = ctx_with_parent_chat_state("auto", "test-model-4.5", "auto", models);
     ctx.sampling_config.compactions_remaining = None;
     let (config, _model_id) = read_parent_sampling_config(&ctx).await;
     assert_eq!(
@@ -2422,14 +2422,14 @@ async fn read_parent_sampling_config_resolves_compactions_remaining_from_catalog
 #[tokio::test]
 async fn read_parent_sampling_config_fallback_resolves_compactions_remaining_from_catalog() {
     use ezer_sampling_types::CompactionsRemaining;
-    let mut entry = test_model_entry("grok-4.5");
+    let mut entry = test_model_entry("test-model-4.5");
     entry.info.compactions_remaining = Some(CompactionsRemaining::Dynamic(true));
     let mut models = indexmap::IndexMap::new();
-    models.insert("grok-4.5".to_string(), entry);
+    models.insert("test-model-4.5".to_string(), entry);
     let mut ctx = ctx_with_toggle(HashMap::new());
     ctx.model_id = acp::ModelId::new("auto");
     ctx.parent_chat_state = None;
-    ctx.sampling_config.model = "grok-4.5".to_string();
+    ctx.sampling_config.model = "test-model-4.5".to_string();
     ctx.sampling_config.compactions_remaining = None;
     ctx.models_manager = crate::agent::remote_config::ModelsManager::new(
         None,
@@ -2559,7 +2559,7 @@ async fn fork_context_pins_parent_model_over_overrides() {
 #[tokio::test]
 async fn resolve_subagent_inherits_parent_model_without_pins() {
     use ezer_agent::config::ModelOverride;
-    for parent_model in ["grok-4.5", "composer-2-fast", "my-custom-byok-model"] {
+    for parent_model in ["test-model-4.5", "composer-2-fast", "my-custom-byok-model"] {
         let mut ctx = ctx_with_toggle(HashMap::new());
         ctx.sampling_config.model = parent_model.to_string();
         ctx.model_id = acp::ModelId::new(parent_model);
@@ -2580,7 +2580,7 @@ async fn resolve_subagent_inherits_parent_model_without_pins() {
 #[tokio::test]
 async fn resolve_subagent_config_override_pin_applies_for_any_parent() {
     use ezer_agent::config::ModelOverride;
-    for parent_model in ["grok-4.5", "composer-2-fast"] {
+    for parent_model in ["test-model-4.5", "composer-2-fast"] {
         let mut ctx = ctx_with_toggle(HashMap::new());
         ctx.sampling_config.model = parent_model.to_string();
         ctx.model_id = acp::ModelId::new(parent_model);
@@ -2606,8 +2606,8 @@ async fn resolve_subagent_config_override_pin_applies_for_any_parent() {
 async fn resolve_subagent_agent_definition_pin_applies_for_light_parent() {
     use ezer_agent::config::ModelOverride;
     let mut ctx = ctx_with_toggle(HashMap::new());
-    ctx.sampling_config.model = "grok-4.5".to_string();
-    ctx.model_id = acp::ModelId::new("grok-4.5");
+    ctx.sampling_config.model = "test-model-4.5".to_string();
+    ctx.model_id = acp::ModelId::new("test-model-4.5");
     ctx.available_models
         .insert("pinned-model".to_string(), test_model_entry("pinned-model"));
     let agent_model = ModelOverride::Override("pinned-model".to_string());
@@ -2625,8 +2625,8 @@ async fn resolve_subagent_agent_definition_pin_applies_for_light_parent() {
 async fn resolve_subagent_config_override_wins_over_agent_definition() {
     use ezer_agent::config::ModelOverride;
     let mut ctx = ctx_with_toggle(HashMap::new());
-    ctx.sampling_config.model = "grok-4.5".to_string();
-    ctx.model_id = acp::ModelId::new("grok-4.5");
+    ctx.sampling_config.model = "test-model-4.5".to_string();
+    ctx.model_id = acp::ModelId::new("test-model-4.5");
     ctx.available_models
         .insert("config-pin".to_string(), test_model_entry("config-pin"));
     ctx.available_models
@@ -2649,8 +2649,8 @@ async fn resolve_subagent_config_override_wins_over_agent_definition() {
 async fn resolve_subagent_config_override_unselectable_model_falls_through_to_inherit() {
     use ezer_agent::config::ModelOverride;
     let mut ctx = ctx_with_toggle(HashMap::new());
-    ctx.sampling_config.model = "grok-4.5".to_string();
-    ctx.model_id = acp::ModelId::new("grok-4.5");
+    ctx.sampling_config.model = "test-model-4.5".to_string();
+    ctx.model_id = acp::ModelId::new("test-model-4.5");
     let mut blocked = test_model_entry("blocked-model");
     blocked.info.user_selectable = false;
     ctx.available_models.insert("blocked-model".to_string(), blocked);
@@ -2661,7 +2661,7 @@ async fn resolve_subagent_config_override_unselectable_model_falls_through_to_in
     cfg.requirements
         .allowed_models
         .pin(
-            crate::agent::config::AllowlistPin::List(vec!["grok-4*".into()]),
+            crate::agent::config::AllowlistPin::List(vec!["test-model-4*".into()]),
             crate::config::RequirementSource::Unknown,
         );
     ctx.agent_config = Some(cfg);
@@ -2671,8 +2671,8 @@ async fn resolve_subagent_config_override_unselectable_model_falls_through_to_in
             &ctx,
         )
         .await;
-    assert_eq!(config.model, "grok-4.5");
-    assert_eq!(model_id.0.as_ref(), "grok-4.5");
+    assert_eq!(config.model, "test-model-4.5");
+    assert_eq!(model_id.0.as_ref(), "test-model-4.5");
 }
 /// A user's own `allowed_models` picker filter does not block named
 /// subagent overrides. Only a fleet pin does.
@@ -2680,8 +2680,8 @@ async fn resolve_subagent_config_override_unselectable_model_falls_through_to_in
 async fn resolve_subagent_config_override_user_allowlist_still_applies() {
     use ezer_agent::config::ModelOverride;
     let mut ctx = ctx_with_toggle(HashMap::new());
-    ctx.sampling_config.model = "grok-4.5".to_string();
-    ctx.model_id = acp::ModelId::new("grok-4.5");
+    ctx.sampling_config.model = "test-model-4.5".to_string();
+    ctx.model_id = acp::ModelId::new("test-model-4.5");
     let mut picker_hidden = test_model_entry("subagent-only");
     picker_hidden.info.user_selectable = false;
     ctx.available_models.insert("subagent-only".to_string(), picker_hidden);
@@ -2705,8 +2705,8 @@ async fn resolve_subagent_config_override_user_allowlist_still_applies() {
 async fn resolve_subagent_config_override_none_agent_config_blocks_unselectable() {
     use ezer_agent::config::ModelOverride;
     let mut ctx = ctx_with_toggle(HashMap::new());
-    ctx.sampling_config.model = "grok-4.5".to_string();
-    ctx.model_id = acp::ModelId::new("grok-4.5");
+    ctx.sampling_config.model = "test-model-4.5".to_string();
+    ctx.model_id = acp::ModelId::new("test-model-4.5");
     let mut blocked = test_model_entry("blocked-model");
     blocked.info.user_selectable = false;
     ctx.available_models.insert("blocked-model".to_string(), blocked);
@@ -2719,16 +2719,16 @@ async fn resolve_subagent_config_override_none_agent_config_blocks_unselectable(
             &ctx,
         )
         .await;
-    assert_eq!(config.model, "grok-4.5");
-    assert_eq!(model_id.0.as_ref(), "grok-4.5");
+    assert_eq!(config.model, "test-model-4.5");
+    assert_eq!(model_id.0.as_ref(), "test-model-4.5");
 }
 /// An unresolvable `[subagents.models]` pin (model absent from `available_models`) falls through to inherit the parent model.
 #[tokio::test]
 async fn resolve_subagent_config_override_unknown_model_falls_through_to_inherit() {
     use ezer_agent::config::ModelOverride;
     let mut ctx = ctx_with_toggle(HashMap::new());
-    ctx.sampling_config.model = "grok-4.5".to_string();
-    ctx.model_id = acp::ModelId::new("grok-4.5");
+    ctx.sampling_config.model = "test-model-4.5".to_string();
+    ctx.model_id = acp::ModelId::new("test-model-4.5");
     ctx.subagent_model_overrides
         .insert("explore".to_string(), "does-not-exist".to_string());
     let (config, model_id) = resolve_subagent_sampling_config(
@@ -2737,16 +2737,16 @@ async fn resolve_subagent_config_override_unknown_model_falls_through_to_inherit
             &ctx,
         )
         .await;
-    assert_eq!(config.model, "grok-4.5");
-    assert_eq!(model_id.0.as_ref(), "grok-4.5");
+    assert_eq!(config.model, "test-model-4.5");
+    assert_eq!(model_id.0.as_ref(), "test-model-4.5");
 }
 /// An unresolvable `AgentDefinition.model` pin (model absent from `available_models`) falls through to inherit the parent model.
 #[tokio::test]
 async fn resolve_subagent_agent_definition_unknown_model_falls_through_to_inherit() {
     use ezer_agent::config::ModelOverride;
     let mut ctx = ctx_with_toggle(HashMap::new());
-    ctx.sampling_config.model = "grok-4.5".to_string();
-    ctx.model_id = acp::ModelId::new("grok-4.5");
+    ctx.sampling_config.model = "test-model-4.5".to_string();
+    ctx.model_id = acp::ModelId::new("test-model-4.5");
     let agent_model = ModelOverride::Override("does-not-exist".to_string());
     let (config, model_id) = resolve_subagent_sampling_config(
             "explore",
@@ -2754,8 +2754,8 @@ async fn resolve_subagent_agent_definition_unknown_model_falls_through_to_inheri
             &ctx,
         )
         .await;
-    assert_eq!(config.model, "grok-4.5");
-    assert_eq!(model_id.0.as_ref(), "grok-4.5");
+    assert_eq!(config.model, "test-model-4.5");
+    assert_eq!(model_id.0.as_ref(), "test-model-4.5");
 }
 /// Spawn-time credentials are cache-only: a cold spawn has no key, never the parent session key.
 #[tokio::test]
@@ -2772,10 +2772,10 @@ async fn subagent_override_provider_model_spawns_cache_only_credentials() {
     let mut models = indexmap::IndexMap::new();
     models.insert("proxied".to_string(), entry);
     let mut ctx = ctx_with_toggle(HashMap::new());
-    ctx.sampling_config.model = "grok-4.5".to_string();
-    ctx.model_id = acp::ModelId::new("grok-4.5");
+    ctx.sampling_config.model = "test-model-4.5".to_string();
+    ctx.model_id = acp::ModelId::new("test-model-4.5");
     ctx.available_models = models;
-    ctx.auth = Some(ezer_login::GrokAuth {
+    ctx.auth = Some(ezer_login::EzerAuth {
         key: "parent-session-jwt".to_string(),
         ..Default::default()
     });

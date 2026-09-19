@@ -25,7 +25,7 @@ pub(super) fn pick_user_image_url(image: &agent_client_protocol::ImageContent) -
 /// A `Configured` file is a user rule wherever its dir sits; everything else is scoped by path.
 fn partition_rules_by_scope(
     files: Vec<ezer_agent::prompt::agents_md::AgentConfigFile>,
-    grok_home: &std::path::Path,
+    ezer_home: &std::path::Path,
     vendor_homes: &[(std::path::PathBuf, bool)],
     workspace_roots: &[&std::path::Path],
 ) -> (
@@ -39,7 +39,7 @@ fn partition_rules_by_scope(
             == ezer_agent::prompt::agents_md::InstructionSource::Configured
             || crate::util::is_user_instruction_path(
                 std::path::Path::new(&file.file_path),
-                grok_home,
+                ezer_home,
                 vendor_homes,
                 workspace_roots,
             );
@@ -98,7 +98,7 @@ mod partition_rules_by_scope_tests {
         entries.iter().map(|entry| entry.content.as_str()).collect()
     }
     #[test]
-    fn partitions_custom_grok_and_vendor_home_rules_as_user_scope() {
+    fn partitions_custom_ezer_and_vendor_home_rules_as_user_scope() {
         let files = vec![
             file("/custom/config/rules/a.md"),
             file("/home/user/.cursor/rules/b.md"),
@@ -130,7 +130,7 @@ mod partition_rules_by_scope_tests {
         );
     }
     #[test]
-    fn grok_home_nested_in_workspace_keeps_direct_surfaces_user_scoped() {
+    fn ezer_home_nested_in_workspace_keeps_direct_surfaces_user_scoped() {
         let files = vec![
             file("/repo/config/AGENTS.md"),
             file("/repo/config/rules/global.md"),
@@ -179,7 +179,7 @@ mod partition_rules_by_scope_tests {
         );
     }
     #[test]
-    fn nested_grok_home_workspace_files_stay_workspace_scoped() {
+    fn nested_ezer_home_workspace_files_stay_workspace_scoped() {
         let files = vec![
             file("/custom/ezer/rules/global.md"),
             file("/custom/ezer/worktrees/repo/.cursor/rules/project.md"),
@@ -582,7 +582,7 @@ impl SessionActor {
         Vec<ezer_agent::prompt::user_message::RuleEntry>,
     ) {
         let files = self.agent.borrow().prompt_context().agents_md_files.clone();
-        let grok_home = ezer_config::grok_home();
+        let ezer_home = ezer_config::ezer_home();
         let vendor_homes = xai_dirs::home_dir()
             .map(|home_dir| {
                 vec![
@@ -611,7 +611,7 @@ impl SessionActor {
             .into_iter()
             .chain(std::iter::once(on_disk_root.as_path()))
             .collect();
-        partition_rules_by_scope(files, &grok_home, &vendor_homes, &workspace_roots)
+        partition_rules_by_scope(files, &ezer_home, &vendor_homes, &workspace_roots)
     }
     /// Build the custom-templated first user message.
     /// Gathers session-scoped inputs: today's date, VCS status, AGENTS.md rules, skill registry, and MCP servers.

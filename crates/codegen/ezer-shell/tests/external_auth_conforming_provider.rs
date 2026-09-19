@@ -13,7 +13,7 @@ use std::time::{Duration, Instant};
 
 use chrono::Utc;
 use ezer_login::{
-    AuthMode, GrokAuth, GrokComConfig, ensure_authenticated, try_ensure_fresh_auth,
+    AuthMode, EzerAuth, EzerComConfig, ensure_authenticated, try_ensure_fresh_auth,
 };
 
 const STALE_TOKEN: &str = "stale-token-the-provider-will-not-renew";
@@ -62,13 +62,13 @@ fn invocations(home: &Path) -> Vec<String> {
 }
 
 fn seed_expired_credential(home: &Path, scope: &str) {
-    let expired = GrokAuth {
+    let expired = EzerAuth {
         key: STALE_TOKEN.to_owned(),
         auth_mode: AuthMode::External,
         expires_at: Some(Utc::now() - chrono::Duration::hours(1)),
-        ..GrokAuth::default()
+        ..EzerAuth::default()
     };
-    let store: BTreeMap<String, GrokAuth> = [(scope.to_owned(), expired)].into_iter().collect();
+    let store: BTreeMap<String, EzerAuth> = [(scope.to_owned(), expired)].into_iter().collect();
     std::fs::write(
         home.join("auth.json"),
         serde_json::to_string(&store).expect("serialize auth store"),
@@ -90,10 +90,10 @@ async fn a_provider_that_declines_the_headless_run_can_still_sign_the_user_in() 
     let dead = dead_endpoint();
 
     // SAFETY: single-threaded test entry, before any thread that reads the
-    // environment is spawned. `grok_home()` memoizes, so this must stay the
+    // environment is spawned. `ezer_home()` memoizes, so this must stay the
     // only test in the binary.
     unsafe {
-        std::env::set_var("GROK_HOME", home.path());
+        std::env::set_var("EZER_HOME", home.path());
         std::env::set_var("EZER_CLI_CHAT_PROXY_BASE_URL", &dead);
         std::env::set_var("EZER_XAI_API_BASE_URL", &dead);
         std::env::remove_var("XAI_API_KEY");
@@ -103,9 +103,9 @@ async fn a_provider_that_declines_the_headless_run_can_still_sign_the_user_in() 
         std::env::set_var("EZER_TRACE_UPLOAD", "false");
     }
 
-    let config = GrokComConfig {
+    let config = EzerComConfig {
         auth_provider_command: Some(provider),
-        ..GrokComConfig::default()
+        ..EzerComConfig::default()
     };
     seed_expired_credential(home.path(), &config.auth_scope());
 

@@ -147,8 +147,8 @@ fn discover_servers(cwd: &Path) -> (Vec<ConfigSourceStatus>, Vec<DiscoveredServe
         &ezer_tools::types::compat::CompatConfig::default(),
     );
 
-    let grok_home = ezer_tools::util::grok_home::grok_home();
-    let user_config = grok_home.join("config.toml");
+    let ezer_home = ezer_tools::util::ezer_home::ezer_home();
+    let user_config = ezer_home.join("config.toml");
     let project_config_paths = crate::config::find_project_configs(cwd);
     let project_layers: Vec<(std::path::PathBuf, toml::Value)> = project_config_paths
         .iter()
@@ -746,9 +746,9 @@ pub async fn run_doctor(cwd: &Path, name_filter: Option<&str>) -> DoctorReport {
 
     let disabled_names = crate::util::config::disabled_mcp_server_names(cwd);
 
-    // Folder-trust gate: `grok mcp doctor` actually STARTS each server (`check_server_start`) In an untrusted clone that would spawn the repo's project-scoped servers
+    // Folder-trust gate: `ezer mcp doctor` actually STARTS each server (`check_server_start`) In an untrusted clone that would spawn the repo's project-scoped servers
     // Resolve the doctor cwd once (no prompt), then skip (do not start) any project-scoped server when untrusted
-    // Uses the same name lookup (`project_scoped_mcp_names`) as the session/agent-pool gates `remote = None` is intentional: standalone `grok mcp doctor` has no loaded `RemoteSettings` A remote-only org opt-out (`folder_trust_enabled = false`) isn't seen here Gating conservatively (treating the feature as enabled) is the deliberate fail-secure choice
+    // Uses the same name lookup (`project_scoped_mcp_names`) as the session/agent-pool gates `remote = None` is intentional: standalone `ezer mcp doctor` has no loaded `RemoteSettings` A remote-only org opt-out (`folder_trust_enabled = false`) isn't seen here Gating conservatively (treating the feature as enabled) is the deliberate fail-secure choice
     crate::agent::folder_trust::resolve_and_record(cwd, None, false);
     // One project-config walk serves both the folder-trust skip set and the
     // policy subject classification below.
@@ -987,7 +987,7 @@ mod tests {
     #[serial_test::serial]
     fn policy_subjects_judge_each_definition_once() {
         // A real `[claude_compat] imported` marker would cut off `.mcp.json`, so pin the cache to
-        // "not imported"; the TOML seed is project-scoped since grok_home() is a OnceLock.
+        // "not imported"; the TOML seed is project-scoped since ezer_home() is a OnceLock.
         let _reset = MarkerCacheReset;
         crate::claude_import::refresh_marker_cache(false);
         let repo = tempfile::tempdir().unwrap();

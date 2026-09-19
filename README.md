@@ -24,7 +24,7 @@ and ACP — without requiring an xAI account.
 - The CLI binary is **`ezer`**.
 - Compiled catalog default is **`workbuddy`** (wire id `deepseek-v4.1-flash`). Startup validates catalog **`id`** (not only the wire `model` slug), so an alias default no longer panics.
 
-Optional browser OAuth still exists behind `EZER_ENABLE_XAI_LOGIN=1` (or `ezer login --force-login`) and never blocks startup. BYOK does not require grok.com.
+Optional browser OAuth still exists behind `EZER_ENABLE_XAI_LOGIN=1` (or `ezer login --force-login`) and never blocks startup. BYOK does not require ezer.com.
 
 ## Building from source
 
@@ -42,10 +42,10 @@ cargo check -p ezer-pager-bin            # fast validation
 
 The shipping package is `ezer-pager-bin`; the default binary name is `ezer`.
 
-Crates that previously used the `xai-grok-*` package/directory names are now
+Crates that previously used the `xai-ezer-*` package/directory names are now
 `ezer-*` (workspace members, path deps, and Rust `use` paths). Historical
-`xai-*` leaf crates that never had `grok` in the name were left as-is.
-Internal function names such as `grok_home()` still exist so TUI, tools,
+`xai-*` leaf crates that never had `ezer` in the name were left as-is.
+Internal function names such as `ezer_home()` still exist so TUI, tools,
 sessions, skills, headless, and ACP keep the same behavior. User-facing CLI,
 `~/.ezer`, and help/version say **ezer**.
 
@@ -224,7 +224,7 @@ Responses (and Chat Completions) requests that advertise tools set
 `parallel_tool_calls: true` so the model can emit several `spawn_subagent`
 calls in one turn. The coordinator then runs those children concurrently.
 
-See [Subagents and Personas](crates/codegen/xai-grok-pager/docs/user-guide/16-subagents.md).
+See [Subagents and Personas](crates/codegen/xai-ezer-pager/docs/user-guide/16-subagents.md).
 
 ## Documentation
 
@@ -253,27 +253,21 @@ Start with [custom models](crates/codegen/ezer-pager/docs/user-guide/11-custom-m
 > profiles) is **generated** — treat it as read-only. Prefer editing per-crate
 > `Cargo.toml` files.
 
-## De-branding leftovers
+## Residual branding leftovers
 
-Shipping crate folders and package names are `ezer-*`. After
-`cargo build --release -p ezer-pager-bin`, `strings target/release/ezer | rg -i grok`
-no longer contains `xai-grok-*` crate paths. Remaining hits:
+Hot-path product URLs, shell markers, metrics, MCP prefixes, and ACP method
+strings now use `ezer` / `EZER_*` names. A fresh `ezer` release binary should
+not embed `grok.com` hosts. These leftovers are intentional:
 
-| Kind | Examples | Why left |
+| Kind | Location | Why left |
 |------|----------|----------|
-| Internal APIs / serde | `grok_home()`, `grok_com_config`, `GrokComConfig`, `GrokBuildEnvironment`, `ClientType::GrokPager` | Wire/config compatibility; renaming would break sessions |
-| `GROK_HOME` env alias | still accepted next to `EZER_HOME` | Existing installs / scripts |
-| Shell snapshot markers | `__GROK_BASH_STATE_*`, `grok_snap_*` | Persistent-shell replay format |
-| Theme ids | `groknight`, `grokday` | First-party theme names |
-| Optional xAI hosts | `grok.com`, `cli-chat-proxy.grok.com`, `computer-hub.grok.com` | Linked with optional `EZER_ENABLE_XAI_LOGIN` / remote sync; not required for BYOK |
-| xAI/X notices | announcements, privacy banner, plugin CTA, changelog CDN, login nudges | Suppressed unless `EZER_ENABLE_XAI_LOGIN=1`. BYOK users never see them. |
-| Auto-upgrade | `[cli].auto_update` defaults false; no background download | One-shot notice only for non-xAI `gh-release` (`iwen-conf/ezer` or `EZER_UPDATE_REPO`). Never auto-upgrade. |
-| Metrics | `grok_workspace_*`, `grok_leader` | Prometheus series names |
-| Historical `xai-*` crates | `xai-dirs`, `xai-crash-handler`, … | Panic `file!()` paths without `grok` |
-| npm platform packages | `crates/codegen/ezer-pager/npm/grok-*` | Not linked into the Rust CLI |
+| `$GROK_HOME` read fallback | `crates/codegen/xai-dirs/src/lib.rs` (`LEGACY_HOME_ENV`) | One-release read of old env; writes use `$EZER_HOME` / `~/.ezer` |
+| `*.x.ai` host match | `ezer-shell-base` `is_xai_api_url` / `is_trusted_xai_https_url` | Security: refuse first-party session tokens on non-xAI hosts |
+| Opt-in OAuth issuer / accounts origins | `ezer-login` `XAI_OAUTH2_ISSUER`, `PROD_ACCOUNTS_APP_ORIGINS`, `LEGACY_AUTH_SCOPE` | Dead unless `EZER_ENABLE_XAI_LOGIN=1`; needed to recognize old `auth.json` scopes and first-party issuers |
+| Historical `xai-*` crate dirs | `xai-dirs`, `xai-crash-handler`, `xai-acp-lib`, … | `file!()` paths contain `xai-` but not `x.ai` / `grok` |
 | Docs | this README | History / leftovers note |
 
-User-facing `ezer --help` / `ezer --version` have no `grok`. This cloud VM cannot reach `192.168.0.63`; no LAN live tests were run.
+User-facing `ezer --help` / `ezer --version` have no `grok` or `xAI`. This cloud VM cannot reach `192.168.0.63`; no LAN live tests were run.
 
 ## Development
 

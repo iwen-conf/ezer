@@ -88,7 +88,7 @@ pub async fn list_skills_with_plugins(
 ) -> Vec<SkillInfo> {
     let _skill_discovery_timer = crate::timing::timer("skill_discovery");
     let workspace_user_dir = crate::prompt::workspace_user::optional_workspace_user_dir();
-    let grok_home = ezer_tools::util::grok_home::grok_home();
+    let ezer_home = ezer_tools::util::ezer_home::ezer_home();
 
     let (discovery_cwd, discovery_user_dir) = if project_trusted {
         (working_directory, workspace_user_dir.as_deref())
@@ -96,7 +96,7 @@ pub async fn list_skills_with_plugins(
         (None, None)
     };
     let mut skills =
-        list_skills_with_options(discovery_cwd, discovery_user_dir, &grok_home, compat).await;
+        list_skills_with_options(discovery_cwd, discovery_user_dir, &ezer_home, compat).await;
 
     let git_root = working_directory
         .map(Path::new)
@@ -161,7 +161,7 @@ fn collect_skill_config_dirs_from_sources(
     config_paths: &[String],
     compat: CompatConfig,
 ) -> Vec<PathBuf> {
-    let grok_home = global_dir.to_path_buf();
+    let ezer_home = global_dir.to_path_buf();
     let mut dirs = Vec::new();
     let mut seen = HashSet::new();
 
@@ -176,7 +176,7 @@ fn collect_skill_config_dirs_from_sources(
         }
     };
 
-    // Vendor dirs (`.claude`/`.cursor`) are gated by the resolved compat config; `.grok` and `.agents` are always present
+    // Vendor dirs (`.claude`/`.cursor`) are gated by the resolved compat config; `.ezer` and `.agents` are always present
     // When all cells are on, this list equals the historical `[".ezer", ".agents", ".claude", ".cursor"]`
     let config_dir_names = compat.skill_config_dirs();
 
@@ -188,9 +188,9 @@ fn collect_skill_config_dirs_from_sources(
         }
     }
 
-    // Priority 3: Global user dirs. `.grok` comes from `grok_home` (which may be overridden), so it's handled separately.
+    // Priority 3: Global user dirs. `.ezer` comes from `ezer_home` (which may be overridden), so it's handled separately.
     // `.agents` is always added, while `.claude`/`.cursor` are gated by the skills compat cells
-    try_add(grok_home);
+    try_add(ezer_home);
     if let Some(home) = xai_dirs::home_dir() {
         try_add(home.join(".agents"));
         if compat.claude.skills {
@@ -218,7 +218,7 @@ fn collect_skill_config_dirs_from_sources(
 
 /// Determine the skill scope for a config directory based on its location relative to `cwd`, `git_root`, and the user's home directory.
 fn scope_for_config_dir(dir: &Path, cwd: Option<&Path>, git_root: Option<&Path>) -> SkillScope {
-    // Home-level dirs (e.g. ~/.grok/, ~/.agents/, ~/.claude/) are User scope.
+    // Home-level dirs (e.g. ~/.ezer/, ~/.agents/, ~/.claude/) are User scope.
     if let Some(home) = xai_dirs::home_dir()
         && dir.parent() == Some(home.as_path())
     {
@@ -795,12 +795,12 @@ mod tests {
     fn find_skill_paths_flat_layout() {
         // Traditional flat layout: skills/<name>/SKILL.md
         let tmp = tempfile::tempdir().unwrap();
-        let grok_dir = tmp.path().join(".ezer");
+        let ezer_dir = tmp.path().join(".ezer");
 
-        write_skill_md(&grok_dir.join("skills").join("alpha"), "alpha");
-        write_skill_md(&grok_dir.join("skills").join("beta"), "beta");
+        write_skill_md(&ezer_dir.join("skills").join("alpha"), "alpha");
+        write_skill_md(&ezer_dir.join("skills").join("beta"), "beta");
 
-        let paths = find_skill_paths(&grok_dir);
+        let paths = find_skill_paths(&ezer_dir);
         assert_eq!(paths.len(), 2);
         assert!(paths.iter().all(|p| p.file_name().unwrap() == "SKILL.md"));
     }
@@ -809,13 +809,13 @@ mod tests {
     fn find_skill_paths_nested_layout() {
         // Nested: skills/team/infra/SKILL.md, skills/team/training/SKILL.md
         let tmp = tempfile::tempdir().unwrap();
-        let grok_dir = tmp.path().join(".ezer");
-        let skills = grok_dir.join("skills");
+        let ezer_dir = tmp.path().join(".ezer");
+        let skills = ezer_dir.join("skills");
 
         write_skill_md(&skills.join("team").join("infra"), "infra");
         write_skill_md(&skills.join("team").join("training"), "training");
 
-        let paths = find_skill_paths(&grok_dir);
+        let paths = find_skill_paths(&ezer_dir);
         assert_eq!(paths.len(), 2);
 
         let path_strs: Vec<String> = paths.iter().map(|p| p.display().to_string()).collect();
@@ -826,8 +826,8 @@ mod tests {
     #[test]
     fn find_skill_paths_mixed_flat_and_nested() {
         let tmp = tempfile::tempdir().unwrap();
-        let grok_dir = tmp.path().join(".ezer");
-        let skills = grok_dir.join("skills");
+        let ezer_dir = tmp.path().join(".ezer");
+        let skills = ezer_dir.join("skills");
 
         // Flat
         write_skill_md(&skills.join("top-level"), "top-level");
@@ -836,15 +836,15 @@ mod tests {
         // Nested 2 levels
         write_skill_md(&skills.join("org").join("team").join("deep"), "deep");
 
-        let paths = find_skill_paths(&grok_dir);
+        let paths = find_skill_paths(&ezer_dir);
         assert_eq!(paths.len(), 3);
     }
 
     #[test]
     fn find_skill_paths_dir_without_skill_md_is_skipped() {
         let tmp = tempfile::tempdir().unwrap();
-        let grok_dir = tmp.path().join(".ezer");
-        let skills = grok_dir.join("skills");
+        let ezer_dir = tmp.path().join(".ezer");
+        let skills = ezer_dir.join("skills");
 
         write_skill_md(&skills.join("valid"), "valid");
         fs::create_dir_all(skills.join("empty-dir")).unwrap();
@@ -853,7 +853,7 @@ mod tests {
         fs::create_dir_all(&other).unwrap();
         fs::write(other.join("README.md"), "not a skill").unwrap();
 
-        let paths = find_skill_paths(&grok_dir);
+        let paths = find_skill_paths(&ezer_dir);
         assert_eq!(paths.len(), 1);
         assert!(
             paths
@@ -864,12 +864,12 @@ mod tests {
 
     #[test]
     fn find_skill_paths_no_skills_dir() {
-        // .grok exists but no skills/ subdirectory
+        // .ezer exists but no skills/ subdirectory
         let tmp = tempfile::tempdir().unwrap();
-        let grok_dir = tmp.path().join(".ezer");
-        fs::create_dir_all(&grok_dir).unwrap();
+        let ezer_dir = tmp.path().join(".ezer");
+        fs::create_dir_all(&ezer_dir).unwrap();
 
-        let paths = find_skill_paths(&grok_dir);
+        let paths = find_skill_paths(&ezer_dir);
         assert!(paths.is_empty());
     }
 
@@ -910,15 +910,15 @@ mod tests {
     #[test]
     fn find_skill_paths_parent_and_child_both_have_skill_md() {
         let tmp = tempfile::tempdir().unwrap();
-        let grok_dir = tmp.path().join(".ezer");
-        let skills = grok_dir.join("skills");
+        let ezer_dir = tmp.path().join(".ezer");
+        let skills = ezer_dir.join("skills");
 
         // Parent skill
         write_skill_md(&skills.join("parent"), "parent-skill");
         // Child skill inside parent
         write_skill_md(&skills.join("parent").join("child"), "child-skill");
 
-        let paths = find_skill_paths(&grok_dir);
+        let paths = find_skill_paths(&ezer_dir);
         assert_eq!(paths.len(), 2);
 
         let path_strs: Vec<String> = paths.iter().map(|p| p.display().to_string()).collect();
@@ -1045,9 +1045,9 @@ mod tests {
 
     #[test]
     fn parse_model_and_effort() {
-        let content = "---\nname: my-skill\ndescription: test\nmodel: grok-3\neffort: high\n---\n";
+        let content = "---\nname: my-skill\ndescription: test\nmodel: test-model-3\neffort: high\n---\n";
         let parsed = parse_skill_frontmatter(content, None).unwrap();
-        assert_eq!(parsed.model.as_deref(), Some("grok-3"));
+        assert_eq!(parsed.model.as_deref(), Some("test-model-3"));
         assert_eq!(parsed.effort.as_deref(), Some("high"));
     }
 
@@ -1191,7 +1191,7 @@ mod tests {
     #[test]
     fn parse_full_spec_plus_extensions() {
         // Mixed agentskills.io spec fields and our extensions; all must parse
-        let content = "---\nname: my-skill\ndescription: A full skill\nlicense: MIT\ncompatibility: Python 3.12+\nmetadata:\n  author: test-org\n  version: \"2.0\"\nallowed-tools:\n  - bash\n  - read_file\nargument-hint: file path\nmodel: grok-3\neffort: high\nuser-invocable: true\ndisable-model-invocation: false\n---\nBody content.\n";
+        let content = "---\nname: my-skill\ndescription: A full skill\nlicense: MIT\ncompatibility: Python 3.12+\nmetadata:\n  author: test-org\n  version: \"2.0\"\nallowed-tools:\n  - bash\n  - read_file\nargument-hint: file path\nmodel: test-model-3\neffort: high\nuser-invocable: true\ndisable-model-invocation: false\n---\nBody content.\n";
         let parsed = parse_skill_frontmatter(content, None).unwrap();
         assert_eq!(parsed.name, "my-skill");
         assert_eq!(parsed.description, "A full skill");
@@ -1203,7 +1203,7 @@ mod tests {
             Some(["bash".to_string(), "read_file".to_string()].as_slice())
         );
         assert_eq!(parsed.argument_hint.as_deref(), Some("file path"));
-        assert_eq!(parsed.model.as_deref(), Some("grok-3"));
+        assert_eq!(parsed.model.as_deref(), Some("test-model-3"));
         assert_eq!(parsed.effort.as_deref(), Some("high"));
         assert!(parsed.user_invocable);
         assert!(!parsed.disable_model_invocation);
@@ -1515,7 +1515,7 @@ mod tests {
             root: root.clone(),
             canonical_root: root.clone(),
             scope: PluginScope::User,
-            origin: crate::plugins::PluginOrigin::UserGrok,
+            origin: crate::plugins::PluginOrigin::UserEzer,
             trusted: true,
             enabled: true,
             version: Some("1.0.0".to_string()),
@@ -1579,8 +1579,8 @@ mod tests {
         use crate::plugins::manifest::PluginManifest;
 
         let (origin, trusted) = match scope {
-            PluginScope::Project => (crate::plugins::PluginOrigin::ProjectGrok, false),
-            PluginScope::User => (crate::plugins::PluginOrigin::UserGrok, true),
+            PluginScope::Project => (crate::plugins::PluginOrigin::ProjectEzer, false),
+            PluginScope::User => (crate::plugins::PluginOrigin::UserEzer, true),
             PluginScope::CliOverride => (crate::plugins::PluginOrigin::CliOverride, true),
             PluginScope::ConfigPath => (crate::plugins::PluginOrigin::ConfigPath, true),
         };
@@ -2349,7 +2349,7 @@ mod tests {
             root: root.clone(),
             canonical_root: root,
             scope: PluginScope::Project,
-            origin: crate::plugins::PluginOrigin::ProjectGrok,
+            origin: crate::plugins::PluginOrigin::ProjectEzer,
             trusted: true,
             enabled: true,
             version: Some("1.0.0".to_string()),
@@ -2599,7 +2599,7 @@ mod tests {
 
     #[test]
     fn dedupe_same_scope_cross_harness_loser_resurfaces() {
-        // A `.claude` skill claiming a `.grok`-owned name (both User scope) re-keys to its dir basename instead of being silently hidden
+        // A `.claude` skill claiming a `.ezer`-owned name (both User scope) re-keys to its dir basename instead of being silently hidden
         let out = dedupe_skills(vec![
             named_skill(
                 "review",
@@ -2663,7 +2663,7 @@ mod tests {
     #[test]
     fn dedupe_same_scope_same_basename_still_drops() {
         // Same name AND same dir basename across two same-scope roots
-        // (e.g. ~/.grok/skills and ~/.agents/skills): first-seen wins.
+        // (e.g. ~/.ezer/skills and ~/.agents/skills): first-seen wins.
         let out = dedupe_skills(vec![
             named_skill(
                 "japandi",
@@ -2683,7 +2683,7 @@ mod tests {
     #[tokio::test]
     async fn copied_skill_dir_with_stale_frontmatter_name_surfaces_both() {
         // Name-dedup runs in `list_skills` (via `merge_skills_with_plugins`), not in `list_skills_with_options`
-        // Names are prefixed to be collision-proof against real user-scope skills (`list_skills` scans grok_home)
+        // Names are prefixed to be collision-proof against real user-scope skills (`list_skills` scans ezer_home)
         let tmp = tempfile::tempdir().unwrap();
         let repo_root = tmp.path().join("repo");
         fs::create_dir_all(&repo_root).unwrap();

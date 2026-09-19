@@ -50,7 +50,7 @@ fn record(id: &str, created_at: i64) -> TrackedRow {
 
 fn worktrees_report(worktrees: Vec<WorktreeUsage>, total_bytes: u64) -> DiskUsageReport {
     DiskUsageReport {
-        grok_home: "/wt-home".into(),
+        ezer_home: "/wt-home".into(),
         total_bytes,
         top_level_dirs: vec![DirUsage {
             name: WORKTREES_DIR.to_owned(),
@@ -531,7 +531,7 @@ fn worktrees_dominate_at_half_of_total() {
     ];
     for case in cases {
         let report = DiskUsageReport {
-            grok_home: "/home/user/.ezer".into(),
+            ezer_home: "/home/user/.ezer".into(),
             total_bytes: case.total_bytes,
             top_level_dirs: vec![DirUsage {
                 name: WORKTREES_DIR.to_owned(),
@@ -549,7 +549,7 @@ fn worktrees_dominate_at_half_of_total() {
 fn json_shape_is_frozen() {
     let report = DiskUsageReport {
         schema_version: SCHEMA_VERSION,
-        grok_home: "/home/user/.ezer".into(),
+        ezer_home: "/home/user/.ezer".into(),
         total_bytes: 100,
         volume_capacity_bytes: Some(1_000),
         volume_available_bytes: Some(600),
@@ -590,7 +590,7 @@ fn json_shape_is_frozen() {
         serde_json::to_value(&report).unwrap(),
         serde_json::json!({
             "schema_version": 1,
-            "grok_home": "/home/user/.ezer",
+            "ezer_home": "/home/user/.ezer",
             "total_bytes": 100,
             "volume_capacity_bytes": 1_000,
             "volume_available_bytes": 600,
@@ -686,7 +686,7 @@ fn missing_home_json_is_valid_and_empty() {
 fn print_report_truncates_long_labels_and_keeps_columns_aligned() {
     let long_label = "a".repeat(30);
     let report = DiskUsageReport {
-        grok_home: "/wt-home".into(),
+        ezer_home: "/wt-home".into(),
         total_bytes: 300,
         top_level_dirs: vec![DirUsage {
             name: WORKTREES_DIR.to_owned(),
@@ -999,23 +999,23 @@ fn symlinked_worktrees_dir_is_surfaced_not_silently_dropped() {
 
 #[cfg(unix)]
 #[test]
-#[serial_test::serial(GROK_HOME)]
+#[serial_test::serial(EZER_HOME)]
 // Serial keys are independent locks, so a test setting both must hold both
 #[serial_test::serial(HOME)]
 fn symlinked_default_home_keeps_home_label() {
     let tmp = tempfile::TempDir::new().unwrap();
     let fake_home = tmp.path().join("home");
-    let real_grok = tmp.path().join("ezer-on-disk");
+    let real_ezer = tmp.path().join("ezer-on-disk");
     std::fs::create_dir_all(&fake_home).unwrap();
-    std::fs::create_dir_all(&real_grok).unwrap();
-    std::os::unix::fs::symlink(&real_grok, fake_home.join(".ezer")).unwrap();
+    std::fs::create_dir_all(&real_ezer).unwrap();
+    std::os::unix::fs::symlink(&real_ezer, fake_home.join(".ezer")).unwrap();
     let _home = crate::test_util::EnvVarGuard::set("HOME", &fake_home);
 
     let resolved = dunce::canonicalize(&fake_home).unwrap().join(".ezer");
     let canonical = dunce::canonicalize(&resolved).unwrap();
     assert_ne!(canonical, resolved, "the symlink must actually resolve");
     assert_eq!(
-        crate::util::display_grok_home_prefix_for(&canonical),
+        crate::util::display_ezer_home_prefix_for(&canonical),
         "~/.ezer"
     );
 }

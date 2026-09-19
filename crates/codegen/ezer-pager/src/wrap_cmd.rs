@@ -109,14 +109,14 @@ fn derive_spawn(
         };
     };
 
-    // A single argument containing whitespace is a shell-quoted command line (`grok wrap "mycli ssh host"`), not a program name
+    // A single argument containing whitespace is a shell-quoted command line (`ezer wrap "mycli ssh host"`), not a program name
     // Hand it to the shell verbatim so it does word-splitting, alias expansion, pipes, etc
     if command.len() == 1 && first.contains(char::is_whitespace) {
         return via_shell(first.clone());
     }
 
     // A bare program name that PATH cannot resolve is usually a shell alias (`alias mycli=remote`); only a shell can
-    // expand it. An empty one (`grok wrap "$PROG".` with `$PROG` unset) must keep failing fast instead of silently
+    // expand it. An empty one (`ezer wrap "$PROG".` with `$PROG` unset) must keep failing fast instead of silently
     // running the tail.
     if !first.is_empty()
         && !first.contains('/')

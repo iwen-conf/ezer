@@ -56,7 +56,7 @@ pub struct IdentityAttrs {
 impl IdentityAttrs {
     /// `user.id` follows whatever the snapshot has (OIDC principal, or an API-key session that populated `user_id`). Email is
     /// never taken from the snapshot — OAuth/gateway only, filled by the shell after `from_snapshot`. Env-only API-key (no
-    /// `GrokAuth` session) has no principal; we do not invent a per-install hash.
+    /// `EzerAuth` session) has no principal; we do not invent a per-install hash.
     pub fn from_snapshot(snapshot: &ezer_auth::CredentialSnapshot) -> Self {
         Self {
             user_id: snapshot.user_id.clone(),

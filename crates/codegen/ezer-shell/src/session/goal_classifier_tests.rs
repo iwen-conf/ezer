@@ -1166,10 +1166,10 @@ fn gap_fingerprint_is_stable_across_scratch_path_churn() {
     ]);
     assert_eq!(a, b, "scratch-path churn must not break the fingerprint");
     let c = gap_fingerprint(&[
-        "no captured output in /var/folders/x1/T/grok-goal-1/out.log for criterion 2",
+        "no captured output in /var/folders/x1/T/ezer-goal-1/out.log for criterion 2",
     ]);
     let d = gap_fingerprint(&[
-        "no captured output in /var/folders/x1/T/grok-goal-2/out.log for criterion 2",
+        "no captured output in /var/folders/x1/T/ezer-goal-2/out.log for criterion 2",
     ]);
     assert_eq!(c, d);
     // Genuinely different gaps still differ.
@@ -1461,8 +1461,8 @@ fn render_skeptic_prompt_substitutes_kind_lens_and_leaves_no_placeholder() {
         "/tmp/goal-verifier-details-x-1-0.md",
         "/tmp/goal-verdict-x-1-0.json",
         kind_lens(Some(GoalKind::CodeChange)),
-        "/tmp/grok-goal-x/skeptic-0",
-        "/tmp/grok-goal-x/implementer",
+        "/tmp/ezer-goal-x/skeptic-0",
+        "/tmp/ezer-goal-x/implementer",
         None,
         &RoleToolNames::inherit_defaults(),
         true,
@@ -1472,8 +1472,8 @@ fn render_skeptic_prompt_substitutes_kind_lens_and_leaves_no_placeholder() {
         "the placeholder must be substituted:\n{body}"
     );
     // The skeptic's own scratch dir AND the line pointing at the implementer's scratch dir are both present, with no dangling placeholder
-    assert!(body.contains("/tmp/grok-goal-x/skeptic-0"));
-    assert!(body.contains("/tmp/grok-goal-x/implementer"));
+    assert!(body.contains("/tmp/ezer-goal-x/skeptic-0"));
+    assert!(body.contains("/tmp/ezer-goal-x/implementer"));
     assert!(
         !body.contains("{SKEPTIC_SCRATCH}") && !body.contains("{IMPLEMENTER_SCRATCH}"),
         "scratch placeholders must be substituted:\n{body}"
@@ -1490,8 +1490,8 @@ fn render_skeptic_prompt_substitutes_kind_lens_and_leaves_no_placeholder() {
         "/tmp/goal-verifier-details-x-1-0.md",
         "/tmp/goal-verdict-x-1-0.json",
         kind_lens(None),
-        "/tmp/grok-goal-x/skeptic-1",
-        "/tmp/grok-goal-x/implementer",
+        "/tmp/ezer-goal-x/skeptic-1",
+        "/tmp/ezer-goal-x/implementer",
         None,
         &RoleToolNames::inherit_defaults(),
         true,
@@ -1515,8 +1515,8 @@ fn render_skeptic_prompt_scratch_status_reflects_readiness() {
             "/tmp/goal-verifier-details-x-1-0.md",
             "/tmp/goal-verdict-x-1-0.json",
             kind_lens(Some(GoalKind::CodeChange)),
-            "/tmp/grok-goal-x/skeptic-0",
-            "/tmp/grok-goal-x/implementer",
+            "/tmp/ezer-goal-x/skeptic-0",
+            "/tmp/ezer-goal-x/implementer",
             None,
             &RoleToolNames::inherit_defaults(),
             scratch_ready,
@@ -1536,8 +1536,8 @@ fn render_skeptic_prompt_scratch_status_reflects_readiness() {
         !not_ready.contains("{SCRATCH_STATUS}"),
         "placeholder must resolve"
     );
-    assert!(ready.contains("/tmp/grok-goal-x/skeptic-0"));
-    assert!(ready.contains("/tmp/grok-goal-x/implementer"));
+    assert!(ready.contains("/tmp/ezer-goal-x/skeptic-0"));
+    assert!(ready.contains("/tmp/ezer-goal-x/implementer"));
 }
 
 /// `{PRIOR_GAPS}` renders the gaps when present, the first-round sentinel when absent, and never leaks the placeholder.
@@ -1554,8 +1554,8 @@ fn render_skeptic_prompt_substitutes_prior_gaps() {
             "/tmp/goal-verifier-details-x-2-1.md",
             "/tmp/goal-verdict-x-2-1.json",
             kind_lens(Some(GoalKind::CodeChange)),
-            "/tmp/grok-goal-x/skeptic-1",
-            "/tmp/grok-goal-x/implementer",
+            "/tmp/ezer-goal-x/skeptic-1",
+            "/tmp/ezer-goal-x/implementer",
             prior,
             &RoleToolNames::inherit_defaults(),
             true,
@@ -1587,8 +1587,8 @@ fn render_skeptic_resume_prompt_is_delta_focused_and_substitutes_paths() {
         "/tmp/goal-classifier-x-2-skeptic-0.md",
         "/tmp/goal-verdict-x-2-0.json",
         kind_lens(Some(GoalKind::CodeChange)),
-        "/tmp/grok-goal-x/skeptic-0",
-        "/tmp/grok-goal-x/implementer",
+        "/tmp/ezer-goal-x/skeptic-0",
+        "/tmp/ezer-goal-x/implementer",
         None,
         &RoleToolNames::inherit_defaults(),
         true,
@@ -1601,8 +1601,8 @@ fn render_skeptic_resume_prompt_is_delta_focused_and_substitutes_paths() {
     assert!(body.contains("/tmp/goal-verdict-x-2-0.json"));
     assert!(body.contains("/tmp/goal-classifier-x-2-skeptic-0.md"));
     // Scratch dirs: the skeptic's own and the implementer's, both substituted
-    assert!(body.contains("/tmp/grok-goal-x/skeptic-0"));
-    assert!(body.contains("/tmp/grok-goal-x/implementer"));
+    assert!(body.contains("/tmp/ezer-goal-x/skeptic-0"));
+    assert!(body.contains("/tmp/ezer-goal-x/implementer"));
     assert!(
         !body.contains("{KIND_LENS}")
             && !body.contains("{DETAILS_FILE}")

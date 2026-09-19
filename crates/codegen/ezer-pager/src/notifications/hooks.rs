@@ -134,7 +134,7 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let out = dir.path().join("env.txt");
         let command = format!(
-            "printf 'EZER_EVENT=%s\\nGROK_MESSAGE=%s\\nGROK_SESSION_ID=%s\\n' \
+            "printf 'EZER_EVENT=%s\\nEZER_MESSAGE=%s\\nEZER_SESSION_ID=%s\\n' \
              \"$EZER_EVENT\" \"$EZER_MESSAGE\" \"$EZER_SESSION_ID\" > {}",
             out.display()
         );
@@ -285,7 +285,7 @@ mod tests {
         let out = dir.path().join("env.txt");
         let hook = NotificationHook {
             command: format!(
-                "printf 'EZER_EVENT=%s\\nGROK_MESSAGE=%s\\nGROK_SESSION_ID=%s\\n' \
+                "printf 'EZER_EVENT=%s\\nEZER_MESSAGE=%s\\nEZER_SESSION_ID=%s\\n' \
                  \"$EZER_EVENT\" \"$EZER_MESSAGE\" \"$EZER_SESSION_ID\" > {}",
                 out.display()
             ),

@@ -7,17 +7,17 @@ use std::time::Duration;
 fn settings_save_serializes_against_init_flock_writer() {
     // One #[test] per binary: the env is process-global (same rule as
     // acp_harness::run_agent_test).
-    let grok_home = tempfile::tempdir().expect("ezer home");
+    let ezer_home = tempfile::tempdir().expect("ezer home");
     // SAFETY: no other threads are running yet.
-    unsafe { std::env::set_var("GROK_HOME", grok_home.path()) };
+    unsafe { std::env::set_var("EZER_HOME", ezer_home.path()) };
 
-    let config_path = grok_home.path().join("config.toml");
+    let config_path = ezer_home.path().join("config.toml");
     std::fs::write(&config_path, "[cli]\n").unwrap();
 
     // Flock-holding writer mid read-modify-write (the shape of
     // session-start auto-enable's `add_enabled_plugin`).
     let flock =
-        ezer_shell::util::config::acquire_init_lock(grok_home.path()).expect("init flock");
+        ezer_shell::util::config::acquire_init_lock(ezer_home.path()).expect("init flock");
     let stale_read = std::fs::read_to_string(&config_path).unwrap();
 
     // Concurrent settings toggle on its own runtime thread.

@@ -1,4 +1,4 @@
-//! E2E: a gateway-connector enable via `x.ai/mcp/toggle` must propagate a failed
+//! E2E: a gateway-connector enable via `ezer/mcp/toggle` must propagate a failed
 //! `disabled_mcp_servers` clear as an error, like the local-server sibling (PersistFailed).
 
 mod acp_harness;
@@ -12,15 +12,15 @@ use serde_json::json;
 #[test]
 fn gateway_toggle_propagates_failed_enable_persist() {
     acp_harness::run_agent_test(|cwd, _server| async move {
-        let grok_home =
-            std::path::PathBuf::from(std::env::var("GROK_HOME").expect("harness sets GROK_HOME"));
+        let ezer_home =
+            std::path::PathBuf::from(std::env::var("EZER_HOME").expect("harness sets EZER_HOME"));
 
         let (conn, _init) = connect_and_auth(AutoApproveClient, "gateway-persist-test").await;
         let session_id = new_session(&conn, &cwd).await;
 
         // Unparseable config.toml: the enable write refuses to clobber it and
         // errors, so the disabled entry cannot be cleared.
-        std::fs::write(grok_home.join("config.toml"), "not toml [[[").unwrap();
+        std::fs::write(ezer_home.join("config.toml"), "not toml [[[").unwrap();
 
         let params = serde_json::value::RawValue::from_string(
             json!({
@@ -33,7 +33,7 @@ fn gateway_toggle_propagates_failed_enable_persist() {
         .expect("serialize mcp/toggle params");
         let err = tokio::time::timeout(
             RPC_TIMEOUT,
-            conn.ext_method(acp::ExtRequest::new("x.ai/mcp/toggle", Arc::from(params))),
+            conn.ext_method(acp::ExtRequest::new("ezer/mcp/toggle", Arc::from(params))),
         )
         .await
         .expect("mcp/toggle timed out")

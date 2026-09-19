@@ -1,4 +1,4 @@
-//! The grok.com chat model catalog (`POST /rest/modes`): the models ezer-web's chat picker shows, distinct from the CLI `/v1/models` build catalog.
+//! The ezer.com chat model catalog (`POST /rest/modes`): the models ezer-web's chat picker shows, distinct from the CLI `/v1/models` build catalog.
 //! Transport only; the cache and the ACP mapping live in [`crate::agent::chat_modes`].
 
 use std::sync::Arc;
@@ -7,7 +7,7 @@ use serde::Deserialize;
 
 use ezer_login::AuthManager;
 
-const GROK_WEB_URL: &str = "https://grok.com";
+const REMOTE_WEB_URL: &str = "";
 
 #[derive(Debug, Clone, Default, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -59,7 +59,7 @@ pub struct ListModesResponse {
 
 #[derive(Debug, thiserror::Error)]
 pub enum ChatModelsError {
-    #[error("no grok.com credentials")]
+    #[error("no ezer.com credentials")]
     NoAuth,
     #[error("request timed out")]
     Timeout,
@@ -93,7 +93,7 @@ impl ChatModelsClient {
                     .ok()
                     .filter(|s| !s.is_empty())
             })
-            .unwrap_or_else(|| GROK_WEB_URL.to_string());
+            .unwrap_or_else(|| REMOTE_WEB_URL.to_string());
         Self {
             http: crate::http::shared_client(),
             base_url,
@@ -101,7 +101,7 @@ impl ChatModelsClient {
         }
     }
 
-    /// Gated only on a valid grok.com bearer, not `is_xai_auth()` like workspaces/conversations.
+    /// Gated only on a valid ezer.com bearer, not `is_xai_auth()` like workspaces/conversations.
     /// `/rest/modes` is the public chat endpoint, and that gate would exclude API-key and cached-token chat users.
     pub(crate) async fn list_modes(
         &self,
@@ -122,7 +122,7 @@ impl ChatModelsClient {
             .header("Authorization", format!("Bearer {}", auth.key))
             .header(
                 "X-XAI-Token-Auth",
-                self.auth.grok_com_config().token_header.clone(),
+                self.auth.ezer_com_config().token_header.clone(),
             )
             .header("x-userid", &auth.user_id)
             .header("x-ezer-client-version", ezer_version::VERSION)

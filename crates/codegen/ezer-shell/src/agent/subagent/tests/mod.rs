@@ -1774,7 +1774,7 @@ async fn bootstrap_fork_live_parent_chat_state_is_forked_with_marker() {
     const MARKER: &str = "UNIQUE_LIVE_FORK_MARKER_xyz789";
     let req = bootstrap_test_request(true);
     let mut ctx = ctx_with_toggle(HashMap::new());
-    let chat = spawn_test_parent_chat_state("grok-4.5");
+    let chat = spawn_test_parent_chat_state("test-model-4.5");
     chat.replace_conversation(
         vec![
             ConversationItem::system("parent system"),
@@ -2139,7 +2139,7 @@ fn subagent_keeps_default_flavor_when_parent_model_is_non_strict() {
     let mut ctx = ctx_with_toggle(HashMap::new());
     ctx.parent_agent_name = Some("ai-oncall-bot".to_string());
     ctx.parent_model_agent_type = Some(
-        BuiltinAgentName::GrokBuildPlan.as_ref().to_string(),
+        BuiltinAgentName::EzerBuildPlan.as_ref().to_string(),
     );
     let mut def = resolve_agent_definition("general-purpose", &ctx).expect("resolves");
     resolve_subagent_toolset("general-purpose", None, &ctx, &mut def);
@@ -2523,10 +2523,10 @@ fn subagent_auth_type_rule() {
 #[test]
 fn fresh_tool_model_accepts_visible_key_and_internal_id() {
     let mut models = indexmap::IndexMap::new();
-    models.insert("grok-3".to_string(), test_model_entry("grok-3-2025-02-15"));
+    models.insert("test-model-3".to_string(), test_model_entry("test-model-3-2025-02-15"));
     assert!(
             super::handle_request::task_model_override_error(
-                Some("grok-3"),
+                Some("test-model-3"),
                 ModelOverrideProvenance::Tool,
                 false,
                 &models,
@@ -2537,7 +2537,7 @@ fn fresh_tool_model_accepts_visible_key_and_internal_id() {
         );
     assert!(
             super::handle_request::task_model_override_error(
-                Some("grok-3-2025-02-15"),
+                Some("test-model-3-2025-02-15"),
                 ModelOverrideProvenance::Tool,
                 false,
                 &models,

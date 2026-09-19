@@ -584,8 +584,8 @@ fn fork_summary(
         head_commit: source.head_commit,
         head_branch: source.head_branch,
         request_id: None,
-        // Fresh local grok_home, not inherited from source: the fork lives on this machine.
-        grok_home: crate::session::persistence::grok_home_string(),
+        // Fresh local ezer_home, not inherited from source: the fork lives on this machine.
+        ezer_home: crate::session::persistence::ezer_home_string(),
         last_active_at: source.last_active_at,
         generated_title: source.generated_title,
         // A fork keeps the parent's title, so whether that title was set manually carries over too

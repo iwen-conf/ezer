@@ -1437,7 +1437,7 @@ impl crate::types::tool_metadata::ToolMetadata for BashTool {
     }
 
     fn tool_namespace(&self) -> ToolNamespace {
-        ToolNamespace::GrokBuild
+        ToolNamespace::EzerBuild
     }
 
     fn description_template(&self) -> &str {
@@ -3840,7 +3840,7 @@ mod tests {
         #[test]
         fn foreground_positive_clamped_to_default_max() {
             // The built-in default foreground ceiling is 5 min; production
-            // grok-shell opts up to 10h via max_timeout_secs. Background unaffected.
+            // ezer-shell opts up to 10h via max_timeout_secs. Background unaffected.
             assert_eq!(DEFAULT_MAX_TIMEOUT_MS, 300_000);
             let above_max: u64 = 50 * 60 * 60 * 1_000;
             assert_eq!(

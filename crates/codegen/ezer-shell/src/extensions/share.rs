@@ -1,4 +1,4 @@
-//! `x.ai/share_session` extension handler.
+//! `ezer/share_session` extension handler.
 //!
 //! Loads a local session, exports it, uploads the message payload to cloud storage via a signed URL, and asks the backend for a public share URL.
 //! The signed URL lets large sessions bypass the proxy/backend body-size limits.
@@ -19,7 +19,7 @@ use ezer_telemetry::id::agent_id;
 #[tracing::instrument(skip_all, fields(method = %args.method))]
 pub async fn handle(agent: &MvpAgent, args: &acp::ExtRequest) -> ExtResult {
     match args.method.as_ref() {
-        "x.ai/share_session" => {
+        "ezer/share_session" => {
             tracing::info!("handling share session request");
             handle_share_session(agent, args).await
         }
@@ -160,7 +160,7 @@ async fn upload_share_data_to_gcs(
 
 fn require_xai_auth_for_share(
     auth_manager: &ezer_login::AuthManager,
-) -> Result<ezer_login::GrokAuth, acp::Error> {
+) -> Result<ezer_login::EzerAuth, acp::Error> {
     super::auth_gate::require_xai_auth(
         auth_manager,
         "Authentication required to share session",
@@ -174,8 +174,8 @@ mod tests {
     use chrono::{Duration, Utc};
     use std::sync::Arc;
     use tempfile::tempdir;
-    use ezer_login::GrokComConfig;
-    use ezer_login::{AuthMode, GrokAuth};
+    use ezer_login::EzerComConfig;
+    use ezer_login::{AuthMode, EzerAuth};
 
     fn make_auth_manager_with_token_expiring_in(
         ttl: Duration,
@@ -183,7 +183,7 @@ mod tests {
         let dir = tempdir().expect("tempdir for share auth test");
         let mgr = Arc::new(ezer_login::AuthManager::new(
             dir.path(),
-            GrokComConfig::default(),
+            EzerComConfig::default(),
         ));
 
         let expires_at = Utc::now() + ttl;
@@ -191,7 +191,7 @@ mod tests {
         // We must explicitly set oidc_issuer to a first-party xAI issuer.
         // Only OIDC tokens against https://auth.x.ai (or the local-dev equivalent) return true from is_xai_auth()
         // The share tests need that to exercise the happy path through require_xai_auth_for_share
-        let auth = GrokAuth {
+        let auth = EzerAuth {
             auth_mode: AuthMode::Oidc,
             oidc_issuer: Some("https://auth.x.ai".to_string()),
             key: "test-key".into(),
@@ -233,21 +233,21 @@ mod tests {
         let dir = tempdir().expect("tempdir");
         let mgr = Arc::new(ezer_login::AuthManager::new(
             dir.path(),
-            GrokComConfig::default(),
+            EzerComConfig::default(),
         ));
         assert!(require_xai_auth_for_share(&mgr).is_err());
     }
 
     #[test]
-    fn share_rejects_non_xai_auth_with_actionable_grok_login_message() {
+    fn share_rejects_non_xai_auth_with_actionable_ezer_login_message() {
         let dir = tempdir().expect("tempdir");
         let mgr = Arc::new(ezer_login::AuthManager::new(
             dir.path(),
-            GrokComConfig::default(),
+            EzerComConfig::default(),
         ));
 
         // API key is the simplest non-xAI credential (External and enterprise OIDC are also rejected the same way)
-        let non_xai = GrokAuth {
+        let non_xai = EzerAuth {
             auth_mode: AuthMode::ApiKey,
             key: "xai-test-key".into(),
             create_time: Utc::now(),

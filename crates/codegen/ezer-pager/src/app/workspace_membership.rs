@@ -376,7 +376,7 @@ impl WorkspaceMembership {
                         db_path, access, ..
                     } => (db_path.clone(), *access),
                     _ => (
-                        ezer_dashboard_store::default_db_path(&ezer_config::grok_home()),
+                        ezer_dashboard_store::default_db_path(&ezer_config::ezer_home()),
                         None,
                     ),
                 };
@@ -483,7 +483,7 @@ impl WorkspaceMembership {
                 Some(*access),
             ),
             WorkspaceIo::Unopened => (
-                ezer_dashboard_store::default_db_path(&ezer_config::grok_home()),
+                ezer_dashboard_store::default_db_path(&ezer_config::ezer_home()),
                 OpenAttempt::Retried,
                 None,
             ),

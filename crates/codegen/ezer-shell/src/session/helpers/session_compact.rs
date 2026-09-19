@@ -442,10 +442,10 @@ pub(crate) async fn generate_session_compact(
             }
 
             let sid = session_id.to_string();
-            message.x_grok_conv_id = Some(sid.clone());
-            message.x_grok_req_id = Some(format!("xai-compact-{}", uuid::Uuid::new_v4()));
-            message.x_grok_session_id = Some(sid);
-            message.x_grok_agent_id = Some(ezer_telemetry::id::agent_id());
+            message.x_ezer_conv_id = Some(sid.clone());
+            message.x_ezer_req_id = Some(format!("xai-compact-{}", uuid::Uuid::new_v4()));
+            message.x_ezer_session_id = Some(sid);
+            message.x_ezer_agent_id = Some(ezer_telemetry::id::agent_id());
 
             tracing::info!(
                 compact_model = %sampling_config.model,
@@ -537,10 +537,10 @@ pub(crate) async fn generate_session_compact(
                 hosted_tools,
                 model: Some(sampling_config.model.to_owned()),
                 temperature: Some(1.0),
-                x_grok_conv_id: Some(session_id.to_string()),
-                x_grok_req_id: Some(format!("xai-compact-{}", uuid::Uuid::new_v4())),
-                x_grok_session_id: Some(session_id.to_string()),
-                x_grok_agent_id: Some(ezer_telemetry::id::agent_id()),
+                x_ezer_conv_id: Some(session_id.to_string()),
+                x_ezer_req_id: Some(format!("xai-compact-{}", uuid::Uuid::new_v4())),
+                x_ezer_session_id: Some(session_id.to_string()),
+                x_ezer_agent_id: Some(ezer_telemetry::id::agent_id()),
                 ..Default::default()
             };
             let stream_result =
@@ -660,10 +660,10 @@ pub(crate) async fn generate_session_compact(
                 hosted_tools,
                 model: Some(sampling_config.model.to_owned()),
                 temperature: Some(1.0),
-                x_grok_conv_id: Some(session_id.to_string()),
-                x_grok_req_id: Some(format!("xai-compact-{}", uuid::Uuid::new_v4())),
-                x_grok_session_id: Some(session_id.to_string()),
-                x_grok_agent_id: Some(ezer_telemetry::id::agent_id()),
+                x_ezer_conv_id: Some(session_id.to_string()),
+                x_ezer_req_id: Some(format!("xai-compact-{}", uuid::Uuid::new_v4())),
+                x_ezer_session_id: Some(session_id.to_string()),
+                x_ezer_agent_id: Some(ezer_telemetry::id::agent_id()),
                 ..Default::default()
             };
             let stream_result =

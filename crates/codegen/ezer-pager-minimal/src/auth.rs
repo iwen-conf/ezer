@@ -470,7 +470,7 @@ mod tests {
         render_auth(&mut buf, area, &theme, &hint);
         let text = crate::buffer_text(&buf);
         assert!(text.contains("Sign in to ezer"), "header: {text:?}");
-        assert!(text.contains("accounts.x.ai/device"), "url: {text:?}");
+        assert!(text.contains("accounts.ezer/device"), "url: {text:?}");
         assert!(text.contains("ABCD-EFGH"), "device code: {text:?}");
         assert!(
             text.contains("Waiting for approval"),

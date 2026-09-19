@@ -12,7 +12,7 @@ use ezer_login::AuthManager;
 use ezer_login::credential_provider::{
     ShellAuthCredentialProvider, StorageClientAttributionBridge,
 };
-use ezer_login::grok_auth_credentials::GrokAuthCredentials;
+use ezer_login::ezer_auth_credentials::EzerAuthCredentials;
 
 /// Build a `StorageClient` for proxy uploads. Pass the correct `client_identifier` so requests can be attributed.
 /// When `auth_manager` is `Some`, use the live provider (refresh and 401 recovery); otherwise fall back to a static token.
@@ -46,7 +46,7 @@ pub fn build_storage_client_for_proxy(
         .with_client_mode(ezer_http::process_client_mode())
         .with_attribution(bridge)
     } else {
-        let mut creds = GrokAuthCredentials::new(user_token);
+        let mut creds = EzerAuthCredentials::new(user_token);
         creds.deployment_key = deployment_key;
         creds.alpha_test_key = alpha_test_key;
         let wire_bearer = creds

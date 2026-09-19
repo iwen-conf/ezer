@@ -24,7 +24,7 @@ fn test_conversation_item_roundtrip() {
 
     // Reasoning is a sibling item, so the single-item conversion leaves reasoning_content None
     // The `conversation_to_chat_messages` helper carries reasoning through and is tested separately
-    let assistant = ConversationItem::assistant_with_model("Hi there!", "grok-3");
+    let assistant = ConversationItem::assistant_with_model("Hi there!", "test-model-3");
     let chat_msg = conversation_item_to_chat_message(assistant);
     assert_eq!(chat_msg.reasoning_content, None);
     let back: ConversationItem = chat_msg.into();
@@ -41,11 +41,11 @@ fn test_conversation_request_to_chat_completion() {
         ConversationItem::system("System prompt"),
         ConversationItem::user("User message"),
     ])
-    .with_model("grok-3")
+    .with_model("test-model-3")
     .with_temperature(0.7);
 
     let chat_req: ChatCompletionRequest = req.into();
-    assert_eq!(chat_req.model, Some("grok-3".to_string()));
+    assert_eq!(chat_req.model, Some("test-model-3".to_string()));
     assert_eq!(chat_req.temperature, Some(0.7));
     assert_eq!(chat_req.messages.len(), 2);
     assert_eq!(chat_req.parallel_tool_calls, None);
@@ -235,7 +235,7 @@ fn test_assistant_with_content_and_tool_calls() {
             name: "read_file".to_string(),
             arguments: r#"{"path": "/test.txt"}"#.into(),
         }],
-        model_id: Some("grok-3".to_string()),
+        model_id: Some("test-model-3".to_string()),
         model_fingerprint: None,
         reasoning_effort: None,
     };
@@ -245,7 +245,7 @@ fn test_assistant_with_content_and_tool_calls() {
 
     assert_eq!(chat_msg.text_content(), "Let me help you with that.");
     assert_eq!(chat_msg.tool_calls.len(), 1);
-    assert_eq!(chat_msg.model_id, Some("grok-3".to_string()));
+    assert_eq!(chat_msg.model_id, Some("test-model-3".to_string()));
 }
 
 #[test]

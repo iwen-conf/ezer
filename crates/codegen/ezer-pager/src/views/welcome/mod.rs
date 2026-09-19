@@ -2095,7 +2095,7 @@ fn render_welcome_done(
             let gate_link = p
                 .gate
                 .and_then(|g| g.url.as_deref())
-                .unwrap_or("https://grok.com/supergrok?referrer=ezer-build");
+                .unwrap_or("https://example.test/upgrade");
             let url = Line::from(Span::styled(
                 gate_link,
                 Style::default()
@@ -4394,7 +4394,7 @@ the usual channels. "
         let area = Rect::new(0, 0, 100, 32);
         let ann = ezer_announcements::RemoteAnnouncement {
             title: Some("Upgrade".into()),
-            message: Some("SuperGrok Heavy is available for your team today.".into()),
+            message: Some("highest tier is available for your team today.".into()),
             ..Default::default()
         };
         let input = |prompt_height| WelcomeLayoutInput {

@@ -44,7 +44,7 @@ pub(crate) const MOCK_RESPONSE_SENTINEL: &str = "MOCKRESPONSE";
 pub(crate) fn unified_log_path(content: &ContentController) -> PathBuf {
     content
         .sandbox()
-        .grok_home()
+        .ezer_home()
         .join("logs")
         .join("unified.jsonl")
 }
@@ -271,7 +271,7 @@ pub(crate) fn turn_sentinel(n: u8) -> String {
 /// Seeded server name; it only renders once the MCP list fetch resolves.
 pub(crate) const MCP_TEST_SERVER: &str = "ptytestmcp";
 
-/// Budget for session creation plus the `x.ai/mcp/list` round-trip.
+/// Budget for session creation plus the `ezer/mcp/list` round-trip.
 pub(crate) const MCP_MENU_LOAD_TIMEOUT: Duration = Duration::from_secs(30);
 
 /// Configured servers list with a status badge even when never connected.
@@ -281,12 +281,12 @@ pub(crate) fn seed_mcp_server_config(content: &ContentController) {
     #[cfg(windows)]
     let command = "cmd.exe";
 
-    let grok_home = content.home().join(".ezer");
-    std::fs::create_dir_all(&grok_home).expect("create fake GROK_HOME");
+    let ezer_home = content.home().join(".ezer");
+    std::fs::create_dir_all(&ezer_home).expect("create fake EZER_HOME");
     let config = format!(
         "[mcp_servers.{MCP_TEST_SERVER}]\ncommand = \"{command}\"\nargs = []\nstartup_timeout_sec = 2\n"
     );
-    std::fs::write(grok_home.join("config.toml"), config).expect("write config.toml");
+    std::fs::write(ezer_home.join("config.toml"), config).expect("write config.toml");
 }
 
 /// Write one hooks spec file under the sandbox's `~/.ezer/hooks/` (`spec` is the file's JSON body).
@@ -413,7 +413,7 @@ pub(crate) const CTRL_O: &[u8] = b"\x0f";
 
 // NOTE: There is no SessionStart hook exactly-once e2e test
 // Deduplication in load_hooks_from_sources is covered by unit tests in ezer-hooks::discovery::tests
-// A PTY e2e test would need careful environment variable setup to avoid static caching issues with GROK_HOME
+// A PTY e2e test would need careful environment variable setup to avoid static caching issues with EZER_HOME
 
 // ── Mouse reporting toggle (opt-in scrollback Ctrl+R) ───────────────────
 
@@ -426,33 +426,33 @@ pub(crate) const MOUSE_OFF_HINT_PROMPT: &str =
     "/toggle-mouse-reporting to enable mouse reporting and restore TUI features";
 
 /// Seed `~/.ezer/config.toml` with a `[ui]` section body (e.g. `"vim_mode = true"`).
-/// Same `{GROK_HOME|HOME}/.ezer/config.toml` location `seed_mouse_reporting_toggle_config` uses; call before spawning the pager.
+/// Same `{EZER_HOME|HOME}/.ezer/config.toml` location `seed_mouse_reporting_toggle_config` uses; call before spawning the pager.
 pub(crate) fn seed_ui_config(content: &ContentController, ui_body: &str) {
-    let grok_home = content.home().join(".ezer");
-    std::fs::create_dir_all(&grok_home).expect("create .ezer");
+    let ezer_home = content.home().join(".ezer");
+    std::fs::create_dir_all(&ezer_home).expect("create .ezer");
     let config = format!("[ui]\n{ui_body}\n");
-    std::fs::write(grok_home.join("config.toml"), config).expect("write config.toml");
+    std::fs::write(ezer_home.join("config.toml"), config).expect("write config.toml");
 }
 
 pub(crate) fn seed_mouse_reporting_toggle_config(content: &ContentController, enabled: bool) {
-    let grok_home = content.home().join(".ezer");
-    std::fs::create_dir_all(&grok_home).expect("create .ezer");
-    // Minimal opt-in only; matches load_config's `{GROK_HOME|HOME}/.grok/config.toml`
+    let ezer_home = content.home().join(".ezer");
+    std::fs::create_dir_all(&ezer_home).expect("create .ezer");
+    // Minimal opt-in only; matches load_config's `{EZER_HOME|HOME}/.ezer/config.toml`
     let config = if enabled {
         "[ui]\nmouse_reporting_toggle = true\n"
     } else {
         // Minimal config so HOME layout matches the enabled case; toggle stays off.
         "[ui]\n"
     };
-    std::fs::write(grok_home.join("config.toml"), config).expect("write config.toml");
+    std::fs::write(ezer_home.join("config.toml"), config).expect("write config.toml");
 }
 
 /// Seed `[ui] keep_text_selection = "hold"` under the content controller's home.
 pub(crate) fn seed_keep_text_selection_config(content: &ContentController) {
-    let grok_home = content.home().join(".ezer");
-    std::fs::create_dir_all(&grok_home).expect("create .ezer");
+    let ezer_home = content.home().join(".ezer");
+    std::fs::create_dir_all(&ezer_home).expect("create .ezer");
     std::fs::write(
-        grok_home.join("config.toml"),
+        ezer_home.join("config.toml"),
         "[ui]\nkeep_text_selection = \"hold\"\n",
     )
     .expect("write config.toml");
@@ -966,7 +966,7 @@ pub(crate) fn enter_session(harness: &mut PtyHarness, content: &ContentControlle
         .expect("session response rendered");
 }
 
-/// Locate `<grok_home>/sessions/<encoded cwd>/<session id>/`, where the shell keeps the session's `plan.md`.
+/// Locate `<ezer_home>/sessions/<encoded cwd>/<session id>/`, where the shell keeps the session's `plan.md`.
 /// Polls: the first turn creates it asynchronously.
 pub(crate) fn session_dir(content: &ContentController, harness: &mut PtyHarness) -> PathBuf {
     let sessions = content.home().join(".ezer").join("sessions");
@@ -1305,7 +1305,7 @@ pub(crate) fn wait_for_exit_status(
     }
 }
 
-// ── grok wrap e2e ───────────────────────────────────────────────────────
+// ── ezer wrap e2e ───────────────────────────────────────────────────────
 
 /// `ezer wrap` run budget.
 /// Same contention math as the requirements-version test.
@@ -1316,7 +1316,7 @@ pub(crate) const WRAP_TIMEOUT: Duration = Duration::from_secs(120);
 #[cfg(unix)]
 const WRAP_DRAIN_TIMEOUT: Duration = Duration::from_secs(10);
 
-/// Run `ezer wrap <wrap_args...>` to completion inside a PTY with an isolated `GROK_HOME`.
+/// Run `ezer wrap <wrap_args...>` to completion inside a PTY with an isolated `EZER_HOME`.
 /// Returns the exit code (`None` only while still running at [`WRAP_TIMEOUT`]) and everything the wrap PTY emitted.
 /// `extra_env` is where tests pin `SHELL`; wrap needs no mock content (it dispatches in `main` before auth/network/sandbox).
 #[cfg(unix)]
@@ -1338,7 +1338,7 @@ pub(crate) fn run_wrap_driving(
 
     let mut args = vec!["wrap"];
     args.extend_from_slice(wrap_args);
-    let mut env: Vec<(&str, &str)> = vec![("GROK_HOME", &home_str), ("NO_COLOR", "1")];
+    let mut env: Vec<(&str, &str)> = vec![("EZER_HOME", &home_str), ("NO_COLOR", "1")];
     env.extend_from_slice(extra_env);
 
     let mut harness =

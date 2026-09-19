@@ -13,7 +13,7 @@ use tracing_subscriber::fmt::writer::BoxMakeWriter;
 use tracing_subscriber::layer::{Context, Layer};
 use tracing_subscriber::registry::LookupSpan;
 
-use ezer_config::grok_home;
+use ezer_config::ezer_home;
 
 const ENV_ENABLED: &str = "EZER_INSTRUMENTATION";
 const ENV_LOG_PATH: &str = "EZER_INSTRUMENTATION_LOG";
@@ -67,7 +67,7 @@ pub fn current_mode() -> InstrumentationMode {
 }
 
 fn default_log_path() -> PathBuf {
-    grok_home().join(DEFAULT_LOG_DIR).join(DEFAULT_LOG_FILE)
+    ezer_home().join(DEFAULT_LOG_DIR).join(DEFAULT_LOG_FILE)
 }
 
 fn log_path_from_env() -> Option<PathBuf> {
@@ -79,7 +79,7 @@ fn log_path_from_env() -> Option<PathBuf> {
 }
 
 fn default_output_path(mode: InstrumentationMode) -> PathBuf {
-    let root = grok_home().join(DEFAULT_LOG_DIR);
+    let root = ezer_home().join(DEFAULT_LOG_DIR);
     match mode {
         InstrumentationMode::Chrome => root.join(DEFAULT_TRACE_FILE),
         // Server uses OTLP export, not file output

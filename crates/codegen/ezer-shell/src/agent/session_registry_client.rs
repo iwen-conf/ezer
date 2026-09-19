@@ -136,7 +136,7 @@ pub struct SessionRegistryClient {
     raw_client: reqwest::Client,
     client: reqwest_middleware::ClientWithMiddleware,
     base_url: String,
-    credentials: crate::util::grok_auth_credentials::GrokAuthCredentials,
+    credentials: crate::util::ezer_auth_credentials::EzerAuthCredentials,
     session_id: Option<String>,
 }
 
@@ -147,7 +147,7 @@ impl SessionRegistryClient {
             raw_client: http_client.clone(),
             client: reqwest_middleware::ClientBuilder::new(http_client).build(),
             base_url: base_url.into(),
-            credentials: crate::util::grok_auth_credentials::GrokAuthCredentials::new(Some(
+            credentials: crate::util::ezer_auth_credentials::EzerAuthCredentials::new(Some(
                 user_token.into(),
             )),
             session_id: None,
@@ -573,7 +573,7 @@ mod tests {
         use std::net::SocketAddr;
         use std::sync::Arc;
         use tokio::net::TcpListener;
-        use ezer_login::{AuthManager, AuthMode, GrokAuth, GrokComConfig};
+        use ezer_login::{AuthManager, AuthMode, EzerAuth, EzerComConfig};
 
         let captured = Arc::new(parking_lot::Mutex::new(None::<String>));
         let captured_for_handler = captured.clone();
@@ -594,14 +594,14 @@ mod tests {
         tokio::spawn(async move { axum::serve(listener, router).await.unwrap() });
 
         let dir = tempfile::tempdir().unwrap();
-        let am = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
-        am.hot_swap(GrokAuth {
+        let am = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
+        am.hot_swap(EzerAuth {
             key: "fresh-from-auth-manager".into(),
             auth_mode: AuthMode::ApiKey,
             create_time: Utc::now(),
             user_id: "user-42".into(),
             expires_at: Some(Utc::now() + Duration::hours(1)),
-            ..GrokAuth::test_default()
+            ..EzerAuth::test_default()
         });
 
         let client = SessionRegistryClient::new(format!("http://{addr}"), "STALE-build-time-token")

@@ -2230,7 +2230,7 @@ fn apply_auth_meta_lifts_restrictions_for_paid_tiers_and_teams() {
     let mut app = test_app();
     advertise_media_tools(&mut app);
     let meta = ezer_login::AuthMeta {
-        subscription_tier: Some("SuperGrok".into()),
+        subscription_tier: Some("MaxTier".into()),
         ..Default::default()
     };
     app.apply_auth_meta(&meta);
@@ -2240,7 +2240,7 @@ fn apply_auth_meta_lifts_restrictions_for_paid_tiers_and_teams() {
     advertise_media_tools(&mut app);
     app.apply_auth_meta(&ezer_login::AuthMeta::default());
     assert!(!app.tier_restricted_commands.is_empty());
-    app.subscription_tier = Some("SuperGrok".into());
+    app.subscription_tier = Some("MaxTier".into());
     app.apply_tier_restrictions();
     assert!(app.tier_restricted_commands.is_empty());
     assert_tier_restricted_commands_present(&app);
@@ -2260,8 +2260,8 @@ fn is_restricted_tier_classification() {
     assert!(is_restricted_tier(Some("Free")));
     assert!(is_restricted_tier(Some("X Basic")));
     assert!(is_restricted_tier(Some("x_basic")));
-    assert!(!is_restricted_tier(Some("SuperGrok")));
-    assert!(!is_restricted_tier(Some("SuperGrok Heavy")));
+    assert!(!is_restricted_tier(Some("MaxTier")));
+    assert!(!is_restricted_tier(Some("highest tier")));
     assert!(!is_restricted_tier(Some("X Premium")));
     assert!(!is_restricted_tier(Some("X Premium+")));
     assert!(!is_restricted_tier(Some("SomeFutureTier")));
@@ -2277,7 +2277,7 @@ fn is_voice_tier_restricted_tracks_tier() {
     assert!(app.is_voice_tier_restricted());
     let mut app = test_app();
     let meta = ezer_login::AuthMeta {
-        subscription_tier: Some("SuperGrok".into()),
+        subscription_tier: Some("MaxTier".into()),
         ..Default::default()
     };
     app.apply_auth_meta(&meta);
@@ -2288,7 +2288,7 @@ fn apply_auth_meta_clears_gate_on_subscription() {
     let mut app = test_app();
     app.gate = Some(ezer_login::GateInfo {
         message: "Subscribe to use ezer".into(),
-        url: Some("https://grok.com/supergrok?referrer=ezer-build".into()),
+        url: Some("https://example.test/upgrade".into()),
         label: None,
     });
     assert!(app.is_access_blocked());
@@ -7884,7 +7884,7 @@ fn welcome_picker_f_cycle_disabled_under_chat_mode() {
     let _ = app.handle_input(&f_key);
     assert_eq!(
         app.session_picker_source_filter,
-        crate::views::session_picker::SourceFilter::Grok,
+        crate::views::session_picker::SourceFilter::Ezer,
         "f must not cycle the hidden source filter under chat mode"
     );
     assert_eq!(

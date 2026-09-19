@@ -28,13 +28,13 @@ use crate::types::resources::SharedResources;
 pub enum ToolNamespace {
     #[display("Ezer")]
     #[serde(rename = "ezer_build")]
-    GrokBuild,
+    EzerBuild,
     #[display("EzerConcise")]
     #[serde(rename = "ezer_concise")]
-    GrokBuildConcise,
+    EzerBuildConcise,
     #[display("EzerHashline")]
     #[serde(rename = "ezer_hashline")]
-    GrokBuildHashline,
+    EzerBuildHashline,
     #[serde(alias = "Codex")]
     Codex,
     #[serde(rename = "opencode", alias = "OpenCode", alias = "open_code")]

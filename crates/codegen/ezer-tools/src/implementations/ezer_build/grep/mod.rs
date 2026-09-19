@@ -31,8 +31,8 @@ use serde::{Deserialize, Serialize};
 
 pub mod ripgrep;
 
-// Re-export the shared GrokIntegerSchema from types module
-pub use crate::types::GrokIntegerSchema;
+// Re-export the shared EzerIntegerSchema from types module
+pub use crate::types::EzerIntegerSchema;
 use ripgrep::rg_path;
 
 #[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema, PartialEq, Default)]
@@ -68,7 +68,7 @@ pub struct GrepSearchInput {
 
     #[schemars(
         rename = "-B",
-        with = "GrokIntegerSchema",
+        with = "EzerIntegerSchema",
         description = "Number of lines to show before each match (rg -B)."
     )]
     #[serde(rename = "-B")]
@@ -77,7 +77,7 @@ pub struct GrepSearchInput {
 
     #[schemars(
         rename = "-A",
-        with = "GrokIntegerSchema",
+        with = "EzerIntegerSchema",
         description = "Number of lines to show after each match (rg -A)."
     )]
     #[serde(rename = "-A")]
@@ -86,7 +86,7 @@ pub struct GrepSearchInput {
 
     #[schemars(
         rename = "-C",
-        with = "GrokIntegerSchema",
+        with = "EzerIntegerSchema",
         description = "Number of lines to show before and after each match (rg -C)."
     )]
     #[serde(rename = "-C")]
@@ -107,7 +107,7 @@ pub struct GrepSearchInput {
     pub r#type: Option<String>,
 
     #[schemars(
-        with = "GrokIntegerSchema",
+        with = "EzerIntegerSchema",
         description = "Limit output to first N lines/entries, equivalent to \"| head -N\". Defaults to 200 lines or 500 entries."
     )]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -233,7 +233,7 @@ impl crate::types::tool_metadata::ToolMetadata for GrepTool {
     }
 
     fn tool_namespace(&self) -> ToolNamespace {
-        ToolNamespace::GrokBuild
+        ToolNamespace::EzerBuild
     }
 
     fn description_template(&self) -> &str {

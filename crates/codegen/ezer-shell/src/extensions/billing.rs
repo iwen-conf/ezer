@@ -1,4 +1,4 @@
-//! `x.ai/billing` extension handler.
+//! `ezer/billing` extension handler.
 //!
 //! Fetches the authenticated user's ezer billing configuration (credit limit, usage, on-demand cap, billing period, history) from the backend.
 //! The pager and desktop use it to display credits and usage.
@@ -54,7 +54,7 @@ pub struct BillingPeriodUsage {
 
 /// Current billing configuration for ezer coding credits. Carries the newer credits-config fields (`credit_usage_percent`, `current_period`).
 /// It also carries the deprecated `EzerBillingConfig` fields (`monthly_limit`, `used`, `billing_period_*`). Consumers should prefer the new fields and fall back to the deprecated ones.
-/// The same struct then works against both the new `GetGrokCreditsConfig` and the legacy `GetEzerBillingConfig` responses.
+/// The same struct then works against both the new `GetCreditsConfig` and the legacy `GetEzerBillingConfig` responses.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct BillingConfig {
@@ -77,11 +77,11 @@ pub struct BillingConfig {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub on_demand_used: Option<Cent>,
     /// Remaining prepaid (purchased) credit balance, positive: the "bought credits" the user has topped up.
-    /// It comes from the credits config (`GetGrokCreditsConfig.prepaid_balance`) and is absent in the legacy billing shape.
+    /// It comes from the credits config (`GetCreditsConfig.prepaid_balance`) and is absent in the legacy billing shape.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub prepaid_balance: Option<Cent>,
     /// Whether this user is on unified usage billing (a shared weekly/monthly pool).
-    /// It comes from `GrokCreditsConfig.is_unified_billing_user`, which billing sets from the remote setting `unified_consumer_billing_enabled`.
+    /// It comes from `CreditsConfig.is_unified_billing_user`, which billing sets from the remote setting `unified_consumer_billing_enabled`.
     /// `None` when absent (legacy `GetEzerBillingConfig` shape or older servers).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub is_unified_billing_user: Option<bool>,
@@ -103,7 +103,7 @@ pub struct BillingConfigResponse {
     /// It comes from `RemoteSettings`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub on_demand_enabled: Option<bool>,
-    /// User-friendly subscription tier name (e.g. "SuperGrok Heavy").
+    /// User-friendly subscription tier name (e.g. "highest tier").
     /// It comes from `RemoteSettings` so the pager can update its cached tier on every billing fetch without an extra request.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub subscription_tier: Option<String>,
@@ -132,11 +132,11 @@ pub struct GetAutoTopupRuleResponse {
 #[tracing::instrument(skip_all, fields(method = %args.method))]
 pub async fn handle(agent: &MvpAgent, args: &acp::ExtRequest) -> ExtResult {
     match args.method.as_ref() {
-        "x.ai/billing" => {
+        "ezer/billing" => {
             tracing::info!("handling billing config request");
             handle_get_billing(agent).await
         }
-        "x.ai/auto-topup-rule" => {
+        "ezer/auto-topup-rule" => {
             tracing::info!("handling auto top-up rule request");
             handle_get_auto_topup_rule(agent).await
         }
@@ -189,14 +189,14 @@ async fn handle_get_billing(agent: &MvpAgent) -> ExtResult {
     let proxy_base = agent.cli_chat_proxy_base_url();
     let base = proxy_base.trim_end_matches('/');
 
-    // Fetch the credits balance and usage (new billing system) via the CLI proxy, which forwards to the backend `GetGrokCreditsConfig`
+    // Fetch the credits balance and usage (new billing system) via the CLI proxy, which forwards to the backend `GetCreditsConfig`
     let credits_url = format!("{}/billing?format=credits", base);
     let credits_resp = crate::http::shared_client()
         .get(&credits_url)
         .header("Authorization", format!("Bearer {}", &auth.key))
         .header(
             "X-XAI-Token-Auth",
-            ezer_login::GrokComConfig::default().token_header,
+            ezer_login::EzerComConfig::default().token_header,
         )
         .header("x-userid", &auth.user_id)
         .header("x-ezer-client-version", ezer_version::VERSION)
@@ -258,7 +258,7 @@ async fn handle_get_billing(agent: &MvpAgent) -> ExtResult {
             .or_else(|| rs.subscription_tier.clone())
     });
 
-    // Every prompt, `/usage`, and poll path hits `x.ai/billing`
+    // Every prompt, `/usage`, and poll path hits `ezer/billing`
     // Log the fetched credits snapshot so support can correlate the limit UI with real balances
     ezer_telemetry::unified_log::info(
         "billing: fetched credits config",
@@ -286,7 +286,7 @@ async fn handle_get_auto_topup_rule(agent: &MvpAgent) -> ExtResult {
         .header("Authorization", format!("Bearer {}", &auth.key))
         .header(
             "X-XAI-Token-Auth",
-            ezer_login::GrokComConfig::default().token_header,
+            ezer_login::EzerComConfig::default().token_header,
         )
         .header("x-userid", &auth.user_id)
         .header("x-ezer-client-version", ezer_version::VERSION)
@@ -421,7 +421,7 @@ mod tests {
                 ],
             }),
             on_demand_enabled: Some(true),
-            subscription_tier: Some("SuperGrok".into()),
+            subscription_tier: Some("MaxTier".into()),
         };
         let ctx = billing_unified_log_ctx(&resp);
         assert_eq!(
@@ -430,7 +430,7 @@ mod tests {
         );
         assert_eq!(
             ctx.get("subscriptionTier").and_then(|v| v.as_str()),
-            Some("SuperGrok")
+            Some("MaxTier")
         );
         let config = ctx
             .get("config")
@@ -552,7 +552,7 @@ mod tests {
 
     #[test]
     fn billing_config_deserializes_credits_config_shape() {
-        // Newer `GetGrokCreditsConfig` response: percentage-based usage, a typed current period, and history keyed by `period`
+        // Newer `GetCreditsConfig` response: percentage-based usage, a typed current period, and history keyed by `period`
         let json = serde_json::json!({
             "config": {
                 "creditUsagePercent": 42.5,
@@ -566,7 +566,7 @@ mod tests {
                 "prepaidBalance": {"val": 1250},
                 "isUnifiedBillingUser": true,
                 "productUsage": [
-                    {"product": "PRODUCT_GROK_BUILD", "usagePercent": 61.2}
+                    {"product": "PRODUCT_EZER_BUILD", "usagePercent": 61.2}
                 ],
                 "history": [
                     {

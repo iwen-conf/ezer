@@ -4,7 +4,7 @@ use axum::http::{HeaderMap, HeaderValue};
 use serde_json::{Value, json};
 
 use super::tests::{
-    GROK_BUILD_TOOLS, chat_body, chat_result, read_call, read_reply, reply, respond_with_headers,
+    EZER_BUILD_TOOLS, chat_body, chat_result, read_call, read_reply, reply, respond_with_headers,
     shell_call, shell_reply,
 };
 use super::{ConversationReplay, ServedReply};
@@ -29,7 +29,7 @@ fn respond(replay: &ConversationReplay, turns: Vec<Value>) -> ServedReply {
         replay,
         ConversationId::nth(1),
         HeaderMap::new(),
-        &chat_body("s", &GROK_BUILD_TOOLS, turns),
+        &chat_body("s", &EZER_BUILD_TOOLS, turns),
     )
     .unwrap()
 }
@@ -196,7 +196,7 @@ fn doom_loop_without_tool_calls_streams_the_looping_reply_and_reports_when_asked
     let replay = replay_for(Conversation::nth(1).doom_loop(1).reply("PONG"));
     let mut asking = HeaderMap::new();
     asking.insert(DOOM_LOOP_CHECK_HEADER, HeaderValue::from_static("4"));
-    let body = chat_body("s", &GROK_BUILD_TOOLS, vec![]);
+    let body = chat_body("s", &EZER_BUILD_TOOLS, vec![]);
 
     let looping = respond_with_headers(&replay, ConversationId::nth(1), asking, &body).unwrap();
     let recovered = respond(&replay, vec![]);

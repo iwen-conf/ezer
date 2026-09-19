@@ -698,9 +698,9 @@ async fn manual_recap_generation_failure_persists_request_artifact() {
                         "artifact must include the recap request items"
                     );
                     assert!(
-                        artifact.x_grok_req_id.starts_with("xai-recap-"),
+                        artifact.x_ezer_req_id.starts_with("xai-recap-"),
                         "req id: {}",
-                        artifact.x_grok_req_id
+                        artifact.x_ezer_req_id
                     );
                     saw_recap_request = true;
                 }
@@ -844,7 +844,7 @@ fn over_budget_recap_serializes_to_well_formed_messages_request() {
         ConversationItem::tool_result("c2", "z".repeat(40_000)),     // trailing run
     ];
 
-    // The grok backend sets `strip_reasoning` to false; the over-budget branch strips anyway
+    // The ezer backend sets `strip_reasoning` to false; the over-budget branch strips anyway
     let items = session_recap::budget_recap_items(conv, "system-reminder", false, 8_000);
     let req = ConversationRequest::from_items(items);
     let msg = ezer_sampling_types::build_messages_request(&req);
@@ -1185,7 +1185,7 @@ async fn turn_summary_generate_persists_and_broadcasts() {
                 let xai_acp_lib::AcpClientMessage::ExtNotification(args) = msg else {
                     continue;
                 };
-                if args.request.method.as_ref() != "x.ai/session_notification" {
+                if args.request.method.as_ref() != "ezer/session_notification" {
                     continue;
                 }
                 let value: serde_json::Value =

@@ -16,7 +16,7 @@ pub(crate) type PendingInterjection = xai_interjection_core::PendingInterjection
 
 /// Prompt-id prefix for interjections that missed their turn and were converted into standalone prompt turns.
 /// The prefix keeps the turn's user echo persist-only.
-/// Every pane already rendered the text from the `x.ai/session/interjection` broadcast, so a live echo would duplicate it.
+/// Every pane already rendered the text from the `ezer/session/interjection` broadcast, so a live echo would duplicate it.
 pub(crate) const INTERJECT_FALLBACK_PROMPT_PREFIX: &str = "interject-fallback-";
 
 pub(crate) fn is_interject_fallback(prompt_id: &str) -> bool {
@@ -143,7 +143,7 @@ impl SessionActor {
             self.notifications
                 .gateway
                 .forward_fire_and_forget(acp::ExtNotification::new(
-                    "x.ai/session/interjection",
+                    "ezer/session/interjection",
                     params.into(),
                 ));
         }

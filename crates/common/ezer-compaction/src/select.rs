@@ -10,7 +10,7 @@
 //! tool results in the next prompt, which the model API rejects with a 400.
 //!
 //! This is the harness-agnostic core: it operates over any slice of
-//! [`CompactionItem`], so both ezer chat (`GrokTurn`) and ezer-build
+//! [`CompactionItem`], so both ezer chat (`EzerTurn`) and ezer-build
 //! (`ConversationItem`) share one implementation.
 
 use crate::item::CompactionItem;

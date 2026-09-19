@@ -94,7 +94,7 @@ pub const CAMPAIGN_STRIP_KEYS: &[&str] = &[
     "auth_provider",
     "model_providers",
     "auth",
-    "grok_com_config",
+    "ezer_com_config",
 ];
 
 /// Dotted paths the `EZER_CONFIG` / `EZER_CONFIG_PATH` overlay may set.
@@ -517,7 +517,7 @@ mod tests {
         let mut cfg = toml::Value::Table(toml::Table::new());
         let patch = table(
             "[auth]\npreferred_method = \"api_key\"\n\
-             [grok_com_config]\nforce_login_team_uuid = \"team-uuid\"\n\
+             [ezer_com_config]\nforce_login_team_uuid = \"team-uuid\"\n\
              [models]\ndefault = \"m\"\n",
         );
         apply_patches(&mut cfg, std::iter::once(patch), CAMPAIGN_STRIP_KEYS);
@@ -532,7 +532,7 @@ mod tests {
         let mut cfg = toml::Value::Table(toml::Table::new());
         let patch = table(
             "[auth]\npreferred_method = \"api_key\"\n\
-             [grok_com_config]\nforce_login_team_uuid = \"team-uuid\"\n\
+             [ezer_com_config]\nforce_login_team_uuid = \"team-uuid\"\n\
              [models]\ndefault = \"m\"\n",
         );
         apply_patches(&mut cfg, std::iter::once(patch.clone()), PATCH_STRIP_KEYS);

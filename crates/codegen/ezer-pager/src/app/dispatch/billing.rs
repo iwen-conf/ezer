@@ -7,29 +7,29 @@ use crate::app::agent_view::AgentView;
 use crate::app::app_view::AppView;
 use crate::scrollback::block::RenderBlock;
 use std::time::Duration;
-use ezer_telemetry::events::{SuperGrokUpsell, SuperGrokUpsellClicked};
+use ezer_telemetry::events::{UpgradeUpsell, UpgradeUpsellClicked};
 use ezer_telemetry::session_ctx::log_event;
 
 /// How long the pager auto-checks subscription status before stopping.
 /// After this, the user can still manually check via the [Refresh] button.
 pub(super) const PAYWALL_AUTO_CHECK_TIMEOUT: Duration = Duration::from_secs(10 * 60);
 
-/// Whether the user is at the highest subscription tier (SuperGrok Heavy).
+/// Whether the user is at the highest subscription tier (highest tier).
 /// Returns `true` only when `subscription_tier` positively matches a known max-tier identifier.
 /// An unknown (`None`) or unrecognized tier returns `false`, so lower-tier users always get the Q&A modal with the upgrade option.
 pub(super) fn is_max_tier(subscription_tier: Option<&str>) -> bool {
     let Some(t) = subscription_tier else {
         return false; // Unknown: default to Q&A.
     };
-    // Lowercase and replace spaces with underscores to match both JWT-derived keys ("supergrok_heavy") and CCP display names ("SuperGrok Heavy")
-    t.to_ascii_lowercase().replace(' ', "_") == "supergrok_heavy"
+    // Lowercase and replace spaces with underscores to match both JWT-derived keys ("max_tier") and CCP display names ("highest tier")
+    t.to_ascii_lowercase().replace(' ', "_") == "max_tier"
 }
 
 /// URL for upgrading the subscription tier.
-pub(crate) const UPSELL_URL_UPGRADE: &str = "https://grok.com/supergrok?referrer=ezer-build";
+pub(crate) const UPSELL_URL_UPGRADE: &str = "";
 
 /// URL for managing pay-as-you-go or on-demand spending and purchasing credits.
-pub(crate) const UPSELL_URL_PAYG: &str = "https://grok.com?_s=usage";
+pub(crate) const UPSELL_URL_PAYG: &str = "";
 
 /// Billing mode for credit-limit upsell copy.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -86,7 +86,7 @@ struct CreditLimitCopy {
 
 /// Open the credit-limit upsell Q&A on the given agent.
 /// Non-max-tier: Upgrade tier + buy-credits (or PAYG) + Try Again.
-/// Max-tier (SuperGrok Heavy): buy-credits (or PAYG) + Try Again — no upgrade option. URL options carry the target in `id` so the submit handler is position-independent.
+/// Max-tier (highest tier): buy-credits (or PAYG) + Try Again — no upgrade option. URL options carry the target in `id` so the submit handler is position-independent.
 pub(super) fn open_credit_limit_upsell(
     agent: &mut AgentView,
     mode: CreditLimitUpsellMode,
@@ -185,20 +185,20 @@ pub(super) fn open_credit_limit_upsell(
 /// Each option's `id` carries its target URL so the submit handler is position-independent.
 /// Only the driver can reach this: the PromptResponse handler calls it, and viewers never receive that response.
 pub(super) fn open_free_usage_upsell(agent: &mut AgentView, auth_method: Option<String>) {
-    open_supergrok_upsell(agent, UpsellReason::FreeUsageLimit, auth_method);
+    open_upgrade_upsell(agent, UpsellReason::FreeUsageLimit, auth_method);
 }
 
-/// Open the SuperGrok upsell for a tier-restricted slash command (`/usage`, `/imagine`, …).
+/// Open the MaxTier upsell for a tier-restricted slash command (`/usage`, `/imagine`, …).
 /// Returns whether the modal opened (`false` when another question modal is already up).
 /// The caller uses that to decide whether to consume the input that triggered it.
 pub(super) fn open_restricted_command_upsell(
     agent: &mut AgentView,
     auth_method: Option<String>,
 ) -> bool {
-    open_supergrok_upsell(agent, UpsellReason::RestrictedCommand, auth_method)
+    open_upgrade_upsell(agent, UpsellReason::RestrictedCommand, auth_method)
 }
 
-/// Which situation opened the SuperGrok upsell modal; it controls the heading and the telemetry source.
+/// Which situation opened the MaxTier upsell modal; it controls the heading and the telemetry source.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(super) enum UpsellReason {
     /// Free-usage quota exhausted (429 paywall).
@@ -209,7 +209,7 @@ pub(super) enum UpsellReason {
 
 /// Shared builder behind [`open_free_usage_upsell`] and [`open_restricted_command_upsell`]: a Q&A modal in the [`open_credit_limit_upsell`] style.
 /// Upgrade options carry their target URL in the option `id`, so submit handling does not depend on option position.
-fn open_supergrok_upsell(
+fn open_upgrade_upsell(
     agent: &mut AgentView,
     reason: UpsellReason,
     auth_method: Option<String>,
@@ -228,22 +228,22 @@ fn open_supergrok_upsell(
     let (heading, source, modal_id_prefix) = match reason {
         UpsellReason::FreeUsageLimit => (
             "You hit your free usage limit.",
-            SuperGrokUpsell::FreeUsagePaywall,
+            UpgradeUpsell::FreeUsagePaywall,
             "free-usage-upsell",
         ),
         UpsellReason::RestrictedCommand => (
             "Unlock all features.",
-            SuperGrokUpsell::RestrictedCommand,
+            UpgradeUpsell::RestrictedCommand,
             "restricted-command-upsell",
         ),
     };
 
-    log_event(ezer_telemetry::events::SuperGrokUpsellShown {
+    log_event(ezer_telemetry::events::UpgradeUpsellShown {
         source,
         auth_method,
     });
 
-    // /supergrok lists all plans; every upgrade option lands there.
+    // /upgrade lists all plans; every upgrade option lands there.
     let options = vec![
         QuestionOption {
             label: "Upgrade".into(),
@@ -369,7 +369,7 @@ pub(super) fn handle_gate_refreshed(
     }
 }
 
-/// `x.ai/auth/check_subscription` completed.
+/// `ezer/auth/check_subscription` completed.
 /// A failed check only promotes the deferred gate it was verifying (the `verify` generation).
 /// Generic watch, focus, and paywall-chain failures never touch it.
 pub(super) fn handle_check_subscription_complete(
@@ -528,17 +528,17 @@ pub(super) fn dispatch_retry_credit_limit_prompt(app: &mut AppView) -> Vec<Effec
 
 // Action handlers.
 
-pub(super) fn dispatch_open_supergrok_url(app: &mut AppView) -> Vec<Effect> {
-    log_event(SuperGrokUpsellClicked {
-        source: SuperGrokUpsell::WelcomeScreen,
+pub(super) fn dispatch_open_upgrade_url(app: &mut AppView) -> Vec<Effect> {
+    log_event(UpgradeUpsellClicked {
+        source: UpgradeUpsell::WelcomeScreen,
         auth_method: app.login_method_id.as_ref().map(|id| id.0.to_string()),
     });
     let url = app
         .gate
         .as_ref()
         .and_then(|g| g.url.as_deref())
-        .unwrap_or("https://grok.com/supergrok?referrer=ezer-build");
-    // Funnel attribution: tag SuperGrok upsell clicks from the CLI with `referrer=grok-build`, matching the OAuth consent flow and x.ai/cli links
+        .unwrap_or("https://example.test/upgrade");
+    // Funnel attribution: tag MaxTier upsell clicks from the CLI with `referrer=ezer-build`, matching the OAuth consent flow and ezer/cli links
     // It applies even when the URL came from remote settings's `gate_url`, so nothing depends on the remote flag being configured correctly
     // If the URL already specifies a referrer it's left alone
     let url = crate::app::link_opener::ensure_query_param(url, "referrer", "ezer-build");

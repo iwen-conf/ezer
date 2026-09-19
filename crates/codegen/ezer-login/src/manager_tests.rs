@@ -4,13 +4,13 @@ use super::*;
 use crate::error::RefreshTokenError;
 use std::sync::atomic::{AtomicU32, Ordering};
 use std::time::Instant;
-fn make_auth(expires_at: Option<DateTime<Utc>>, create_time: DateTime<Utc>) -> GrokAuth {
-    GrokAuth {
+fn make_auth(expires_at: Option<DateTime<Utc>>, create_time: DateTime<Utc>) -> EzerAuth {
+    EzerAuth {
         auth_mode: AuthMode::External,
         create_time,
         user_id: String::new(),
         expires_at,
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     }
 }
 /// The one-read classification must match what split `current()` /
@@ -19,27 +19,27 @@ fn make_auth(expires_at: Option<DateTime<Utc>>, create_time: DateTime<Utc>) -> G
 #[test]
 fn cached_token_state_truth_table() {
     let dir = tempfile::tempdir().unwrap();
-    let mgr = AuthManager::new(dir.path(), GrokComConfig::default());
+    let mgr = AuthManager::new(dir.path(), EzerComConfig::default());
     assert!(
         matches!(mgr.cached_token_state(), CachedTokenState::Missing),
         "no credential must classify Missing"
     );
-    mgr.hot_swap(GrokAuth {
+    mgr.hot_swap(EzerAuth {
         key: "expired".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("rt".into()),
         expires_at: Some(Utc::now() - chrono::Duration::hours(1)),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     });
     assert!(
         matches!(mgr.cached_token_state(), CachedTokenState::Expired),
         "an expired credential must classify Expired"
     );
-    mgr.hot_swap(GrokAuth {
+    mgr.hot_swap(EzerAuth {
         key: "live".into(),
         auth_mode: AuthMode::Oidc,
         expires_at: Some(Utc::now() + chrono::Duration::hours(1)),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     });
     let state = mgr.cached_token_state();
     assert!(
@@ -64,7 +64,7 @@ fn fallback_ttl_when_no_expires_at() {
 #[tokio::test]
 async fn refresh_path_lock_acquire_attaches_the_heartbeat() {
     let dir = tempfile::tempdir().unwrap();
-    let cfg = GrokComConfig::default();
+    let cfg = EzerComConfig::default();
     let mgr = Arc::new(AuthManager::new(dir.path(), cfg));
     let outcome = mgr
         .acquire_refresh_lock_or_adopt(RefreshReason::PreRequest)
@@ -82,7 +82,7 @@ async fn refresh_path_lock_acquire_attaches_the_heartbeat() {
 #[tokio::test]
 async fn lock_loss_revalidation_adopts_the_sibling_token() {
     let dir = tempfile::tempdir().unwrap();
-    let cfg = GrokComConfig::default();
+    let cfg = EzerComConfig::default();
     let scope = cfg.auth_scope();
     let mgr = Arc::new(AuthManager::new(dir.path(), cfg));
     let guard = mgr
@@ -93,12 +93,12 @@ async fn lock_loss_revalidation_adopts_the_sibling_token() {
     let lock_path = dir.path().join("auth.json.lock");
     std::fs::remove_file(&lock_path).unwrap();
     std::fs::write(&lock_path, b"").unwrap();
-    let fresh_disk = GrokAuth {
+    let fresh_disk = EzerAuth {
         key: "fresh-key-from-sibling".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("new-rt".into()),
         expires_at: Some(Utc::now() + Duration::hours(1)),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     let mut store = AuthStore::new();
     store.insert(scope, fresh_disk);
@@ -115,7 +115,7 @@ async fn lock_loss_revalidation_adopts_the_sibling_token() {
 #[test]
 fn has_usable_disk_token_reads_disk_independent_of_memory() {
     let dir = tempfile::tempdir().unwrap();
-    let cfg = GrokComConfig::default();
+    let cfg = EzerComConfig::default();
     let mgr = Arc::new(AuthManager::new(dir.path(), cfg));
     assert!(!mgr.has_usable_disk_token());
     let valid = make_auth(Some(Utc::now() + Duration::hours(1)), Utc::now());
@@ -137,7 +137,7 @@ fn has_usable_disk_token_reads_disk_independent_of_memory() {
 #[test]
 fn has_usable_token_covers_memory_and_disk() {
     let dir = tempfile::tempdir().unwrap();
-    let cfg = GrokComConfig::default();
+    let cfg = EzerComConfig::default();
     let mgr = Arc::new(AuthManager::new(dir.path(), cfg));
     assert!(!mgr.has_usable_token(), "nothing in memory or on disk");
     mgr.hot_swap(make_auth(Some(Utc::now() + Duration::hours(1)), Utc::now()));
@@ -155,7 +155,7 @@ fn has_usable_token_covers_memory_and_disk() {
 }
 #[test]
 fn auth_scope_uses_oauth2_when_present() {
-    let cfg = GrokComConfig::default();
+    let cfg = EzerComConfig::default();
     assert_eq!(
         cfg.auth_scope(),
         format!(
@@ -173,7 +173,7 @@ fn legacy_scope_fallback_reads_old_auth_json() {
     let mut store = AuthStore::new();
     store.insert(LEGACY_SCOPE.to_string(), legacy_auth);
     write_auth_json(&auth_path, &store).unwrap();
-    let cfg = GrokComConfig::default();
+    let cfg = EzerComConfig::default();
     let mgr = Arc::new(AuthManager::new(dir.path(), cfg));
     let current = mgr.current();
     assert!(current.is_some(), "should fall back to legacy scope key");
@@ -183,15 +183,15 @@ fn legacy_scope_fallback_reads_old_auth_json() {
 fn new_scope_takes_precedence_over_legacy() {
     let dir = tempfile::tempdir().unwrap();
     let auth_path = dir.path().join("auth.json");
-    let legacy_auth = GrokAuth {
+    let legacy_auth = EzerAuth {
         key: "legacy-key".into(),
         ..make_auth(Some(Utc::now() + Duration::hours(1)), Utc::now())
     };
-    let new_auth = GrokAuth {
+    let new_auth = EzerAuth {
         key: "new-key".into(),
         ..make_auth(Some(Utc::now() + Duration::hours(1)), Utc::now())
     };
-    let cfg = GrokComConfig::default();
+    let cfg = EzerComConfig::default();
     let scope = cfg.auth_scope();
     let mut store = AuthStore::new();
     store.insert(LEGACY_SCOPE.to_string(), legacy_auth);
@@ -206,9 +206,9 @@ fn new_scope_takes_precedence_over_legacy() {
 #[test]
 fn near_expiry_token_invisible_to_current_visible_to_expired_auth() {
     let dir = tempfile::tempdir().unwrap();
-    let cfg = GrokComConfig::default();
+    let cfg = EzerComConfig::default();
     let mgr = Arc::new(AuthManager::new(dir.path(), cfg));
-    let near_expiry = GrokAuth {
+    let near_expiry = EzerAuth {
         key: "near-expiry-key".into(),
         user_id: "user-1".into(),
         email: Some("user@test.com".into()),
@@ -216,7 +216,7 @@ fn near_expiry_token_invisible_to_current_visible_to_expired_auth() {
         expires_at: Some(Utc::now() + Duration::minutes(3)),
         oidc_issuer: Some("https://idp.example.com".into()),
         oidc_client_id: Some("client-1".into()),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     mgr.hot_swap(near_expiry);
     assert!(
@@ -242,9 +242,9 @@ fn near_expiry_token_invisible_to_current_visible_to_expired_auth() {
 #[tokio::test]
 async fn update_preserves_other_scope_entries() {
     let dir = tempfile::tempdir().unwrap();
-    let cfg = GrokComConfig::default();
+    let cfg = EzerComConfig::default();
     let mgr = Arc::new(AuthManager::new(dir.path(), cfg.clone()));
-    let external = GrokAuth {
+    let external = EzerAuth {
         key: "external-key".into(),
         auth_mode: AuthMode::External,
         ..make_auth(Some(Utc::now() + Duration::hours(1)), Utc::now())
@@ -254,7 +254,7 @@ async fn update_preserves_other_scope_entries() {
         map.insert("other-scope".into(), external);
         write_auth_json(&dir.path().join("auth.json"), &map).unwrap();
     }
-    let new_auth = GrokAuth {
+    let new_auth = EzerAuth {
         key: "oidc-token".into(),
         auth_mode: AuthMode::Oidc,
         ..make_auth(Some(Utc::now() + Duration::hours(1)), Utc::now())
@@ -270,11 +270,11 @@ async fn update_preserves_other_scope_entries() {
 async fn update_recovers_from_corrupt_auth_json_by_backing_up_old_file() {
     let dir = tempfile::tempdir().unwrap();
     let auth_path = dir.path().join("auth.json");
-    let cfg = GrokComConfig::default();
+    let cfg = EzerComConfig::default();
     let mgr = Arc::new(AuthManager::new(dir.path(), cfg.clone()));
     let bad_content = b"NOT VALID JSON {{{";
     std::fs::write(&auth_path, bad_content).unwrap();
-    let new_auth = GrokAuth {
+    let new_auth = EzerAuth {
         key: "fresh-token".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("fresh-rt".into()),
@@ -319,9 +319,9 @@ async fn update_recovers_from_corrupt_auth_json_by_backing_up_old_file() {
 #[tokio::test]
 async fn update_preserves_team_fields_when_proxy_omits_them() {
     let dir = tempfile::tempdir().unwrap();
-    let cfg = GrokComConfig::default();
+    let cfg = EzerComConfig::default();
     let mgr = Arc::new(AuthManager::new(dir.path(), cfg).with_proxy_base_url("http://127.0.0.1:1"));
-    let team_auth = GrokAuth {
+    let team_auth = EzerAuth {
         key: "team-token".into(),
         auth_mode: AuthMode::Oidc,
         principal_type: Some("Team".into()),
@@ -357,10 +357,10 @@ async fn update_preserves_team_fields_when_proxy_omits_them() {
 #[tokio::test]
 async fn update_stores_team_token_under_base_scope() {
     let dir = tempfile::tempdir().unwrap();
-    let cfg = GrokComConfig::default();
+    let cfg = EzerComConfig::default();
     let base_scope = cfg.auth_scope();
     let mgr = Arc::new(AuthManager::new(dir.path(), cfg).with_proxy_base_url("http://127.0.0.1:1"));
-    let team_auth = GrokAuth {
+    let team_auth = EzerAuth {
         key: "team-token".into(),
         auth_mode: AuthMode::Oidc,
         principal_type: Some("Team".into()),
@@ -382,17 +382,17 @@ async fn update_stores_team_token_under_base_scope() {
 #[tokio::test]
 async fn team_login_then_personal_evicts_team_token() {
     let dir = tempfile::tempdir().unwrap();
-    let cfg = GrokComConfig::default();
+    let cfg = EzerComConfig::default();
     let base_scope = cfg.auth_scope();
     let mgr = Arc::new(AuthManager::new(dir.path(), cfg).with_proxy_base_url("http://127.0.0.1:1"));
-    let team_auth = GrokAuth {
+    let team_auth = EzerAuth {
         key: "team-token".into(),
         principal_type: Some("Team".into()),
         principal_id: Some("team-abc".into()),
         ..make_auth(Some(Utc::now() + Duration::hours(1)), Utc::now())
     };
     mgr.update(team_auth).await.unwrap();
-    let personal_auth = GrokAuth {
+    let personal_auth = EzerAuth {
         key: "personal-token".into(),
         principal_type: None,
         principal_id: None,
@@ -415,15 +415,15 @@ async fn team_login_then_personal_evicts_team_token() {
 fn clear_does_not_remove_legacy_scope() {
     let dir = tempfile::tempdir().unwrap();
     let auth_path = dir.path().join("auth.json");
-    let legacy_auth = GrokAuth {
+    let legacy_auth = EzerAuth {
         key: "legacy-key".into(),
         ..make_auth(Some(Utc::now() + Duration::hours(1)), Utc::now())
     };
-    let oauth_auth = GrokAuth {
+    let oauth_auth = EzerAuth {
         key: "oauth-key".into(),
         ..make_auth(Some(Utc::now() + Duration::hours(1)), Utc::now())
     };
-    let cfg = GrokComConfig::default();
+    let cfg = EzerComConfig::default();
     let scope = cfg.auth_scope();
     let mut store = AuthStore::new();
     store.insert(LEGACY_SCOPE.to_string(), legacy_auth);
@@ -462,10 +462,10 @@ fn is_data_collection_disabled_matrix() {
         ),
     ];
     for (reasons, opt_out, expected) in cases {
-        let auth = GrokAuth {
+        let auth = EzerAuth {
             team_blocked_reasons: reasons.iter().map(|s| (*s).into()).collect(),
             coding_data_retention_opt_out: *opt_out,
-            ..GrokAuth::test_default()
+            ..EzerAuth::test_default()
         };
         assert_eq!(
             auth.is_data_collection_disabled(),
@@ -480,22 +480,22 @@ fn is_data_collection_disabled_matrix() {
 #[test]
 fn manager_collection_predicates_fail_directions() {
     let dir = tempfile::tempdir().unwrap();
-    let mgr = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
+    let mgr = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
     assert!(!mgr.is_data_collection_disabled());
     assert!(
         !mgr.allows_data_collection(),
         "missing credential must fail closed for collection"
     );
-    mgr.hot_swap(GrokAuth::test_default());
+    mgr.hot_swap(EzerAuth::test_default());
     assert!(!mgr.is_data_collection_disabled());
     assert!(mgr.allows_data_collection());
-    mgr.hot_swap(GrokAuth {
+    mgr.hot_swap(EzerAuth {
         coding_data_retention_opt_out: true,
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     });
     assert!(mgr.is_data_collection_disabled());
     assert!(!mgr.allows_data_collection());
-    mgr.hot_swap(GrokAuth::test_default());
+    mgr.hot_swap(EzerAuth::test_default());
     assert!(mgr.allows_data_collection(), "precondition");
     mgr.clear_in_memory();
     assert!(
@@ -518,10 +518,10 @@ fn token_suffix_matrix() {
 #[test]
 fn hot_swap_updates_in_memory_without_disk() {
     let dir = tempfile::tempdir().unwrap();
-    let cfg = GrokComConfig::default();
+    let cfg = EzerComConfig::default();
     let mgr = Arc::new(AuthManager::new(dir.path(), cfg));
     assert!(mgr.current().is_none());
-    let auth = GrokAuth {
+    let auth = EzerAuth {
         key: "swapped".into(),
         ..make_auth(Some(Utc::now() + Duration::hours(1)), Utc::now())
     };
@@ -532,9 +532,9 @@ fn hot_swap_updates_in_memory_without_disk() {
 #[test]
 fn try_use_disk_token_accepts_valid_disk_token() {
     let dir = tempfile::tempdir().unwrap();
-    let cfg = GrokComConfig::default();
+    let cfg = EzerComConfig::default();
     let mgr = Arc::new(AuthManager::new(dir.path(), cfg));
-    let valid_disk = GrokAuth {
+    let valid_disk = EzerAuth {
         key: "valid-disk".into(),
         ..make_auth(Some(Utc::now() + Duration::hours(1)), Utc::now())
     };
@@ -545,7 +545,7 @@ fn try_use_disk_token_accepts_valid_disk_token() {
 #[test]
 fn try_use_disk_token_rejects_expired_disk_token() {
     let dir = tempfile::tempdir().unwrap();
-    let cfg = GrokComConfig::default();
+    let cfg = EzerComConfig::default();
     let mgr = Arc::new(AuthManager::new(dir.path(), cfg));
     let expired_disk = make_auth(Some(Utc::now() - Duration::hours(1)), Utc::now());
     assert_eq!(
@@ -557,9 +557,9 @@ fn try_use_disk_token_rejects_expired_disk_token() {
 #[test]
 fn try_use_disk_token_rejects_same_key_on_server_rejected() {
     let dir = tempfile::tempdir().unwrap();
-    let cfg = GrokComConfig::default();
+    let cfg = EzerComConfig::default();
     let mgr = Arc::new(AuthManager::new(dir.path(), cfg));
-    let auth = GrokAuth {
+    let auth = EzerAuth {
         key: "same-key".into(),
         ..make_auth(Some(Utc::now() + Duration::hours(1)), Utc::now())
     };
@@ -573,14 +573,14 @@ fn try_use_disk_token_rejects_same_key_on_server_rejected() {
 #[test]
 fn try_use_disk_token_accepts_different_key_on_server_rejected() {
     let dir = tempfile::tempdir().unwrap();
-    let cfg = GrokComConfig::default();
+    let cfg = EzerComConfig::default();
     let mgr = Arc::new(AuthManager::new(dir.path(), cfg));
-    let mem_auth = GrokAuth {
+    let mem_auth = EzerAuth {
         key: "old-key".into(),
         ..make_auth(Some(Utc::now() + Duration::hours(1)), Utc::now())
     };
     mgr.hot_swap(mem_auth);
-    let disk_auth = GrokAuth {
+    let disk_auth = EzerAuth {
         key: "new-key".into(),
         ..make_auth(Some(Utc::now() + Duration::hours(1)), Utc::now())
     };
@@ -593,14 +593,14 @@ fn try_use_disk_token_accepts_different_key_on_server_rejected() {
 #[test]
 fn try_use_disk_token_skips_disk_token_older_than_memory_mint() {
     let dir = tempfile::tempdir().unwrap();
-    let cfg = GrokComConfig::default();
+    let cfg = EzerComConfig::default();
     let mgr = Arc::new(AuthManager::new(dir.path(), cfg));
-    let fresh_mint = GrokAuth {
+    let fresh_mint = EzerAuth {
         key: "fresh-mint".into(),
         ..make_auth(Some(Utc::now() + Duration::hours(1)), Utc::now())
     };
     mgr.hot_swap(fresh_mint);
-    let lagging_disk = GrokAuth {
+    let lagging_disk = EzerAuth {
         key: "stale-disk".into(),
         ..make_auth(
             Some(Utc::now() + Duration::minutes(30)),
@@ -621,15 +621,15 @@ fn try_use_disk_token_skips_disk_token_older_than_memory_mint() {
 #[test]
 fn try_use_disk_token_lagging_guard_holds_for_buffered_in_memory_token() {
     let dir = tempfile::tempdir().unwrap();
-    let cfg = GrokComConfig::default();
+    let cfg = EzerComConfig::default();
     let mgr = Arc::new(AuthManager::new(dir.path(), cfg));
-    let buffered_mint = GrokAuth {
+    let buffered_mint = EzerAuth {
         key: "buffered-mint".into(),
         ..make_auth(Some(Utc::now() + Duration::minutes(2)), Utc::now())
     };
     mgr.hot_swap(buffered_mint);
     assert!(mgr.current().is_none(), "bearer is inside the buffer");
-    let lagging_disk = GrokAuth {
+    let lagging_disk = EzerAuth {
         key: "stale-disk".into(),
         ..make_auth(
             Some(Utc::now() + Duration::minutes(30)),
@@ -651,15 +651,15 @@ fn try_use_disk_token_lagging_guard_holds_for_buffered_in_memory_token() {
 #[test]
 fn pick_up_sibling_token_refuses_lagging_disk_token() {
     let dir = tempfile::tempdir().unwrap();
-    let cfg = GrokComConfig::default();
+    let cfg = EzerComConfig::default();
     let scope = cfg.auth_scope();
     let mgr = Arc::new(AuthManager::new(dir.path(), cfg));
-    let fresh_mint = GrokAuth {
+    let fresh_mint = EzerAuth {
         key: "fresh-mint".into(),
         ..make_auth(Some(Utc::now() + Duration::hours(1)), Utc::now())
     };
     mgr.hot_swap(fresh_mint);
-    let lagging_disk = GrokAuth {
+    let lagging_disk = EzerAuth {
         key: "stale-disk".into(),
         ..make_auth(
             Some(Utc::now() + Duration::minutes(30)),
@@ -680,23 +680,23 @@ fn pick_up_sibling_token_refuses_lagging_disk_token() {
 #[tokio::test]
 async fn disk_refresh_wins_over_expired_in_memory() {
     let dir = tempfile::tempdir().unwrap();
-    let cfg = GrokComConfig::default();
+    let cfg = EzerComConfig::default();
     let scope = cfg.auth_scope();
     let mgr = Arc::new(AuthManager::new(dir.path(), cfg));
-    let expired = GrokAuth {
+    let expired = EzerAuth {
         key: "expired-key".into(),
         refresh_token: Some("old-rt".into()),
         expires_at: Some(Utc::now() - Duration::hours(1)),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     mgr.hot_swap(expired);
     assert!(mgr.is_expired());
     assert!(mgr.current().is_none());
-    let fresh_disk = GrokAuth {
+    let fresh_disk = EzerAuth {
         key: "fresh-key-from-sibling".into(),
         refresh_token: Some("new-rt".into()),
         expires_at: Some(Utc::now() + Duration::hours(1)),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     let mut store = AuthStore::new();
     store.insert(scope, fresh_disk);
@@ -722,11 +722,11 @@ impl TokenRefresher for CountingRefresher {
     async fn refresh(&self, _reason: RefreshReason) -> crate::refresh::RefreshOutcome {
         self.call_count.fetch_add(1, Ordering::SeqCst);
         tokio::time::sleep(self.delay).await;
-        let fresh = GrokAuth {
+        let fresh = EzerAuth {
             key: "fresh-token".into(),
             expires_at: Some(Utc::now() + Duration::hours(1)),
             refresh_token: Some("rt-new".into()),
-            ..GrokAuth::test_default()
+            ..EzerAuth::test_default()
         };
         crate::refresh::RefreshOutcome::Success(Box::new(fresh))
     }
@@ -761,22 +761,22 @@ fn record_permanent_failure(
 #[tokio::test]
 async fn refresh_chain_adopts_sibling_pre_lock_without_flock() {
     let dir = tempfile::tempdir().unwrap();
-    let cfg = GrokComConfig::default();
+    let cfg = EzerComConfig::default();
     let scope = cfg.auth_scope();
     let mgr = Arc::new(AuthManager::new(dir.path(), cfg));
-    mgr.hot_swap(GrokAuth {
+    mgr.hot_swap(EzerAuth {
         key: "expired-key".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("old-rt".into()),
         expires_at: Some(Utc::now() - Duration::hours(1)),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     });
-    let fresh_disk = GrokAuth {
+    let fresh_disk = EzerAuth {
         key: "fresh-key-from-sibling".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("new-rt".into()),
         expires_at: Some(Utc::now() + Duration::hours(1)),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     let mut store = AuthStore::new();
     store.insert(scope, fresh_disk);
@@ -811,15 +811,15 @@ async fn refresh_chain_adopts_sibling_pre_lock_without_flock() {
 #[tokio::test]
 async fn refresh_chain_server_rejected_same_key_skips_pre_lock_adopt() {
     let dir = tempfile::tempdir().unwrap();
-    let cfg = GrokComConfig::default();
+    let cfg = EzerComConfig::default();
     let scope = cfg.auth_scope();
     let mgr = Arc::new(AuthManager::new(dir.path(), cfg));
-    let rejected = GrokAuth {
+    let rejected = EzerAuth {
         key: "rejected-key".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("rt-live".into()),
         expires_at: Some(Utc::now() + Duration::hours(1)),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     mgr.hot_swap(rejected.clone());
     let mut store = AuthStore::new();
@@ -846,22 +846,22 @@ async fn refresh_chain_server_rejected_same_key_skips_pre_lock_adopt() {
 #[tokio::test]
 async fn refresh_chain_pre_lock_adopt_ignores_expired_disk_token() {
     let dir = tempfile::tempdir().unwrap();
-    let cfg = GrokComConfig::default();
+    let cfg = EzerComConfig::default();
     let scope = cfg.auth_scope();
     let mgr = Arc::new(AuthManager::new(dir.path(), cfg));
-    mgr.hot_swap(GrokAuth {
+    mgr.hot_swap(EzerAuth {
         key: "expired-key".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("old-rt".into()),
         expires_at: Some(Utc::now() - Duration::hours(1)),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     });
-    let buffered_disk = GrokAuth {
+    let buffered_disk = EzerAuth {
         key: "buffered-sibling-key".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("rt-buffered".into()),
         expires_at: Some(Utc::now() + Duration::minutes(3)),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     let mut store = AuthStore::new();
     store.insert(scope, buffered_disk);
@@ -888,26 +888,26 @@ async fn refresh_chain_pre_lock_adopt_ignores_expired_disk_token() {
 #[tokio::test]
 async fn refresh_chain_pre_lock_adopt_skips_disk_token_older_than_memory() {
     let dir = tempfile::tempdir().unwrap();
-    let cfg = GrokComConfig::default();
+    let cfg = EzerComConfig::default();
     let scope = cfg.auth_scope();
     let mgr = Arc::new(AuthManager::new(dir.path(), cfg));
-    let lagging_disk = GrokAuth {
+    let lagging_disk = EzerAuth {
         key: "stale-disk-key".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("rt-old".into()),
         expires_at: Some(Utc::now() + Duration::minutes(30)),
         create_time: Utc::now() - Duration::hours(1),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     let mut store = AuthStore::new();
     store.insert(scope, lagging_disk);
     write_auth_json(&dir.path().join("auth.json"), &store).unwrap();
-    mgr.hot_swap(GrokAuth {
+    mgr.hot_swap(EzerAuth {
         key: "fresh-mint-key".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("rt-new".into()),
         expires_at: Some(Utc::now() + Duration::hours(1)),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     });
     let calls = Arc::new(AtomicU32::new(0));
     mgr.set_refresher(Arc::new(CountingRefresher {
@@ -932,26 +932,26 @@ async fn refresh_chain_pre_lock_adopt_skips_disk_token_older_than_memory() {
 #[tokio::test]
 async fn refresh_chain_server_rejected_skips_lagging_disk_token_pre_lock() {
     let dir = tempfile::tempdir().unwrap();
-    let cfg = GrokComConfig::default();
+    let cfg = EzerComConfig::default();
     let scope = cfg.auth_scope();
     let mgr = Arc::new(AuthManager::new(dir.path(), cfg));
-    let lagging_disk = GrokAuth {
+    let lagging_disk = EzerAuth {
         key: "stale-disk-key".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("rt-old".into()),
         expires_at: Some(Utc::now() + Duration::minutes(30)),
         create_time: Utc::now() - Duration::minutes(10),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     let mut store = AuthStore::new();
     store.insert(scope, lagging_disk);
     write_auth_json(&dir.path().join("auth.json"), &store).unwrap();
-    mgr.hot_swap(GrokAuth {
+    mgr.hot_swap(EzerAuth {
         key: "rejected-key".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("rt-live".into()),
         expires_at: Some(Utc::now() + Duration::hours(1)),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     });
     let calls = Arc::new(AtomicU32::new(0));
     mgr.set_refresher(Arc::new(CountingRefresher {
@@ -984,24 +984,24 @@ async fn refresh_chain_bounded_times_out_without_dropping_mint() {
         async fn refresh(&self, _reason: RefreshReason) -> crate::refresh::RefreshOutcome {
             self.call_count.fetch_add(1, Ordering::SeqCst);
             tokio::time::sleep(StdDuration::from_secs(5)).await;
-            let fresh = GrokAuth {
+            let fresh = EzerAuth {
                 key: "fresh-token".into(),
                 expires_at: Some(Utc::now() + Duration::hours(1)),
                 refresh_token: Some("rt-new".into()),
-                ..GrokAuth::test_default()
+                ..EzerAuth::test_default()
             };
             self.returning.notify_one();
             crate::refresh::RefreshOutcome::Success(Box::new(fresh))
         }
     }
     let dir = tempfile::tempdir().unwrap();
-    let mgr = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
-    mgr.hot_swap(GrokAuth {
+    let mgr = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
+    mgr.hot_swap(EzerAuth {
         key: "expired-key".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("old-rt".into()),
         expires_at: Some(Utc::now() - Duration::hours(1)),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     });
     let calls = Arc::new(AtomicU32::new(0));
     let returning = Arc::new(tokio::sync::Notify::new());
@@ -1055,15 +1055,15 @@ async fn refresh_chain_bounded_times_out_without_dropping_mint() {
 #[tokio::test]
 async fn storm_cap_engages_with_empty_inner_and_dead_disk_refresh_token() {
     let dir = tempfile::tempdir().unwrap();
-    let cfg = GrokComConfig::default();
+    let cfg = EzerComConfig::default();
     let scope = cfg.auth_scope();
     let mgr = Arc::new(AuthManager::new(dir.path(), cfg));
-    let dead = GrokAuth {
+    let dead = EzerAuth {
         key: "disk-dead".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("rt-dead".into()),
         expires_at: Some(Utc::now() - Duration::hours(1)),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     let mut store = read_auth_json(&dir.path().join("auth.json")).unwrap_or_default();
     store.insert(scope, dead);
@@ -1090,22 +1090,22 @@ async fn storm_cap_engages_with_empty_inner_and_dead_disk_refresh_token() {
 #[tokio::test]
 async fn verdict_not_keyed_on_in_mem_bearer() {
     let dir = tempfile::tempdir().unwrap();
-    let cfg = GrokComConfig::default();
+    let cfg = EzerComConfig::default();
     let scope = cfg.auth_scope();
     let mgr = Arc::new(AuthManager::new(dir.path(), cfg));
-    mgr.hot_swap(GrokAuth {
+    mgr.hot_swap(EzerAuth {
         key: "mem-stale".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("rt-mem".into()),
         expires_at: Some(Utc::now() - Duration::hours(1)),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     });
-    let disk = GrokAuth {
+    let disk = EzerAuth {
         key: "disk-stale".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("rt-disk".into()),
         expires_at: Some(Utc::now() - Duration::hours(1)),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     let mut store = read_auth_json(&dir.path().join("auth.json")).unwrap_or_default();
     store.insert(scope, disk);
@@ -1141,12 +1141,12 @@ async fn verdict_not_keyed_on_in_mem_bearer() {
         mgr.read_disk_auth().is_some(),
         "ClientRejected must retain the disk credential the verdict is keyed on",
     );
-    mgr.hot_swap(GrokAuth {
+    mgr.hot_swap(EzerAuth {
         key: "mem-stale-2".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("rt-mem-2".into()),
         expires_at: Some(Utc::now() - Duration::hours(1)),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     });
     let _ = mgr
         .refresh_chain(TokenType::OidcSession, RefreshReason::ServerRejected)
@@ -1163,13 +1163,13 @@ async fn verdict_not_keyed_on_in_mem_bearer() {
 #[tokio::test]
 async fn refresh_persist_failure_is_transient_but_swaps_in_memory() {
     let dir = tempfile::tempdir().unwrap();
-    let mgr = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
-    mgr.hot_swap(GrokAuth {
+    let mgr = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
+    mgr.hot_swap(EzerAuth {
         key: "stale".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("rt".into()),
         expires_at: Some(Utc::now() - Duration::hours(1)),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     });
     struct FaultGuard;
     impl Drop for FaultGuard {
@@ -1204,13 +1204,13 @@ async fn refresh_persist_failure_is_transient_but_swaps_in_memory() {
 #[tokio::test]
 async fn auth_concurrent_refresh_deduplicates() {
     let dir = tempfile::tempdir().unwrap();
-    let mgr = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
-    let expired = GrokAuth {
+    let mgr = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
+    let expired = EzerAuth {
         key: "expired-key".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("rt-old".into()),
         expires_at: Some(Utc::now() - Duration::hours(1)),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     mgr.hot_swap(expired);
     let call_count = Arc::new(AtomicU32::new(0));
@@ -1243,13 +1243,13 @@ async fn auth_concurrent_refresh_deduplicates() {
 #[tokio::test]
 async fn auth_permanent_failure_stops_retries() {
     let dir = tempfile::tempdir().unwrap();
-    let mgr = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
-    let expired = GrokAuth {
+    let mgr = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
+    let expired = EzerAuth {
         key: "expired-key".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("rt-old".into()),
         expires_at: Some(Utc::now() - Duration::hours(1)),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     mgr.hot_swap(expired);
     let call_count = Arc::new(AtomicU32::new(0));
@@ -1271,10 +1271,10 @@ async fn auth_permanent_failure_stops_retries() {
         1,
         "refresher must be called exactly once"
     );
-    let valid = GrokAuth {
+    let valid = EzerAuth {
         key: "new-valid-key".into(),
         expires_at: Some(Utc::now() + Duration::hours(1)),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     mgr.hot_swap(valid);
     assert_eq!(mgr.auth().await.unwrap().key, "new-valid-key");
@@ -1283,20 +1283,20 @@ async fn auth_permanent_failure_stops_retries() {
 #[tokio::test]
 async fn auth_legacy_session_picks_up_sibling_disk_token() {
     let dir = tempfile::tempdir().unwrap();
-    let cfg = GrokComConfig::default();
+    let cfg = EzerComConfig::default();
     let scope = cfg.auth_scope();
     let mgr = Arc::new(AuthManager::new(dir.path(), cfg));
-    mgr.hot_swap(GrokAuth {
+    mgr.hot_swap(EzerAuth {
         key: "stale-oidc".into(),
         auth_mode: AuthMode::Oidc,
         expires_at: Some(Utc::now() - Duration::hours(1)),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     });
-    let fresh = GrokAuth {
+    let fresh = EzerAuth {
         key: "fresh-from-sibling".into(),
         auth_mode: AuthMode::Oidc,
         expires_at: Some(Utc::now() + Duration::hours(1)),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     let mut store = AuthStore::new();
     store.insert(scope, fresh);
@@ -1308,13 +1308,13 @@ async fn auth_legacy_session_picks_up_sibling_disk_token() {
 #[tokio::test]
 async fn refresh_chain_surfaces_transient_failure() {
     let dir = tempfile::tempdir().unwrap();
-    let mgr = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
-    mgr.hot_swap(GrokAuth {
+    let mgr = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
+    mgr.hot_swap(EzerAuth {
         key: "expired".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("rt".into()),
         expires_at: Some(Utc::now() - Duration::hours(1)),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     });
     struct TransientRefresher;
     #[async_trait::async_trait]
@@ -1338,14 +1338,14 @@ async fn refresh_chain_surfaces_transient_failure() {
 #[tokio::test]
 async fn auth_returns_expired_api_key_consistently_with_current() {
     let dir = tempfile::tempdir().unwrap();
-    let mgr = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
-    let expired_key = GrokAuth {
+    let mgr = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
+    let expired_key = EzerAuth {
         key: "stale-api-key".into(),
         auth_mode: AuthMode::ApiKey,
         create_time: Utc::now() - Duration::days(60),
         expires_at: None,
         refresh_token: None,
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     mgr.hot_swap(expired_key);
     assert!(
@@ -1361,13 +1361,13 @@ async fn auth_returns_expired_api_key_consistently_with_current() {
         mgr.get_valid_token().await.is_err(),
         "get_valid_token() must error rather than return the stale key"
     );
-    let fresh_key = GrokAuth {
+    let fresh_key = EzerAuth {
         key: "fresh-api-key".into(),
         auth_mode: AuthMode::ApiKey,
         create_time: Utc::now(),
         expires_at: None,
         refresh_token: None,
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     mgr.hot_swap(fresh_key);
     assert_eq!(
@@ -1384,13 +1384,13 @@ async fn auth_returns_expired_api_key_consistently_with_current() {
 #[tokio::test]
 async fn proactive_refresh_backs_off_on_permanent_failure() {
     let dir = tempfile::tempdir().unwrap();
-    let mgr = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
-    let expired = GrokAuth {
+    let mgr = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
+    let expired = EzerAuth {
         key: "expired".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("rt".into()),
         expires_at: Some(Utc::now() - Duration::hours(1)),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     mgr.hot_swap(expired);
     let call_count = Arc::new(AtomicU32::new(0));
@@ -1438,13 +1438,13 @@ impl TokenRefresher for TransientRefresher {
 #[tokio::test]
 async fn proactive_refresh_backs_off_when_grace_serves_the_cached_token() {
     let dir = tempfile::tempdir().unwrap();
-    let mgr = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
-    let soft_expired = GrokAuth {
+    let mgr = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
+    let soft_expired = EzerAuth {
         key: "soft-expired".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("rt".into()),
         expires_at: Some(Utc::now() + Duration::minutes(2)),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     mgr.hot_swap(soft_expired);
     let call_count = Arc::new(AtomicU32::new(0));
@@ -1474,12 +1474,12 @@ struct ShortLivedRefresher {
 impl TokenRefresher for ShortLivedRefresher {
     async fn refresh(&self, _reason: RefreshReason) -> crate::refresh::RefreshOutcome {
         let n = self.call_count.fetch_add(1, Ordering::SeqCst) + 1;
-        crate::refresh::RefreshOutcome::Success(Box::new(GrokAuth {
+        crate::refresh::RefreshOutcome::Success(Box::new(EzerAuth {
             key: format!("short-lived-{n}"),
             auth_mode: AuthMode::Oidc,
             refresh_token: Some("rt".into()),
             expires_at: Some(Utc::now() + Duration::minutes(2)),
-            ..GrokAuth::test_default()
+            ..EzerAuth::test_default()
         }))
     }
 }
@@ -1488,13 +1488,13 @@ impl TokenRefresher for ShortLivedRefresher {
 #[tokio::test]
 async fn proactive_refresh_counts_a_short_lived_renewal_as_progress() {
     let dir = tempfile::tempdir().unwrap();
-    let mgr = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
-    mgr.hot_swap(GrokAuth {
+    let mgr = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
+    mgr.hot_swap(EzerAuth {
         key: "short-lived-0".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("rt".into()),
         expires_at: Some(Utc::now() + Duration::minutes(2)),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     });
     let call_count = Arc::new(AtomicU32::new(0));
     mgr.set_refresher(Arc::new(ShortLivedRefresher {
@@ -1523,12 +1523,12 @@ struct ReissuingRefresher {
 impl TokenRefresher for ReissuingRefresher {
     async fn refresh(&self, _reason: RefreshReason) -> crate::refresh::RefreshOutcome {
         self.call_count.fetch_add(1, Ordering::SeqCst);
-        crate::refresh::RefreshOutcome::Success(Box::new(GrokAuth {
+        crate::refresh::RefreshOutcome::Success(Box::new(EzerAuth {
             key: "same-opaque-bearer".into(),
             auth_mode: AuthMode::Oidc,
             refresh_token: Some("rt".into()),
             expires_at: Some(Utc::now() + Duration::minutes(2)),
-            ..GrokAuth::test_default()
+            ..EzerAuth::test_default()
         }))
     }
 }
@@ -1537,13 +1537,13 @@ impl TokenRefresher for ReissuingRefresher {
 #[tokio::test]
 async fn proactive_refresh_counts_a_reissued_bearer_as_progress() {
     let dir = tempfile::tempdir().unwrap();
-    let mgr = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
-    mgr.hot_swap(GrokAuth {
+    let mgr = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
+    mgr.hot_swap(EzerAuth {
         key: "same-opaque-bearer".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("rt".into()),
         expires_at: Some(Utc::now() + Duration::minutes(2)),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     });
     let call_count = Arc::new(AtomicU32::new(0));
     mgr.set_refresher(Arc::new(ReissuingRefresher {
@@ -1565,14 +1565,14 @@ async fn proactive_refresh_counts_a_reissued_bearer_as_progress() {
 #[tokio::test]
 async fn start_proactive_refresh_is_idempotent() {
     let dir = tempfile::tempdir().unwrap();
-    let mgr = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
-    let stale_api_key = GrokAuth {
+    let mgr = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
+    let stale_api_key = EzerAuth {
         key: "stale-api-key".into(),
         auth_mode: AuthMode::ApiKey,
         create_time: Utc::now() - Duration::days(60),
         expires_at: None,
         refresh_token: None,
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     mgr.hot_swap(stale_api_key);
     let cancel = CancellationToken::new();
@@ -1591,13 +1591,13 @@ async fn start_proactive_refresh_is_idempotent() {
 #[tokio::test]
 async fn proactive_refresh_and_consumer_see_fresh_token_end_to_end() {
     let dir = tempfile::tempdir().unwrap();
-    let mgr = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
-    mgr.hot_swap(GrokAuth {
+    let mgr = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
+    mgr.hot_swap(EzerAuth {
         key: "soon-to-expire".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("rt-original".into()),
         expires_at: Some(Utc::now() + Duration::seconds(2)),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     });
     let call_count = Arc::new(AtomicU32::new(0));
     mgr.set_refresher(Arc::new(CountingRefresher {
@@ -1616,13 +1616,13 @@ async fn proactive_refresh_and_consumer_see_fresh_token_end_to_end() {
 #[tokio::test]
 async fn reactive_401_recovery_produces_fresh_token_end_to_end() {
     let dir = tempfile::tempdir().unwrap();
-    let mgr = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
-    mgr.hot_swap(GrokAuth {
+    let mgr = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
+    mgr.hot_swap(EzerAuth {
         key: "expired-bearer".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("rt-valid".into()),
         expires_at: Some(Utc::now() - Duration::minutes(10)),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     });
     let call_count = Arc::new(AtomicU32::new(0));
     mgr.set_refresher(Arc::new(CountingRefresher {
@@ -1640,27 +1640,27 @@ async fn reactive_401_recovery_produces_fresh_token_end_to_end() {
 #[tokio::test]
 async fn refresh_chain_demotes_when_disk_rt_differs_even_if_at_expired() {
     let dir = tempfile::tempdir().unwrap();
-    let cfg = GrokComConfig::default();
+    let cfg = EzerComConfig::default();
     let scope = cfg.auth_scope();
     let mgr = Arc::new(AuthManager::new(dir.path(), cfg));
-    let stale = GrokAuth {
+    let stale = EzerAuth {
         key: "stale-key".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("rt-old".into()),
         expires_at: Some(Utc::now() - Duration::hours(1)),
         oidc_issuer: Some("https://issuer.example".into()),
         oidc_client_id: Some("client-1".into()),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     mgr.hot_swap(stale);
-    let sibling = GrokAuth {
+    let sibling = EzerAuth {
         key: "sibling-key".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("rt-new".into()),
         expires_at: Some(Utc::now() - Duration::minutes(30)),
         oidc_issuer: Some("https://issuer.example".into()),
         oidc_client_id: Some("client-1".into()),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     let mut store = AuthStore::new();
     store.insert(scope, sibling.clone());
@@ -1700,32 +1700,32 @@ async fn refresh_chain_demotes_when_disk_rt_differs_even_if_at_expired() {
 #[tokio::test]
 async fn refresh_chain_demotes_when_attributed_tried_rt_differs_from_disk() {
     let dir = tempfile::tempdir().unwrap();
-    let cfg = GrokComConfig::default();
+    let cfg = EzerComConfig::default();
     let scope = cfg.auth_scope();
     let mgr = Arc::new(AuthManager::new(dir.path(), cfg));
-    let tried = GrokAuth {
+    let tried = EzerAuth {
         key: "tried-key".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("rt-spent".into()),
         expires_at: Some(Utc::now() - Duration::hours(1)),
         oidc_issuer: Some("https://issuer.example".into()),
         oidc_client_id: Some("client-1".into()),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     mgr.hot_swap(tried.clone());
-    let sibling = GrokAuth {
+    let sibling = EzerAuth {
         key: "sibling-key".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("rt-successor".into()),
         expires_at: Some(Utc::now() - Duration::minutes(30)),
         oidc_issuer: Some("https://issuer.example".into()),
         oidc_client_id: Some("client-1".into()),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     let mut store = AuthStore::new();
     store.insert(scope, sibling);
     write_auth_json(&dir.path().join("auth.json"), &store).unwrap();
-    struct AttributedRejection(GrokAuth);
+    struct AttributedRejection(EzerAuth);
     #[async_trait::async_trait]
     impl TokenRefresher for AttributedRejection {
         async fn refresh(
@@ -1764,23 +1764,23 @@ async fn refresh_chain_demotes_when_attributed_tried_rt_differs_from_disk() {
 #[tokio::test]
 async fn refresh_chain_still_discards_when_attributed_tried_rt_matches_disk() {
     let dir = tempfile::tempdir().unwrap();
-    let cfg = GrokComConfig::default();
+    let cfg = EzerComConfig::default();
     let scope = cfg.auth_scope();
     let mgr = Arc::new(AuthManager::new(dir.path(), cfg));
-    let tried = GrokAuth {
+    let tried = EzerAuth {
         key: "only-key".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("rt-revoked".into()),
         expires_at: Some(Utc::now() - Duration::hours(1)),
         oidc_issuer: Some("https://issuer.example".into()),
         oidc_client_id: Some("client-1".into()),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     mgr.hot_swap(tried.clone());
     let mut store = AuthStore::new();
     store.insert(scope, tried.clone());
     write_auth_json(&dir.path().join("auth.json"), &store).unwrap();
-    struct AttributedRejection(GrokAuth);
+    struct AttributedRejection(EzerAuth);
     #[async_trait::async_trait]
     impl TokenRefresher for AttributedRejection {
         async fn refresh(
@@ -1811,26 +1811,26 @@ async fn refresh_chain_still_discards_when_attributed_tried_rt_matches_disk() {
 #[tokio::test]
 async fn permanent_rtr_clears_only_the_tried_side_when_rts_diverge() {
     let dir = tempfile::tempdir().unwrap();
-    let cfg = GrokComConfig::default();
+    let cfg = EzerComConfig::default();
     let scope = cfg.auth_scope();
     let mgr = Arc::new(AuthManager::new(dir.path(), cfg));
-    mgr.hot_swap(GrokAuth {
+    mgr.hot_swap(EzerAuth {
         key: "mem-successor".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("rt-new".into()),
         expires_at: Some(Utc::now() - Duration::hours(1)),
         oidc_issuer: Some("https://issuer.example".into()),
         oidc_client_id: Some("client-1".into()),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     });
-    let disk = GrokAuth {
+    let disk = EzerAuth {
         key: "disk-predecessor".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("rt-old".into()),
         expires_at: Some(Utc::now() - Duration::hours(1)),
         oidc_issuer: Some("https://issuer.example".into()),
         oidc_client_id: Some("client-1".into()),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     let mut store = AuthStore::new();
     store.insert(scope, disk);
@@ -1874,15 +1874,15 @@ async fn permanent_rtr_clears_only_the_tried_side_when_rts_diverge() {
 #[tokio::test]
 async fn client_rejected_graces_soft_expired_access_token() {
     let dir = tempfile::tempdir().unwrap();
-    let mgr = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
-    mgr.hot_swap(GrokAuth {
+    let mgr = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
+    mgr.hot_swap(EzerAuth {
         key: "buffered-at".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("rt".into()),
         expires_at: Some(Utc::now() + Duration::seconds(30)),
         oidc_issuer: Some("https://issuer.example".into()),
         oidc_client_id: Some("client-1".into()),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     });
     struct AlwaysClientRejected;
     #[async_trait::async_trait]
@@ -1912,19 +1912,19 @@ async fn client_rejected_graces_soft_expired_access_token() {
 #[tokio::test]
 async fn permanent_other_retains_credentials() {
     let dir = tempfile::tempdir().unwrap();
-    let mgr = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
-    let session = GrokAuth {
+    let mgr = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
+    let session = EzerAuth {
         key: "live-key".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("rt-still-valid".into()),
         expires_at: Some(Utc::now() - Duration::hours(1)),
         oidc_issuer: Some("https://issuer.example".into()),
         oidc_client_id: Some("client-1".into()),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     mgr.hot_swap(session.clone());
     let mut store = AuthStore::new();
-    store.insert(GrokComConfig::default().auth_scope(), session);
+    store.insert(EzerComConfig::default().auth_scope(), session);
     write_auth_json(&dir.path().join("auth.json"), &store).unwrap();
     struct OtherPermanent;
     #[async_trait::async_trait]
@@ -1959,29 +1959,29 @@ async fn permanent_other_retains_credentials() {
 #[tokio::test]
 async fn sticky_permanent_allows_refresh_when_attempted_key_differs() {
     let dir = tempfile::tempdir().unwrap();
-    let cfg = GrokComConfig::default();
+    let cfg = EzerComConfig::default();
     let scope = cfg.auth_scope();
     let mgr = Arc::new(AuthManager::new(dir.path(), cfg));
-    mgr.hot_swap(GrokAuth {
+    mgr.hot_swap(EzerAuth {
         key: "dead-key".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("rt-dead".into()),
         expires_at: Some(Utc::now() - Duration::hours(1)),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     });
     record_permanent_failure(
         &mgr,
         crate::error::RefreshTokenFailedReason::RefreshTokenRejected,
     );
     assert!(mgr.permanent_failure().is_some());
-    let sibling = GrokAuth {
+    let sibling = EzerAuth {
         key: "sibling-key".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("rt-sibling".into()),
         expires_at: Some(Utc::now() - Duration::minutes(30)),
         oidc_issuer: Some("https://issuer.example".into()),
         oidc_client_id: Some("client-1".into()),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     let mut store = AuthStore::new();
     store.insert(scope, sibling.clone());
@@ -2000,12 +2000,12 @@ async fn sticky_permanent_allows_refresh_when_attempted_key_differs() {
             _reason: crate::manager::RefreshReason,
         ) -> crate::refresh::RefreshOutcome {
             self.0.fetch_add(1, Ordering::SeqCst);
-            crate::refresh::RefreshOutcome::Success(Box::new(GrokAuth {
+            crate::refresh::RefreshOutcome::Success(Box::new(EzerAuth {
                 key: "fresh-from-sibling-rt".into(),
                 auth_mode: AuthMode::Oidc,
                 refresh_token: Some("rt-sibling".into()),
                 expires_at: Some(Utc::now() + Duration::hours(1)),
-                ..GrokAuth::test_default()
+                ..EzerAuth::test_default()
             }))
         }
     }
@@ -2021,27 +2021,27 @@ async fn sticky_permanent_allows_refresh_when_attempted_key_differs() {
 #[tokio::test]
 async fn refresh_chain_demotes_to_transient_when_disk_rt_differs_and_at_valid() {
     let dir = tempfile::tempdir().unwrap();
-    let cfg = GrokComConfig::default();
+    let cfg = EzerComConfig::default();
     let scope = cfg.auth_scope();
     let mgr = Arc::new(AuthManager::new(dir.path(), cfg));
-    let stale = GrokAuth {
+    let stale = EzerAuth {
         key: "stale-key".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("rt-old".into()),
         expires_at: Some(Utc::now() - Duration::hours(1)),
         oidc_issuer: Some("https://issuer.example".into()),
         oidc_client_id: Some("client-1".into()),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     mgr.hot_swap(stale);
-    let sibling = GrokAuth {
+    let sibling = EzerAuth {
         key: "sibling-key".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("rt-new".into()),
         expires_at: Some(Utc::now() + Duration::hours(1)),
         oidc_issuer: Some("https://issuer.example".into()),
         oidc_client_id: Some("client-1".into()),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     let mut store = AuthStore::new();
     store.insert(scope, sibling);
@@ -2080,13 +2080,13 @@ async fn refresh_chain_demotes_to_transient_when_disk_rt_differs_and_at_valid() 
 #[tokio::test]
 async fn permanent_failure_reads_absent_after_clear_so_auth_reports_not_logged_in() {
     let dir = tempfile::tempdir().unwrap();
-    let mgr = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
-    let session = GrokAuth {
+    let mgr = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
+    let session = EzerAuth {
         key: "broken-session".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("rt-revoked".into()),
         expires_at: Some(Utc::now() - Duration::hours(1)),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     mgr.hot_swap(session);
     record_permanent_failure(
@@ -2104,12 +2104,12 @@ async fn permanent_failure_reads_absent_after_clear_so_auth_reports_not_logged_i
         mgr.permanent_failure().is_none(),
         "the credential-scoped verdict must read as absent after clear()",
     );
-    let session = GrokAuth {
+    let session = EzerAuth {
         key: "broken-2".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("rt-2".into()),
         expires_at: Some(Utc::now() - Duration::hours(1)),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     mgr.hot_swap(session);
     record_permanent_failure(
@@ -2132,10 +2132,10 @@ async fn permanent_failure_reads_absent_after_clear_so_auth_reports_not_logged_i
 #[tokio::test]
 async fn permanent_failure_expires_on_wall_clock_across_sleep() {
     let dir = tempfile::tempdir().unwrap();
-    let mgr = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
-    mgr.hot_swap(GrokAuth {
+    let mgr = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
+    mgr.hot_swap(EzerAuth {
         key: "tok".into(),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     });
     record_permanent_failure(&mgr, crate::error::RefreshTokenFailedReason::Other);
     assert!(
@@ -2157,13 +2157,13 @@ async fn permanent_failure_expires_on_wall_clock_across_sleep() {
 #[tokio::test]
 async fn oidc_refresh_not_blocked_by_model_api_key() {
     let dir = tempfile::tempdir().unwrap();
-    let mgr = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
-    let expired_oidc = GrokAuth {
+    let mgr = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
+    let expired_oidc = EzerAuth {
         key: "expired-session-token".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("valid-rt".into()),
         expires_at: Some(Utc::now() - Duration::hours(1)),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     mgr.hot_swap(expired_oidc);
     assert_eq!(mgr.token_type(), TokenType::OidcSession);
@@ -2181,13 +2181,13 @@ async fn oidc_refresh_not_blocked_by_model_api_key() {
 #[test]
 fn compute_proactive_sleep_permanent_failure_returns_backoff() {
     let dir = tempfile::tempdir().unwrap();
-    let mgr = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
-    let oidc = GrokAuth {
+    let mgr = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
+    let oidc = EzerAuth {
         key: "x".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("rt".into()),
         expires_at: Some(Utc::now() + Duration::hours(1)),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     mgr.hot_swap(oidc);
     record_permanent_failure(
@@ -2204,25 +2204,25 @@ fn compute_proactive_sleep_permanent_failure_returns_backoff() {
 #[test]
 fn compute_proactive_sleep_non_refreshable_returns_backoff() {
     let dir = tempfile::tempdir().unwrap();
-    let mgr = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
+    let mgr = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
     mgr.set_refresher(Arc::new(CountingRefresher {
         call_count: Arc::new(AtomicU32::new(0)),
         delay: StdDuration::from_millis(0),
     }));
-    mgr.hot_swap(GrokAuth {
+    mgr.hot_swap(EzerAuth {
         key: "legacy".into(),
         auth_mode: AuthMode::WebLogin,
         create_time: Utc::now() - Duration::hours(2),
         expires_at: Some(Utc::now() - Duration::hours(1)),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     });
     assert_eq!(mgr.token_type(), TokenType::LegacySession);
     assert_eq!(compute_proactive_sleep(&mgr), BACKOFF_INTERVAL);
-    mgr.hot_swap(GrokAuth {
+    mgr.hot_swap(EzerAuth {
         key: "api".into(),
         auth_mode: AuthMode::ApiKey,
         expires_at: Some(Utc::now() - Duration::hours(1)),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     });
     assert_eq!(mgr.token_type(), TokenType::ApiKey);
     assert_eq!(compute_proactive_sleep(&mgr), BACKOFF_INTERVAL);
@@ -2235,17 +2235,17 @@ fn compute_proactive_sleep_non_refreshable_returns_backoff() {
 #[test]
 fn compute_proactive_sleep_sleep_gated_returns_backoff() {
     let dir = tempfile::tempdir().unwrap();
-    let mgr = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
+    let mgr = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
     mgr.set_refresher(Arc::new(CountingRefresher {
         call_count: Arc::new(AtomicU32::new(0)),
         delay: StdDuration::from_millis(0),
     }));
-    mgr.hot_swap(GrokAuth {
+    mgr.hot_swap(EzerAuth {
         key: "oidc".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("rt".into()),
         expires_at: Some(Utc::now() - Duration::hours(1)),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     });
     assert_eq!(
         compute_proactive_sleep(&mgr),
@@ -2265,17 +2265,17 @@ fn compute_proactive_sleep_sleep_gated_returns_backoff() {
 #[test]
 fn compute_proactive_sleep_dark_wake_returns_backoff() {
     let dir = tempfile::tempdir().unwrap();
-    let mgr = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
+    let mgr = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
     mgr.set_refresher(Arc::new(CountingRefresher {
         call_count: Arc::new(AtomicU32::new(0)),
         delay: StdDuration::from_millis(0),
     }));
-    mgr.hot_swap(GrokAuth {
+    mgr.hot_swap(EzerAuth {
         key: "oidc".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("rt".into()),
         expires_at: Some(Utc::now() + Duration::minutes(2)),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     });
     assert_eq!(
         compute_proactive_sleep(&mgr),
@@ -2288,12 +2288,12 @@ fn compute_proactive_sleep_dark_wake_returns_backoff() {
         BACKOFF_INTERVAL,
         "dark wake must back the proactive loop off instead of busy-looping"
     );
-    mgr.hot_swap(GrokAuth {
+    mgr.hot_swap(EzerAuth {
         key: "oidc".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("rt".into()),
         expires_at: Some(Utc::now() - Duration::hours(1)),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     });
     assert_eq!(
         compute_proactive_sleep(&mgr),
@@ -2306,13 +2306,13 @@ fn compute_proactive_sleep_dark_wake_returns_backoff() {
 #[test]
 fn compute_proactive_sleep_no_refresher_returns_backoff() {
     let dir = tempfile::tempdir().unwrap();
-    let mgr = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
-    mgr.hot_swap(GrokAuth {
+    let mgr = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
+    mgr.hot_swap(EzerAuth {
         key: "oidc".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("rt".into()),
         expires_at: Some(Utc::now() - Duration::hours(1)),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     });
     assert!(mgr.refresher.read().is_none());
     assert_eq!(compute_proactive_sleep(&mgr), BACKOFF_INTERVAL);
@@ -2321,16 +2321,16 @@ fn compute_proactive_sleep_no_refresher_returns_backoff() {
 #[test]
 fn compute_proactive_sleep_refreshable_no_expiry_returns_backoff() {
     let dir = tempfile::tempdir().unwrap();
-    let mgr = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
+    let mgr = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
     mgr.set_refresher(Arc::new(CountingRefresher {
         call_count: Arc::new(AtomicU32::new(0)),
         delay: StdDuration::from_millis(0),
     }));
-    mgr.hot_swap(GrokAuth {
+    mgr.hot_swap(EzerAuth {
         key: "external".into(),
         auth_mode: AuthMode::External,
         expires_at: None,
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     });
     assert_eq!(mgr.token_type(), TokenType::ExternalBinary);
     assert_eq!(compute_proactive_sleep(&mgr), BACKOFF_INTERVAL);
@@ -2341,17 +2341,17 @@ fn compute_proactive_sleep_refreshable_no_expiry_returns_backoff() {
 #[test]
 fn compute_proactive_sleep_refreshable_past_expiry_returns_floor() {
     let dir = tempfile::tempdir().unwrap();
-    let mgr = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
+    let mgr = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
     mgr.set_refresher(Arc::new(CountingRefresher {
         call_count: Arc::new(AtomicU32::new(0)),
         delay: StdDuration::from_millis(0),
     }));
-    mgr.hot_swap(GrokAuth {
+    mgr.hot_swap(EzerAuth {
         key: "oidc".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("rt".into()),
         expires_at: Some(Utc::now() - Duration::hours(1)),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     });
     assert_eq!(mgr.token_type(), TokenType::OidcSession);
     assert_eq!(compute_proactive_sleep(&mgr), PROACTIVE_MIN_SLEEP);
@@ -2361,18 +2361,18 @@ fn compute_proactive_sleep_refreshable_past_expiry_returns_floor() {
 #[test]
 fn compute_proactive_sleep_refreshable_future_expiry_returns_delta() {
     let dir = tempfile::tempdir().unwrap();
-    let mgr = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
+    let mgr = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
     mgr.set_refresher(Arc::new(CountingRefresher {
         call_count: Arc::new(AtomicU32::new(0)),
         delay: StdDuration::from_millis(0),
     }));
     let expires_at = Utc::now() + Duration::hours(1);
-    mgr.hot_swap(GrokAuth {
+    mgr.hot_swap(EzerAuth {
         key: "oidc".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("rt".into()),
         expires_at: Some(expires_at),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     });
     let dur = compute_proactive_sleep(&mgr);
     assert!(
@@ -2385,10 +2385,10 @@ fn compute_proactive_sleep_refreshable_future_expiry_returns_delta() {
 #[tokio::test]
 async fn permanent_failure_expires_after_ttl() {
     let dir = tempfile::tempdir().unwrap();
-    let mgr = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
-    mgr.hot_swap(GrokAuth {
+    let mgr = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
+    mgr.hot_swap(EzerAuth {
         key: "tok".into(),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     });
     record_permanent_failure(&mgr, crate::error::RefreshTokenFailedReason::ClientRejected);
     assert!(
@@ -2425,10 +2425,10 @@ async fn sticky_verdict_survives_both_clocks_but_not_a_credential_change() {
         return;
     }
     let dir = tempfile::tempdir().unwrap();
-    let mgr = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
-    mgr.hot_swap(GrokAuth {
+    let mgr = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
+    mgr.hot_swap(EzerAuth {
         key: "dead".into(),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     });
     record_permanent_failure(
         &mgr,
@@ -2448,9 +2448,9 @@ async fn sticky_verdict_survives_both_clocks_but_not_a_credential_change() {
             panic!("sticky verdict must survive both clocks aging out, got {other:?}")
         }
     }
-    mgr.hot_swap(GrokAuth {
+    mgr.hot_swap(EzerAuth {
         key: "fresh".into(),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     });
     assert!(
         mgr.permanent_failure().is_none(),
@@ -2462,19 +2462,19 @@ async fn sticky_verdict_survives_both_clocks_but_not_a_credential_change() {
 #[tokio::test]
 async fn permanent_failure_is_scoped_to_its_credential() {
     let dir = tempfile::tempdir().unwrap();
-    let mgr = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
-    mgr.hot_swap(GrokAuth {
+    let mgr = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
+    mgr.hot_swap(EzerAuth {
         key: "dead".into(),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     });
     record_permanent_failure(
         &mgr,
         crate::error::RefreshTokenFailedReason::RefreshTokenRejected,
     );
     assert!(mgr.permanent_failure().is_some());
-    mgr.hot_swap(GrokAuth {
+    mgr.hot_swap(EzerAuth {
         key: "fresh".into(),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     });
     assert!(
         mgr.permanent_failure().is_none(),
@@ -2487,13 +2487,13 @@ async fn permanent_failure_is_scoped_to_its_credential() {
 #[tokio::test]
 async fn auth_serves_wire_valid_token_despite_permanent_verdict() {
     let dir = tempfile::tempdir().unwrap();
-    let mgr = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
-    mgr.hot_swap(GrokAuth {
+    let mgr = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
+    mgr.hot_swap(EzerAuth {
         key: "wire-valid".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("rt-dead".into()),
         expires_at: Some(Utc::now() + Duration::minutes(1)),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     });
     record_permanent_failure(
         &mgr,
@@ -2521,12 +2521,12 @@ async fn auth_serves_wire_valid_token_despite_permanent_verdict() {
         0,
         "the verdict must gate the refresher; serving the cached token is free",
     );
-    mgr.hot_swap(GrokAuth {
+    mgr.hot_swap(EzerAuth {
         key: "wire-valid".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("rt-dead".into()),
         expires_at: Some(Utc::now() - Duration::minutes(1)),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     });
     let err = mgr.auth().await.unwrap_err();
     assert!(
@@ -2544,18 +2544,18 @@ async fn auth_serves_wire_valid_token_despite_permanent_verdict() {
 #[tokio::test]
 async fn auth_verdict_arm_serves_just_outside_and_withholds_just_inside_the_send_horizon() {
     let dir = tempfile::tempdir().unwrap();
-    let mgr = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
+    let mgr = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
     mgr.set_refresher(Arc::new(CountingRefresher {
         call_count: Arc::new(AtomicU32::new(0)),
         delay: StdDuration::ZERO,
     }));
     let install = |expires_in: Duration| {
-        mgr.hot_swap(GrokAuth {
+        mgr.hot_swap(EzerAuth {
             key: "edge".into(),
             auth_mode: AuthMode::Oidc,
             refresh_token: Some("rt-dead".into()),
             expires_at: Some(Utc::now() + expires_in),
-            ..GrokAuth::test_default()
+            ..EzerAuth::test_default()
         });
         record_permanent_failure(
             &mgr,
@@ -2582,17 +2582,17 @@ async fn auth_verdict_arm_serves_just_outside_and_withholds_just_inside_the_send
 #[tokio::test]
 async fn auth_grace_arm_honors_the_send_horizon() {
     let dir = tempfile::tempdir().unwrap();
-    let mgr = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
+    let mgr = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
     let call_count = Arc::new(AtomicU32::new(0));
     mgr.set_refresher(Arc::new(TransientRefresher {
         call_count: call_count.clone(),
     }));
-    mgr.hot_swap(GrokAuth {
+    mgr.hot_swap(EzerAuth {
         key: "grace-outside".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("rt".into()),
         expires_at: Some(Utc::now() + Duration::seconds(SEND_HORIZON_SECS + 2)),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     });
     assert_eq!(
         mgr.auth().await.map(|a| a.key).ok().as_deref(),
@@ -2604,12 +2604,12 @@ async fn auth_grace_arm_honors_the_send_horizon() {
         1,
         "the refresher was consulted"
     );
-    mgr.hot_swap(GrokAuth {
+    mgr.hot_swap(EzerAuth {
         key: "grace-inside".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("rt".into()),
         expires_at: Some(Utc::now() + Duration::seconds(SEND_HORIZON_SECS - 2)),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     });
     assert!(
         matches!(
@@ -2630,13 +2630,13 @@ async fn auth_grace_arm_honors_the_send_horizon() {
 #[tokio::test]
 async fn auth_withholds_verdict_blocked_token_inside_the_send_horizon() {
     let dir = tempfile::tempdir().unwrap();
-    let mgr = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
-    mgr.hot_swap(GrokAuth {
+    let mgr = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
+    mgr.hot_swap(EzerAuth {
         key: "about-to-expire".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("rt-dead".into()),
         expires_at: Some(Utc::now() + Duration::seconds(2)),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     });
     record_permanent_failure(
         &mgr,
@@ -2668,9 +2668,9 @@ async fn auth_withholds_verdict_blocked_token_inside_the_send_horizon() {
 #[tokio::test]
 async fn auth_returns_cached_token_when_refresh_fails_within_real_expiry() {
     let dir = tempfile::tempdir().unwrap();
-    let cfg = GrokComConfig::default();
+    let cfg = EzerComConfig::default();
     let mgr = Arc::new(AuthManager::new(dir.path(), cfg).with_proxy_base_url("http://127.0.0.1:1"));
-    let in_buffer = GrokAuth {
+    let in_buffer = EzerAuth {
         key: "still-valid-by-idp".into(),
         auth_mode: AuthMode::Oidc,
         create_time: Utc::now() - Duration::minutes(55),
@@ -2679,7 +2679,7 @@ async fn auth_returns_cached_token_when_refresh_fails_within_real_expiry() {
         expires_at: Some(Utc::now() + Duration::minutes(1)),
         oidc_issuer: Some("http://127.0.0.1:1".into()),
         oidc_client_id: Some("client".into()),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     mgr.hot_swap(in_buffer);
     let result = mgr.auth().await.expect("grace should return cached token");
@@ -2710,11 +2710,11 @@ async fn update_writes_disk_before_user_enrichment() {
     );
     let server = tokio::spawn(async move { axum::serve(listener, app).await.unwrap() });
     let dir = tempfile::tempdir().unwrap();
-    let cfg = GrokComConfig::default();
+    let cfg = EzerComConfig::default();
     let mgr = Arc::new(
         AuthManager::new(dir.path(), cfg).with_proxy_base_url(&format!("http://127.0.0.1:{port}")),
     );
-    let new_auth = GrokAuth {
+    let new_auth = EzerAuth {
         key: "rotated-key".into(),
         refresh_token: Some("rotated-rt".into()),
         user_id: String::new(),
@@ -2795,17 +2795,17 @@ async fn enrichment_task_preserves_interleaved_token_rotation() {
     );
     let server = tokio::spawn(async move { axum::serve(listener, app).await.unwrap() });
     let dir = tempfile::tempdir().unwrap();
-    let cfg = GrokComConfig::default();
+    let cfg = EzerComConfig::default();
     let mgr = Arc::new(
         AuthManager::new(dir.path(), cfg).with_proxy_base_url(&format!("http://127.0.0.1:{port}")),
     );
-    let auth_v1 = GrokAuth {
+    let auth_v1 = EzerAuth {
         key: "key-v1".into(),
         refresh_token: Some("rt-v1".into()),
         user_id: "stable-user".into(),
         ..make_auth(Some(Utc::now() + Duration::hours(1)), Utc::now())
     };
-    let auth_v2 = GrokAuth {
+    let auth_v2 = EzerAuth {
         key: "key-v2".into(),
         refresh_token: Some("rt-v2".into()),
         user_id: "stable-user".into(),
@@ -2881,13 +2881,13 @@ async fn enrichment_aborts_when_disk_user_changes_mid_flight() {
     );
     let server = tokio::spawn(async move { axum::serve(listener, app).await.unwrap() });
     let dir = tempfile::tempdir().unwrap();
-    let cfg = GrokComConfig::default();
+    let cfg = EzerComConfig::default();
     let scope = cfg.auth_scope();
     let mgr = Arc::new(
         AuthManager::new(dir.path(), cfg.clone())
             .with_proxy_base_url(&format!("http://127.0.0.1:{port}")),
     );
-    let initial = GrokAuth {
+    let initial = EzerAuth {
         key: "initial-key".into(),
         refresh_token: Some("initial-rt".into()),
         user_id: "fetched-user".into(),
@@ -2895,7 +2895,7 @@ async fn enrichment_aborts_when_disk_user_changes_mid_flight() {
     };
     mgr.update(initial).await.unwrap();
     tokio::time::sleep(std::time::Duration::from_millis(50)).await;
-    let intruder = GrokAuth {
+    let intruder = EzerAuth {
         key: "intruder-key".into(),
         refresh_token: Some("intruder-rt".into()),
         user_id: "intruder-user".into(),
@@ -2965,11 +2965,11 @@ async fn enrichment_overlays_team_login_placeholder_user_id() {
     );
     let server = tokio::spawn(async move { axum::serve(listener, app).await.unwrap() });
     let dir = tempfile::tempdir().unwrap();
-    let cfg = GrokComConfig::default();
+    let cfg = EzerComConfig::default();
     let mgr = Arc::new(
         AuthManager::new(dir.path(), cfg).with_proxy_base_url(&format!("http://127.0.0.1:{port}")),
     );
-    let team_login = GrokAuth {
+    let team_login = EzerAuth {
         key: "team-key".into(),
         refresh_token: Some("team-rt".into()),
         user_id: "team-xyz".into(),
@@ -3015,12 +3015,12 @@ async fn enrichment_overlays_team_login_placeholder_user_id() {
     assert_eq!(enriched.team_id.as_deref(), Some("team-xyz"));
     server.abort();
 }
-/// `apply_user_info_enrichment` must NEVER touch the token and provenance fields: `key`, `refresh_token`, `expires_at`, `oidc_issuer`, `oidc_client_id`, `auth_mode`, `create_time`, `has_grok_code_access`.
-/// The `&mut GrokAuth` signature enforces this at the type level (you cannot construct a fresh auth from a `UserInfo`; there's no `From` impl).
-/// A unit test pins the exact list so a contributor adding a token-like field to both `GrokAuth` and `UserInfo` is forced to look here.
+/// `apply_user_info_enrichment` must NEVER touch the token and provenance fields: `key`, `refresh_token`, `expires_at`, `oidc_issuer`, `oidc_client_id`, `auth_mode`, `create_time`, `has_remote_code_access`.
+/// The `&mut EzerAuth` signature enforces this at the type level (you cannot construct a fresh auth from a `UserInfo`; there's no `From` impl).
+/// A unit test pins the exact list so a contributor adding a token-like field to both `EzerAuth` and `UserInfo` is forced to look here.
 #[test]
 fn apply_user_info_enrichment_preserves_token_fields() {
-    let mut disk = GrokAuth {
+    let mut disk = EzerAuth {
         key: "ROT_KEY".into(),
         refresh_token: Some("ROT_RT".into()),
         expires_at: Some(Utc::now() + Duration::hours(1)),
@@ -3028,11 +3028,11 @@ fn apply_user_info_enrichment_preserves_token_fields() {
         oidc_client_id: Some("client-xyz".into()),
         auth_mode: AuthMode::Oidc,
         create_time: Utc::now() - Duration::minutes(10),
-        has_grok_code_access: Some(true),
+        has_remote_code_access: Some(true),
         user_id: "old-user".into(),
         email: Some("old@corp.com".into()),
         team_id: Some("old-team".into()),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     let snapshot = disk.clone();
     let user_info = UserInfo {
@@ -3062,7 +3062,7 @@ fn apply_user_info_enrichment_preserves_token_fields() {
     assert_eq!(disk.oidc_client_id, snapshot.oidc_client_id);
     assert_eq!(disk.auth_mode, snapshot.auth_mode);
     assert_eq!(disk.create_time, snapshot.create_time);
-    assert_eq!(disk.has_grok_code_access, snapshot.has_grok_code_access);
+    assert_eq!(disk.has_remote_code_access, snapshot.has_remote_code_access);
     assert_eq!(disk.user_id, "new-user");
     assert_eq!(disk.email.as_deref(), Some("new@corp.com"));
     assert_eq!(disk.team_id.as_deref(), Some("new-team"));
@@ -3079,13 +3079,13 @@ async fn current_api_key_async_drives_refresh_chain() {
     let _legacy = EnvGuard::unset("EZER_CODE_XAI_API_KEY");
     let _auth_path = EnvGuard::unset("EZER_AUTH_PATH");
     let dir = tempfile::tempdir().unwrap();
-    let mgr = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
-    mgr.hot_swap(GrokAuth {
+    let mgr = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
+    mgr.hot_swap(EzerAuth {
         key: "expired-oidc".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("rt".into()),
         expires_at: Some(Utc::now() - Duration::hours(1)),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     });
     let call_count = Arc::new(AtomicU32::new(0));
     mgr.set_refresher(Arc::new(CountingRefresher {
@@ -3104,11 +3104,11 @@ async fn current_api_key_async_drives_refresh_chain() {
 async fn update_recovers_from_empty_auth_json() {
     let dir = tempfile::tempdir().unwrap();
     let auth_path = dir.path().join("auth.json");
-    let cfg = GrokComConfig::default();
+    let cfg = EzerComConfig::default();
     std::fs::write(&auth_path, b"").unwrap();
     assert_eq!(std::fs::metadata(&auth_path).unwrap().len(), 0);
     let mgr = Arc::new(AuthManager::new(dir.path(), cfg.clone()));
-    let new_auth = GrokAuth {
+    let new_auth = EzerAuth {
         key: "recovered-token".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("recovered-rt".into()),
@@ -3147,10 +3147,10 @@ async fn update_recovers_from_empty_auth_json() {
 async fn update_recovers_from_whitespace_only_auth_json() {
     let dir = tempfile::tempdir().unwrap();
     let auth_path = dir.path().join("auth.json");
-    let cfg = GrokComConfig::default();
+    let cfg = EzerComConfig::default();
     std::fs::write(&auth_path, b"  \n\t  ").unwrap();
     let mgr = Arc::new(AuthManager::new(dir.path(), cfg.clone()));
-    let new_auth = GrokAuth {
+    let new_auth = EzerAuth {
         key: "ws-token".into(),
         auth_mode: AuthMode::Oidc,
         user_id: "ws-user".into(),
@@ -3186,22 +3186,22 @@ fn refresh_token_superseded_needs_a_successor_on_disk() {
 #[tokio::test]
 async fn sibling_different_rt_with_expired_at_is_still_sibling() {
     let dir = tempfile::tempdir().unwrap();
-    let cfg = GrokComConfig::default();
+    let cfg = EzerComConfig::default();
     let mgr = Arc::new(AuthManager::new(dir.path(), cfg.clone()));
-    let original = GrokAuth {
+    let original = EzerAuth {
         key: "original-at".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("rt-original".into()),
         expires_at: Some(Utc::now() - Duration::hours(1)),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     mgr.hot_swap(original);
-    let successor = GrokAuth {
+    let successor = EzerAuth {
         key: "successor-at".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("rt-successor".into()),
         expires_at: Some(Utc::now() - Duration::minutes(30)),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     let mut store = AuthStore::new();
     store.insert(cfg.auth_scope(), successor);
@@ -3216,22 +3216,22 @@ async fn sibling_different_rt_with_expired_at_is_still_sibling() {
 #[tokio::test]
 async fn sibling_different_rt_with_valid_at_is_treated_as_live() {
     let dir = tempfile::tempdir().unwrap();
-    let cfg = GrokComConfig::default();
+    let cfg = EzerComConfig::default();
     let mgr = Arc::new(AuthManager::new(dir.path(), cfg.clone()));
-    let original = GrokAuth {
+    let original = EzerAuth {
         key: "original-at".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("rt-original".into()),
         expires_at: Some(Utc::now() - Duration::hours(1)),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     mgr.hot_swap(original);
-    let sibling = GrokAuth {
+    let sibling = EzerAuth {
         key: "sibling-at".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("rt-sibling".into()),
         expires_at: Some(Utc::now() + Duration::hours(1)),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     let mut store = AuthStore::new();
     store.insert(cfg.auth_scope(), sibling);
@@ -3247,13 +3247,13 @@ async fn sibling_different_rt_with_valid_at_is_treated_as_live() {
 #[tokio::test]
 async fn refresh_chain_server_rejected_bypasses_valid_token_double_check() {
     let dir = tempfile::tempdir().unwrap();
-    let mgr = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
-    let valid_but_rejected = GrokAuth {
+    let mgr = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
+    let valid_but_rejected = EzerAuth {
         key: "pre-subscription-jwt".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("rt-original".into()),
         expires_at: Some(Utc::now() + Duration::hours(1)),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     mgr.hot_swap(valid_but_rejected);
     let call_count = Arc::new(AtomicU32::new(0));
@@ -3290,13 +3290,13 @@ async fn refresh_chain_server_rejected_bypasses_valid_token_double_check() {
 #[tokio::test]
 async fn refresh_chain_server_rejected_concurrent_skips_redundant_refresh() {
     let dir = tempfile::tempdir().unwrap();
-    let mgr = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
-    let rejected = GrokAuth {
+    let mgr = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
+    let rejected = EzerAuth {
         key: "rejected-jwt".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("rt-old".into()),
         expires_at: Some(Utc::now() + Duration::hours(1)),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     mgr.hot_swap(rejected);
     let call_count = Arc::new(AtomicU32::new(0));
@@ -3329,13 +3329,13 @@ async fn refresh_chain_server_rejected_concurrent_skips_redundant_refresh() {
 #[tokio::test]
 async fn refresh_chain_pre_request_short_circuits_on_valid_token() {
     let dir = tempfile::tempdir().unwrap();
-    let mgr = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
-    let valid = GrokAuth {
+    let mgr = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
+    let valid = EzerAuth {
         key: "still-good".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("rt".into()),
         expires_at: Some(Utc::now() + Duration::hours(1)),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     mgr.hot_swap(valid);
     let call_count = Arc::new(AtomicU32::new(0));
@@ -3381,10 +3381,10 @@ async fn enrich_auth_inline_populates_zdr_flags() {
     let body = r#"{"userId":"u-1","teamBlockedReasons":["BLOCKED_REASON_NO_LOGS"],"codingDataRetentionOptOut":true}"#;
     let base = spawn_user_stub("tok", body).await;
     let dir = tempfile::tempdir().unwrap();
-    let mgr = AuthManager::new(dir.path(), GrokComConfig::default()).with_proxy_base_url(&base);
-    let mut auth = GrokAuth {
+    let mgr = AuthManager::new(dir.path(), EzerComConfig::default()).with_proxy_base_url(&base);
+    let mut auth = EzerAuth {
         key: "tok".into(),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     assert!(!auth.is_data_collection_disabled(), "precondition");
     mgr.enrich_auth_inline(&mut auth).await;
@@ -3397,12 +3397,12 @@ async fn enrich_auth_inline_keeps_fields_absent_from_response() {
     let body = r#"{"userId":"u-1","teamBlockedReasons":["BLOCKED_REASON_NO_LOGS_MODERATED"]}"#;
     let base = spawn_user_stub("tok", body).await;
     let dir = tempfile::tempdir().unwrap();
-    let mgr = AuthManager::new(dir.path(), GrokComConfig::default()).with_proxy_base_url(&base);
-    let mut auth = GrokAuth {
+    let mgr = AuthManager::new(dir.path(), EzerComConfig::default()).with_proxy_base_url(&base);
+    let mut auth = EzerAuth {
         key: "tok".into(),
         principal_type: Some("Team".into()),
         principal_id: Some("team-1".into()),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     mgr.enrich_auth_inline(&mut auth).await;
     assert_eq!(auth.user_id, "u-1");
@@ -3421,11 +3421,11 @@ async fn enrich_auth_inline_unreachable_server_leaves_auth_unchanged() {
         let l = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
         l.local_addr().unwrap().port()
     };
-    let mgr = AuthManager::new(dir.path(), GrokComConfig::default())
+    let mgr = AuthManager::new(dir.path(), EzerComConfig::default())
         .with_proxy_base_url(&format!("http://127.0.0.1:{port}"));
-    let mut auth = GrokAuth {
+    let mut auth = EzerAuth {
         key: "tok".into(),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     let before = auth.clone();
     mgr.enrich_auth_inline(&mut auth).await;
@@ -3465,22 +3465,22 @@ fn principal_id_only_jwt(principal_id: &str) -> String {
     )
     .unwrap()
 }
-fn pinned_cfg(team: &str) -> GrokComConfig {
-    GrokComConfig {
+fn pinned_cfg(team: &str) -> EzerComConfig {
+    EzerComConfig {
         force_login_team_uuid: Some(crate::config::ForceLoginTeam::Single(team.to_string())),
-        ..GrokComConfig::default()
+        ..EzerComConfig::default()
     }
 }
 /// A valid, non-expired OIDC session whose access token carries `principal_id`.
-fn oidc_session_for_team(principal_id: &str) -> GrokAuth {
-    GrokAuth {
+fn oidc_session_for_team(principal_id: &str) -> EzerAuth {
+    EzerAuth {
         key: team_jwt(principal_id),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("rt".into()),
         expires_at: Some(Utc::now() + Duration::hours(1)),
         oidc_issuer: Some(crate::config::XAI_OAUTH2_ISSUER.to_string()),
         oidc_client_id: Some("client".into()),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     }
 }
 /// The repro: a wrong-team session persisted to disk (e.g. logged in before the pin was deployed).
@@ -3549,7 +3549,7 @@ async fn auth_accepts_matching_team_cached_token() {
 #[tokio::test]
 async fn no_pin_accepts_any_team_cached_token() {
     let dir = tempfile::tempdir().unwrap();
-    let mgr = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
+    let mgr = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
     let tok = oidc_session_for_team("team-anything");
     mgr.hot_swap(tok.clone());
     assert_eq!(mgr.current().map(|a| a.key.clone()), Some(tok.key.clone()));
@@ -3565,18 +3565,18 @@ async fn auth_rejects_token_refreshed_into_wrong_team() {
     #[async_trait::async_trait]
     impl TokenRefresher for WrongTeamRefresher {
         async fn refresh(&self, _reason: RefreshReason) -> crate::refresh::RefreshOutcome {
-            crate::refresh::RefreshOutcome::Success(Box::new(GrokAuth {
+            crate::refresh::RefreshOutcome::Success(Box::new(EzerAuth {
                 key: self.jwt.clone(),
                 auth_mode: AuthMode::Oidc,
                 refresh_token: Some("rt-new".into()),
                 expires_at: Some(Utc::now() + Duration::hours(1)),
-                ..GrokAuth::test_default()
+                ..EzerAuth::test_default()
             }))
         }
     }
     let dir = tempfile::tempdir().unwrap();
     let mgr = Arc::new(AuthManager::new(dir.path(), pinned_cfg("team-good")));
-    mgr.hot_swap(GrokAuth {
+    mgr.hot_swap(EzerAuth {
         expires_at: Some(Utc::now() - Duration::minutes(10)),
         ..oidc_session_for_team("team-good")
     });
@@ -3615,13 +3615,13 @@ fn force_reload_clears_wrong_team_token() {
 #[test]
 fn force_reload_retains_live_rt_on_transient_file_missing() {
     let dir = tempfile::tempdir().unwrap();
-    let mgr = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
-    let session = GrokAuth {
+    let mgr = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
+    let session = EzerAuth {
         key: "live-session".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("live-rt".into()),
         expires_at: Some(Utc::now() + Duration::hours(1)),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     mgr.hot_swap(session);
     assert!(mgr.permanent_failure().is_none());
@@ -3641,13 +3641,13 @@ fn force_reload_retains_live_rt_on_transient_file_missing() {
 #[tokio::test]
 async fn force_reload_drops_rt_when_permanent_failure_set() {
     let dir = tempfile::tempdir().unwrap();
-    let mgr = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
-    let session = GrokAuth {
+    let mgr = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
+    let session = EzerAuth {
         key: "broken".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("rt-revoked".into()),
         expires_at: Some(Utc::now() - Duration::hours(1)),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     mgr.hot_swap(session);
     record_permanent_failure(
@@ -3674,13 +3674,13 @@ async fn force_reload_drops_rt_when_permanent_failure_set() {
 #[test]
 fn force_reload_drops_creds_on_entry_missing() {
     let dir = tempfile::tempdir().unwrap();
-    let mgr = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
-    let session = GrokAuth {
+    let mgr = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
+    let session = EzerAuth {
         key: "live-session".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("live-rt".into()),
         expires_at: Some(Utc::now() + Duration::hours(1)),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     mgr.hot_swap(session);
     let mut store = AuthStore::new();
@@ -3699,21 +3699,21 @@ fn force_reload_drops_creds_on_entry_missing() {
 #[test]
 fn force_reload_adopts_fresh_disk_token() {
     let dir = tempfile::tempdir().unwrap();
-    let cfg = GrokComConfig::default();
+    let cfg = EzerComConfig::default();
     let scope = cfg.auth_scope();
     let mgr = Arc::new(AuthManager::new(dir.path(), cfg));
-    let expired = GrokAuth {
+    let expired = EzerAuth {
         key: "stale".into(),
         refresh_token: Some("old-rt".into()),
         expires_at: Some(Utc::now() - Duration::hours(1)),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     mgr.hot_swap(expired);
-    let fresh = GrokAuth {
+    let fresh = EzerAuth {
         key: "fresh-from-disk".into(),
         refresh_token: Some("new-rt".into()),
         expires_at: Some(Utc::now() + Duration::hours(1)),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     let mut store = AuthStore::new();
     store.insert(scope, fresh);
@@ -3726,11 +3726,11 @@ fn force_reload_adopts_fresh_disk_token() {
 async fn pin_matches_principal_id_without_principal_type() {
     let dir = tempfile::tempdir().unwrap();
     let mgr = Arc::new(AuthManager::new(dir.path(), pinned_cfg("team-good")));
-    mgr.hot_swap(GrokAuth {
+    mgr.hot_swap(EzerAuth {
         key: principal_id_only_jwt("team-good"),
         auth_mode: AuthMode::Oidc,
         expires_at: Some(Utc::now() + Duration::hours(1)),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     });
     assert!(
         mgr.current().is_some(),
@@ -3741,11 +3741,11 @@ async fn pin_matches_principal_id_without_principal_type() {
 /// A cached `AuthMode::ApiKey` session is rejected under the kill switch (here implied by a team pin), and honored when it's off.
 #[tokio::test]
 async fn cached_api_key_session_rejected_when_api_key_auth_disabled() {
-    let api_key_session = || GrokAuth {
+    let api_key_session = || EzerAuth {
         key: "xai-cached-key".into(),
         auth_mode: AuthMode::ApiKey,
         expires_at: Some(Utc::now() + Duration::hours(1)),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     let dir = tempfile::tempdir().unwrap();
     let mgr = Arc::new(AuthManager::new(dir.path(), pinned_cfg("team-good")));
@@ -3759,7 +3759,7 @@ async fn cached_api_key_session_rejected_when_api_key_auth_disabled() {
         "auth() must reject a cached api-key session under the kill switch"
     );
     let dir2 = tempfile::tempdir().unwrap();
-    let mgr2 = Arc::new(AuthManager::new(dir2.path(), GrokComConfig::default()));
+    let mgr2 = Arc::new(AuthManager::new(dir2.path(), EzerComConfig::default()));
     mgr2.hot_swap(api_key_session());
     assert_eq!(
         mgr2.current().map(|a| a.key),
@@ -3770,12 +3770,12 @@ async fn cached_api_key_session_rejected_when_api_key_auth_disabled() {
 #[tokio::test]
 async fn shared_api_key_provider_resolves_live_bearer() {
     let dir = tempfile::tempdir().unwrap();
-    let mgr = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
-    let auth = GrokAuth {
+    let mgr = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
+    let auth = EzerAuth {
         key: "shared-provider-token".into(),
         expires_at: Some(Utc::now() + Duration::hours(1)),
         create_time: Utc::now(),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     mgr.hot_swap(auth);
     let provider = shared_api_key_provider(mgr.clone());
@@ -3789,11 +3789,11 @@ async fn shared_api_key_provider_resolves_live_bearer() {
         Some("shared-provider-token".to_string()),
         "async accessor must resolve the current bearer for a fresh token"
     );
-    let rotated = GrokAuth {
+    let rotated = EzerAuth {
         key: "rotated-token".into(),
         expires_at: Some(Utc::now() + Duration::hours(1)),
         create_time: Utc::now(),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     mgr.hot_swap(rotated);
     assert_eq!(
@@ -3808,10 +3808,10 @@ async fn shared_api_key_provider_resolves_live_bearer() {
 async fn shared_api_key_provider_static_fallthrough() {
     use ezer_test_support::EnvGuard;
     let dir = tempfile::tempdir().unwrap();
-    let mgr = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
+    let mgr = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
     let provider = shared_api_key_provider(mgr.clone());
     {
-        let _legacy = EnvGuard::unset("GROK_CODE_XAI_API_KEY");
+        let _legacy = EnvGuard::unset("EZER_CODE_XAI_API_KEY");
         let _key = EnvGuard::set("XAI_API_KEY", "env-only-key");
         assert_eq!(
             provider.current_api_key_async().await.as_deref(),
@@ -3820,8 +3820,8 @@ async fn shared_api_key_provider_static_fallthrough() {
     }
     {
         let _xai = EnvGuard::unset("XAI_API_KEY");
-        let _legacy = EnvGuard::unset("GROK_CODE_XAI_API_KEY");
-        let _auth_path = EnvGuard::unset("GROK_AUTH_PATH");
+        let _legacy = EnvGuard::unset("EZER_CODE_XAI_API_KEY");
+        let _auth_path = EnvGuard::unset("EZER_AUTH_PATH");
         crate::store_api_key(dir.path(), "disk-api-key").unwrap();
         assert_eq!(
             provider.current_api_key_async().await.as_deref(),
@@ -3830,11 +3830,11 @@ async fn shared_api_key_provider_static_fallthrough() {
     }
     {
         let _key = EnvGuard::set("XAI_API_KEY", "env-should-lose");
-        mgr.hot_swap(GrokAuth {
+        mgr.hot_swap(EzerAuth {
             key: "session-bearer".into(),
             expires_at: Some(Utc::now() + Duration::hours(1)),
             create_time: Utc::now(),
-            ..GrokAuth::test_default()
+            ..EzerAuth::test_default()
         });
         assert_eq!(
             provider.current_api_key_async().await.as_deref(),
@@ -3850,9 +3850,9 @@ async fn shared_api_key_provider_kill_switch_blocks_static() {
     let dir = tempfile::tempdir().unwrap();
     let mgr = Arc::new(AuthManager::new(
         dir.path(),
-        GrokComConfig {
+        EzerComConfig {
             disable_api_key_auth: Some(true),
-            ..GrokComConfig::default()
+            ..EzerComConfig::default()
         },
     ));
     assert_eq!(
@@ -3868,9 +3868,9 @@ async fn shared_api_key_provider_oidc_preferred_blocks_static() {
     let dir = tempfile::tempdir().unwrap();
     let mgr = Arc::new(AuthManager::new(
         dir.path(),
-        GrokComConfig {
+        EzerComConfig {
             preferred_method: Some(crate::PreferredAuthMethod::Oidc),
-            ..GrokComConfig::default()
+            ..EzerComConfig::default()
         },
     ));
     assert_eq!(
@@ -3883,21 +3883,21 @@ async fn shared_api_key_provider_oidc_preferred_blocks_static() {
 #[serial_test::serial]
 async fn shared_api_key_provider_api_key_preferred_skips_session() {
     use ezer_test_support::EnvGuard;
-    let _legacy = EnvGuard::unset("GROK_CODE_XAI_API_KEY");
+    let _legacy = EnvGuard::unset("EZER_CODE_XAI_API_KEY");
     let _key = EnvGuard::set("XAI_API_KEY", "static-preferred");
     let dir = tempfile::tempdir().unwrap();
     let mgr = Arc::new(AuthManager::new(
         dir.path(),
-        GrokComConfig {
+        EzerComConfig {
             preferred_method: Some(crate::PreferredAuthMethod::ApiKey),
-            ..GrokComConfig::default()
+            ..EzerComConfig::default()
         },
     ));
-    mgr.hot_swap(GrokAuth {
+    mgr.hot_swap(EzerAuth {
         key: "leftover-oidc".into(),
         expires_at: Some(Utc::now() + Duration::hours(1)),
         create_time: Utc::now(),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     });
     assert_eq!(
         shared_api_key_provider(mgr)
@@ -3912,16 +3912,16 @@ async fn shared_api_key_provider_api_key_preferred_skips_session() {
 #[serial_test::serial]
 async fn shared_api_key_provider_sync_falls_through_when_session_expired() {
     use ezer_test_support::EnvGuard;
-    let _legacy = EnvGuard::unset("GROK_CODE_XAI_API_KEY");
+    let _legacy = EnvGuard::unset("EZER_CODE_XAI_API_KEY");
     let _key = EnvGuard::set("XAI_API_KEY", "static-after-expiry");
     let dir = tempfile::tempdir().unwrap();
-    let mgr = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
-    mgr.hot_swap(GrokAuth {
+    let mgr = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
+    mgr.hot_swap(EzerAuth {
         key: "expired-oidc".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("rt".into()),
         expires_at: Some(Utc::now() - Duration::hours(1)),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     });
     let provider = shared_api_key_provider(mgr);
     assert_eq!(
@@ -3940,16 +3940,16 @@ async fn shared_api_key_provider_sync_falls_through_when_session_expired() {
 async fn shared_api_key_provider_sync_buffered_session_beats_static() {
     use ezer_test_support::EnvGuard;
     use ezer_tools::types::ApiKeyProvider;
-    let _legacy = EnvGuard::unset("GROK_CODE_XAI_API_KEY");
+    let _legacy = EnvGuard::unset("EZER_CODE_XAI_API_KEY");
     let _key = EnvGuard::set("XAI_API_KEY", "leftover-static");
     let dir = tempfile::tempdir().unwrap();
-    let mgr = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
-    mgr.hot_swap(GrokAuth {
+    let mgr = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
+    mgr.hot_swap(EzerAuth {
         key: "buffered-oidc".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("rt".into()),
         expires_at: Some(Utc::now() + Duration::minutes(2)),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     });
     let provider = super::SharedAuthKeyProvider(mgr);
     assert_eq!(provider.current_api_key().as_deref(), Some("buffered-oidc"));
@@ -3960,10 +3960,10 @@ async fn shared_api_key_provider_sync_buffered_session_beats_static() {
 async fn shared_api_key_provider_disk_memo_follows_rewrites() {
     use ezer_test_support::EnvGuard;
     let _xai = EnvGuard::unset("XAI_API_KEY");
-    let _legacy = EnvGuard::unset("GROK_CODE_XAI_API_KEY");
-    let _auth_path = EnvGuard::unset("GROK_AUTH_PATH");
+    let _legacy = EnvGuard::unset("EZER_CODE_XAI_API_KEY");
+    let _auth_path = EnvGuard::unset("EZER_AUTH_PATH");
     let dir = tempfile::tempdir().unwrap();
-    let mgr = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
+    let mgr = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
     let provider = shared_api_key_provider(mgr);
     assert_eq!(provider.current_api_key_async().await, None);
     for key in ["first-key", "fresh-key", "second-key-rotated"] {
@@ -3978,10 +3978,10 @@ async fn shared_api_key_provider_disk_memo_follows_rewrites() {
 async fn process_key_precedence() {
     use ezer_test_support::EnvGuard;
     let _xai = EnvGuard::unset("XAI_API_KEY");
-    let _legacy = EnvGuard::unset("GROK_CODE_XAI_API_KEY");
-    let _auth_path = EnvGuard::unset("GROK_AUTH_PATH");
+    let _legacy = EnvGuard::unset("EZER_CODE_XAI_API_KEY");
+    let _auth_path = EnvGuard::unset("EZER_AUTH_PATH");
     let dir = tempfile::tempdir().unwrap();
-    let mgr = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
+    let mgr = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
     let provider = shared_api_key_provider(mgr.clone());
     assert_eq!(provider.current_api_key_async().await, None);
     crate::store_api_key(dir.path(), "disk").unwrap();
@@ -4009,9 +4009,9 @@ async fn process_key_precedence() {
     let dir_blocked = tempfile::tempdir().unwrap();
     let blocked = Arc::new(AuthManager::new(
         dir_blocked.path(),
-        GrokComConfig {
+        EzerComConfig {
             disable_api_key_auth: Some(true),
-            ..GrokComConfig::default()
+            ..EzerComConfig::default()
         },
     ));
     blocked.set_process_static_api_key(Some("ignored".into()));
@@ -4022,13 +4022,13 @@ async fn process_key_precedence() {
         None
     );
 }
-fn expired_oidc() -> GrokAuth {
-    GrokAuth {
+fn expired_oidc() -> EzerAuth {
+    EzerAuth {
         key: "expired-key".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("rt-old".into()),
         expires_at: Some(Utc::now() - Duration::hours(1)),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     }
 }
 /// Signals when it has started, then blocks until released.
@@ -4043,18 +4043,18 @@ impl TokenRefresher for BlockingRefresher {
         self.call_count.fetch_add(1, Ordering::SeqCst);
         self.started.notify_one();
         self.release.notified().await;
-        crate::refresh::RefreshOutcome::Success(Box::new(GrokAuth {
+        crate::refresh::RefreshOutcome::Success(Box::new(EzerAuth {
             key: "fresh-token".into(),
             expires_at: Some(Utc::now() + Duration::hours(1)),
             refresh_token: Some("rt-new".into()),
-            ..GrokAuth::test_default()
+            ..EzerAuth::test_default()
         }))
     }
 }
 #[tokio::test]
 async fn sleep_gate_defers_refresh_without_calling_idp() {
     let dir = tempfile::tempdir().unwrap();
-    let mgr = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
+    let mgr = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
     mgr.hot_swap(expired_oidc());
     let call_count = Arc::new(AtomicU32::new(0));
     mgr.set_refresher(Arc::new(CountingRefresher {
@@ -4079,7 +4079,7 @@ async fn sleep_gate_defers_refresh_without_calling_idp() {
 #[tokio::test]
 async fn sleep_deferred_refresh_is_transient_no_kpi_no_verdict() {
     let dir = tempfile::tempdir().unwrap();
-    let mgr = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
+    let mgr = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
     mgr.hot_swap(expired_oidc());
     let call_count = Arc::new(AtomicU32::new(0));
     mgr.set_refresher(Arc::new(CountingRefresher {
@@ -4126,13 +4126,13 @@ async fn sleep_deferred_refresh_is_transient_no_kpi_no_verdict() {
 #[tokio::test]
 async fn dark_wake_defers_refresh_while_a_live_token_can_be_served() {
     let dir = tempfile::tempdir().unwrap();
-    let mgr = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
-    mgr.hot_swap(GrokAuth {
+    let mgr = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
+    mgr.hot_swap(EzerAuth {
         key: "live-key".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("rt-old".into()),
         expires_at: Some(Utc::now() + Duration::minutes(2)),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     });
     let call_count = Arc::new(AtomicU32::new(0));
     mgr.set_refresher(Arc::new(CountingRefresher {
@@ -4164,7 +4164,7 @@ async fn dark_wake_defers_refresh_while_a_live_token_can_be_served() {
 #[tokio::test]
 async fn dark_wake_does_not_defer_when_no_usable_token() {
     let dir = tempfile::tempdir().unwrap();
-    let mgr = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
+    let mgr = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
     mgr.hot_swap(expired_oidc());
     let call_count = Arc::new(AtomicU32::new(0));
     mgr.set_refresher(Arc::new(CountingRefresher {
@@ -4183,13 +4183,13 @@ async fn dark_wake_does_not_defer_when_no_usable_token() {
 #[tokio::test]
 async fn dark_wake_does_not_defer_server_rejected_recovery() {
     let dir = tempfile::tempdir().unwrap();
-    let mgr = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
-    mgr.hot_swap(GrokAuth {
+    let mgr = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
+    mgr.hot_swap(EzerAuth {
         key: "rejected-but-unexpired".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("rt-old".into()),
         expires_at: Some(Utc::now() + Duration::minutes(2)),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     });
     let call_count = Arc::new(AtomicU32::new(0));
     mgr.set_refresher(Arc::new(CountingRefresher {
@@ -4213,13 +4213,13 @@ async fn dark_wake_does_not_defer_server_rejected_recovery() {
 #[tokio::test]
 async fn dark_wake_defer_forces_refresh_after_max() {
     let dir = tempfile::tempdir().unwrap();
-    let mgr = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
-    mgr.hot_swap(GrokAuth {
+    let mgr = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
+    mgr.hot_swap(EzerAuth {
         key: "live-key".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("rt-old".into()),
         expires_at: Some(Utc::now() + Duration::minutes(2)),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     });
     let call_count = Arc::new(AtomicU32::new(0));
     mgr.set_refresher(Arc::new(CountingRefresher {
@@ -4256,7 +4256,7 @@ async fn dark_wake_defer_forces_refresh_after_max() {
 #[test]
 fn dark_wake_defer_budget_survives_powered_on_during_dark_wake() {
     let dir = tempfile::tempdir().unwrap();
-    let mgr = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
+    let mgr = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
     mgr.set_dark_wake_for_test(true);
     assert!(
         mgr.should_defer_for_dark_wake(),
@@ -4280,9 +4280,9 @@ fn dark_wake_defer_budget_survives_powered_on_during_dark_wake() {
 #[test]
 #[serial_test::serial(force_dark_wake_env)]
 fn is_dark_wake_false_when_power_listener_not_started() {
-    let _unset = ezer_test_support::EnvGuard::unset("GROK_AUTH_FORCE_DARK_WAKE");
+    let _unset = ezer_test_support::EnvGuard::unset("EZER_AUTH_FORCE_DARK_WAKE");
     let dir = tempfile::tempdir().unwrap();
-    let mgr = AuthManager::new(dir.path(), GrokComConfig::default());
+    let mgr = AuthManager::new(dir.path(), EzerComConfig::default());
     assert!(
         !mgr.is_dark_wake(),
         "is_dark_wake must be false when the power listener was never started"
@@ -4296,27 +4296,27 @@ fn is_dark_wake_false_when_power_listener_not_started() {
 fn is_dark_wake_env_override_forces_both_states() {
     use ezer_test_support::EnvGuard;
     let dir = tempfile::tempdir().unwrap();
-    let mgr = AuthManager::new(dir.path(), GrokComConfig::default());
+    let mgr = AuthManager::new(dir.path(), EzerComConfig::default());
     {
-        let _g = EnvGuard::set("GROK_AUTH_FORCE_DARK_WAKE", "1");
+        let _g = EnvGuard::set("EZER_AUTH_FORCE_DARK_WAKE", "1");
         assert!(
             mgr.is_dark_wake(),
             "=1 must force dark wake even without a power listener"
         );
     }
     {
-        let _g = EnvGuard::set("GROK_AUTH_FORCE_DARK_WAKE", "0");
+        let _g = EnvGuard::set("EZER_AUTH_FORCE_DARK_WAKE", "0");
         assert!(!mgr.is_dark_wake(), "=0 must force full wake");
     }
     {
-        let _g = EnvGuard::set("GROK_AUTH_FORCE_DARK_WAKE", "yes");
+        let _g = EnvGuard::set("EZER_AUTH_FORCE_DARK_WAKE", "yes");
         assert!(!mgr.is_dark_wake(), "non-1/0 values must not force a state");
     }
 }
 #[tokio::test]
 async fn sleep_gate_cleared_on_wake_allows_refresh() {
     let dir = tempfile::tempdir().unwrap();
-    let mgr = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
+    let mgr = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
     mgr.hot_swap(expired_oidc());
     let call_count = Arc::new(AtomicU32::new(0));
     mgr.set_refresher(Arc::new(CountingRefresher {
@@ -4332,7 +4332,7 @@ async fn sleep_gate_cleared_on_wake_allows_refresh() {
 #[tokio::test]
 async fn sleep_gate_auto_expires_after_max() {
     let dir = tempfile::tempdir().unwrap();
-    let mgr = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
+    let mgr = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
     mgr.set_system_sleep_imminent(true);
     assert!(mgr.is_sleep_gated(), "freshly-raised gate must be active");
     let back = super::sleep_gate::SLEEP_GATE_MAX + StdDuration::from_secs(5);
@@ -4358,7 +4358,7 @@ async fn sleep_gate_auto_expires_after_max() {
 #[tokio::test]
 async fn sleep_gate_auto_expires_when_wall_clock_passes_during_sleep() {
     let dir = tempfile::tempdir().unwrap();
-    let mgr = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
+    let mgr = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
     mgr.set_system_sleep_imminent(true);
     assert!(mgr.is_sleep_gated(), "freshly-raised gate must be active");
     let back = super::sleep_gate::SLEEP_GATE_MAX + StdDuration::from_secs(5);
@@ -4382,7 +4382,7 @@ async fn sleep_gate_auto_expires_when_wall_clock_passes_during_sleep() {
 #[tokio::test]
 async fn sleep_gate_lets_in_flight_refresh_complete() {
     let dir = tempfile::tempdir().unwrap();
-    let mgr = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
+    let mgr = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
     mgr.hot_swap(expired_oidc());
     let started = Arc::new(tokio::sync::Notify::new());
     let release = Arc::new(tokio::sync::Notify::new());
@@ -4431,7 +4431,7 @@ async fn sleep_gate_lets_in_flight_refresh_complete() {
 #[test]
 fn sleep_ack_hold_returns_immediately_when_nothing_in_flight() {
     let dir = tempfile::tempdir().unwrap();
-    let mgr = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
+    let mgr = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
     let start = Instant::now();
     mgr.test_hold_sleep_ack(StdDuration::from_secs(5));
     let waited = start.elapsed();
@@ -4444,7 +4444,7 @@ fn sleep_ack_hold_returns_immediately_when_nothing_in_flight() {
 #[test]
 fn sleep_ack_hold_releases_when_in_flight_refresh_drains() {
     let dir = tempfile::tempdir().unwrap();
-    let mgr = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
+    let mgr = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
     mgr.test_enter_refresh_in_flight();
     let releaser = mgr.clone();
     let drain = std::thread::spawn(move || {
@@ -4470,7 +4470,7 @@ fn sleep_ack_hold_releases_when_in_flight_refresh_drains() {
 #[test]
 fn sleep_ack_hold_times_out_when_refresh_never_drains() {
     let dir = tempfile::tempdir().unwrap();
-    let mgr = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
+    let mgr = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
     mgr.test_enter_refresh_in_flight();
     let start = Instant::now();
     mgr.test_hold_sleep_ack(StdDuration::from_millis(150));
@@ -4557,12 +4557,12 @@ fn relay_should_cancel_gives_up_only_on_terminal_failures() {
 async fn manual_auth_capture_attributes_and_recorder_debounces() {
     use crate::recovery::{ManualAuthTracker, RejectedAuth};
     use ezer_telemetry::events::{AuthTokenKind, ManualAuthSurface};
-    let auth = GrokAuth {
+    let auth = EzerAuth {
         key: "dead-token".into(),
         user_id: "user-1".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("rt".into()),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     };
     let snap = RejectedAuth::capture(Some(&auth));
     assert_eq!(snap.principal_for_test(), Some("user-1"));
@@ -4584,7 +4584,7 @@ async fn manual_auth_capture_attributes_and_recorder_debounces() {
         ManualAuthSurface::Turn,
     );
     assert_eq!(last(), id);
-    let rearmed = GrokAuth {
+    let rearmed = EzerAuth {
         key: "another-token".into(),
         ..auth.clone()
     };
@@ -4609,7 +4609,7 @@ async fn manual_auth_capture_attributes_and_recorder_debounces() {
 async fn manual_auth_emits_only_for_user_facing_source() {
     use crate::recovery::RecoverySource;
     fn mgr_with(dir: &std::path::Path, key: &str, mode: AuthMode) -> Arc<AuthManager> {
-        let mgr = Arc::new(AuthManager::new(dir, GrokComConfig::default()));
+        let mgr = Arc::new(AuthManager::new(dir, EzerComConfig::default()));
         let mut auth = make_auth(Some(Utc::now() + Duration::hours(1)), Utc::now());
         auth.user_id = "u1".into();
         auth.key = key.into();
@@ -4658,13 +4658,13 @@ async fn manual_auth_emits_only_for_user_facing_source() {
 #[tokio::test]
 async fn requires_manual_reauth_false_for_refreshable_credential() {
     let dir = tempfile::tempdir().unwrap();
-    let mgr = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
-    mgr.hot_swap(GrokAuth {
+    let mgr = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
+    mgr.hot_swap(EzerAuth {
         key: "expired-at".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("rt-live".into()),
         expires_at: Some(Utc::now() - Duration::hours(1)),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     });
     mgr.set_refresher(Arc::new(FailingRefresher {
         call_count: Arc::new(AtomicU32::new(0)),
@@ -4683,13 +4683,13 @@ async fn requires_manual_reauth_false_for_refreshable_credential() {
 #[tokio::test]
 async fn requires_manual_reauth_true_for_sticky_verdict_and_no_refresher() {
     let dir = tempfile::tempdir().unwrap();
-    let mgr = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
-    mgr.hot_swap(GrokAuth {
+    let mgr = Arc::new(AuthManager::new(dir.path(), EzerComConfig::default()));
+    mgr.hot_swap(EzerAuth {
         key: "expired-at".into(),
         auth_mode: AuthMode::Oidc,
         refresh_token: Some("rt-dead".into()),
         expires_at: Some(Utc::now() - Duration::hours(1)),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     });
     assert!(
         mgr.requires_manual_reauth(),
@@ -4713,11 +4713,11 @@ async fn requires_manual_reauth_true_for_sticky_verdict_and_no_refresher() {
 async fn requires_manual_reauth_true_after_external_provider_refresh_failed() {
     let dir = tempfile::tempdir().unwrap();
     let mgr = Arc::new(AuthManager::new(dir.path(), external_provider_config()));
-    mgr.hot_swap(GrokAuth {
+    mgr.hot_swap(EzerAuth {
         key: "expired-external".into(),
         auth_mode: AuthMode::External,
         expires_at: Some(Utc::now() - Duration::hours(1)),
-        ..GrokAuth::test_default()
+        ..EzerAuth::test_default()
     });
     mgr.set_refresher(Arc::new(FailingRefresher {
         call_count: Arc::new(AtomicU32::new(0)),
@@ -4741,10 +4741,10 @@ async fn requires_manual_reauth_true_after_external_provider_refresh_failed() {
     );
 }
 /// Config for a deployment that mints sessions with an external binary.
-fn external_provider_config() -> GrokComConfig {
-    GrokComConfig {
+fn external_provider_config() -> EzerComConfig {
+    EzerComConfig {
         auth_provider_command: Some("acme-auth".to_owned()),
-        ..GrokComConfig::default()
+        ..EzerComConfig::default()
     }
 }
 /// The proactive loop's failure backoff: zero before any failure (the schedule is purely expiry-driven).

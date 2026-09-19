@@ -7,7 +7,7 @@ use indexmap::IndexMap;
 
 use super::{ModelFetchAuth, prefetch_models_blocking};
 use crate::agent::config::{self, ModelEntry};
-use ezer_login::GrokAuth;
+use ezer_login::EzerAuth;
 
 /// Boxed future returned by [`ModelsEndpoint::fetch_models`].
 pub(crate) type ModelsFetchFuture =
@@ -18,7 +18,7 @@ pub(crate) trait ModelsEndpoint: Send + Sync {
     fn fetch_models(
         &self,
         endpoints: config::EndpointsConfig,
-        auth: Option<GrokAuth>,
+        auth: Option<EzerAuth>,
         fetch_auth: ModelFetchAuth,
     ) -> ModelsFetchFuture;
 }
@@ -30,7 +30,7 @@ impl ModelsEndpoint for HttpModelsEndpoint {
     fn fetch_models(
         &self,
         endpoints: config::EndpointsConfig,
-        auth: Option<GrokAuth>,
+        auth: Option<EzerAuth>,
         fetch_auth: ModelFetchAuth,
     ) -> ModelsFetchFuture {
         Box::pin(fetch_models_async(endpoints, auth, fetch_auth))
@@ -39,7 +39,7 @@ impl ModelsEndpoint for HttpModelsEndpoint {
 
 pub(crate) async fn fetch_models_async(
     endpoints: config::EndpointsConfig,
-    auth: Option<GrokAuth>,
+    auth: Option<EzerAuth>,
     fetch_auth: ModelFetchAuth,
 ) -> Option<IndexMap<String, ModelEntry>> {
     tokio::task::spawn_blocking(move || {

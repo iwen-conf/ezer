@@ -870,7 +870,7 @@ static PRODUCT_SKILLS_NEGATIVE_CACHE: parking_lot::Mutex<Option<ProductSkillsIde
 /// Callers re-check caches after acquiring the gate.
 static PRODUCT_SKILLS_FETCH_GATE: std::sync::OnceLock<tokio::sync::Mutex<()>> =
     std::sync::OnceLock::new();
-/// Fresh successful catalog is reused without another REST round-trip so ACU, list, and per-turn resolve do not stampede grok.com.
+/// Fresh successful catalog is reused without another REST round-trip so ACU, list, and per-turn resolve do not stampede ezer.com.
 const PRODUCT_SKILLS_SUCCESS_TTL: std::time::Duration = std::time::Duration::from_secs(60);
 /// Bounded negative cache for user-list failure (bundled-only).
 /// Keeps consumers from re-paying the full retry ladder during a short outage.
@@ -902,7 +902,7 @@ fn product_skills_identity_matches(
     user_id: &str,
     team_id: &Option<String>,
     organization_id: &Option<String>,
-    auth: &ezer_login::GrokAuth,
+    auth: &ezer_login::EzerAuth,
 ) -> bool {
     if team_id != &auth.team_id || organization_id != &auth.organization_id {
         return false;
@@ -917,7 +917,7 @@ fn product_skills_identity_matches(
 }
 fn product_skills_cache_matches(
     entry: &ProductSkillsCacheEntry,
-    auth: &ezer_login::GrokAuth,
+    auth: &ezer_login::EzerAuth,
 ) -> bool {
     product_skills_identity_matches(
         &entry.auth_key,
@@ -929,7 +929,7 @@ fn product_skills_cache_matches(
 }
 fn product_skills_negative_matches(
     entry: &ProductSkillsIdentityStamp,
-    auth: &ezer_login::GrokAuth,
+    auth: &ezer_login::EzerAuth,
 ) -> bool {
     product_skills_identity_matches(
         &entry.auth_key,
@@ -940,7 +940,7 @@ fn product_skills_negative_matches(
     )
 }
 fn product_skills_cache_entry(
-    auth: &ezer_login::GrokAuth,
+    auth: &ezer_login::EzerAuth,
     skills: Vec<SkillInfo>,
 ) -> ProductSkillsCacheEntry {
     ProductSkillsCacheEntry {
@@ -956,13 +956,13 @@ fn product_skills_cache_entry(
 /// Always keys by the primary auth identity (user and team/org), even when the HTTP request succeeded via an untagged recovery credential.
 /// Personal (empty team/org) primaries cannot match a team-keyed entry.
 fn product_skills_cache_entry_after_fetch(
-    primary: &ezer_login::GrokAuth,
+    primary: &ezer_login::EzerAuth,
     skills: Vec<SkillInfo>,
     _used_untagged_recovery: bool,
 ) -> ProductSkillsCacheEntry {
     product_skills_cache_entry(primary, skills)
 }
-fn product_skills_negative_stamp(auth: &ezer_login::GrokAuth) -> ProductSkillsIdentityStamp {
+fn product_skills_negative_stamp(auth: &ezer_login::EzerAuth) -> ProductSkillsIdentityStamp {
     ProductSkillsIdentityStamp {
         auth_key: auth.key.clone(),
         user_id: auth.user_id.clone(),
@@ -971,7 +971,7 @@ fn product_skills_negative_stamp(auth: &ezer_login::GrokAuth) -> ProductSkillsId
         fetched_at: std::time::Instant::now(),
     }
 }
-fn clear_degraded_cache_for_auth(auth: &ezer_login::GrokAuth) {
+fn clear_degraded_cache_for_auth(auth: &ezer_login::EzerAuth) {
     let mut guard = PRODUCT_SKILLS_DEGRADED_CACHE.lock();
     if let Some(entry) = guard.as_ref()
         && product_skills_cache_matches(entry, auth)
@@ -979,7 +979,7 @@ fn clear_degraded_cache_for_auth(auth: &ezer_login::GrokAuth) {
         *guard = None;
     }
 }
-fn clear_negative_cache_for_auth(auth: &ezer_login::GrokAuth) {
+fn clear_negative_cache_for_auth(auth: &ezer_login::EzerAuth) {
     let mut guard = PRODUCT_SKILLS_NEGATIVE_CACHE.lock();
     if let Some(entry) = guard.as_ref()
         && product_skills_negative_matches(entry, auth)
@@ -1006,18 +1006,18 @@ pub(crate) async fn product_skill_infos(
         tracing::warn!("product skills: no auth — catalog unavailable");
         return None;
     };
-    let grok_auth = match auth.auth().await {
+    let ezer_auth = match auth.auth().await {
         Ok(a) => a,
         Err(err) => {
             tracing::warn!(error = %err, "product skills: auth unavailable");
             return None;
         }
     };
-    if let Some(skills) = product_skills_cache_lookup(&grok_auth) {
+    if let Some(skills) = product_skills_cache_lookup(&ezer_auth) {
         return skills;
     }
     let _gate = product_skills_fetch_gate().lock().await;
-    if let Some(skills) = product_skills_cache_lookup(&grok_auth) {
+    if let Some(skills) = product_skills_cache_lookup(&ezer_auth) {
         return skills;
     }
     let client = crate::remote::SkillsClient::new(auth);
@@ -1027,7 +1027,7 @@ pub(crate) async fn product_skill_infos(
             {
                 let guard = PRODUCT_SKILLS_CACHE.lock();
                 if let Some(entry) = guard.as_ref()
-                    && product_skills_cache_matches(entry, &grok_auth)
+                    && product_skills_cache_matches(entry, &ezer_auth)
                 {
                     tracing::warn!(
                         skill_count = entry.skills.len(),
@@ -1037,11 +1037,11 @@ pub(crate) async fn product_skill_infos(
                 }
             }
             *PRODUCT_SKILLS_DEGRADED_CACHE.lock() = Some(product_skills_cache_entry_after_fetch(
-                &grok_auth,
+                &ezer_auth,
                 skills.clone(),
                 used_untagged_recovery,
             ));
-            clear_negative_cache_for_auth(&grok_auth);
+            clear_negative_cache_for_auth(&ezer_auth);
             tracing::warn!(
                 skill_count = skills.len(),
                 used_untagged_recovery,
@@ -1052,18 +1052,18 @@ pub(crate) async fn product_skill_infos(
         Ok((catalog, used_untagged_recovery)) => {
             let skills = catalog.to_skill_infos();
             *PRODUCT_SKILLS_CACHE.lock() = Some(product_skills_cache_entry_after_fetch(
-                &grok_auth,
+                &ezer_auth,
                 skills.clone(),
                 used_untagged_recovery,
             ));
-            clear_degraded_cache_for_auth(&grok_auth);
-            clear_negative_cache_for_auth(&grok_auth);
+            clear_degraded_cache_for_auth(&ezer_auth);
+            clear_negative_cache_for_auth(&ezer_auth);
             Some(skills)
         }
         Err(err) => {
             let cached = PRODUCT_SKILLS_CACHE.lock().clone();
             if let Some(entry) = cached
-                && product_skills_cache_matches(&entry, &grok_auth)
+                && product_skills_cache_matches(&entry, &ezer_auth)
             {
                 tracing::warn!(
                     error = %err,
@@ -1072,7 +1072,7 @@ pub(crate) async fn product_skill_infos(
                 );
                 return Some(entry.skills);
             }
-            *PRODUCT_SKILLS_NEGATIVE_CACHE.lock() = Some(product_skills_negative_stamp(&grok_auth));
+            *PRODUCT_SKILLS_NEGATIVE_CACHE.lock() = Some(product_skills_negative_stamp(&ezer_auth));
             tracing::warn!(
                 error = %err,
                 "product skills: catalog unavailable after retries — negative cache"
@@ -1083,12 +1083,12 @@ pub(crate) async fn product_skill_infos(
 }
 /// `Some(Some(skills))` success/degraded hit, `Some(None)` negative hit, `None` miss.
 fn product_skills_cache_lookup(
-    grok_auth: &ezer_login::GrokAuth,
+    ezer_auth: &ezer_login::EzerAuth,
 ) -> Option<Option<Vec<SkillInfo>>> {
     {
         let guard = PRODUCT_SKILLS_CACHE.lock();
         if let Some(entry) = guard.as_ref()
-            && product_skills_cache_matches(entry, grok_auth)
+            && product_skills_cache_matches(entry, ezer_auth)
             && entry.fetched_at.elapsed() < PRODUCT_SKILLS_SUCCESS_TTL
         {
             return Some(Some(entry.skills.clone()));
@@ -1097,7 +1097,7 @@ fn product_skills_cache_lookup(
     {
         let guard = PRODUCT_SKILLS_DEGRADED_CACHE.lock();
         if let Some(entry) = guard.as_ref()
-            && product_skills_cache_matches(entry, grok_auth)
+            && product_skills_cache_matches(entry, ezer_auth)
             && entry.fetched_at.elapsed() < PRODUCT_SKILLS_DEGRADED_TTL
         {
             return Some(Some(entry.skills.clone()));
@@ -1106,7 +1106,7 @@ fn product_skills_cache_lookup(
     {
         let guard = PRODUCT_SKILLS_NEGATIVE_CACHE.lock();
         if let Some(entry) = guard.as_ref()
-            && product_skills_negative_matches(entry, grok_auth)
+            && product_skills_negative_matches(entry, ezer_auth)
             && entry.fetched_at.elapsed() < PRODUCT_SKILLS_NEGATIVE_TTL
         {
             return Some(None);

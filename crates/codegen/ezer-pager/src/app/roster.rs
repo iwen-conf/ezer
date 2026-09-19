@@ -2,8 +2,8 @@
 //!
 //! The leader process hosts session actors and exposes a roster API the pager consumes in leader mode (FleetView dashboard):
 //!
-//! - Request/response `x.ai/sessions/list` parses into [`RosterListResponse`].
-//! - Broadcast notification `x.ai/sessions/changed` parses into [`RosterChanged`].
+//! - Request/response `ezer/sessions/list` parses into [`RosterListResponse`].
+//! - Broadcast notification `ezer/sessions/changed` parses into [`RosterChanged`].
 //!
 //! These structs mirror the producer-side wire format (camelCase JSON, snake_case activity enum).
 //! They are deserialize-only: the pager never produces them.
@@ -61,14 +61,14 @@ pub struct RosterEntry {
     pub origin: RosterOrigin,
 }
 
-/// Response to `x.ai/sessions/list`.
+/// Response to `ezer/sessions/list`.
 #[derive(Debug, Clone, Default, Deserialize)]
 pub struct RosterListResponse {
     #[serde(default)]
     pub sessions: Vec<RosterEntry>,
 }
 
-/// Broadcast payload for `x.ai/sessions/changed`.
+/// Broadcast payload for `ezer/sessions/changed`.
 #[derive(Debug, Clone, Default, Deserialize)]
 pub struct RosterChanged {
     #[serde(default)]
@@ -77,7 +77,7 @@ pub struct RosterChanged {
     pub removed: Vec<String>,
 }
 
-/// Parse an `x.ai/sessions/list` ext-response body into a [`RosterListResponse`].
+/// Parse an `ezer/sessions/list` ext-response body into a [`RosterListResponse`].
 /// The agent answers through `ExtMethodResult::success(..).to_ext_response()`, which wraps the payload as `{ "result": { "sessions": [...] } }`.
 /// A bare `{ "sessions": [...] }` body (no envelope) is tolerated too.
 pub fn parse_roster_list_response(body: &str) -> Option<RosterListResponse> {
@@ -99,7 +99,7 @@ mod tests {
             cwd: "/repo/worktree".to_string(),
             is_worktree: true,
             session_kind: None,
-            model_id: Some("grok-4".to_string()),
+            model_id: Some("test-model-4".to_string()),
             reasoning_effort: None,
             yolo: true,
             activity: agent::RosterActivity::Working,
@@ -122,7 +122,7 @@ mod tests {
             sessions: vec![agent_entry()],
         };
 
-        // Exact wire bytes the agent emits for `x.ai/sessions/list`.
+        // Exact wire bytes the agent emits for `ezer/sessions/list`.
         let ext_response = ExtMethodResult::success(agent_resp)
             .to_ext_response()
             .expect("agent serializes the roster response");
@@ -154,7 +154,7 @@ mod tests {
         assert_eq!(e.title.as_deref(), Some("Fix the roster"));
         assert_eq!(e.cwd, "/repo/worktree");
         assert!(e.is_worktree);
-        assert_eq!(e.model_id.as_deref(), Some("grok-4"));
+        assert_eq!(e.model_id.as_deref(), Some("test-model-4"));
         assert!(e.yolo);
         assert_eq!(e.activity, RosterActivity::Working);
         assert_eq!(
@@ -218,7 +218,7 @@ mod tests {
         );
     }
 
-    /// Round-trip for `x.ai/sessions/changed`: serialize the agent's `RosterChanged` as `emit_roster_changed` does (bare params, no envelope).
+    /// Round-trip for `ezer/sessions/changed`: serialize the agent's `RosterChanged` as `emit_roster_changed` does (bare params, no envelope).
     /// The pager's `RosterChanged` must recover `upserted`, `removed`, and the nested entry fields (camelCase).
     #[test]
     fn roster_changed_round_trips() {

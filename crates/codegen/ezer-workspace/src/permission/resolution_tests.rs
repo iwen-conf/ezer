@@ -1,7 +1,7 @@
 use super::*;
 
 // Crate-shared lock serializing tests that mutate the global process environment so concurrent test threads can't race on shared env state
-// Shared so `GROK_HOME`/`HOME` mutations here also serialize against the other env-mutating test modules under single-process `cargo test --lib`
+// Shared so `EZER_HOME`/`HOME` mutations here also serialize against the other env-mutating test modules under single-process `cargo test --lib`
 use crate::ENV_TEST_LOCK as ENV_LOCK;
 
 // The crate-shared generic env-var guard, defined once in `lib.rs`
@@ -590,12 +590,12 @@ fn load_settings_no_env_field() {
 
 #[test]
 fn load_claude_env_merges_with_precedence() {
-    // Isolate GROK_HOME so the claude-import marker reads clean; an imported dev machine would otherwise early-return an empty map
+    // Isolate EZER_HOME so the claude-import marker reads clean; an imported dev machine would otherwise early-return an empty map
     // The project tier overrides any real `~/.claude`, so the per-key assertions hold without isolating HOME
     let _lock = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
     let home = tempfile::tempdir().unwrap();
-    let _home_guard = EnvVarGuard::set("GROK_HOME", home.path());
-    let _marker_guard = EnvVarGuard::unset("_GROK_CLAUDE_MARKER_OVERRIDE");
+    let _home_guard = EnvVarGuard::set("EZER_HOME", home.path());
+    let _marker_guard = EnvVarGuard::unset("_EZER_CLAUDE_MARKER_OVERRIDE");
     let tmp = tempfile::tempdir().unwrap();
     let claude_dir = tmp.path().join(".claude");
     std::fs::create_dir_all(&claude_dir).unwrap();
@@ -622,13 +622,13 @@ fn load_claude_env_merges_with_precedence() {
 
 #[test]
 fn load_claude_env_empty_when_no_settings() {
-    // Isolate GROK_HOME (claude-import marker) and HOME (global `~/.claude`)
+    // Isolate EZER_HOME (claude-import marker) and HOME (global `~/.claude`)
     // Neither a dev machine's import marker nor its real `~/.claude` env can then trip the empty-map assertion
     let _lock = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
     let home = tempfile::tempdir().unwrap();
-    let _home_guard = EnvVarGuard::set("GROK_HOME", home.path());
+    let _home_guard = EnvVarGuard::set("EZER_HOME", home.path());
     let _real_home_guard = EnvVarGuard::set("HOME", home.path());
-    let _marker_guard = EnvVarGuard::unset("_GROK_CLAUDE_MARKER_OVERRIDE");
+    let _marker_guard = EnvVarGuard::unset("_EZER_CLAUDE_MARKER_OVERRIDE");
     let tmp = tempfile::tempdir().unwrap();
     let env = load_claude_env_with_project(tmp.path(), true);
     assert!(env.is_empty());
@@ -637,11 +637,11 @@ fn load_claude_env_empty_when_no_settings() {
 #[test]
 fn load_claude_env_with_project_drops_repo_env_when_untrusted() {
     // Repo-tree `.claude` env is injected into every subprocess, so an untrusted folder must drop it
-    // Isolate `GROK_HOME` so the import marker is clean and the unique key stays independent of the host `~/.claude`
+    // Isolate `EZER_HOME` so the import marker is clean and the unique key stays independent of the host `~/.claude`
     let _lock = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
     let home = tempfile::tempdir().unwrap();
-    let _home_guard = EnvVarGuard::set("GROK_HOME", home.path());
-    let _marker_guard = EnvVarGuard::unset("_GROK_CLAUDE_MARKER_OVERRIDE");
+    let _home_guard = EnvVarGuard::set("EZER_HOME", home.path());
+    let _marker_guard = EnvVarGuard::unset("_EZER_CLAUDE_MARKER_OVERRIDE");
     let tmp = tempfile::tempdir().unwrap();
     let claude_dir = tmp.path().join(".claude");
     std::fs::create_dir_all(&claude_dir).unwrap();
@@ -1077,8 +1077,8 @@ fn untrusted_project_claude_permissions_are_not_honored() {
     let _lock = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
     let home = tempfile::tempdir().unwrap();
     let _home_guard = EnvVarGuard::set("HOME", home.path());
-    let _grok_guard = EnvVarGuard::set("GROK_HOME", home.path());
-    let _marker_guard = EnvVarGuard::unset("_GROK_CLAUDE_MARKER_OVERRIDE");
+    let _ezer_guard = EnvVarGuard::set("EZER_HOME", home.path());
+    let _marker_guard = EnvVarGuard::unset("_EZER_CLAUDE_MARKER_OVERRIDE");
 
     // Global user-tier allow (must survive untrusted project).
     let global_claude = home.path().join(".claude");
@@ -1142,16 +1142,16 @@ fn untrusted_project_claude_permissions_are_not_honored() {
 }
 
 /// Untrusted clone must not contribute project `.ezer/config.toml` `[permission]`.
-/// Sync `block_on` so `ENV_LOCK` is not held across `.await`. Global counts are not exact: `grok_home()` is a process-wide `OnceLock`.
+/// Sync `block_on` so `ENV_LOCK` is not held across `.await`. Global counts are not exact: `ezer_home()` is a process-wide `OnceLock`.
 #[test]
 fn untrusted_project_config_toml_permissions_are_not_honored() {
     let _lock = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
     let home = tempfile::tempdir().unwrap();
     let _home_guard = EnvVarGuard::set("HOME", home.path());
-    let _grok_guard = EnvVarGuard::set("GROK_HOME", home.path());
-    let _marker_guard = EnvVarGuard::unset("_GROK_CLAUDE_MARKER_OVERRIDE");
+    let _ezer_guard = EnvVarGuard::set("EZER_HOME", home.path());
+    let _marker_guard = EnvVarGuard::unset("_EZER_CLAUDE_MARKER_OVERRIDE");
 
-    // Global allow (survives untrusted project when GROK_HOME resolves here).
+    // Global allow (survives untrusted project when EZER_HOME resolves here).
     std::fs::write(
         home.path().join("config.toml"),
         r#"[permission]
@@ -1163,7 +1163,7 @@ allow = ["Bash(git status)"]
     let tmp = tempfile::tempdir().unwrap();
     // Bound project discovery to this temp dir (canonical walker uses git root).
     git2::Repository::init(tmp.path()).expect("git init");
-    let ezer = tmp.path().join(".grok");
+    let ezer = tmp.path().join(".ezer");
     std::fs::create_dir_all(&ezer).unwrap();
     std::fs::write(
         ezer.join("config.toml"),
@@ -1177,7 +1177,7 @@ allow = ["Bash(evil *)"]
         .enable_all()
         .build()
         .expect("test runtime");
-    // Untrusted may be None when no global rules load (GROK_HOME OnceLock already pinned by another test); empty after dropping project is OK
+    // Untrusted may be None when no global rules load (EZER_HOME OnceLock already pinned by another test); empty after dropping project is OK
     let untrusted = rt.block_on(resolve_permissions_with_provenance_inner(
         tmp.path(),
         inputs_trusted(None, false),
@@ -1208,10 +1208,10 @@ allow = ["Bash(evil *)"]
     );
 
     // Global survival is checked only when this process's OnceLock points at our temp home
-    let global_live = ezer_config::user_grok_home()
+    let global_live = ezer_config::user_ezer_home()
         .is_some_and(|g| g == home.path() || g.starts_with(home.path()));
     if global_live {
-        let untrusted = untrusted.expect("global rules present when GROK_HOME is live");
+        let untrusted = untrusted.expect("global rules present when EZER_HOME is live");
         assert!(
             untrusted
                 .config
@@ -1757,7 +1757,7 @@ fn catchall_allow_covers_freeform_dimensions() {
 #[test]
 fn admin_source_trusts_only_root_owned_tiers() {
     // Only managed-settings and the system-dir requirements layer are admin;
-    // the user-writable `~/.grok/requirements.toml` is not, despite its path.
+    // the user-writable `~/.ezer/requirements.toml` is not, despite its path.
     let p = std::path::PathBuf::from("x");
     assert!(is_admin_source(&RequirementSource::ManagedSettings {
         path: p.clone()
@@ -1802,7 +1802,7 @@ fn drop_untrusted_catchall_allows_is_source_aware() {
                 path: "/home/u/.ezer/requirements.toml".into(),
             },
         ),
-        // Managed config: defaults tier, untrusted even from /etc/grok.
+        // Managed config: defaults tier, untrusted even from /etc/ezer.
         sourced(
             allow_any(Some("*")),
             RequirementSource::ManagedConfig {
@@ -2233,7 +2233,7 @@ fn unrecognized_project_mode_claims_scope_over_global_accept_edits() {
         skipped
             .iter()
             .any(|s| s.rule.contains("dontask") || s.rule.contains("defaultMode=")),
-        "typo should be recorded for grok inspect"
+        "typo should be recorded for ezer inspect"
     );
 }
 
@@ -2820,8 +2820,8 @@ fn explicit_default_mode_blocks_permission_mode_hint() {
         std::fs::create_dir_all(&claude_dir).unwrap();
         std::fs::write(claude_dir.join("settings.json"), settings).unwrap();
         let _home = EnvVarGuard::set("HOME", tmp.path());
-        let _grok_home = EnvVarGuard::set("GROK_HOME", &tmp.path().join(".grok"));
-        let _marker = EnvVarGuard::unset("_GROK_CLAUDE_MARKER_OVERRIDE");
+        let _ezer_home = EnvVarGuard::set("EZER_HOME", &tmp.path().join(".ezer"));
+        let _marker = EnvVarGuard::unset("_EZER_CLAUDE_MARKER_OVERRIDE");
 
         let resolved = rt
             .block_on(resolve_permissions_with_provenance_inner(

@@ -16,7 +16,7 @@ pub struct WorktreeIdentity {
 
 /// [`worktree_identity_in`] against the default `<ezer home>/worktrees`.
 pub fn worktree_identity_for_cwd(cwd: &str) -> Option<WorktreeIdentity> {
-    worktree_identity_in(&super::grok_home().join("worktrees"), cwd)
+    worktree_identity_in(&super::ezer_home().join("worktrees"), cwd)
 }
 
 /// Derive the identity of the worktree containing `cwd`, where worktrees live at `<worktrees_dir>/<slug>/<label>`.
@@ -24,7 +24,7 @@ pub fn worktree_identity_for_cwd(cwd: &str) -> Option<WorktreeIdentity> {
 /// Returns `None` when `cwd` is not inside a worktree.
 pub fn worktree_identity_in(worktrees_dir: &Path, cwd: &str) -> Option<WorktreeIdentity> {
     // Session cwd is usually `current_dir()` (symlink-resolved)
-    // GROK_HOME (and so `worktrees_dir`) is often the unresolved env spelling
+    // EZER_HOME (and so `worktrees_dir`) is often the unresolved env spelling
     // A raw strip_prefix then misses a real worktree and summaries never get a kind or label
     let cwd_path = Path::new(cwd);
     let cwd_canon = canonical(cwd_path);
@@ -43,8 +43,8 @@ pub fn worktree_identity_in(worktrees_dir: &Path, cwd: &str) -> Option<WorktreeI
     let source_workspace_dir = super::source_repo_for_cwd(cwd)
         .or_else(|| standalone_source_marker(&worktree_root))
         .or_else(|| {
-            // NO_SEARCH, not `discover`: every grok-created worktree has `.git` at its root
-            // An upward walk would let a stray non-repo directory here inherit a repository enclosing grok home, like a git-managed home directory
+            // NO_SEARCH, not `discover`: every ezer-created worktree has `.git` at its root
+            // An upward walk would let a stray non-repo directory here inherit a repository enclosing ezer home, like a git-managed home directory
             let repo = git2::Repository::open_ext(
                 &worktree_root,
                 git2::RepositoryOpenFlags::NO_SEARCH,
@@ -53,7 +53,7 @@ pub fn worktree_identity_in(worktrees_dir: &Path, cwd: &str) -> Option<WorktreeI
             .ok()?;
             let root = repo.commondir().parent()?.to_path_buf();
             // git2 returns symlink-resolved paths, so the containment check must compare canonicalized paths
-            // Otherwise a symlinked grok home lets a standalone clone report itself as the source
+            // Otherwise a symlinked ezer home lets a standalone clone report itself as the source
             (!canonical(&root).starts_with(canonical(worktrees_dir))).then_some(root)
         })
         .map(|root| root.to_string_lossy().into_owned());

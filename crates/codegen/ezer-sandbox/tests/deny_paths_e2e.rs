@@ -6,7 +6,7 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 const SCENARIO_ENV: &str = "SANDBOX_E2E_SCENARIO";
 const WORKSPACE_ENV: &str = "SANDBOX_E2E_WORKSPACE";
-const GROK_HOME_ENV: &str = "SANDBOX_E2E_GROK_HOME";
+const EZER_HOME_ENV: &str = "SANDBOX_E2E_EZER_HOME";
 const HOME_ENV: &str = "SANDBOX_E2E_HOME";
 const PROFILE_ENV: &str = "SANDBOX_E2E_PROFILE";
 const TARGETS_ENV: &str = "SANDBOX_E2E_TARGETS";
@@ -17,18 +17,18 @@ const POSTLAUNCH_ENV: &str = "SANDBOX_E2E_POSTLAUNCH";
 const DATA_STAGED_ENV: &str = "SANDBOX_E2E_DATA_STAGED";
 const MARKER: &str = "deny-paths-e2e-marker-9f3c1a";
 const REQUIRE_ENV: &str = "SANDBOX_E2E_REQUIRE_ENFORCEMENT";
-fn apply_fixture_env(cmd: &mut Command, home: &Path, grok_home: &Path, workspace: &Path) {
+fn apply_fixture_env(cmd: &mut Command, home: &Path, ezer_home: &Path, workspace: &Path) {
     cmd.env(WORKSPACE_ENV, workspace.as_os_str())
         .env(HOME_ENV, home.as_os_str())
-        .env(GROK_HOME_ENV, grok_home.as_os_str())
+        .env(EZER_HOME_ENV, ezer_home.as_os_str())
         .env("HOME", home.as_os_str())
-        .env("GROK_HOME", grok_home.as_os_str());
+        .env("EZER_HOME", ezer_home.as_os_str());
 }
 /// Re-invoke this test binary as a subprocess driving `profile` over `targets` (denied) and `controls` (must stay readable).
 /// `postlaunch` paths are created AFTER apply to exercise the macOS runtime-regex (post-launch) coverage.
 fn run_scenario(
     home: &Path,
-    grok_home: &Path,
+    ezer_home: &Path,
     workspace: &Path,
     profile: &str,
     targets: &[&str],
@@ -37,7 +37,7 @@ fn run_scenario(
 ) -> (std::process::ExitStatus, String) {
     let exe = std::env::current_exe().expect("current_exe");
     let mut cmd = Command::new(exe);
-    apply_fixture_env(&mut cmd, home, grok_home, workspace);
+    apply_fixture_env(&mut cmd, home, ezer_home, workspace);
     let output = cmd
         .env(SCENARIO_ENV, "block_deny")
         .env(PROFILE_ENV, profile)
@@ -58,13 +58,13 @@ fn run_scenario(
 /// Re-invoke as a subprocess for the direct-hook write-deny scenarios.
 fn run_hook_write_deny_scenario(
     home: &Path,
-    grok_home: &Path,
+    ezer_home: &Path,
     workspace: &Path,
     scenario: &str,
 ) -> (std::process::ExitStatus, String) {
     let exe = std::env::current_exe().expect("current_exe");
     let mut cmd = Command::new(exe);
-    apply_fixture_env(&mut cmd, home, grok_home, workspace);
+    apply_fixture_env(&mut cmd, home, ezer_home, workspace);
     let output = cmd
         .env(SCENARIO_ENV, scenario)
         .arg("--ignored")
@@ -226,16 +226,16 @@ fn subprocess_entry() {
     let workspace = dunce::canonicalize(&workspace).expect("canonicalize workspace");
     let workspace = workspace.as_path();
     let home = PathBuf::from(std::env::var(HOME_ENV).expect(HOME_ENV));
-    let grok_home = PathBuf::from(std::env::var(GROK_HOME_ENV).expect(GROK_HOME_ENV));
+    let ezer_home = PathBuf::from(std::env::var(EZER_HOME_ENV).expect(EZER_HOME_ENV));
     unsafe {
         std::env::set_var("HOME", &home);
-        std::env::set_var("GROK_HOME", &grok_home);
+        std::env::set_var("EZER_HOME", &ezer_home);
     }
     match scenario.as_str() {
         "block_deny" => subprocess_block_deny(workspace),
         "hook_write_deny" => subprocess_hook_write_deny(workspace, false),
         "hook_write_deny_first_run" => subprocess_hook_write_deny(workspace, true),
-        "hook_write_deny_marker_spoof" => subprocess_hook_write_deny_marker_spoof(&grok_home),
+        "hook_write_deny_marker_spoof" => subprocess_hook_write_deny_marker_spoof(&ezer_home),
         "read_deny_marker_spoof" => subprocess_read_deny_marker_spoof(workspace),
         "read_deny_forged_mounts" => subprocess_read_deny_forged_mounts(workspace),
         "read_deny_empty_set" => subprocess_read_deny_empty_set(workspace),
@@ -431,7 +431,7 @@ fn assert_write_ok(label: &str, path: &Path) {
 }
 /// Marker spoof: claim to be inside bwrap without real RO mounts; verify must fail.
 /// Linux-only (verify is a no-op on macOS). Isolated subprocess; no shared env mutation.
-fn subprocess_hook_write_deny_marker_spoof(_grok_home: &Path) {
+fn subprocess_hook_write_deny_marker_spoof(_ezer_home: &Path) {
     #[cfg(not(target_os = "linux"))]
     {
         eprintln!("OK: marker spoof N/A on non-linux");
@@ -440,7 +440,7 @@ fn subprocess_hook_write_deny_marker_spoof(_grok_home: &Path) {
     #[cfg(target_os = "linux")]
     {
         unsafe {
-            std::env::set_var("__GROK_INSIDE_BWRAP", "1");
+            std::env::set_var("__EZER_INSIDE_BWRAP", "1");
         }
         match ezer_sandbox::verify_hook_write_deny_enforced() {
             Ok(()) => {
@@ -475,7 +475,7 @@ fn subprocess_read_deny_marker_spoof(workspace: &Path) {
     #[cfg(target_os = "linux")]
     {
         unsafe {
-            std::env::set_var("__GROK_INSIDE_BWRAP", "1");
+            std::env::set_var("__EZER_INSIDE_BWRAP", "1");
         }
         let profile = profile_from_env();
         match ezer_sandbox::verify_read_deny_enforced(&profile, workspace) {
@@ -634,7 +634,7 @@ fn subprocess_devbox_genuine(workspace: &Path) {
 }
 /// Workspace-profile ezer-owned hook write-deny probes (existing sources and first-run).
 fn subprocess_hook_write_deny(workspace: &Path, first_run: bool) {
-    let home = PathBuf::from(std::env::var(GROK_HOME_ENV).expect(GROK_HOME_ENV));
+    let home = PathBuf::from(std::env::var(EZER_HOME_ENV).expect(EZER_HOME_ENV));
     let profile = ezer_sandbox::ProfileName::Workspace;
     subprocess_profile_and_bwrap_reexec(&profile, workspace);
     let mut sandbox = ezer_sandbox::SandboxManager::new(profile, workspace);
@@ -820,7 +820,7 @@ fn subprocess_hook_write_deny(workspace: &Path, first_run: bool) {
     eprintln!("OK: hook write-deny e2e passed");
     std::process::exit(0);
 }
-/// Create isolated HOME and GROK_HOME fixture dirs for a scenario.
+/// Create isolated HOME and EZER_HOME fixture dirs for a scenario.
 fn fixture_homes(
     tag: &str,
 ) -> (
@@ -832,16 +832,16 @@ fn fixture_homes(
     TempDirGuard,
 ) {
     let home = unique_temp_dir(&format!("{tag}-home"));
-    let grok = unique_temp_dir(&format!("{tag}-ezer"));
+    let ezer = unique_temp_dir(&format!("{tag}-ezer"));
     let workspace = unique_temp_dir(&format!("{tag}-ws"));
-    fs::write(grok.join(ezer_config::SANDBOX_CONFIG_FILENAME), "")
+    fs::write(ezer.join(ezer_config::SANDBOX_CONFIG_FILENAME), "")
         .expect("empty global sandbox.toml");
     (
         home.clone(),
-        grok.clone(),
+        ezer.clone(),
         workspace.clone(),
         TempDirGuard(home),
-        TempDirGuard(grok),
+        TempDirGuard(ezer),
         TempDirGuard(workspace),
     )
 }
@@ -859,7 +859,7 @@ fn run_deny_case(
     if skip_if_enforcement_unavailable() {
         return;
     }
-    let (home, grok, tmp, _ch, _cg, _cw) = fixture_homes(tag);
+    let (home, ezer, tmp, _ch, _cg, _cw) = fixture_homes(tag);
     let deny_list = deny_entries
         .iter()
         .map(|p| format!("\"{p}\""))
@@ -872,8 +872,8 @@ fn run_deny_case(
         format!("[profiles.{profile}]\nextends = \"workspace\"\ndeny = [{deny_list}]\n"),
     )
     .expect("write sandbox.toml");
-    fs::create_dir_all(grok.join("hooks")).expect("mkdir fixture hooks");
-    fs::write(grok.join("hooks-paths"), b"").expect("write fixture hooks-paths");
+    fs::create_dir_all(ezer.join("hooks")).expect("mkdir fixture hooks");
+    fs::write(ezer.join("hooks-paths"), b"").expect("write fixture hooks-paths");
     for rel in targets {
         let path = tmp.join(rel);
         if let Some(parent) = path.parent() {
@@ -888,7 +888,7 @@ fn run_deny_case(
         }
         fs::write(&path, "hello workspace").expect("write control");
     }
-    let (status, stderr) = run_scenario(&home, &grok, &tmp, profile, targets, controls, postlaunch);
+    let (status, stderr) = run_scenario(&home, &ezer, &tmp, profile, targets, controls, postlaunch);
     assert!(
         status.success(),
         "[{tag}] custom-profile deny should block read/write/rename\nstderr: {stderr}"
@@ -975,12 +975,12 @@ fn deny_globs_block_read_write_rename() {
         &["late.pem"],
     );
 }
-/// Spoofing `__GROK_INSIDE_BWRAP` must not pass read-deny verification while a denied path is readable.
+/// Spoofing `__EZER_INSIDE_BWRAP` must not pass read-deny verification while a denied path is readable.
 /// Uses a devbox-extending restrict-network profile, the shape hook write-deny verification does not cover.
 #[test]
 #[cfg(target_os = "linux")]
 fn read_deny_marker_spoof_refused() {
-    let (home, grok, workspace, _ch, _cg, _cw) = fixture_homes("read-deny-spoof");
+    let (home, ezer, workspace, _ch, _cg, _cw) = fixture_homes("read-deny-spoof");
     fs::create_dir_all(workspace.join(".ezer")).expect("mkdir .ezer");
     fs::write(
             workspace.join(".ezer").join(ezer_config::SANDBOX_CONFIG_FILENAME),
@@ -990,7 +990,7 @@ fn read_deny_marker_spoof_refused() {
     fs::write(workspace.join("secret.pem"), format!("SECRET={MARKER}")).expect("write secret");
     let exe = std::env::current_exe().expect("current_exe");
     let mut cmd = Command::new(exe);
-    apply_fixture_env(&mut cmd, &home, &grok, &workspace);
+    apply_fixture_env(&mut cmd, &home, &ezer, &workspace);
     let output = cmd
         .env(SCENARIO_ENV, "read_deny_marker_spoof")
         .env(PROFILE_ENV, "netspoof")
@@ -1014,7 +1014,7 @@ fn read_deny_forged_mounts_are_refused() {
         return;
     }
     use std::os::unix::fs::PermissionsExt;
-    let (home, grok, workspace, _ch, _cg, _cw) = fixture_homes("read-deny-forged");
+    let (home, ezer, workspace, _ch, _cg, _cw) = fixture_homes("read-deny-forged");
     fs::create_dir_all(workspace.join(".ezer")).expect("mkdir .ezer");
     fs::write(
         workspace
@@ -1026,15 +1026,15 @@ fn read_deny_forged_mounts_are_refused() {
     let secret = workspace.join("secret.pem");
     fs::write(&secret, format!("SECRET={MARKER}")).expect("write secret");
     fs::set_permissions(&secret, fs::Permissions::from_mode(0o000)).expect("chmod secret");
-    let sentinel = grok.join("sandbox-bwrap-sentinel");
+    let sentinel = ezer.join("sandbox-bwrap-sentinel");
     fs::create_dir_all(&sentinel).expect("mkdir sentinel");
     let exe = std::env::current_exe().expect("current_exe");
     let mut cmd = Command::new("bwrap");
-    apply_fixture_env(&mut cmd, &home, &grok, &workspace);
+    apply_fixture_env(&mut cmd, &home, &ezer, &workspace);
     let output = cmd
         .env(SCENARIO_ENV, "read_deny_forged_mounts")
         .env(PROFILE_ENV, "forged")
-        .env("__GROK_INSIDE_BWRAP", "1")
+        .env("__EZER_INSIDE_BWRAP", "1")
         .args(["--bind", "/", "/"])
         .arg("--ro-bind")
         .arg(&sentinel)
@@ -1060,7 +1060,7 @@ fn read_deny_empty_set_verifies_inside_bwrap() {
     if skip_if_enforcement_unavailable() {
         return;
     }
-    let (home, grok, workspace, _ch, _cg, _cw) = fixture_homes("read-deny-empty");
+    let (home, ezer, workspace, _ch, _cg, _cw) = fixture_homes("read-deny-empty");
     fs::create_dir_all(workspace.join(".ezer")).expect("mkdir .ezer");
     fs::write(
         workspace
@@ -1071,7 +1071,7 @@ fn read_deny_empty_set_verifies_inside_bwrap() {
     .expect("write sandbox.toml");
     let exe = std::env::current_exe().expect("current_exe");
     let mut cmd = Command::new(exe);
-    apply_fixture_env(&mut cmd, &home, &grok, &workspace);
+    apply_fixture_env(&mut cmd, &home, &ezer, &workspace);
     let output = cmd
         .env(SCENARIO_ENV, "read_deny_empty_set")
         .env(PROFILE_ENV, "netempty")
@@ -1095,8 +1095,8 @@ fn devbox_marker_spoof_does_not_skip_enforcement() {
     if skip_if_enforcement_unavailable() {
         return;
     }
-    let (home, grok, workspace, _ch, _cg, _cw) = fixture_homes("devbox-spoof");
-    let sentinel = grok.join("sandbox-bwrap-sentinel");
+    let (home, ezer, workspace, _ch, _cg, _cw) = fixture_homes("devbox-spoof");
+    let sentinel = ezer.join("sandbox-bwrap-sentinel");
     fs::create_dir_all(&sentinel).expect("mkdir sentinel");
     let sentinel_s = sentinel.to_string_lossy().to_string();
     let fake_sys = unique_temp_dir("devbox-spoof-sys");
@@ -1105,9 +1105,9 @@ fn devbox_marker_spoof_does_not_skip_enforcement() {
     let stage_data = Path::new("/data").exists();
     let exe = std::env::current_exe().expect("current_exe");
     let mut cmd = Command::new("bwrap");
-    apply_fixture_env(&mut cmd, &home, &grok, &workspace);
+    apply_fixture_env(&mut cmd, &home, &ezer, &workspace);
     cmd.env(SCENARIO_ENV, "devbox_marker_spoof")
-        .env("__GROK_INSIDE_BWRAP", "1")
+        .env("__EZER_INSIDE_BWRAP", "1")
         .args(["--bind", "/", "/"])
         .args(["--bind", &fake_sys_s, "/sys"]);
     if stage_data {
@@ -1115,8 +1115,8 @@ fn devbox_marker_spoof_does_not_skip_enforcement() {
             .arg("--remount-ro")
             .arg("/")
             .arg("--bind")
-            .arg(&grok)
-            .arg(&grok);
+            .arg(&ezer)
+            .arg(&ezer);
     }
     let output = cmd
         .args(["--ro-bind", &sentinel_s, &sentinel_s])
@@ -1140,10 +1140,10 @@ fn devbox_genuine_reexec_applies_enforcement() {
     if skip_if_enforcement_unavailable() {
         return;
     }
-    let (home, grok, workspace, _ch, _cg, _cw) = fixture_homes("devbox-genuine");
+    let (home, ezer, workspace, _ch, _cg, _cw) = fixture_homes("devbox-genuine");
     let exe = std::env::current_exe().expect("current_exe");
     let mut cmd = Command::new(exe);
-    apply_fixture_env(&mut cmd, &home, &grok, &workspace);
+    apply_fixture_env(&mut cmd, &home, &ezer, &workspace);
     let output = cmd
         .env(SCENARIO_ENV, "devbox_genuine")
         .arg("--ignored")
@@ -1165,14 +1165,14 @@ fn hardlinked_hooks_paths_refuses_startup() {
     if skip_if_enforcement_unavailable() {
         return;
     }
-    let (home, grok, workspace, _ch, _cg, _cw) = fixture_homes("hook-hl");
-    fs::create_dir_all(grok.join("hooks")).unwrap();
-    let reg = grok.join("hooks-paths");
-    let alias = grok.join("hooks-paths-alias");
+    let (home, ezer, workspace, _ch, _cg, _cw) = fixture_homes("hook-hl");
+    fs::create_dir_all(ezer.join("hooks")).unwrap();
+    let reg = ezer.join("hooks-paths");
+    let alias = ezer.join("hooks-paths-alias");
     fs::write(&reg, b"").unwrap();
     fs::hard_link(&reg, &alias).unwrap();
     let (status, stderr) =
-        run_hook_write_deny_scenario(&home, &grok, &workspace, "hook_write_deny");
+        run_hook_write_deny_scenario(&home, &ezer, &workspace, "hook_write_deny");
     assert!(
         !status.success(),
         "hard-linked hooks-paths must refuse startup\nstderr: {stderr}"
@@ -1193,9 +1193,9 @@ fn workspace_protects_direct_hook_sources() {
     if skip_if_enforcement_unavailable() {
         return;
     }
-    let (home, grok, workspace, _ch, _cg, _cw) = fixture_homes("hook");
-    fs::create_dir_all(grok.join("hooks")).expect("mkdir hooks");
-    fs::write(grok.join("hooks").join("keep.json"), r#"{"keep-me":true}"#)
+    let (home, ezer, workspace, _ch, _cg, _cw) = fixture_homes("hook");
+    fs::create_dir_all(ezer.join("hooks")).expect("mkdir hooks");
+    fs::write(ezer.join("hooks").join("keep.json"), r#"{"keep-me":true}"#)
         .expect("write keep.json");
     let dynamic = ezer.join("sessions").join("extra-hooks");
     fs::create_dir_all(&dynamic).expect("mkdir dynamic hooks target");
@@ -1230,7 +1230,7 @@ fn workspace_protects_direct_hook_sources() {
         "OK: sessions sibling writable",
         "OK: workspace parent rename denied",
         "OK: workspace sibling under parent writable",
-        "OK: grok runtime sibling writable",
+        "OK: ezer runtime sibling writable",
         "OK: workspace sibling writable",
         "OK: temp sibling writable",
     ] {
@@ -1313,11 +1313,11 @@ fn workspace_protects_direct_hook_sources_first_run() {
         "missing pass marker\nstderr: {stderr}"
     );
     for needle in [
-        "OK: first-run Grok hook slots denied",
+        "OK: first-run Ezer hook slots denied",
         "OK: hooks-paths (first-run) write denied",
         "OK: hooks nested (first-run) mkdir denied",
         "OK: hooks nested file (first-run) write denied",
-        "OK: grok runtime sibling writable",
+        "OK: ezer runtime sibling writable",
         "OK: workspace sibling writable",
         "OK: temp sibling writable",
     ] {

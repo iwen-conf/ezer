@@ -66,7 +66,7 @@ pub(crate) fn build_instruction_items(
     items
 }
 
-/// This is the verified `max_prompt_length` for current `ezer-build` / `grok-4.5` product backends (`500000`).
+/// This is the verified `max_prompt_length` for current `ezer-build` / `test-model-4.5` product backends (`500000`).
 /// Applied via `min(window, CAP)`, so a smaller real window still wins (e.g. a 256k legacy model or a debug override).
 const RECAP_CONTEXT_WINDOW_CAP: u64 = 500_000;
 
@@ -110,7 +110,7 @@ pub(crate) fn budget_instruction_items(
     let instruction_item = ConversationItem::user(instruction.clone());
     let snapshot_budget = prompt_budget.saturating_sub(estimate_item_tokens(&instruction_item));
 
-    // Un-stripped estimate is a safe upper bound (stripping only shrinks); the verbatim path keeps the grok prefix cache warm
+    // Un-stripped estimate is a safe upper bound (stripping only shrinks); the verbatim path keeps the ezer prefix cache warm
     let pre_tokens = estimate_conversation_tokens(&conversation);
     if pre_tokens <= snapshot_budget {
         return build_instruction_items(conversation, instruction, strip_reasoning);
@@ -704,13 +704,13 @@ mod tests {
     }
 
     #[test]
-    fn budget_over_budget_strips_reasoning_even_on_grok() {
+    fn budget_over_budget_strips_reasoning_even_on_ezer() {
         let conv = vec![
             mk_reasoning("r1"),
             ConversationItem::assistant("did stuff"),
             ConversationItem::user("z".repeat(40_000)),
         ];
-        // The grok backend passes strip_reasoning=false, but the over-budget branch must strip reasoning anyway
+        // The ezer backend passes strip_reasoning=false, but the over-budget branch must strip reasoning anyway
         // The prefix cache is already lost once trimmed
         let out = budget_recap_items(conv, "system-reminder", false, 8_000);
         assert!(
@@ -721,13 +721,13 @@ mod tests {
     }
 
     #[test]
-    fn budget_fast_path_keeps_reasoning_on_grok() {
+    fn budget_fast_path_keeps_reasoning_on_ezer() {
         let conv = vec![
             mk_reasoning("r1"),
             ConversationItem::assistant("did stuff"),
             ConversationItem::user("small"),
         ];
-        // The snapshot fits under a large window on grok (strip_reasoning=false), so it is returned verbatim
+        // The snapshot fits under a large window on ezer (strip_reasoning=false), so it is returned verbatim
         // Reasoning is kept so the prefix KV cache stays warm
         let out = budget_recap_items(conv, "system-reminder", false, 256_000);
         assert!(

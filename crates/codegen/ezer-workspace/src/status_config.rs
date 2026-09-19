@@ -7,7 +7,7 @@ use std::str::FromStr;
 use std::time::Duration;
 
 // ── Default timing/threshold values ──────────────────────────────────────
-// Single source of truth for the `StatusConfig::default()` values and the documented fallbacks for each `GROK_WORKSPACE_*` env var
+// Single source of truth for the `StatusConfig::default()` values and the documented fallbacks for each `EZER_WORKSPACE_*` env var
 
 /// Default interval between status/heartbeat emissions.
 const DEFAULT_HEARTBEAT_SECS: u64 = 30;

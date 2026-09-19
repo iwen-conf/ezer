@@ -33,7 +33,7 @@ impl VoiceAuthProvider for AuthManagerVoiceAuth {
 
 /// Build the voice bearer provider from the connection's `AuthManager`.
 ///
-/// Works for every auth method: OAuth / grok.com / OIDC session tokens and `XAI_API_KEY` / per-model BYOK keys.
+/// Works for every auth method: OAuth / ezer.com / OIDC session tokens and `XAI_API_KEY` / per-model BYOK keys.
 pub fn build_voice_auth(auth_manager: Arc<ezer_login::AuthManager>) -> SharedVoiceAuth {
     Arc::new(AuthManagerVoiceAuth(
         ezer_login::shared_api_key_provider(auth_manager),

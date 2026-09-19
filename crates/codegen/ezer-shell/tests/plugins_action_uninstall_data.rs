@@ -1,4 +1,4 @@
-//! E2E: the pager modal Uninstall (`x.ai/plugins/action`) must clean up
+//! E2E: the pager modal Uninstall (`ezer/plugins/action`) must clean up
 //! `~/.ezer/plugin-data/<id>/` like the CLI uninstall path, not orphan it.
 
 mod acp_harness;
@@ -15,8 +15,8 @@ fn action_outcome(response: &serde_json::Value) -> xai_hooks_plugins_types::Acti
 #[test]
 fn plugins_action_uninstall_removes_plugin_data_dir() {
     acp_harness::run_agent_test(|cwd, _server| async move {
-        let grok_home =
-            std::path::PathBuf::from(std::env::var("GROK_HOME").expect("harness sets GROK_HOME"));
+        let ezer_home =
+            std::path::PathBuf::from(std::env::var("EZER_HOME").expect("harness sets EZER_HOME"));
 
         let plugin_dir = cwd.join("data-demo");
         std::fs::create_dir_all(&plugin_dir).unwrap();
@@ -27,7 +27,7 @@ fn plugins_action_uninstall_removes_plugin_data_dir() {
 
         let response = ext_method(
             &conn,
-            "x.ai/plugins/action",
+            "ezer/plugins/action",
             json!({
                 "sessionId": session_id.0.to_string(),
                 "action": {"type": "install", "source": plugin_dir.display().to_string()},
@@ -53,7 +53,7 @@ fn plugins_action_uninstall_removes_plugin_data_dir() {
             _ => PluginScope::ConfigPath,
         };
         let id = PluginId::new(scope, &repo.path, "data-demo");
-        let data_dir = grok_home.join("plugin-data").join(&id.0);
+        let data_dir = ezer_home.join("plugin-data").join(&id.0);
         std::fs::create_dir_all(&data_dir).unwrap();
         std::fs::write(data_dir.join("state.json"), "{}").unwrap();
         let repo_path = repo.path.clone();
@@ -61,7 +61,7 @@ fn plugins_action_uninstall_removes_plugin_data_dir() {
 
         let response = ext_method(
             &conn,
-            "x.ai/plugins/action",
+            "ezer/plugins/action",
             json!({
                 "sessionId": session_id.0.to_string(),
                 "action": {"type": "uninstall", "plugin_id": "data-demo", "confirmed": false},

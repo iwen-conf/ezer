@@ -234,7 +234,7 @@ mod tests {
     fn explicit_model_overrides_role() {
         let overrides = make_overrides(Some("ezer-light"), None, None, None, None);
         let role = SubagentRole {
-            model: Some("grok-3".into()),
+            model: Some("test-model-3".into()),
             ..Default::default()
         };
         let result =
@@ -246,12 +246,12 @@ mod tests {
     fn role_model_used_when_no_explicit() {
         let overrides = make_overrides(None, None, None, None, None);
         let role = SubagentRole {
-            model: Some("grok-3".into()),
+            model: Some("test-model-3".into()),
             ..Default::default()
         };
         let result =
             resolve_effective_overrides(&overrides, Some(&role), &empty_personas(), None, None);
-        assert_eq!(result.model.as_deref(), Some("grok-3"));
+        assert_eq!(result.model.as_deref(), Some("test-model-3"));
     }
 
     #[test]
@@ -261,13 +261,13 @@ mod tests {
         personas.insert(
             "researcher".to_string(),
             SubagentPersona {
-                model: Some("grok-3-fast".into()),
+                model: Some("test-model-3-fast".into()),
                 instructions: Some("Research things.".into()),
                 ..Default::default()
             },
         );
         let result = resolve_effective_overrides(&overrides, None, &personas, None, None);
-        assert_eq!(result.model.as_deref(), Some("grok-3-fast"));
+        assert_eq!(result.model.as_deref(), Some("test-model-3-fast"));
     }
 
     #[test]
@@ -625,7 +625,7 @@ mod tests {
     #[test]
     fn persona_not_found_error_is_non_fatal() {
         // "not found" is a config-level error: persona_error is set but other fields still resolve from role/overrides
-        let overrides = make_overrides(Some("grok-3"), Some("missing"), None, None, None);
+        let overrides = make_overrides(Some("test-model-3"), Some("missing"), None, None, None);
         let role = SubagentRole {
             model: Some("ezer-light".into()),
             default_isolation: Some("worktree".into()),
@@ -640,7 +640,7 @@ mod tests {
         // Non-fatal: other fields ARE resolved (explicit model takes precedence)
         assert_eq!(
             result.model.as_deref(),
-            Some("grok-3"),
+            Some("test-model-3"),
             "explicit model should resolve despite persona error"
         );
     }
@@ -648,7 +648,7 @@ mod tests {
     #[test]
     fn persona_file_error_returns_early_with_defaults() {
         // File I/O errors ARE fatal: early return with defaults.
-        let overrides = make_overrides(Some("grok-3"), Some("broken"), None, None, None);
+        let overrides = make_overrides(Some("test-model-3"), Some("broken"), None, None, None);
         let dir = tempfile::tempdir().unwrap();
         let mut personas = HashMap::new();
         personas.insert(

@@ -160,8 +160,8 @@ pub fn hyperlink_capabilities(brand: TerminalName) -> HyperlinkCapabilities {
             native_link_hover: false,
             native_plain_url_open: false,
         },
-        // GrokDesktop is an Electron app; its terminal behavior is undocumented
-        TerminalName::GrokDesktop => HyperlinkCapabilities {
+        // EzerDesktop is an Electron app; its terminal behavior is undocumented
+        TerminalName::EzerDesktop => HyperlinkCapabilities {
             osc8: Unknown,
             id_param: false,
             scheme_filter: SchemeFilter::Standard,

@@ -362,11 +362,11 @@ pub fn plugin_group(plugin: &xai_hooks_plugins_types::PluginInfo) -> PluginGroup
     use xai_hooks_plugins_types::{PluginOrigin, PluginScope};
 
     match &plugin.origin {
-        Some(PluginOrigin::ProjectGrok) => PluginGroup::new(0, "origin:project", "Project"),
+        Some(PluginOrigin::ProjectEzer) => PluginGroup::new(0, "origin:project", "Project"),
         Some(PluginOrigin::ProjectClaude) => {
             PluginGroup::new(1, "origin:project-claude", "Project (Claude)")
         }
-        Some(PluginOrigin::UserGrok) => PluginGroup::new(2, "origin:user", "User"),
+        Some(PluginOrigin::UserEzer) => PluginGroup::new(2, "origin:user", "User"),
         Some(PluginOrigin::UserClaude)
         | Some(PluginOrigin::ClaudeInstalled { marketplace: None }) => {
             PluginGroup::new(3, "origin:user-claude", "User (Claude)")
@@ -627,7 +627,7 @@ pub enum ButtonAction {
     ReloadSkills,
     /// Refresh MCP server list (re-fetch from shell).
     RefreshMcpList,
-    /// Open grok.com connectors page (MCP tab: press `o`).
+    /// Open ezer.com connectors page (MCP tab: press `o`).
     OpenManagedConnectors,
     /// Update (fetch latest from source) the selected plugin.
     UpdateSelectedPlugin,
@@ -1831,7 +1831,7 @@ pub struct ExtensionsModalState {
     pub active_tab: ExtensionsTab,
     /// Session team principal for managed-connectors deep links in section copy.
     pub session_team_id: Option<String>,
-    /// Wait overlay after opening grok.com/connectors. Cleared on MCP list refresh.
+    /// Wait overlay after opening ezer.com/connectors. Cleared on MCP list refresh.
     pub managed_connectors_wait:
         Option<crate::views::managed_connectors_wait::ManagedConnectorsWaitState>,
     /// Hooks list data (fetched from shell).
@@ -2469,9 +2469,9 @@ pub fn derive_source_label(source_dir: &str) -> (String, bool) {
 
 /// Classify a hooks `source_dir` into a display label and stable kind rank.
 fn classify_hook_source(source_dir: &str) -> HookSourceMeta {
-    let grok = ezer_config::grok_home();
+    let ezer = ezer_config::ezer_home();
     let source_path = std::path::Path::new(source_dir);
-    // Plugin / installed-plugin dirs, under the user grok home (GROK_HOME-aware) or a project-scoped `{cwd}/.grok/<subdir>/`
+    // Plugin / installed-plugin dirs, under the user ezer home (EZER_HOME-aware) or a project-scoped `{cwd}/.ezer/<subdir>/`
     // Returns the first path component after the subdir (the plugin's install directory name)
     let plugin_name = |subdir: &str| -> Option<String> {
         let first_comp = |p: &std::path::Path| {
@@ -2480,13 +2480,13 @@ fn classify_hook_source(source_dir: &str) -> HookSourceMeta {
                 .map(|c| c.as_os_str().to_string_lossy().into_owned())
                 .filter(|s| !s.is_empty())
         };
-        // User grok home (GROK_HOME-aware).
-        if let Ok(rest) = source_path.strip_prefix(grok.join(subdir))
+        // User ezer home (EZER_HOME-aware).
+        if let Ok(rest) = source_path.strip_prefix(ezer.join(subdir))
             && let Some(name) = first_comp(rest)
         {
             return Some(name);
         }
-        // Project-scoped `.grok/<subdir>/<name>` anywhere in the path.
+        // Project-scoped `.ezer/<subdir>/<name>` anywhere in the path.
         // Component-based so it works regardless of path separator.
         let comps: Vec<_> = source_path
             .components()
@@ -2506,7 +2506,7 @@ fn classify_hook_source(source_dir: &str) -> HookSourceMeta {
         };
     }
     // Global hooks under $EZER_HOME/hooks
-    let global_hooks = grok.join("hooks");
+    let global_hooks = ezer.join("hooks");
     let global_str = global_hooks.display().to_string();
     if source_dir == global_str || source_dir.starts_with(&format!("{global_str}/")) {
         return HookSourceMeta {
@@ -2530,8 +2530,8 @@ fn classify_hook_source(source_dir: &str) -> HookSourceMeta {
     }
     // Custom directory (removable)
     let display = {
-        if let Ok(rest) = source_path.strip_prefix(&grok) {
-            let prefix = crate::util::display_grok_home_prefix();
+        if let Ok(rest) = source_path.strip_prefix(&ezer) {
+            let prefix = crate::util::display_ezer_home_prefix();
             let rest_str = rest.to_string_lossy();
             let rest_trimmed = rest_str.strip_prefix('/').unwrap_or(&rest_str);
             format!("Custom: {prefix}/{rest_trimmed}")
@@ -2643,8 +2643,8 @@ fn skill_source_str(skill: &SkillInfo) -> String {
     if let Some(ref cs) = skill.config_source {
         match cs {
             ezer_tools::types::config_source::ConfigSource::User { path } => {
-                if crate::util::is_under_user_grok_home(path) {
-                    crate::util::display_user_grok_path("skills")
+                if crate::util::is_under_user_ezer_home(path) {
+                    crate::util::display_user_ezer_path("skills")
                 } else if path.display().to_string().contains("/.claude/") {
                     "~/.claude/skills".into()
                 } else {
@@ -4276,8 +4276,8 @@ mod tests {
 
     #[test]
     fn derive_source_label_detects_project_scoped_plugins() {
-        // Regression: project-scoped `{cwd}/.grok/plugins/<name>/` must label as a (non-removable) plugin, not a removable "Custom" source
-        // The user grok-home branch is GROK_HOME-aware; this covers the project fallback
+        // Regression: project-scoped `{cwd}/.ezer/plugins/<name>/` must label as a (non-removable) plugin, not a removable "Custom" source
+        // The user ezer-home branch is EZER_HOME-aware; this covers the project fallback
         let (label, is_custom) = derive_source_label("/repo/work/.ezer/plugins/my-plugin/hooks");
         assert_eq!(label, "Plugin: my-plugin");
         assert!(!is_custom);
@@ -4650,7 +4650,7 @@ mod tests {
         use crate::views::mcps_modal::McpWireSource;
 
         let servers = vec![
-            make_mcp_server_for_rows("grok_com_linear", McpWireSource::Managed, vec![]),
+            make_mcp_server_for_rows("ezer_com_linear", McpWireSource::Managed, vec![]),
             make_mcp_server_for_rows("local-srv", McpWireSource::Local, vec![]),
         ];
         let mut collapsed = std::collections::HashSet::new();
@@ -4665,11 +4665,11 @@ mod tests {
         assert!(
             rows.labels
                 .iter()
-                .any(|l| l.starts_with("Managed by grok.com")),
+                .any(|l| l.starts_with("Managed remotely")),
             "managed section header must appear"
         );
         assert!(
-            !rows.labels.iter().any(|l| l == "grok_com_linear"),
+            !rows.labels.iter().any(|l| l == "ezer_com_linear"),
             "servers in collapsed managed section must be omitted"
         );
         assert!(
@@ -4874,7 +4874,7 @@ mod tests {
             is_managed_gateway: false,
         };
         let servers = vec![
-            server("grok_com_x", None),
+            server("ezer_com_x", None),
             server("local-srv", None),
             server("alpha-srv", Some("alpha")),
             server("beta-srv", Some("beta")),
@@ -5446,7 +5446,7 @@ mod tests {
         user.removable = true;
 
         // Entry maps as the picker builds them (headers carry a group key, no data index):
-        //   0: header /etc/grok, 1: pinned row, 2: header user, 3: user row
+        //   0: header /etc/ezer, 1: pinned row, 2: header user, 3: user row
         let mut state = ExtensionsModalState::new(ExtensionsTab::Hooks);
         state.hooks_data = TabDataState::Loaded(xai_hooks_plugins_types::HooksListResponse {
             hooks: vec![pinned, user],
@@ -7046,14 +7046,14 @@ mod tests {
     fn plugin_group_maps_each_origin_variant() {
         use xai_hooks_plugins_types::PluginOrigin;
         for (origin, rank, key, label) in [
-            (PluginOrigin::ProjectGrok, 0, "origin:project", "Project"),
+            (PluginOrigin::ProjectEzer, 0, "origin:project", "Project"),
             (
                 PluginOrigin::ProjectClaude,
                 1,
                 "origin:project-claude",
                 "Project (Claude)",
             ),
-            (PluginOrigin::UserGrok, 2, "origin:user", "User"),
+            (PluginOrigin::UserEzer, 2, "origin:user", "User"),
             (
                 PluginOrigin::UserClaude,
                 3,
@@ -7170,7 +7170,7 @@ mod tests {
                     marketplace: "claude-market".into(),
                 },
             ),
-            make_plugin_with_origin("user-tool", PluginOrigin::UserGrok),
+            make_plugin_with_origin("user-tool", PluginOrigin::UserEzer),
             make_plugin_with_origin("claude-tool", PluginOrigin::UserClaude),
         ]);
         let buf = render_plugins_into_buffer(&mut state, 100, 40);
@@ -7242,7 +7242,7 @@ mod tests {
     fn plugins_render_multiple_plugins_under_one_group() {
         use xai_hooks_plugins_types::PluginOrigin;
         let mut state = plugins_modal_state(vec![
-            make_plugin_with_origin("solo-tool", PluginOrigin::UserGrok),
+            make_plugin_with_origin("solo-tool", PluginOrigin::UserEzer),
             make_plugin_with_origin(
                 "catalog-tool",
                 PluginOrigin::ClaudeMarketplace {
@@ -7299,7 +7299,7 @@ mod tests {
     #[test]
     fn plugins_collapsed_group_hides_rows_and_search_forces_open() {
         use xai_hooks_plugins_types::PluginOrigin;
-        let mut plugin = make_plugin_with_origin("user-tool", PluginOrigin::UserGrok);
+        let mut plugin = make_plugin_with_origin("user-tool", PluginOrigin::UserEzer);
         plugin.root = "/opt/p1".into();
         let mut state = plugins_modal_state(vec![plugin]);
         state.plugins_collapsed_groups.insert("origin:user".into());
@@ -7339,7 +7339,7 @@ mod tests {
         let mut disabled = make_plugin_with_origin("off-tool", PluginOrigin::UserClaude);
         disabled.enabled = false;
         let mut state = plugins_modal_state(vec![
-            make_plugin_with_origin("user-tool", PluginOrigin::UserGrok),
+            make_plugin_with_origin("user-tool", PluginOrigin::UserEzer),
             disabled,
         ]);
         state.plugins_filter = StatusFilter::Disabled;
@@ -7412,7 +7412,7 @@ mod tests {
         let mut managed = Vec::new();
         for i in 0..20 {
             managed.push(make_mcp_server_for_rows(
-                &format!("grok_com_srv_{i}"),
+                &format!("ezer_com_srv_{i}"),
                 McpWireSource::Managed,
                 vec![],
             ));
@@ -7490,7 +7490,7 @@ mod tests {
         let mut managed = Vec::new();
         for i in 0..20 {
             managed.push(make_mcp_server_for_rows(
-                &format!("grok_com_srv_{i}"),
+                &format!("ezer_com_srv_{i}"),
                 McpWireSource::Managed,
                 vec![],
             ));
@@ -7520,7 +7520,7 @@ mod tests {
             "wait must show a copy button"
         );
         assert_eq!(
-            buffer_count(&buf, "https://grok.com/connectors"),
+            buffer_count(&buf, "https://example.test/connectors"),
             1,
             "wait must show a copyable connectors URL"
         );
@@ -7789,9 +7789,9 @@ mod tests {
     fn plugins_sort_az_by_name_within_group() {
         use xai_hooks_plugins_types::PluginOrigin;
         let mut state = plugins_modal_state(vec![
-            make_plugin_with_origin("Zebra", PluginOrigin::UserGrok),
-            make_plugin_with_origin("alpha", PluginOrigin::UserGrok),
-            make_plugin_with_origin("MID", PluginOrigin::UserGrok),
+            make_plugin_with_origin("Zebra", PluginOrigin::UserEzer),
+            make_plugin_with_origin("alpha", PluginOrigin::UserEzer),
+            make_plugin_with_origin("MID", PluginOrigin::UserEzer),
         ]);
         let _buf = render_plugins_into_buffer(&mut state, 100, 40);
         assert_eq!(

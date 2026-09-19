@@ -29,7 +29,7 @@ use crate::types::tool::{ToolKind, ToolNamespace};
 /// Default Imagine model for `image_gen`. Used unless an explicit
 /// `model_override` is supplied via `ImageGenConfig::Enabled`.
 const XAI_IMAGINE_MODEL: &str = "ezer-imagine-image-quality";
-// Some Imagine models (e.g. `grok-imagine-image`, selectable via `model_override`) expand the prompt then generate,
+// Some Imagine models (e.g. `ezer-imagine-image`, selectable via `model_override`) expand the prompt then generate,
 // and the proxy buffers the whole image before sending any bytes — so the client may receive nothing for well over a
 // minute. Keep these generous so a slow-but-progressing generation isn't cut off.
 const IMAGE_GEN_TIMEOUT_SECS: u64 = 300;
@@ -41,7 +41,7 @@ pub use ezer_tools_api::slash_commands::{
 };
 
 /// Prose returned to the model (as a normal, successful tool result) when a free / X Basic user calls `image_gen` or
-/// `image_edit`. The model relays it to the user. The deliberate `/imagine` slash command shows the richer SuperGrok
+/// `image_edit`. The model relays it to the user. The deliberate `/imagine` slash command shows the richer MaxTier
 /// upsell modal instead; this covers the natural-language path.
 pub(crate) const TIER_RESTRICTED_UPSELL: &str = "Image generation is not available on this plan. Do not retry this tool.";
 
@@ -62,7 +62,7 @@ pub struct ImageGenClient {
     /// `consumer == "ImageGen"` for unified auth-failure telemetry.
     attribution_callback: Option<SharedAttributionCallback>,
     /// When `true`, the user is on a tier the Imagine server zero-limits (free / X Basic).
-    /// `image_gen` / `image_edit` short-circuit before any HTTP call and return the SuperGrok
+    /// `image_gen` / `image_edit` short-circuit before any HTTP call and return the MaxTier
     /// upsell prose instead. See [`ImageGenClient::is_tier_restricted`].
     tier_restricted: bool,
     /// Per-request [`SESSION_ID_HEADER`]; kept off `default_headers` so the
@@ -173,7 +173,7 @@ impl ImageGenClient {
 
     /// Whether the current user's tier (free / X Basic) is zero-limited on
     /// Imagine server-side. `image_gen` / `image_edit` use this to short-circuit
-    /// with the SuperGrok upsell instead of issuing a doomed request.
+    /// with the MaxTier upsell instead of issuing a doomed request.
     pub(crate) fn is_tier_restricted(&self) -> bool {
         self.tier_restricted
     }
@@ -319,7 +319,7 @@ pub enum ImageGenConfig {
         model_override: Option<String>,
         edit_model_override: Option<String>,
         /// `true` when the user is on a tier the Imagine server zero-limits (free / X Basic). The tools stay advertised to the
-        /// model, but `image_gen` / `image_edit` short-circuit at call time with the SuperGrok upsell prose instead of a doomed
+        /// model, but `image_gen` / `image_edit` short-circuit at call time with the MaxTier upsell prose instead of a doomed
         /// request. Set by the host from the subscription tier; always `false` for team / API-key / workspace callers.
         tier_restricted: bool,
     },
@@ -409,7 +409,7 @@ impl crate::types::tool_metadata::ToolMetadata for ImageGenTool {
     }
 
     fn tool_namespace(&self) -> ToolNamespace {
-        ToolNamespace::GrokBuild
+        ToolNamespace::EzerBuild
     }
 
     fn description_template(&self) -> &str {
@@ -698,7 +698,7 @@ mod tests {
 
     #[tokio::test]
     async fn tier_restricted_short_circuits_with_upsell() {
-        // A free / X Basic user's image_gen call returns the SuperGrok upsell prose as a normal
+        // A free / X Basic user's image_gen call returns the MaxTier upsell prose as a normal
         // result (no HTTP, no error card) so the model can relay it. Only the client is inserted —
         // the short-circuit returns before any other resource (e.g. SessionFolder) is required.
         let cfg = ImageGenConfig::Enabled {
@@ -728,7 +728,7 @@ mod tests {
         match result {
             ToolOutput::Text(t) => {
                 assert!(t.text.contains("not available on this plan"), "got: {}", t.text);
-                assert!(t.text.contains("supergrok?referrer=ezer-build"));
+                assert!(t.text.contains("upgrade?referrer=ezer-build"));
             }
             other => panic!("expected Text upsell, got {other:?}"),
         }

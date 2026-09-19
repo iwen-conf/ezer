@@ -13,7 +13,7 @@ use ezer_config::campaigns::{
 use ezer_config::config_override::{PatchPath, patch_touches_any};
 use ezer_config::{
     CampaignsState, ConfigLayers, campaigns_state_path, load_dismissed_ids_from_home,
-    user_grok_home,
+    user_ezer_home,
 };
 use ezer_config_types::{CampaignOverride, RemoteSettings};
 
@@ -55,7 +55,7 @@ pub(crate) fn load_dismissed_ids() -> HashSet<String> {
 }
 
 pub(crate) fn dismiss_campaign_ids(ids: impl IntoIterator<Item = String>) {
-    let Some(home) = user_grok_home() else {
+    let Some(home) = user_ezer_home() else {
         return;
     };
     if let Err(e) = dismiss_campaign_ids_at(&home, ids) {
@@ -72,7 +72,7 @@ fn dismiss_campaign_ids_at(
     use fs2::FileExt as _;
     let _guard = DISMISS_LOCK.lock().unwrap_or_else(|p| p.into_inner());
     let path = campaigns_state_path(home);
-    // Cross-process advisory lock over the read-modify-write: in leader mode several grok processes share `$EZER_HOME`
+    // Cross-process advisory lock over the read-modify-write: in leader mode several ezer processes share `$EZER_HOME`
     // The in-process mutex alone would let one process overwrite another's update
     // The lock is best-effort; a lock failure still proceeds
     let lock = std::fs::OpenOptions::new()
@@ -239,7 +239,7 @@ pub fn campaign_driven_models_default() -> Option<CampaignModelsDefault> {
     campaign_driven_models_default_from(&layers, &cached_remote_campaigns(), &load_dismissed_ids())
 }
 
-/// Env-free resolution core of [`campaign_driven_models_default`] (unit-testable without touching `GROK_HOME` or the process-global cache).
+/// Env-free resolution core of [`campaign_driven_models_default`] (unit-testable without touching `EZER_HOME` or the process-global cache).
 fn campaign_driven_models_default_from(
     layers: &ConfigLayers,
     remote: &[CampaignEntry],

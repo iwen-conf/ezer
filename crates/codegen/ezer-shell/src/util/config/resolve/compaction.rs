@@ -120,7 +120,7 @@ pub(crate) fn resolve_compaction_wall_clock_budget_secs(gb_global: Option<u64>) 
 mod compaction_wall_clock_budget_tests {
     use super::resolve_compaction_wall_clock_budget_secs as resolve;
 
-    // Assumes GROK_COMPACTION_WALL_CLOCK_SECS is unset in the test env.
+    // Assumes EZER_COMPACTION_WALL_CLOCK_SECS is unset in the test env.
     #[test]
     fn default_global_disable_and_no_clamp() {
         assert_eq!(resolve(None), 300); // client default

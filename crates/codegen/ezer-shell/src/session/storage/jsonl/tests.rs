@@ -150,7 +150,7 @@ async fn test_jsonl_round_trip() {
         .unwrap();
     let plan_state = create_test_plan_state();
     adapter.write_plan_state(&info, &plan_state).await.unwrap();
-    let new_model = acp::ModelId::new("grok-4.3");
+    let new_model = acp::ModelId::new("test-model-4.3");
     adapter.update_current_model(&info, &new_model).await.unwrap();
     let loaded = adapter.load_session(&info).await.unwrap();
     assert_eq!(loaded.summary.info.id, info.id);
@@ -705,7 +705,7 @@ async fn test_subagent_notifications_round_trip() {
         panic!("expected two JSONL lines: {lines:?}");
     };
     let spawned_json: serde_json::Value = serde_json::from_str(spawned_line).unwrap();
-    assert_eq!(spawned_json.get("method").and_then(|v| v.as_str()), Some("_x.ai/session/update"));
+    assert_eq!(spawned_json.get("method").and_then(|v| v.as_str()), Some("_ezer/session/update"));
     let spawned_update = spawned_json.get("params").and_then(|p| p.get("update"));
     assert_eq!(
             spawned_update
@@ -720,7 +720,7 @@ async fn test_subagent_notifications_round_trip() {
             Some("child-001")
         );
     let finished_json: serde_json::Value = serde_json::from_str(finished_line).unwrap();
-    assert_eq!(finished_json.get("method").and_then(|v| v.as_str()), Some("_x.ai/session/update"));
+    assert_eq!(finished_json.get("method").and_then(|v| v.as_str()), Some("_ezer/session/update"));
     let finished_update = finished_json.get("params").and_then(|p| p.get("update"));
     assert_eq!(
             finished_update
@@ -1164,8 +1164,8 @@ async fn test_append_feedback_creates_file_and_persists() {
             turn_number: Some(3),
             rating_type: Some(RatingType::Thumbs),
             rating_value: Some(1),
-            model_id: Some("grok-3-fast".into()),
-            resolved_model_id: Some("grok-4.5".into()),
+            model_id: Some("test-model-3-fast".into()),
+            resolved_model_id: Some("test-model-4.5".into()),
             ..Default::default()
         }),
     });
@@ -1296,7 +1296,7 @@ fn write_test_summary(
         head_commit: None,
         head_branch: None,
         request_id: None,
-        grok_home: None,
+        ezer_home: None,
         last_active_at,
         generated_title: None,
         title_is_manual: false,
@@ -1327,7 +1327,7 @@ fn scan_session_dirs_returns_empty_when_no_sessions_dir() {
 fn scan_session_dirs_finds_all_sessions() {
     let tmp = TempDir::new().unwrap();
     let now = chrono::Utc::now();
-    let cwd = crate::util::grok_home::encode_cwd_dirname("/home/user/project");
+    let cwd = crate::util::ezer_home::encode_cwd_dirname("/home/user/project");
     write_test_summary(tmp.path(), &cwd, "s1", now, None, None, None);
     write_test_summary(tmp.path(), &cwd, "s2", now, None, None, None);
     let adapter = JsonlStorageAdapter::with_root(tmp.path().to_path_buf());
@@ -1338,8 +1338,8 @@ fn scan_session_dirs_finds_all_sessions() {
 fn scan_session_dirs_filters_by_cwd() {
     let tmp = TempDir::new().unwrap();
     let now = chrono::Utc::now();
-    let cwd_a = crate::util::grok_home::encode_cwd_dirname("/home/user/project-a");
-    let cwd_b = crate::util::grok_home::encode_cwd_dirname("/home/user/project-b");
+    let cwd_a = crate::util::ezer_home::encode_cwd_dirname("/home/user/project-a");
+    let cwd_b = crate::util::ezer_home::encode_cwd_dirname("/home/user/project-b");
     write_test_summary(tmp.path(), &cwd_a, "s1", now, None, None, None);
     write_test_summary(tmp.path(), &cwd_b, "s2", now, None, None, None);
     let adapter = JsonlStorageAdapter::with_root(tmp.path().to_path_buf());
@@ -1352,7 +1352,7 @@ fn scan_session_dirs_filters_by_cwd() {
 #[test]
 fn scan_session_dirs_skips_non_directory_entries() {
     let tmp = TempDir::new().unwrap();
-    let cwd = crate::util::grok_home::encode_cwd_dirname("/project");
+    let cwd = crate::util::ezer_home::encode_cwd_dirname("/project");
     let cwd_dir = tmp.path().join("sessions").join(&cwd);
     std::fs::create_dir_all(&cwd_dir).unwrap();
     std::fs::write(cwd_dir.join("stray-file.txt"), b"oops").unwrap();
@@ -1367,7 +1367,7 @@ fn scan_session_dirs_skips_non_directory_entries() {
 fn scan_session_dirs_continues_when_a_cwd_bucket_is_gone() {
     let tmp = TempDir::new().unwrap();
     let now = chrono::Utc::now();
-    let keep = crate::util::grok_home::encode_cwd_dirname("/keep");
+    let keep = crate::util::ezer_home::encode_cwd_dirname("/keep");
     write_test_summary(tmp.path(), &keep, "s1", now, None, None, None);
     let gone = tmp.path().join("sessions").join("gone-bucket");
     std::fs::create_dir_all(&gone).unwrap();
@@ -1380,7 +1380,7 @@ fn scan_session_dirs_continues_when_a_cwd_bucket_is_gone() {
 #[tokio::test]
 async fn list_sessions_recent_returns_most_recent_by_mtime() {
     let tmp = TempDir::new().unwrap();
-    let cwd = crate::util::grok_home::encode_cwd_dirname("/workspace");
+    let cwd = crate::util::ezer_home::encode_cwd_dirname("/workspace");
     let t1 = chrono::Utc::now() - chrono::Duration::hours(3);
     let t2 = chrono::Utc::now() - chrono::Duration::hours(2);
     let t3 = chrono::Utc::now() - chrono::Duration::hours(1);
@@ -1399,7 +1399,7 @@ async fn list_sessions_recent_returns_most_recent_by_mtime() {
 #[tokio::test]
 async fn list_sessions_recent_excludes_hidden_sessions() {
     let tmp = TempDir::new().unwrap();
-    let cwd = crate::util::grok_home::encode_cwd_dirname("/workspace");
+    let cwd = crate::util::ezer_home::encode_cwd_dirname("/workspace");
     let now = chrono::Utc::now();
     write_test_summary(tmp.path(), &cwd, "visible", now, None, None, None);
     write_test_summary(tmp.path(), &cwd, "hidden-explicit", now, None, Some(true), None);
@@ -1420,7 +1420,7 @@ async fn list_sessions_recent_excludes_hidden_sessions() {
 #[tokio::test]
 async fn list_sessions_recent_excludes_unused_optimistic_husks() {
     let tmp = TempDir::new().unwrap();
-    let cwd = crate::util::grok_home::encode_cwd_dirname("/workspace");
+    let cwd = crate::util::ezer_home::encode_cwd_dirname("/workspace");
     let now = chrono::Utc::now();
     write_test_summary(tmp.path(), &cwd, "real", now, None, None, None);
     let husk_dir = write_test_summary(tmp.path(), &cwd, "husk", now, None, None, None);
@@ -1439,7 +1439,7 @@ async fn list_sessions_recent_excludes_unused_optimistic_husks() {
 #[tokio::test]
 async fn list_sessions_recent_skips_headless_without_shorting_the_page() {
     let tmp = TempDir::new().unwrap();
-    let cwd = crate::util::grok_home::encode_cwd_dirname("/workspace");
+    let cwd = crate::util::ezer_home::encode_cwd_dirname("/workspace");
     let now = chrono::Utc::now();
     let times: Vec<_> = (0..4).map(|i| now - chrono::Duration::hours(i)).collect();
     for (i, (id, kind)) in [
@@ -1469,7 +1469,7 @@ async fn list_sessions_recent_skips_headless_without_shorting_the_page() {
 #[tokio::test]
 async fn list_sessions_recent_bounds_reads_on_headless_dominated_store() {
     let tmp = TempDir::new().unwrap();
-    let cwd = crate::util::grok_home::encode_cwd_dirname("/workspace");
+    let cwd = crate::util::ezer_home::encode_cwd_dirname("/workspace");
     let now = chrono::Utc::now();
     let newest_interactive = 40;
     for i in 0..50 {
@@ -1497,7 +1497,7 @@ async fn list_sessions_recent_empty_dir() {
 async fn list_sessions_sorts_by_last_active_at_over_updated_at() {
     let tmp = TempDir::new().unwrap();
     let cwd_path = "/ws/resume-sort";
-    let cwd = crate::util::grok_home::encode_cwd_dirname(cwd_path);
+    let cwd = crate::util::ezer_home::encode_cwd_dirname(cwd_path);
     let now = chrono::Utc::now();
     write_test_summary(
         tmp.path(),
@@ -1526,7 +1526,7 @@ async fn list_sessions_sorts_by_last_active_at_over_updated_at() {
 #[tokio::test]
 async fn list_sessions_recent_sorts_by_updated_at() {
     let tmp = TempDir::new().unwrap();
-    let cwd = crate::util::grok_home::encode_cwd_dirname("/ws");
+    let cwd = crate::util::ezer_home::encode_cwd_dirname("/ws");
     let now = chrono::Utc::now();
     let t_old = now - chrono::Duration::hours(10);
     let t_new = now;
@@ -1541,8 +1541,8 @@ async fn list_sessions_recent_sorts_by_updated_at() {
 #[tokio::test]
 async fn list_sessions_recent_spans_multiple_workspaces() {
     let tmp = TempDir::new().unwrap();
-    let cwd_a = crate::util::grok_home::encode_cwd_dirname("/project-a");
-    let cwd_b = crate::util::grok_home::encode_cwd_dirname("/project-b");
+    let cwd_a = crate::util::ezer_home::encode_cwd_dirname("/project-a");
+    let cwd_b = crate::util::ezer_home::encode_cwd_dirname("/project-b");
     let now = chrono::Utc::now();
     write_test_summary(
         tmp.path(),
@@ -1563,7 +1563,7 @@ async fn list_sessions_recent_spans_multiple_workspaces() {
 #[tokio::test]
 async fn list_sessions_recent_skips_corrupt_summary() {
     let tmp = TempDir::new().unwrap();
-    let cwd = crate::util::grok_home::encode_cwd_dirname("/ws");
+    let cwd = crate::util::ezer_home::encode_cwd_dirname("/ws");
     let now = chrono::Utc::now();
     write_test_summary(tmp.path(), &cwd, "good", now, None, None, None);
     let bad_dir = tmp.path().join("sessions").join(&cwd).join("bad");
@@ -2012,7 +2012,7 @@ fn read_chat_history_handles_hybrid_legacy_and_post_pr_lines() {
     assert_eq!(legacy_assistant.content.as_ref(), "a1");
     assert_eq!(
             legacy_assistant.model_id.as_deref(),
-            Some("grok-build"),
+            Some("ezer-build"),
             "model_id preserved across the upgrade"
         );
     let Some(ConversationItem::Reasoning(reconstructed)) = items.get(3) else {
@@ -2571,7 +2571,7 @@ async fn init_session_creates_owner_only_session_and_parent_dirs() {
     let session_dir = temp_dir
         .path()
         .join("sessions")
-        .join(crate::util::grok_home::encode_cwd_dirname(&info.cwd))
+        .join(crate::util::ezer_home::encode_cwd_dirname(&info.cwd))
         .join(info.id.to_string());
     assert_eq!(unix_mode(&session_dir), 0o700, "session dir must be 0700");
     assert_eq!(
@@ -2596,7 +2596,7 @@ async fn init_session_retightens_loosened_existing_dirs() {
     let session_dir = temp_dir
         .path()
         .join("sessions")
-        .join(crate::util::grok_home::encode_cwd_dirname(&info.cwd))
+        .join(crate::util::ezer_home::encode_cwd_dirname(&info.cwd))
         .join(info.id.to_string());
     set_unix_mode(&session_dir, 0o755);
     set_unix_mode(session_dir.parent().unwrap(), 0o755);
@@ -2622,7 +2622,7 @@ async fn copy_session_data_creates_owner_only_target_dir() {
     let target_dir = temp_dir
         .path()
         .join("sessions")
-        .join(crate::util::grok_home::encode_cwd_dirname(&target.cwd))
+        .join(crate::util::ezer_home::encode_cwd_dirname(&target.cwd))
         .join(target.id.to_string());
     assert_eq!(unix_mode(&target_dir), 0o700);
 }
@@ -2662,12 +2662,12 @@ async fn usage_json_rewrites_session_and_appends_turns() {
         cache_creation_prompt_tokens: 0,
     };
     let mut ledger = UsageLedger::default();
-    ledger.record_main_loop_call("grok-4", &tu(100, 20), Some(10), Some(50));
+    ledger.record_main_loop_call("test-model-4", &tu(100, 20), Some(10), Some(50));
     let mut file = SessionUsageFile::new(info.id.to_string());
     let first = UsageSummary::from_ledger(&ledger);
     file.apply_turn(1, "t1", &first, None);
     adapter.write_usage(&info, &file).await.unwrap();
-    ledger.record_main_loop_call("grok-4", &tu(40, 10), Some(10), Some(20));
+    ledger.record_main_loop_call("test-model-4", &tu(40, 10), Some(10), Some(20));
     let mut loaded = adapter.read_usage(&info).await.unwrap().unwrap();
     loaded.apply_turn(2, "t2", &UsageSummary::from_ledger(&ledger), Some(&first));
     adapter.write_usage(&info, &loaded).await.unwrap();

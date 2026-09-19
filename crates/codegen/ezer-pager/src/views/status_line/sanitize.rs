@@ -220,7 +220,7 @@ fn safe_link_target(uri: &str) -> Option<Arc<str>> {
     ) {
         return None;
     }
-    // The shared gate stops at the scheme, enough for Grok's own text but not a script's
+    // The shared gate stops at the scheme, enough for Ezer's own text but not a script's
     // `http://` with no host passes it and opens a browser on nothing
     let web = uri.split_once("://").is_some_and(|(scheme, _)| {
         scheme.eq_ignore_ascii_case("http") || scheme.eq_ignore_ascii_case("https")

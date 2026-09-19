@@ -100,10 +100,10 @@ fn status_map(
 
 fn configured_pending_cwd() -> tempfile::TempDir {
     let dir = tempfile::tempdir().expect("isolated cwd");
-    let grok = dir.path().join(".ezer");
-    std::fs::create_dir_all(&grok).expect(".ezer");
+    let ezer = dir.path().join(".ezer");
+    std::fs::create_dir_all(&ezer).expect(".ezer");
     std::fs::write(
-        grok.join("config.toml"),
+        ezer.join("config.toml"),
         "[mcp_servers.configured]\ncommand = \"false\"\n",
     )
     .expect("mcp config");

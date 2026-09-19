@@ -1460,9 +1460,9 @@ mod searchable_text_tests {
             auto_compact_threshold_percent: 85,
             usage_categories: vec![],
         };
-        let block = RenderBlock::context_info(snapshot, "grok-4.5");
+        let block = RenderBlock::context_info(snapshot, "test-model-4.5");
         // Only the model name is source text; the rest is a numeric breakdown.
-        assert_eq!(block.searchable_text().as_deref(), Some("grok-4.5"));
+        assert_eq!(block.searchable_text().as_deref(), Some("test-model-4.5"));
     }
 
     #[test]

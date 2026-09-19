@@ -39,8 +39,8 @@ pub(crate) fn find_mcp_json_files_in(chain_dirs: &[PathBuf]) -> Vec<PathBuf> {
 }
 
 /// True when `config_path` is `$EZER_HOME/config.toml` (user tier, not project).
-fn is_user_grok_config_file(config_path: &Path) -> bool {
-    let Some(user_home) = ezer_config::user_grok_home() else {
+fn is_user_ezer_config_file(config_path: &Path) -> bool {
+    let Some(user_home) = ezer_config::user_ezer_home() else {
         return false;
     };
     let user_config = user_home.join("config.toml");
@@ -77,7 +77,7 @@ pub(crate) fn find_project_configs_in(chain_dirs: &[PathBuf]) -> Vec<PathBuf> {
         .iter()
         .rev()
         .map(|dir| project_config_path(dir))
-        .filter(|config_path| config_path.is_file() && !is_user_grok_config_file(config_path))
+        .filter(|config_path| config_path.is_file() && !is_user_ezer_config_file(config_path))
         .collect()
 }
 
@@ -86,8 +86,8 @@ mod tests {
     use super::*;
 
     #[test]
-    fn find_project_configs_excludes_user_grok_config_file() {
-        let Some(user_home) = ezer_config::user_grok_home() else {
+    fn find_project_configs_excludes_user_ezer_config_file() {
+        let Some(user_home) = ezer_config::user_ezer_home() else {
             return;
         };
         let user_config = user_home.join("config.toml");
@@ -95,10 +95,10 @@ mod tests {
             let home = xai_dirs::home_dir().expect("home dir");
             let from_home = find_project_configs(&home);
             assert!(
-                !from_home.iter().any(|p| is_user_grok_config_file(p)),
+                !from_home.iter().any(|p| is_user_ezer_config_file(p)),
                 "user config leaked into project configs: {from_home:?}"
             );
-            assert!(is_user_grok_config_file(&user_config));
+            assert!(is_user_ezer_config_file(&user_config));
         }
 
         let tmp = tempfile::tempdir().unwrap();
@@ -110,6 +110,6 @@ mod tests {
         let Some(first) = found.first() else {
             panic!("expected one project config: {found:?}");
         };
-        assert!(!is_user_grok_config_file(first));
+        assert!(!is_user_ezer_config_file(first));
     }
 }

@@ -279,7 +279,7 @@ pub fn fit_turns_for_summarizer<T: CompactionItemBuilder>(
     }
 
     // ── 2) ToolTruncated (only if history drop still insufficient) ────
-    // One-shot prefix clip on tool results only (grok-build style).
+    // One-shot prefix clip on tool results only (ezer-build style).
     let (hist2, n1) = shrink_oversized_tool_results(&hist, counter, budget);
     let (step2, n2) = shrink_oversized_tool_results(&step, counter, budget);
     hist = hist2;
@@ -344,7 +344,7 @@ pub fn fit_turns_for_summarizer<T: CompactionItemBuilder>(
     }
 
     // ── 4) Emergency (last resort) ────────────────────────────────────
-    // grok-build: when even the newest unit alone exceeds budget, keep it
+    // ezer-build: when even the newest unit alone exceeds budget, keep it
     // truncated in place (tool result, or lone assistant/user text).
     //
     // If the ladder emptied both sides (e.g. select returned None and both

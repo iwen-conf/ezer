@@ -40,7 +40,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Skip auto-bundling on Windows: ripgrep ships .zip archives there and this script only extracts .tar.gz
     // Returning before `cargo:rustc-cfg=bundle_rg` keeps the include_bytes! macros compiled out The runtime then falls back to `rg` on PATH (see src/util/ripgrep.rs::rg_path)
-    // Users install via `winget install BurntSushi.ripgrep.MSVC` or `scoop install ripgrep` An explicit GROK_SHELL_BUNDLE_RG_PATH still bundles on Windows; the override branch below copies any binary regardless of target
+    // Users install via `winget install BurntSushi.ripgrep.MSVC` or `scoop install ripgrep` An explicit EZER_SHELL_BUNDLE_RG_PATH still bundles on Windows; the override branch below copies any binary regardless of target
     let target_os = env::var("CARGO_CFG_TARGET_OS").unwrap_or_default();
     if target_os == "windows" && path_override.is_none() {
         return Ok(());
@@ -90,7 +90,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let _ = fs::remove_file(&dest);
 
     // The download base is overridable so sandboxed or offline CI can point at an internal mirror; it defaults to the public GitHub releases URL
-    // Example: GROK_SHELL_RG_DOWNLOAD_BASE=http://<mirror>/github/BurntSushi/ripgrep/releases/download
+    // Example: EZER_SHELL_RG_DOWNLOAD_BASE=http://<mirror>/github/BurntSushi/ripgrep/releases/download
     let download_base = env::var("EZER_SHELL_RG_DOWNLOAD_BASE")
         .unwrap_or_else(|_| "https://github.com/BurntSushi/ripgrep/releases/download".to_string());
     let url = format!(

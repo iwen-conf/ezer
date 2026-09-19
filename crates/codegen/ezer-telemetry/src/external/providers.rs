@@ -147,7 +147,7 @@ fn build_resource(cfg: &ExternalOtelConfig) -> opentelemetry_sdk::Resource {
         attrs.push(opentelemetry::KeyValue::new("terminal.type", terminal_type));
     }
     opentelemetry_sdk::Resource::builder_empty()
-        // `grok-cli` is a wire commitment
+        // `ezer-cli` is a wire commitment
         .with_service_name("ezer-cli")
         .with_attributes(attrs)
         .build()
@@ -299,7 +299,7 @@ fn grpc_tls_candidates(
     }
     let mut base =
         ClientTlsConfig::new().trust_anchors(webpki_roots::TLS_SERVER_ROOTS.iter().cloned());
-    // Process-wide `GROK_EXTRA_CA_BUNDLE` roots (fail-open by that crate's contract), matching the HTTP transport's client policy
+    // Process-wide `EZER_EXTRA_CA_BUNDLE` roots (fail-open by that crate's contract), matching the HTTP transport's client policy
     // The same corporate CA must work on both transports
     if let Some(extra_pem) = ders_to_pem_bundle(ezer_extra_ca::extra_root_ders()) {
         base = base.ca_certificate(Certificate::from_pem(extra_pem));

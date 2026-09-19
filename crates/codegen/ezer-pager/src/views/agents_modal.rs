@@ -270,7 +270,7 @@ pub struct AgentsModalState {
 /// EzerConcise, EzerPlan, EzerPlanNoSubagents, EzerAskUser, Codex, Opencode, CursorExtended, EzerOrchestrator.
 fn user_visible_builtins() -> &'static [BuiltinAgentName] {
     &[
-        BuiltinAgentName::GrokBuild,
+        BuiltinAgentName::EzerBuild,
         BuiltinAgentName::GeneralPurpose,
         BuiltinAgentName::Explore,
         BuiltinAgentName::Plan,
@@ -498,8 +498,8 @@ pub fn merge_persona_lists(bundle: &BundleState, cwd: &Path) -> Vec<PersonaDetai
     let mut list = personas_from_bundle(bundle);
     let mut names: std::collections::HashSet<String> =
         list.iter().map(|p| p.name.clone()).collect();
-    let grok_home = ezer_config::grok_home();
-    let bundled_dir = grok_home.join("bundled").join("personas");
+    let ezer_home = ezer_config::ezer_home();
+    let bundled_dir = ezer_home.join("bundled").join("personas");
     for persona in &mut list {
         if persona.source_path.is_none() {
             let path = bundled_dir.join(format!("{}.toml", persona.name));
@@ -513,7 +513,7 @@ pub fn merge_persona_lists(bundle: &BundleState, cwd: &Path) -> Vec<PersonaDetai
     }
     let dirs = [
         (ConfigFileScope::Project, cwd.join(".ezer").join("personas")),
-        (ConfigFileScope::User, grok_home.join("personas")),
+        (ConfigFileScope::User, ezer_home.join("personas")),
     ];
     for (scope, dir) in dirs {
         append_local_personas_in_dir(&dir, scope, &mut list, &mut names);
@@ -625,7 +625,7 @@ pub fn sanitize_config_name(name: &str) -> Result<String, String> {
 }
 fn personas_dir_for_scope(scope: ConfigFileScope, cwd: &Path) -> PathBuf {
     match scope {
-        ConfigFileScope::User => ezer_config::grok_home().join("personas"),
+        ConfigFileScope::User => ezer_config::ezer_home().join("personas"),
         ConfigFileScope::Project => cwd.join(".ezer").join("personas"),
     }
 }
@@ -679,8 +679,8 @@ fn config_path_is_user_or_project(path: &Path, subdir: &str) -> bool {
     {
         return false;
     }
-    let grok_home = ezer_config::grok_home();
-    let in_user = dunce::canonicalize(grok_home.join(subdir))
+    let ezer_home = ezer_config::ezer_home();
+    let in_user = dunce::canonicalize(ezer_home.join(subdir))
         .ok()
         .is_some_and(|d| canonical.starts_with(&d));
     let project_suffix = std::path::Path::new(".ezer").join(subdir);
@@ -756,7 +756,7 @@ fn refresh_default_agent(state: &mut AgentsModalState) {
 ///
 /// Pass `Some(name)` to set, `None` to clear (remove the key).
 pub fn set_default_agent(name: Option<&str>) -> Result<(), String> {
-    let config_path = ezer_config::grok_home().join(ezer_config::USER_CONFIG_FILENAME);
+    let config_path = ezer_config::ezer_home().join(ezer_config::USER_CONFIG_FILENAME);
     if let Some(parent) = config_path.parent() {
         let _ = std::fs::create_dir_all(parent);
     }
@@ -776,7 +776,7 @@ pub fn set_default_agent(name: Option<&str>) -> Result<(), String> {
 }
 /// Toggle an agent's enabled state via `[subagents.toggle]` in config.toml.
 pub fn toggle_agent(name: &str, enabled: bool) -> Result<(), String> {
-    let config_path = ezer_config::grok_home().join(ezer_config::USER_CONFIG_FILENAME);
+    let config_path = ezer_config::ezer_home().join(ezer_config::USER_CONFIG_FILENAME);
     if let Some(parent) = config_path.parent() {
         let _ = std::fs::create_dir_all(parent);
     }
@@ -3445,7 +3445,7 @@ mod tests {
             root: plugin_root.to_path_buf(),
             canonical_root: plugin_root.to_path_buf(),
             scope: PluginScope::User,
-            origin: PluginOrigin::UserGrok,
+            origin: PluginOrigin::UserEzer,
             trusted: true,
             skill_dirs: vec![],
             command_dirs: vec![],

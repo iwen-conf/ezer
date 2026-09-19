@@ -11,7 +11,7 @@ use std::sync::OnceLock;
 use serial_test::serial;
 
 /// Shared temp directory that lives for the entire test binary.
-/// All tests share this as GROK_HOME (the `OnceLock` in ezer-config only allows one value per process).
+/// All tests share this as EZER_HOME (the `OnceLock` in ezer-config only allows one value per process).
 fn test_home() -> &'static PathBuf {
     static HOME: OnceLock<PathBuf> = OnceLock::new();
     HOME.get_or_init(|| {
@@ -19,7 +19,7 @@ fn test_home() -> &'static PathBuf {
         // Keep so the directory survives the entire test process.
         let path = dir.keep();
         // SAFETY: called once at init before other threads touch this var.
-        unsafe { std::env::set_var("GROK_HOME", &path) };
+        unsafe { std::env::set_var("EZER_HOME", &path) };
         path
     })
 }
@@ -75,7 +75,7 @@ async fn update_config_does_not_leak_requirements_into_user_config() {
     // --- Act ---
     // Simulate an unrelated config write (e.g. persisting a model preference).
     ezer_shell::util::config::update_config(|cfg| {
-        cfg.models.default = Some("grok-3".to_string());
+        cfg.models.default = Some("test-model-3".to_string());
     })
     .await
     .expect("update_config should succeed");
@@ -94,7 +94,7 @@ async fn update_config_does_not_leak_requirements_into_user_config() {
     );
 
     // Also verify the unrelated write succeeded.
-    assert_eq!(user_cfg.models.default.as_deref(), Some("grok-3"));
+    assert_eq!(user_cfg.models.default.as_deref(), Some("test-model-3"));
 }
 
 #[tokio::test]

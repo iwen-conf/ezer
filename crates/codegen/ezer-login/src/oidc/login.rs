@@ -15,10 +15,10 @@ use axum::{
 };
 use tokio::net::TcpListener;
 
-use super::super::config::{GrokComConfig, OidcAuthConfig};
-use super::super::{AuthManager, GrokAuth};
+use super::super::config::{EzerComConfig, OidcAuthConfig};
+use super::super::{AuthManager, EzerAuth};
 use super::protocol::{
-    build_authorize_url, build_grok_auth, discover, enforce_login_principal, exchange_code,
+    build_authorize_url, build_ezer_auth, discover, enforce_login_principal, exchange_code,
     extract_user_info, generate_pkce, login_principal_policy, peek_access_token_principal,
     peek_access_token_principal_id, validate_state, OidcError,
 };
@@ -67,7 +67,7 @@ fn parse_pasted_input(input: &str) -> Result<Callback, OidcError> {
 /// Render a styled callback page shown in the browser after the OAuth redirect.
 pub fn callback_page(title: &str, message: &str, is_success: bool) -> String {
     let icon = if is_success {
-        // Grok logo
+        // Ezer logo
         r#"<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="none" viewBox="0 0 33 33"><path fill="currentColor" d="m13.237 21.04 11.082-8.19c.543-.4 1.32-.244 1.578.38 1.363 3.288.754 7.241-1.957 9.955-2.71 2.714-6.482 3.31-9.93 1.954l-3.765 1.745c5.401 3.697 11.96 2.782 16.059-1.324 3.251-3.255 4.258-7.692 3.317-11.693l.008.009c-1.365-5.878.336-8.227 3.82-13.031q.123-.17.247-.345l-4.585 4.59v-.014L13.234 21.044M10.95 23.031c-3.877-3.707-3.208-9.446.1-12.755 2.446-2.449 6.454-3.448 9.952-1.979L24.76 6.56c-.677-.49-1.545-1.017-2.54-1.387A12.465 12.465 0 0 0 8.675 7.901c-3.519 3.523-4.625 8.94-2.725 13.561 1.42 3.454-.907 5.898-3.251 8.364-.83.874-1.664 1.749-2.335 2.674l10.583-9.466"/></svg>"#
     } else {
         // X circle
@@ -338,10 +338,10 @@ async fn race_callback_and_stdin(
 
 /// Run the full OIDC login flow: discovery, PKCE, browser, callback, token exchange, persist.
 pub async fn run_login_flow(
-    config: &GrokComConfig,
+    config: &EzerComConfig,
     auth_manager: &Arc<AuthManager>,
     channels: Option<super::super::flow::AuthChannels>,
-) -> anyhow::Result<(GrokAuth, bool)> {
+) -> anyhow::Result<(EzerAuth, bool)> {
     let oidc = config
         .oidc
         .as_ref()
@@ -356,7 +356,7 @@ pub async fn run_login_flow_with_config(
     oidc: &OidcAuthConfig,
     auth_manager: &Arc<AuthManager>,
     channels: Option<super::super::flow::AuthChannels>,
-) -> anyhow::Result<(GrokAuth, bool)> {
+) -> anyhow::Result<(EzerAuth, bool)> {
     tracing::info!(issuer = %oidc.issuer, client_id = %oidc.client_id, "OIDC: starting login flow");
 
     // Ensure jsonwebtoken CryptoProvider is installed (required for JWT validation).
@@ -382,7 +382,7 @@ pub async fn run_login_flow_with_config(
         .map_err(|e| anyhow::Error::new(OidcError::BindLoopback(e.to_string())))?;
     let port = listener.local_addr()?.port();
     let redirect_uri = format!("http://127.0.0.1:{}/callback", port);
-    let oauth2 = auth_manager.grok_com_config().oauth2.as_ref();
+    let oauth2 = auth_manager.ezer_com_config().oauth2.as_ref();
     let auth_url = build_authorize_url(
         oidc,
         oauth2,
@@ -467,7 +467,7 @@ pub async fn run_login_flow_with_config(
 
     // The authorize URL only pre-selects; verify the token's principal here.
     // Match the principal id even if `principal_type` is absent.
-    let principal_policy = login_principal_policy(auth_manager.grok_com_config());
+    let principal_policy = login_principal_policy(auth_manager.ezer_com_config());
     enforce_login_principal(
         principal_policy.as_ref(),
         peek_access_token_principal_id(&tokens.access_token).as_deref(),
@@ -504,7 +504,7 @@ pub async fn run_login_flow_with_config(
     .await?;
     tracing::debug!(user_id = %user_info.user_id, "OIDC: extracted user info");
 
-    let mut auth = build_grok_auth(tokens, user_info, &oidc.issuer, &oidc.client_id);
+    let mut auth = build_ezer_auth(tokens, user_info, &oidc.issuer, &oidc.client_id);
     auth_manager.enrich_auth_inline(&mut auth).await;
     let auth = auth_manager
         .update(auth)
@@ -543,7 +543,7 @@ mod tests {
             format!("http://127.0.0.1:{}", l.local_addr().unwrap().port())
         };
         let auth_manager = Arc::new(
-            AuthManager::new(temp_dir.path(), GrokComConfig::default())
+            AuthManager::new(temp_dir.path(), EzerComConfig::default())
                 .with_proxy_base_url(&dead_proxy),
         );
 
@@ -611,7 +611,7 @@ mod tests {
         )
         .await
         .unwrap();
-        let auth = build_grok_auth(tokens, user_info, &oidc_cfg.issuer, &oidc_cfg.client_id);
+        let auth = build_ezer_auth(tokens, user_info, &oidc_cfg.issuer, &oidc_cfg.client_id);
         let auth = auth_manager.update(auth).await.unwrap();
 
         assert_eq!(auth.key, "mock-access-token");

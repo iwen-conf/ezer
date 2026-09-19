@@ -58,15 +58,15 @@ pub enum ClientType {
     #[serde(rename = "generic", alias = "ezer-shell")]
     Generic,
     #[serde(rename = "ezer-tui")]
-    GrokTUI,
+    EzerTUI,
     #[serde(rename = "ezer-web")]
-    GrokWeb,
+    EzerWeb,
     #[serde(rename = "nebula")]
     Nebula,
     #[serde(rename = "extension")]
     Extension,
     #[serde(rename = "ezer")]
-    GrokPager,
+    EzerPager,
     #[serde(rename = "ezer-desktop")]
     Desktop,
 }
@@ -74,28 +74,28 @@ impl ClientType {
     pub fn user_agent_label(&self) -> &'static str {
         match self {
             Self::Generic => "ezer-shell",
-            Self::GrokTUI => "ezer-tui",
-            Self::GrokWeb => "ezer-web",
+            Self::EzerTUI => "ezer-tui",
+            Self::EzerWeb => "ezer-web",
             Self::Nebula => "nebula",
             Self::Extension => "ezer-code-extension",
-            Self::GrokPager => "ezer",
+            Self::EzerPager => "ezer",
             Self::Desktop => "ezer-desktop",
         }
     }
     pub fn from_client_identifier(id: Option<&str>) -> Self {
         match id {
-            Some("ezer-web") => Self::GrokWeb,
+            Some("ezer-web") => Self::EzerWeb,
             Some("nebula") => Self::Nebula,
             Some("ezer-code-extension") => Self::Extension,
             Some("ezer-desktop") => Self::Desktop,
-            Some("ezer") => Self::GrokPager,
+            Some("ezer") => Self::EzerPager,
             _ => Self::Generic,
         }
     }
     pub fn feedback_label(&self) -> &'static str {
         match self {
-            Self::GrokTUI | Self::GrokPager => "tui",
-            Self::GrokWeb => "web",
+            Self::EzerTUI | Self::EzerPager => "tui",
+            Self::EzerWeb => "web",
             Self::Nebula => "nebula",
             Self::Extension => "extension",
             Self::Generic => "agent",
@@ -911,13 +911,13 @@ mod tests {
         ));
     }
     #[test]
-    fn client_type_deserializes_grok_shell_as_generic() {
+    fn client_type_deserializes_ezer_shell_dir_as_generic() {
         assert_eq!(
             serde_json::from_value::<ClientType>("ezer-shell".into()).unwrap(),
             ClientType::Generic,
         );
         assert_eq!(
-            serde_json::from_value::<ClientType>("grok_shell".into()).unwrap(),
+            serde_json::from_value::<ClientType>("ezer_shell_dir".into()).unwrap(),
             ClientType::Generic,
         );
         assert_eq!(

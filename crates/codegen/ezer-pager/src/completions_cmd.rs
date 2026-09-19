@@ -9,7 +9,7 @@ use crate::app::PagerArgs;
 
 /// Generate and print the completion script for the given shell.
 pub fn run(shell: Shell) {
-    // Public command name is `ezer` (`grok` remains a compatibility symlink).
+    // Public command name is `ezer` (`ezer` remains a compatibility symlink).
     let mut cmd = PagerArgs::command().name("ezer");
     if shell != Shell::Zsh {
         generate(shell, &mut cmd, "ezer", &mut std::io::stdout());

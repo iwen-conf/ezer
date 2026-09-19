@@ -44,7 +44,7 @@ pub(crate) fn conversations_lane_enabled() -> bool {
 pub fn conversations_lane_active() -> bool {
     conversations_lane_enabled() || crate::agent::chat_modes::process_chat_mode_enabled()
 }
-/// Parse `x.ai/session/list` params and, under process-wide chat mode, force the conversations-only `kind` facet.
+/// Parse `ezer/session/list` params and, under process-wide chat mode, force the conversations-only `kind` facet.
 /// Client-sent `kind` of `chat`/`build` is honored only behind `feature = "local-workspace"` (pager welcome Local history).
 /// Chat-only Desktop/ACP agents keep the force-rewrite so `kind: ["build"]` cannot surface Build rows.
 pub fn parse_list_req(raw: &str) -> Result<ListReq, serde_json::Error> {
@@ -71,7 +71,7 @@ fn client_sent_kind_filter(req: &ListReq) -> bool {
     let Some(kind) = req
         .meta
         .as_ref()
-        .and_then(|m| m.get("x.ai/facetFilters"))
+        .and_then(|m| m.get("ezer/facetFilters"))
         .and_then(|f| f.get("kind"))
     else {
         return false;
@@ -97,7 +97,7 @@ pub struct ListReq {
     pub cursor: Option<String>,
     /// Which directories the listing draws from. The wire carries the original `allowRelax` boolean.
     /// `Only` is reachable only in code (ACP `session/list`), so "exact" and "relax" cannot be requested together.
-    /// A relaxed response sets `_meta["x.ai/listScope"]`, re-evaluated per page.
+    /// A relaxed response sets `_meta["ezer/listScope"]`, re-evaluated per page.
     #[serde(
         default,
         rename = "allowRelax",
@@ -112,7 +112,7 @@ pub struct ListReq {
     pub meta: Option<serde_json::Value>,
 }
 /// Directory scope the returned sessions were drawn from.
-/// Wire form is the `as_str` value (`x.ai/listScope`), so no serde derive is needed.
+/// Wire form is the `as_str` value (`ezer/listScope`), so no serde derive is needed.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, strum::AsRefStr, strum::IntoStaticStr)]
 #[strum(serialize_all = "snake_case")]
 pub enum ListScope {
@@ -150,7 +150,7 @@ impl ParsedMeta {
             return Self::default();
         };
         let facet_filters = meta
-            .get("x.ai/facetFilters")
+            .get("ezer/facetFilters")
             .and_then(|v| v.as_object())
             .map(|obj| {
                 obj.iter()
@@ -159,11 +159,11 @@ impl ParsedMeta {
             })
             .unwrap_or_default();
         let query = meta
-            .get("x.ai/query")
+            .get("ezer/query")
             .and_then(|v| v.as_str())
             .map(str::to_owned);
         let limit = meta
-            .get("x.ai/limit")
+            .get("ezer/limit")
             .and_then(serde_json::Value::as_u64)
             .map(|n| n as usize);
         Self {
@@ -191,7 +191,7 @@ pub(crate) fn force_kind(req: &mut ListReq, kind: SessionKind) {
         Some(serde_json::Value::Object(map)) => map,
         _ => serde_json::Map::new(),
     };
-    let mut filters = match meta.remove("x.ai/facetFilters") {
+    let mut filters = match meta.remove("ezer/facetFilters") {
         Some(serde_json::Value::Object(map)) => map,
         _ => serde_json::Map::new(),
     };
@@ -200,7 +200,7 @@ pub(crate) fn force_kind(req: &mut ListReq, kind: SessionKind) {
         serde_json::json!([kind.as_ref()]),
     );
     meta.insert(
-        "x.ai/facetFilters".to_owned(),
+        "ezer/facetFilters".to_owned(),
         serde_json::Value::Object(filters),
     );
     req.meta = Some(serde_json::Value::Object(meta));
@@ -508,12 +508,12 @@ pub(crate) struct ExtListResponse {
 }
 #[derive(Debug, Clone, Serialize)]
 pub(crate) struct ExtListResponseMeta {
-    #[serde(rename = "x.ai/facets")]
+    #[serde(rename = "ezer/facets")]
     pub facets: FacetSummary,
-    #[serde(rename = "x.ai/partial")]
+    #[serde(rename = "ezer/partial")]
     pub partial: PartialInfo,
     /// Present only when the listing relaxed beyond the cwd.
-    #[serde(rename = "x.ai/listScope", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "ezer/listScope", skip_serializing_if = "Option::is_none")]
     pub list_scope: Option<&'static str>,
 }
 #[derive(Debug, Clone, Serialize)]
@@ -625,7 +625,7 @@ mod tests {
         assert_eq!(
             value
                 .get("_meta")
-                .and_then(|m| m.get("x.ai/session"))
+                .and_then(|m| m.get("ezer/session"))
                 .and_then(|s| s.get("kind"))
                 .and_then(|v| v.as_str()),
             Some("build")
@@ -678,7 +678,7 @@ mod tests {
         assert_eq!(
             value
                 .get("_meta")
-                .and_then(|m| m.get("x.ai/session"))
+                .and_then(|m| m.get("ezer/session"))
                 .and_then(|s| s.get("kind"))
                 .and_then(|v| v.as_str()),
             Some("build")
@@ -739,9 +739,9 @@ mod tests {
     #[test]
     fn parsed_meta_reads_facet_filters_query_and_limit() {
         let meta = serde_json::json!({
-            "x.ai/facetFilters": { "kind": ["build"], "starred": true },
-            "x.ai/query": "antelope",
-            "x.ai/limit": 5,
+            "ezer/facetFilters": { "kind": ["build"], "starred": true },
+            "ezer/query": "antelope",
+            "ezer/limit": 5,
         });
         let parsed = ParsedMeta::parse(Some(&meta));
         assert_eq!(parsed.query.as_deref(), Some("antelope"));
@@ -802,7 +802,7 @@ mod tests {
     fn forced_kind_replaces_client_build_filter() {
         let mut req = ListReq {
             meta: Some(serde_json::json!({
-                "x.ai/facetFilters": { "kind": ["build"] },
+                "ezer/facetFilters": { "kind": ["build"] },
             })),
             ..ListReq::default()
         };
@@ -823,9 +823,9 @@ mod tests {
     fn forced_kind_preserves_other_facets() {
         let mut req = ListReq {
             meta: Some(serde_json::json!({
-                "x.ai/facetFilters": { "kind": ["build"], "starred": [true], "workspace": ["w1"] },
-                "x.ai/query": "antelope",
-                "x.ai/limit": 5,
+                "ezer/facetFilters": { "kind": ["build"], "starred": [true], "workspace": ["w1"] },
+                "ezer/query": "antelope",
+                "ezer/limit": 5,
             })),
             ..ListReq::default()
         };
@@ -859,13 +859,13 @@ mod tests {
     fn xai_auth_manager(dir: &std::path::Path) -> std::sync::Arc<ezer_login::AuthManager> {
         let am = std::sync::Arc::new(ezer_login::AuthManager::new(
             dir,
-            ezer_login::GrokComConfig::default(),
+            ezer_login::EzerComConfig::default(),
         ));
-        am.hot_swap(ezer_login::GrokAuth {
+        am.hot_swap(ezer_login::EzerAuth {
             auth_mode: ezer_login::AuthMode::Oidc,
             oidc_issuer: Some(ezer_login::xai_oauth2_issuer().to_owned()),
             expires_at: Some(chrono::Utc::now() + chrono::Duration::hours(1)),
-            ..ezer_login::GrokAuth::test_default()
+            ..ezer_login::EzerAuth::test_default()
         });
         am
     }
@@ -915,7 +915,7 @@ mod tests {
         let client = ConversationsClient::new(xai_auth_manager(home.path()));
         let mut req = ListReq {
             meta: Some(serde_json::json!({
-                "x.ai/facetFilters": { "kind": ["build"] },
+                "ezer/facetFilters": { "kind": ["build"] },
             })),
             ..ListReq::default()
         };
@@ -943,7 +943,7 @@ mod tests {
         let home = tempfile::tempdir().expect("tempdir");
         let auth = std::sync::Arc::new(ezer_login::AuthManager::new(
             home.path(),
-            ezer_login::GrokComConfig::default(),
+            ezer_login::EzerComConfig::default(),
         ));
         let client = ConversationsClient::new(auth);
         let mut req = ListReq::default();
@@ -1015,7 +1015,7 @@ mod tests {
     fn parse_list_req_forces_kind_under_process_chat_mode_only() {
         use crate::agent::chat_modes::EZER_CHAT_MODE_ENV;
         let raw = serde_json::json!({
-            "_meta": { "x.ai/facetFilters": { "kind": ["build"], "starred": [true] } },
+            "_meta": { "ezer/facetFilters": { "kind": ["build"], "starred": [true] } },
         })
         .to_string();
         {
@@ -1056,9 +1056,9 @@ mod tests {
                 "absent client kind still forces chat under process chat mode"
             );
             for bad in [
-                serde_json::json!({ "_meta": { "x.ai/facetFilters": { "kind": [] } } }),
-                serde_json::json!({ "_meta": { "x.ai/facetFilters": { "kind": null } } }),
-                serde_json::json!({ "_meta": { "x.ai/facetFilters": { "kind": ["other"] } } }),
+                serde_json::json!({ "_meta": { "ezer/facetFilters": { "kind": [] } } }),
+                serde_json::json!({ "_meta": { "ezer/facetFilters": { "kind": null } } }),
+                serde_json::json!({ "_meta": { "ezer/facetFilters": { "kind": ["other"] } } }),
             ] {
                 let req = parse_list_req(&bad.to_string()).expect("parse");
                 let parsed = ParsedMeta::parse(req.meta.as_ref());
@@ -1070,7 +1070,7 @@ mod tests {
             }
         }
     }
-    /// Wire pin for the cross-crate `x.ai/partial` envelope the pager parses: the serialized reason strings must not drift.
+    /// Wire pin for the cross-crate `ezer/partial` envelope the pager parses: the serialized reason strings must not drift.
     /// The pager maps unknown reasons to a generic retry notice, masking a rename.
     #[test]
     fn ext_list_response_serializes_partial_reasons() {
@@ -1088,7 +1088,7 @@ mod tests {
             }))
             .expect("serialize");
             assert_eq!(
-                value.get("_meta").and_then(|m| m.get("x.ai/partial")),
+                value.get("_meta").and_then(|m| m.get("ezer/partial")),
                 Some(&serde_json::json!({ "conversations": true, "reason": wire }))
             );
         }
@@ -1101,7 +1101,7 @@ mod tests {
         }))
         .expect("serialize");
         assert_eq!(
-            healthy.get("_meta").and_then(|m| m.get("x.ai/partial")),
+            healthy.get("_meta").and_then(|m| m.get("ezer/partial")),
             Some(&serde_json::json!({ "conversations": false }))
         );
     }
@@ -1287,7 +1287,7 @@ mod tests {
         assert!(!policy_emptied_cwd_lane(true, &husk));
         assert!(!policy_emptied_cwd_lane(false, &husk));
     }
-    /// Send-side wire pin: `x.ai/listScope` present iff the scope relaxed.
+    /// Send-side wire pin: `ezer/listScope` present iff the scope relaxed.
     #[test]
     fn ext_list_response_serializes_scope() {
         let result = |scope| UnifiedListResult {
@@ -1300,7 +1300,7 @@ mod tests {
         let with =
             serde_json::to_value(ext_list_response(result(ListScope::Repo))).expect("serialize");
         assert_eq!(
-            with.get("_meta").and_then(|m| m.get("x.ai/listScope")),
+            with.get("_meta").and_then(|m| m.get("ezer/listScope")),
             Some(&serde_json::json!("repo"))
         );
         let without =
@@ -1308,7 +1308,7 @@ mod tests {
         assert!(
             without
                 .get("_meta")
-                .and_then(|m| m.get("x.ai/listScope"))
+                .and_then(|m| m.get("ezer/listScope"))
                 .is_none()
         );
     }

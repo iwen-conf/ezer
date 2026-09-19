@@ -277,7 +277,7 @@ mod login_shell_capture_tests {
     #[test]
     fn env_beats_overlay() {
         let _g = guard();
-        // `GROK_LOGIN_ENV` outranks the overlay
+        // `EZER_LOGIN_ENV` outranks the overlay
         unsafe { std::env::set_var(ENV_LOGIN_SHELL_CAPTURE, "1") };
         let on = resolve_login_shell_capture_tiers(LoginShellCaptureTiers {
             env_overlay: Some(&cfg(false)),
@@ -732,7 +732,7 @@ mod ask_user_question_timeout_tests {
 mod tests {
     use super::*;
 
-    // Assumes GROK_TOOLS_* / DISABLE_EMBEDDED_SEARCH_TOOLS are unset in the test env.
+    // Assumes EZER_TOOLS_* / DISABLE_EMBEDDED_SEARCH_TOOLS are unset in the test env.
     #[test]
     fn resolve_search_tools_enabled_layers_and_precedence() {
         // Default-on when nothing is set.

@@ -19,40 +19,40 @@ use tokio_util::sync::CancellationToken;
 use super::SettingsCacheManager;
 use crate::agent::config::Config;
 use crate::util::config::RemoteSettings;
-use ezer_login::{GrokAuth, GrokComConfig};
+use ezer_login::{EzerAuth, EzerComConfig};
 
 /// A settings load request. Warm a load with [`resolve`](Self::resolve) or
 /// [`from_config`](Self::from_config); a consume-time recheck reuses the warmed
 /// [`auth`](Self::auth) rather than re-reading disk.
 #[derive(Clone)]
 pub struct SettingsQuery {
-    auth: Option<GrokAuth>,
+    auth: Option<EzerAuth>,
     origin: String,
     alpha_test_key: Option<String>,
-    /// The grok.com config disk auth was resolved under. The commit-time
+    /// The ezer.com config disk auth was resolved under. The commit-time
     /// identity re-check must resolve through the same config: the default
     /// config only sees env, so a file- or managed-configured IdP would
     /// otherwise read as a credential change on every load.
-    auth_config: Option<GrokComConfig>,
+    auth_config: Option<EzerComConfig>,
 }
 
 impl SettingsQuery {
-    pub(crate) fn from_config(cfg: &Config, auth: Option<GrokAuth>) -> Self {
-        Self::resolve(auth, Some(cfg.grok_com_config.clone()))
+    pub(crate) fn from_config(cfg: &Config, auth: Option<EzerAuth>) -> Self {
+        Self::resolve(auth, Some(cfg.ezer_com_config.clone()))
     }
 
     #[cfg(any(test, feature = "test-support"))]
-    pub fn from_auth(auth: Option<GrokAuth>) -> Self {
+    pub fn from_auth(auth: Option<EzerAuth>) -> Self {
         Self::resolve(auth, None)
     }
 
     /// Build from the live parts a caller already holds, skipping the disk-auth
     /// and endpoint resolution `resolve` does.
     pub(crate) fn from_parts(
-        auth: Option<GrokAuth>,
+        auth: Option<EzerAuth>,
         origin: String,
         alpha_test_key: Option<String>,
-        auth_config: Option<GrokComConfig>,
+        auth_config: Option<EzerComConfig>,
     ) -> Self {
         Self {
             auth,
@@ -65,19 +65,19 @@ impl SettingsQuery {
     /// The auth this query resolved to. A consume-time recheck reuses this
     /// warmed credential instead of re-reading disk, so a just-refreshed
     /// session that has not yet been persisted is not mistaken for a change.
-    pub fn auth(&self) -> Option<&GrokAuth> {
+    pub fn auth(&self) -> Option<&EzerAuth> {
         self.auth.as_ref()
     }
 
-    /// `auth` wins; otherwise the on-disk session for `grok_com_config`.
-    pub fn resolve(auth: Option<GrokAuth>, grok_com_config: Option<GrokComConfig>) -> Self {
+    /// `auth` wins; otherwise the on-disk session for `ezer_com_config`.
+    pub fn resolve(auth: Option<EzerAuth>, ezer_com_config: Option<EzerComConfig>) -> Self {
         let endpoints = super::resolve_startup_endpoints();
-        let auth = auth.or_else(|| super::resolve_disk_auth(grok_com_config.clone()));
+        let auth = auth.or_else(|| super::resolve_disk_auth(ezer_com_config.clone()));
         Self {
             auth,
             origin: endpoints.proxy_url(),
             alpha_test_key: endpoints.alpha_test_key,
-            auth_config: grok_com_config,
+            auth_config: ezer_com_config,
         }
     }
 }
@@ -129,24 +129,24 @@ impl SettingsOutcome {
     pub(crate) fn install_allowed(
         &self,
         cfg: &crate::agent::config::Config,
-        warmed_auth: Option<&GrokAuth>,
+        warmed_auth: Option<&EzerAuth>,
     ) -> bool {
         self.scope_matches(&SettingsQuery::from_config(cfg, warmed_auth.cloned()))
     }
 
-    /// Consume-time recheck for callers holding a `GrokComConfig` rather than a
+    /// Consume-time recheck for callers holding a `EzerComConfig` rather than a
     /// `Config` (the pager). `auth` is the credential the caller warmed the load
     /// with: it wins over disk so a just-refreshed session that has not yet been
     /// persisted still matches, while origin and policy are re-resolved live so a
     /// repair between warm and consume is still caught.
     fn take_if_in_scope(
         self,
-        auth: Option<&GrokAuth>,
-        grok_com_config: &GrokComConfig,
+        auth: Option<&EzerAuth>,
+        ezer_com_config: &EzerComConfig,
     ) -> Option<RemoteSettings> {
         if self.scope_matches(&SettingsQuery::resolve(
             auth.cloned(),
-            Some(grok_com_config.clone()),
+            Some(ezer_com_config.clone()),
         )) {
             self.settings
         } else {
@@ -379,11 +379,11 @@ pub async fn await_startup_settings(
 /// scope; a timeout or cancel falls open to `None`.
 pub fn consume_wait(
     wait: SettingsWait,
-    auth: Option<&GrokAuth>,
-    grok_com_config: &GrokComConfig,
+    auth: Option<&EzerAuth>,
+    ezer_com_config: &EzerComConfig,
 ) -> Option<RemoteSettings> {
     match wait {
-        SettingsWait::Ready(outcome) => outcome.take_if_in_scope(auth, grok_com_config),
+        SettingsWait::Ready(outcome) => outcome.take_if_in_scope(auth, ezer_com_config),
         SettingsWait::TimedOut | SettingsWait::Cancelled => None,
     }
 }

@@ -29,7 +29,7 @@ pub(crate) struct ModelsCache {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub(crate) renewed_at: Option<DateTime<Utc>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub(crate) grok_version: Option<String>,
+    pub(crate) ezer_version: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub(crate) auth_method: Option<CacheAuthMethod>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -56,7 +56,7 @@ pub(crate) struct ModelsCacheManager {
 impl ModelsCacheManager {
     pub(crate) fn new() -> Self {
         Self {
-            path: crate::util::grok_home::grok_home().join(MODELS_CACHE_FILE),
+            path: crate::util::ezer_home::ezer_home().join(MODELS_CACHE_FILE),
             ttl: CACHE_TTL,
         }
     }
@@ -79,7 +79,7 @@ impl ModelsCacheManager {
             read_capped(&self.path, MODELS_CACHE_MAX_BYTES).ok_or(CacheLoadError::NotFound)?;
         let cache: ModelsCache =
             serde_json::from_slice(&data).map_err(|_| CacheLoadError::ParseFailed)?;
-        if cache.grok_version.as_deref() != Some(ezer_version::VERSION) {
+        if cache.ezer_version.as_deref() != Some(ezer_version::VERSION) {
             return Err(CacheLoadError::VersionMismatch);
         }
         if cache.auth_method.as_ref() != Some(&scope.auth_method) {
@@ -122,7 +122,7 @@ impl ModelsCacheManager {
         let cache = ModelsCache {
             fetched_at,
             renewed_at: None,
-            grok_version: Some(ezer_version::VERSION.to_string()),
+            ezer_version: Some(ezer_version::VERSION.to_string()),
             auth_method: Some(scope.auth_method.clone()),
             origin: Some(scope.origin.clone()),
             identity: Some(scope.identity.clone()),

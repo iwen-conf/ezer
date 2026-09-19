@@ -1,5 +1,5 @@
-//! Extension handlers for `x.ai/compact_conversation`, `x.ai/memory/flush`, `x.ai/memory/rewrite`,
-//! `x.ai/memory/list`, `x.ai/memory/toggle`, and `x.ai/memory/forget`.
+//! Extension handlers for `ezer/compact_conversation`, `ezer/memory/flush`, `ezer/memory/rewrite`,
+//! `ezer/memory/list`, `ezer/memory/toggle`, and `ezer/memory/forget`.
 //! `memory/rewrite` turns a raw memory note into structured markdown with a one-shot LLM call.
 //! `memory/list` and `memory/toggle` back the `/memory` modal without running a prompt turn, so
 //! opening it or flipping memory writes nothing to scrollback.
@@ -21,10 +21,10 @@ use crate::session::{
 #[tracing::instrument(skip_all, fields(method = %args.method))]
 pub async fn handle(agent: &MvpAgent, args: &acp::ExtRequest) -> ExtResult {
     match args.method.as_ref() {
-        m if m.starts_with("x.ai/compact_conversation") => handle_compact(agent, args).await,
+        m if m.starts_with("ezer/compact_conversation") => handle_compact(agent, args).await,
         MEMORY_FLUSH_METHOD => handle_flush(agent, args).await,
         MEMORY_DREAM_METHOD => handle_dream(agent, args).await,
-        "x.ai/memory/rewrite" => handle_rewrite(agent, args).await,
+        "ezer/memory/rewrite" => handle_rewrite(agent, args).await,
         MEMORY_LIST_METHOD => handle_list(agent, args).await,
         MEMORY_TOGGLE_METHOD => handle_toggle(agent, args).await,
         MEMORY_FORGET_METHOD => handle_forget(agent, args).await,
@@ -32,11 +32,11 @@ pub async fn handle(agent: &MvpAgent, args: &acp::ExtRequest) -> ExtResult {
     }
 }
 
-pub const MEMORY_FLUSH_METHOD: &str = "x.ai/memory/flush";
-pub const MEMORY_DREAM_METHOD: &str = "x.ai/memory/dream";
-pub const MEMORY_LIST_METHOD: &str = "x.ai/memory/list";
-pub const MEMORY_TOGGLE_METHOD: &str = "x.ai/memory/toggle";
-pub const MEMORY_FORGET_METHOD: &str = "x.ai/memory/forget";
+pub const MEMORY_FLUSH_METHOD: &str = "ezer/memory/flush";
+pub const MEMORY_DREAM_METHOD: &str = "ezer/memory/dream";
+pub const MEMORY_LIST_METHOD: &str = "ezer/memory/list";
+pub const MEMORY_TOGGLE_METHOD: &str = "ezer/memory/toggle";
+pub const MEMORY_FORGET_METHOD: &str = "ezer/memory/forget";
 
 /// How a `/dream` run ended.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -205,7 +205,7 @@ impl MemoryFlushResponse {
     }
 }
 
-/// Largest note `x.ai/memory/forget` will hash and delete, for both v2 and legacy stores.
+/// Largest note `ezer/memory/forget` will hash and delete, for both v2 and legacy stores.
 pub const MEMORY_FORGET_MAX_FILE_BYTES: u64 = ezer_memory::MAX_FORGET_FILE_BYTES;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -350,7 +350,7 @@ async fn handle_compact(agent: &MvpAgent, args: &acp::ExtRequest) -> ExtResult {
     to_raw_response(&CompactConversationResponse {})
 }
 
-/// Request body for `x.ai/memory/flush` and `x.ai/memory/dream` (snake_case, unlike the modal methods).
+/// Request body for `ezer/memory/flush` and `ezer/memory/dream` (snake_case, unlike the modal methods).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MemoryFlushRequest {
     pub session_id: String,

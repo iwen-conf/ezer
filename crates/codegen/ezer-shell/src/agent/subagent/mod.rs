@@ -202,7 +202,7 @@ pub(crate) struct SubagentSpawnContext {
     pub alpha_test_key: Option<String>,
     pub auth_method_id: acp::AuthMethodId,
     pub model_id: acp::ModelId,
-    pub auth: Option<ezer_login::GrokAuth>,
+    pub auth: Option<ezer_login::EzerAuth>,
     pub parent_cwd: PathBuf,
     pub parent_session_id: String,
     /// Shell-owned source used only to freeze active-message parent attribution synchronously.
@@ -1156,7 +1156,7 @@ async fn bootstrap_initial_context(
             cwd: source.child_cwd.clone(),
         };
         let storage = crate::session::storage::jsonl::JsonlStorageAdapter::with_root(
-            crate::util::grok_home::grok_home(),
+            crate::util::ezer_home::ezer_home(),
         );
         let copy_options = crate::session::storage::CopySessionOptions {
             parent_session_id: Some(source.child_session_id.clone()),
@@ -1300,7 +1300,7 @@ async fn bootstrap_initial_context(
     }
     if let Some(ref parent_info) = ctx.parent_session_info {
         let storage = crate::session::storage::jsonl::JsonlStorageAdapter::with_root(
-            crate::util::grok_home::grok_home(),
+            crate::util::ezer_home::ezer_home(),
         );
         let copy_options = crate::session::storage::CopySessionOptions {
             parent_session_id: Some(ctx.parent_session_id.clone()),
@@ -2049,7 +2049,7 @@ pub(crate) fn spawn_progress_publisher(
             }
             if let Some(params) = params {
                 let ext_notification =
-                    acp::ExtNotification::new("x.ai/session_notification", params.into());
+                    acp::ExtNotification::new("ezer/session_notification", params.into());
                 gateway.forward_fire_and_forget(ext_notification);
             }
         }

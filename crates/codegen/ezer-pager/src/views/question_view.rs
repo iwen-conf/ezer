@@ -104,11 +104,11 @@ pub enum LocalQuestionKind {
     CreditLimitUpsell {
         choices: Vec<ezer_telemetry::events::CreditLimitChoice>,
     },
-    /// SuperGrok upsell modal: the free-usage paywall (429 with `subscription:free-usage-exhausted`) or a tier-restricted slash command invocation.
+    /// MaxTier upsell modal: the free-usage paywall (429 with `subscription:free-usage-exhausted`) or a tier-restricted slash command invocation.
     /// Upgrade options carry their URL in the option `id`.
     FreeUsageUpsell {
-        /// Telemetry source for `SuperGrokUpsellClicked`; distinguishes the paywall from the restricted-command upsell.
-        source: ezer_telemetry::events::SuperGrokUpsell,
+        /// Telemetry source for `UpgradeUpsellClicked`; distinguishes the paywall from the restricted-command upsell.
+        source: ezer_telemetry::events::UpgradeUpsell,
     },
     /// Modal shown when the shell rejects a model switch due to agent type incompatibility.
     /// Carries the target model and effort so the answer handler can create a new session with it.
@@ -125,7 +125,7 @@ pub enum LocalQuestionKind {
 
 // ── State ──────────────────────────────────────────────────────────────
 
-/// Complete state for the question view overlay. Created when an `x.ai/ask_user_question`
+/// Complete state for the question view overlay. Created when an `ezer/ask_user_question`
 /// ext-method request arrives; destroyed on submit, skip, or cancel. Not `Clone` because it owns a
 /// `oneshot::Sender` for the ACP response.
 #[derive(Debug)]
@@ -174,7 +174,7 @@ pub struct QuestionViewState {
     /// `None` means the options list has focus; `Some(0)` is Chat about this and `Some(1)` is Skip interview.
     pub bottom_panel_index: Option<usize>,
     /// `Some` when this question was opened locally (e.g. by `/fork`) instead of by an ACP
-    /// `x.ai/ask_user_question` request. `None` for ACP questions. Mutually exclusive with
+    /// `ezer/ask_user_question` request. `None` for ACP questions. Mutually exclusive with
     /// `response_tx`: a local question never has an ACP sender.
     pub local_kind: Option<LocalQuestionKind>,
     /// When this question view was created. Used to pause the turn timer while the user is answering questions.
@@ -209,7 +209,7 @@ impl QuestionViewState {
 
     /// Create a new question view state with an ACP response sender.
     ///
-    /// Called by the `ExtMethod` handler when a blocking `x.ai/ask_user_question` request arrives from the shell coordinator.
+    /// Called by the `ExtMethod` handler when a blocking `ezer/ask_user_question` request arrives from the shell coordinator.
     pub fn with_response_tx(
         tool_call_id: String,
         questions: Vec<Question>,
@@ -717,7 +717,7 @@ impl QuestionViewState {
         }
     }
 
-    /// Activate freeform input for the active question. Such questions (e.g. the SuperGrok upsell) have
+    /// Activate freeform input for the active question. Such questions (e.g. the MaxTier upsell) have
     /// no freeform row, so `InputMode` must be unreachable.
     pub fn activate_freeform_input(&mut self) -> String {
         if self.no_freeform {
@@ -2548,7 +2548,7 @@ mod tests {
 
     // ── no_freeform ────────────────────────────────────────────────────
 
-    /// `no_freeform` questions (e.g. the SuperGrok upsell) have no "Other" row, so activating freeform input must be impossible.
+    /// `no_freeform` questions (e.g. the MaxTier upsell) have no "Other" row, so activating freeform input must be impossible.
     /// Focus stays in Navigation and nothing gets marked selected.
     /// Regression test for the upsell modal letting the user type after clicking under the last option.
     #[test]

@@ -1,4 +1,4 @@
-//! [`GrokStdioClient`] drives `ezer agent stdio`: it owns the child, the [`AgentConnection`] over its pipes,
+//! [`EzerStdioClient`] drives `ezer agent stdio`: it owns the child, the [`AgentConnection`] over its pipes,
 //! and runs every request under a scaled budget; a timeout, or a failed setup request or cancel, panics with
 //! the child's stderr.
 
@@ -22,7 +22,7 @@ const PROMPT_TIMEOUT: Duration = Duration::from_secs(30);
 /// `session/load` replays history and is slower under Rosetta (macos-x86_64 lifecycle CI), where 20s flaked.
 const LOAD_SESSION_TIMEOUT: Duration = Duration::from_secs(60);
 
-/// How [`GrokStdioClient::spawn_with_options`] starts the agent. [`SpawnOptions::new`] is the sandbox alone,
+/// How [`EzerStdioClient::spawn_with_options`] starts the agent. [`SpawnOptions::new`] is the sandbox alone,
 /// with no overrides and a policy that allows every permission and dismisses every question.
 pub struct SpawnOptions {
     agent: AgentProcessOptions,
@@ -99,14 +99,14 @@ impl SpawnOptions {
 
 /// Spawn and drive it inside a `tokio::task::LocalSet`; the connection's tasks are spawned locally. The child
 /// is killed on drop, before its sandbox goes.
-pub struct GrokStdioClient {
+pub struct EzerStdioClient {
     connection: AgentConnection,
     process: TestProcess,
     sandbox: TestSandbox,
     turn_budget: Option<Duration>,
 }
 
-impl GrokStdioClient {
+impl EzerStdioClient {
     pub async fn spawn(server: &MockInferenceServer, cwd: &Path) -> Self {
         Self::spawn_with_options(server, cwd, SpawnOptions::new(TestSandbox::new())).await
     }
@@ -134,7 +134,7 @@ impl GrokStdioClient {
             sandbox,
         } = agent.spawn(server, cwd);
         let connection = AgentConnection::connect(&mut process, policy);
-        GrokStdioClient {
+        EzerStdioClient {
             connection,
             process,
             sandbox,

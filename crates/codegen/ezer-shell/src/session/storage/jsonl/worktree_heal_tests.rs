@@ -57,7 +57,7 @@ fn mark_summary_used(session_dir: &std::path::Path) {
 #[serial]
 async fn list_sessions_repairs_untagged_worktree_summary_in_rows_and_on_disk() {
     let home = TempDir::new().unwrap();
-    let _env = EnvGuard::set("GROK_HOME", home.path());
+    let _env = EnvGuard::set("EZER_HOME", home.path());
     let info = Info {
         id: acp::SessionId::new("untagged-listed"),
         cwd: worktree_cwd_under(home.path()),
@@ -96,7 +96,7 @@ async fn list_sessions_repairs_untagged_worktree_summary_in_rows_and_on_disk() {
 #[serial]
 async fn list_sessions_fills_missing_label_on_kinded_fork_without_changing_kind() {
     let home = TempDir::new().unwrap();
-    let _env = EnvGuard::set("GROK_HOME", home.path());
+    let _env = EnvGuard::set("EZER_HOME", home.path());
     let info = Info {
         id: acp::SessionId::new("kinded-listed"),
         cwd: worktree_cwd_under(home.path()),
@@ -153,7 +153,7 @@ async fn list_sessions_fills_missing_label_on_kinded_fork_without_changing_kind(
 #[serial]
 async fn list_sessions_leaves_kinded_labeled_worktree_summary_untouched() {
     let home = TempDir::new().unwrap();
-    let _env = EnvGuard::set("GROK_HOME", home.path());
+    let _env = EnvGuard::set("EZER_HOME", home.path());
     let info = Info {
         id: acp::SessionId::new("kinded-labeled"),
         cwd: worktree_cwd_under(home.path()),
@@ -193,7 +193,7 @@ async fn list_sessions_leaves_kinded_labeled_worktree_summary_untouched() {
 #[serial]
 async fn list_sessions_leaves_untagged_summary_outside_worktrees_untouched() {
     let home = TempDir::new().unwrap();
-    let _env = EnvGuard::set("GROK_HOME", home.path());
+    let _env = EnvGuard::set("EZER_HOME", home.path());
     let plain_cwd = home.path().join("project");
     std::fs::create_dir_all(&plain_cwd).unwrap();
     let info = Info {
@@ -220,7 +220,7 @@ async fn list_sessions_leaves_untagged_summary_outside_worktrees_untouched() {
 #[serial]
 async fn repair_keeps_summary_untagged_when_locked_write_fails() {
     let home = TempDir::new().unwrap();
-    let _env = EnvGuard::set("GROK_HOME", home.path());
+    let _env = EnvGuard::set("EZER_HOME", home.path());
     let info = Info {
         id: acp::SessionId::new("unwritable-repair"),
         cwd: worktree_cwd_under(home.path()),
@@ -245,7 +245,7 @@ async fn repair_keeps_summary_untagged_when_locked_write_fails() {
 #[serial]
 async fn repair_adopts_kinded_summary_when_mtime_restore_fails() {
     let home = TempDir::new().unwrap();
-    let _env = EnvGuard::set("GROK_HOME", home.path());
+    let _env = EnvGuard::set("EZER_HOME", home.path());
     let info = Info {
         id: acp::SessionId::new("mtime-restore-miss"),
         cwd: worktree_cwd_under(home.path()),
@@ -274,7 +274,7 @@ async fn repair_adopts_kinded_summary_when_mtime_restore_fails() {
 #[serial]
 async fn init_session_load_backfills_worktree_identity_on_untagged_summary() {
     let home = TempDir::new().unwrap();
-    let _env = EnvGuard::set("GROK_HOME", home.path());
+    let _env = EnvGuard::set("EZER_HOME", home.path());
     let info = Info {
         id: acp::SessionId::new("legacy-worktree-session"),
         cwd: worktree_cwd_under(home.path()),
@@ -302,7 +302,7 @@ async fn init_session_load_backfills_worktree_identity_on_untagged_summary() {
 #[serial]
 async fn init_session_load_leaves_untagged_summary_outside_worktrees_untouched() {
     let home = TempDir::new().unwrap();
-    let _env = EnvGuard::set("GROK_HOME", home.path());
+    let _env = EnvGuard::set("EZER_HOME", home.path());
     let plain_cwd = home.path().join("project");
     std::fs::create_dir_all(&plain_cwd).unwrap();
     let info = Info {
@@ -331,7 +331,7 @@ async fn init_session_load_leaves_untagged_summary_outside_worktrees_untouched()
 #[serial]
 async fn init_session_load_fills_missing_label_on_kinded_fork_without_changing_kind() {
     let home = TempDir::new().unwrap();
-    let _env = EnvGuard::set("GROK_HOME", home.path());
+    let _env = EnvGuard::set("EZER_HOME", home.path());
     let info = Info {
         id: acp::SessionId::new("kinded-load"),
         cwd: worktree_cwd_under(home.path()),
@@ -373,7 +373,7 @@ async fn init_session_load_fills_missing_label_on_kinded_fork_without_changing_k
 #[serial]
 async fn list_sessions_recent_fills_missing_label_on_kinded_fork_without_changing_kind() {
     let home = TempDir::new().unwrap();
-    let _env = EnvGuard::set("GROK_HOME", home.path());
+    let _env = EnvGuard::set("EZER_HOME", home.path());
     let info = Info {
         id: acp::SessionId::new("kinded-recent"),
         cwd: worktree_cwd_under(home.path()),
@@ -417,7 +417,7 @@ async fn list_sessions_recent_fills_missing_label_on_kinded_fork_without_changin
 #[serial]
 async fn list_sessions_recent_repairs_untagged_worktree_summary_in_rows_and_on_disk() {
     let home = TempDir::new().unwrap();
-    let _env = EnvGuard::set("GROK_HOME", home.path());
+    let _env = EnvGuard::set("EZER_HOME", home.path());
     let info = Info {
         id: acp::SessionId::new("untagged-recent"),
         cwd: worktree_cwd_under(home.path()),
@@ -449,7 +449,7 @@ async fn list_sessions_recent_repairs_untagged_worktree_summary_in_rows_and_on_d
 #[serial]
 async fn list_sessions_heal_does_not_evict_recent_sessions_from_mtime_window() {
     let home = TempDir::new().unwrap();
-    let _env = EnvGuard::set("GROK_HOME", home.path());
+    let _env = EnvGuard::set("EZER_HOME", home.path());
     let adapter = JsonlStorageAdapter::with_root(home.path().to_path_buf());
     let cwd = worktree_cwd_under(home.path());
     let now = std::time::SystemTime::now();

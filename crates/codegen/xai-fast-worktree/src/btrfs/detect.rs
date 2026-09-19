@@ -521,7 +521,7 @@ mod tests {
 
     #[test]
     fn test_resolve_via_subvol_mount_nested_path() {
-        // Simulates: target root /repo/.grok-snapshots/wt-123 resolved via
+        // Simulates: target root /repo/.ezer-snapshots/wt-123 resolved via
         // mount with root=/repo at /workspace/repo
         let mountinfo =
             "8267 8961 0:813 /repo /workspace/repo rw,relatime - btrfs /dev/loop0 rw,ssd";

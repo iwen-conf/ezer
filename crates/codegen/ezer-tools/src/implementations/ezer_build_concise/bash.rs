@@ -85,7 +85,7 @@ impl crate::types::tool_metadata::ToolMetadata for BashConciseTool {
     }
 
     fn tool_namespace(&self) -> ToolNamespace {
-        ToolNamespace::GrokBuildConcise
+        ToolNamespace::EzerBuildConcise
     }
 
     fn description_template(&self) -> &str {

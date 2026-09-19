@@ -5,11 +5,11 @@ use ezer_auth::{AuthCredentialProvider, CredentialSnapshot, HttpAuth};
 
 use crate::AuthManager;
 use crate::backend::{ActiveAuthBackend, AuthBackend};
-use crate::grok_auth_credentials::GrokAuthCredentials;
+use crate::ezer_auth_credentials::EzerAuthCredentials;
 
 /// `api_key.id` for the active credential: hash the stable API key, never the OIDC bearer (which rotates).
 /// `None` for non-API-key auth.
-fn api_key_id_for(auth: Option<&crate::GrokAuth>) -> Option<String> {
+fn api_key_id_for(auth: Option<&crate::EzerAuth>) -> Option<String> {
     auth.filter(|a| matches!(a.auth_mode, crate::AuthMode::ApiKey))
         .map(|a| ezer_telemetry::config::deployment_id_from_key(&a.key))
 }
@@ -97,7 +97,7 @@ pub type DeploymentIdResolver =
 /// 401 recovery delegates to `AuthManager::unauthorized_recovery`.
 pub struct ShellAuthCredentialProvider {
     auth_manager: Arc<AuthManager>,
-    static_credentials: GrokAuthCredentials,
+    static_credentials: EzerAuthCredentials,
     deployment_id_resolver: DeploymentIdResolver,
 }
 
@@ -124,7 +124,7 @@ impl ShellAuthCredentialProvider {
         alpha_test_key: Option<String>,
         deployment_id_resolver: DeploymentIdResolver,
     ) -> Self {
-        let mut static_credentials = GrokAuthCredentials::new(None);
+        let mut static_credentials = EzerAuthCredentials::new(None);
         static_credentials.deployment_key = deployment_key;
         static_credentials.alpha_test_key = alpha_test_key;
         Self {
@@ -343,7 +343,7 @@ impl HttpAuth for OtelAuthCredentialProvider {
             return builder;
         }
         let snapshot = self.snapshot_inner();
-        let mut creds = GrokAuthCredentials::new(None);
+        let mut creds = EzerAuthCredentials::new(None);
         if self.deployment_key.load().is_some() {
             creds.deployment_key = snapshot.token;
         } else {
@@ -440,8 +440,8 @@ pub fn wire_otel_auth_manager(auth_manager: Arc<AuthManager>) {
 
 /// Email for the external OTEL stream. OIDC/gateway only; never API-key,
 /// WebLogin, or a blank address. Callers must also skip deployment-key
-/// snapshots — this helper only inspects `GrokAuth`.
-pub fn oauth_gateway_email_from_auth(auth: &crate::GrokAuth) -> Option<String> {
+/// snapshots — this helper only inspects `EzerAuth`.
+pub fn oauth_gateway_email_from_auth(auth: &crate::EzerAuth) -> Option<String> {
     match auth.auth_mode {
         crate::AuthMode::Oidc | crate::AuthMode::External => {
             auth.email.clone().filter(|e| !e.is_empty())
@@ -481,13 +481,13 @@ pub fn install_bootstrap_otel_provider(
     proxy_base_url: String,
     deployment_id_resolver: DeploymentIdResolver,
 ) -> (Arc<dyn AuthCredentialProvider>, String) {
-    let grok_com_config = crate::GrokComConfig::default();
-    let token_header_value = grok_com_config.token_header.clone();
+    let ezer_com_config = crate::EzerComConfig::default();
+    let token_header_value = ezer_com_config.token_header.clone();
 
-    let grok_home = ezer_shell_base::util::grok_home::grok_home();
+    let ezer_home = ezer_shell_base::util::ezer_home::ezer_home();
     let bootstrap = Arc::new(AuthManager::new_with_proxy_base_url(
-        &grok_home,
-        grok_com_config,
+        &ezer_home,
+        ezer_com_config,
         proxy_base_url,
     ));
     let provider = Arc::new(OtelAuthCredentialProvider::with_deployment_id_resolver(
@@ -505,8 +505,8 @@ pub fn install_bootstrap_otel_provider(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::GrokAuth;
-    use crate::GrokComConfig;
+    use crate::EzerAuth;
+    use crate::EzerComConfig;
     use crate::manager::AuthManager;
     use chrono::{Duration as ChronoDuration, Utc};
     use std::sync::Mutex;
@@ -551,20 +551,20 @@ mod tests {
         }
     }
 
-    fn make_auth(key: &str, expires_in: ChronoDuration) -> GrokAuth {
-        GrokAuth {
+    fn make_auth(key: &str, expires_in: ChronoDuration) -> EzerAuth {
+        EzerAuth {
             key: key.to_string(),
             user_id: "test-user".to_string(),
             create_time: Utc::now(),
             expires_at: Some(Utc::now() + expires_in),
-            ..GrokAuth::test_default()
+            ..EzerAuth::test_default()
         }
     }
 
     /// Build an `AuthManager` rooted at `dir`.
     /// The caller keeps `dir` alive for the duration of the test so the `TempDir` `Drop` actually cleans up.
-    fn make_manager(dir: &tempfile::TempDir, initial: Option<GrokAuth>) -> Arc<AuthManager> {
-        let mgr = AuthManager::new(dir.path(), GrokComConfig::default());
+    fn make_manager(dir: &tempfile::TempDir, initial: Option<EzerAuth>) -> Arc<AuthManager> {
+        let mgr = AuthManager::new(dir.path(), EzerComConfig::default());
         if let Some(auth) = initial {
             mgr.hot_swap(auth);
         }
@@ -615,7 +615,7 @@ mod tests {
             _reason: crate::manager::RefreshReason,
         ) -> crate::refresh::RefreshOutcome {
             self.0.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
-            crate::refresh::RefreshOutcome::success(GrokAuth {
+            crate::refresh::RefreshOutcome::success(EzerAuth {
                 auth_mode: crate::AuthMode::Oidc,
                 refresh_token: Some("rt".into()),
                 ..make_auth("pre-send-minted", ChronoDuration::hours(1))
@@ -633,7 +633,7 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let mgr = make_manager(
             &dir,
-            Some(GrokAuth {
+            Some(EzerAuth {
                 auth_mode: crate::AuthMode::Oidc,
                 refresh_token: Some("rt".into()),
                 ..make_auth("dying-token", ChronoDuration::seconds(2))
@@ -673,7 +673,7 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let mgr = make_manager(
             &dir,
-            Some(GrokAuth {
+            Some(EzerAuth {
                 auth_mode: crate::AuthMode::Oidc,
                 refresh_token: Some("rt".into()),
                 ..make_auth("hard-expired", ChronoDuration::hours(-1))
@@ -736,7 +736,7 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let mgr = make_manager(
             &dir,
-            Some(GrokAuth {
+            Some(EzerAuth {
                 auth_mode: crate::AuthMode::Oidc,
                 refresh_token: Some("rt".into()),
                 ..make_auth("dying-token", ChronoDuration::seconds(4))
@@ -824,16 +824,16 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let mgr = Arc::new(AuthManager::new(
             dir.path(),
-            crate::GrokComConfig::default(),
+            crate::EzerComConfig::default(),
         ));
-        mgr.hot_swap(GrokAuth {
+        mgr.hot_swap(EzerAuth {
             key: "stale".into(),
             auth_mode: crate::AuthMode::Oidc,
             create_time: chrono::Utc::now() - ChronoDuration::hours(2),
             user_id: "u".into(),
             refresh_token: Some("rt-stale".into()),
             expires_at: Some(chrono::Utc::now() - ChronoDuration::hours(1)),
-            ..GrokAuth::test_default()
+            ..EzerAuth::test_default()
         });
 
         struct OkRefresher {
@@ -846,14 +846,14 @@ mod tests {
                 _r: crate::manager::RefreshReason,
             ) -> crate::refresh::RefreshOutcome {
                 self.calls.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
-                crate::refresh::RefreshOutcome::Success(Box::new(GrokAuth {
+                crate::refresh::RefreshOutcome::Success(Box::new(EzerAuth {
                     key: "fresh".into(),
                     auth_mode: crate::AuthMode::Oidc,
                     create_time: chrono::Utc::now(),
                     user_id: "u".into(),
                     refresh_token: Some("rt-new".into()),
                     expires_at: Some(chrono::Utc::now() + ChronoDuration::hours(1)),
-                    ..GrokAuth::test_default()
+                    ..EzerAuth::test_default()
                 }))
             }
         }
@@ -939,11 +939,11 @@ mod tests {
         );
         assert!(dep.api_key_id.is_none());
 
-        let api_auth = GrokAuth {
+        let api_auth = EzerAuth {
             key: "sk-apikey-xyz".into(),
             auth_mode: crate::AuthMode::ApiKey,
             expires_at: Some(Utc::now() + ChronoDuration::hours(1)),
-            ..GrokAuth::test_default()
+            ..EzerAuth::test_default()
         };
         let api = ShellAuthCredentialProvider::new(make_manager(&dir, Some(api_auth)), None, None)
             .snapshot();
@@ -975,7 +975,7 @@ mod tests {
     fn otel_bootstrap_snapshot_picks_up_disk_writes() {
         let _guard = EarlyInvalidationGuard::pin_to_default();
         let dir = tempfile::tempdir().unwrap();
-        let scope = crate::GrokComConfig::default().auth_scope();
+        let scope = crate::EzerComConfig::default().auth_scope();
         let auth_path = dir.path().join("auth.json");
 
         let mgr = make_manager(
@@ -1052,16 +1052,16 @@ mod tests {
         let live_dir = tempfile::tempdir().unwrap();
         let live_mgr = Arc::new(AuthManager::new(
             live_dir.path(),
-            crate::GrokComConfig::default(),
+            crate::EzerComConfig::default(),
         ));
-        live_mgr.hot_swap(GrokAuth {
+        live_mgr.hot_swap(EzerAuth {
             key: "stale".into(),
             auth_mode: crate::AuthMode::Oidc,
             create_time: chrono::Utc::now() - ChronoDuration::hours(2),
             user_id: "u".into(),
             refresh_token: Some("rt-stale".into()),
             expires_at: Some(chrono::Utc::now() - ChronoDuration::hours(1)),
-            ..GrokAuth::test_default()
+            ..EzerAuth::test_default()
         });
 
         struct OkRefresher;
@@ -1071,14 +1071,14 @@ mod tests {
                 &self,
                 _r: crate::manager::RefreshReason,
             ) -> crate::refresh::RefreshOutcome {
-                crate::refresh::RefreshOutcome::Success(Box::new(GrokAuth {
+                crate::refresh::RefreshOutcome::Success(Box::new(EzerAuth {
                     key: "refreshed".into(),
                     auth_mode: crate::AuthMode::Oidc,
                     create_time: chrono::Utc::now(),
                     user_id: "u".into(),
                     refresh_token: Some("rt-new".into()),
                     expires_at: Some(chrono::Utc::now() + ChronoDuration::hours(1)),
-                    ..GrokAuth::test_default()
+                    ..EzerAuth::test_default()
                 }))
             }
         }
@@ -1199,7 +1199,7 @@ mod tests {
         );
     }
 
-    /// A configured `deployment_key` always wins over the AuthManager-resolved user token, matching the precedence in `GrokAuthCredentials::apply`.
+    /// A configured `deployment_key` always wins over the AuthManager-resolved user token, matching the precedence in `EzerAuthCredentials::apply`.
     /// The snapshot must report the deployment key so the 401-attribution prefix matches the wire bytes.
     #[test]
     fn deployment_key_wins_over_resolved_user_token() {
@@ -1220,37 +1220,37 @@ mod tests {
 
     #[test]
     fn oauth_gateway_email_oidc_and_external_only() {
-        let oidc = GrokAuth {
+        let oidc = EzerAuth {
             auth_mode: crate::AuthMode::Oidc,
             email: Some("alice@corp.example".into()),
-            ..GrokAuth::test_default()
+            ..EzerAuth::test_default()
         };
         assert_eq!(
             oauth_gateway_email_from_auth(&oidc).as_deref(),
             Some("alice@corp.example")
         );
 
-        let external = GrokAuth {
+        let external = EzerAuth {
             auth_mode: crate::AuthMode::External,
             email: Some("bob@gateway.example".into()),
-            ..GrokAuth::test_default()
+            ..EzerAuth::test_default()
         };
         assert_eq!(
             oauth_gateway_email_from_auth(&external).as_deref(),
             Some("bob@gateway.example")
         );
 
-        let blank = GrokAuth {
+        let blank = EzerAuth {
             auth_mode: crate::AuthMode::Oidc,
             email: Some(String::new()),
-            ..GrokAuth::test_default()
+            ..EzerAuth::test_default()
         };
         assert_eq!(oauth_gateway_email_from_auth(&blank), None);
 
-        let api = GrokAuth {
+        let api = EzerAuth {
             auth_mode: crate::AuthMode::ApiKey,
             email: Some("should-not-export@example.com".into()),
-            ..GrokAuth::test_default()
+            ..EzerAuth::test_default()
         };
         assert_eq!(oauth_gateway_email_from_auth(&api), None);
     }

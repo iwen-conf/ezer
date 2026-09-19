@@ -25,10 +25,10 @@ const MAX_PENDING: usize = 256;
 const DROP_BATCH_SIZE: usize = 64;
 
 /// Build the share URL for a session.
-/// Format: https://grok.com/build/{sessionId}
+/// Format: https://example.test/build/{sessionId}
 pub(crate) fn build_share_url(session_id: &str) -> String {
     let base_url =
-        std::env::var("EZER_CODE_WEB_URL").unwrap_or_else(|_| "https://grok.com".to_string());
+        std::env::var("EZER_CODE_WEB_URL").unwrap_or_else(|_| "https://example.test".to_string());
     format!("{}/build/{}", base_url, session_id)
 }
 
@@ -115,7 +115,7 @@ impl RelaySyncState {
     /// Writes to a temporary file then renames to avoid corruption on crash.
     /// Creates the session directory if it doesn't exist.
     pub fn save(&self, session_dir: &std::path::Path) -> std::io::Result<()> {
-        crate::util::grok_home::create_dir_all_owner_only(session_dir)?;
+        crate::util::ezer_home::create_dir_all_owner_only(session_dir)?;
 
         let path = Self::state_path(session_dir);
         let tmp_path = path.with_extension("json.tmp");
@@ -540,7 +540,7 @@ fn handle_relay_message(
                 // Register session with relay via the WebSocket connection.
                 let upsert = json!({
                     "jsonrpc": "2.0",
-                    "method": "_x.ai/session/upsert",
+                    "method": "_ezer/session/upsert",
                     "params": {
                         "sessionId": session_id,
                         "cwd": cwd,
@@ -555,7 +555,7 @@ fn handle_relay_message(
                 tprintln!("📡 Session syncing to relay. View at: {}", share_url);
             }
         }
-        Some("_x.ai/relay/initialized") => {
+        Some("_ezer/relay/initialized") => {
             tracing::debug!(session_id = %session_id, "RelaySync: relay confirmed TUI sync mode");
         }
         Some(other) => {
@@ -785,7 +785,7 @@ mod tests {
     #[test]
     fn test_build_share_url_default() {
         let url = build_share_url("test-session-123");
-        assert_eq!(url, "https://grok.com/build/test-session-123");
+        assert_eq!(url, "https://example.test/build/test-session-123");
     }
 
     #[test]
@@ -793,7 +793,7 @@ mod tests {
         let url = build_share_url("01937d8a-1234-7abc-9def-0123456789ab");
         assert_eq!(
             url,
-            "https://grok.com/build/01937d8a-1234-7abc-9def-0123456789ab"
+            "https://example.test/build/01937d8a-1234-7abc-9def-0123456789ab"
         );
     }
 

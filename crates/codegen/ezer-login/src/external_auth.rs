@@ -1,5 +1,5 @@
 use crate::AuthMode;
-use crate::GrokAuth;
+use crate::EzerAuth;
 use crate::token_output::parse_token_output;
 use std::time::Duration;
 use ezer_shell_base::util::subprocess::CommandLog;
@@ -8,10 +8,10 @@ use ezer_shell_base::util::subprocess::RunOptions;
 use ezer_shell_base::util::subprocess::run_detached_with_timeout;
 use ezer_shell_base::util::subprocess::shell_c;
 
-/// Parse stdout into a session-credential `GrokAuth`.
-pub fn parse_output(output: &std::process::Output) -> anyhow::Result<GrokAuth> {
+/// Parse stdout into a session-credential `EzerAuth`.
+pub fn parse_output(output: &std::process::Output) -> anyhow::Result<EzerAuth> {
     let parsed = parse_token_output(output)?;
-    Ok(GrokAuth {
+    Ok(EzerAuth {
         key: parsed.access_token,
         auth_mode: AuthMode::External,
         create_time: chrono::Utc::now(),
@@ -31,7 +31,7 @@ pub fn parse_output(output: &std::process::Output) -> anyhow::Result<GrokAuth> {
         user_blocked_reason: None,
         team_blocked_reasons: vec![],
         coding_data_retention_opt_out: crate::default_coding_data_retention_opt_out(),
-        has_grok_code_access: None,
+        has_remote_code_access: None,
         refresh_token: parsed.refresh_token,
         expires_at: parsed.expires_at,
         oidc_issuer: parsed.issuer,
@@ -58,7 +58,7 @@ pub enum ExternalRefreshError {
 /// Runs the external auth binary for a headless mid-session refresh.
 /// Initial, interactive sign-in takes a separate path (`flow::run_external_auth_provider`, which bridges the provider's stderr link).
 /// This handles refresh only.
-pub async fn run_external_refresh(command: &str) -> Result<GrokAuth, ExternalRefreshError> {
+pub async fn run_external_refresh(command: &str) -> Result<EzerAuth, ExternalRefreshError> {
     tracing::info!(cmd = %command, timeout_secs = EXTERNAL_AUTH_REFRESH_TIMEOUT.as_secs(), "auth: running external auth provider (headless refresh)");
 
     let mut cmd = shell_c(command);
@@ -110,8 +110,8 @@ pub async fn run_external_refresh(command: &str) -> Result<GrokAuth, ExternalRef
 /// Run external auth provider, carrying forward `/user`-derived fields from previous auth.
 pub async fn refresh_with_command(
     command: &str,
-    prev_auth: &GrokAuth,
-) -> Result<GrokAuth, ExternalRefreshError> {
+    prev_auth: &EzerAuth,
+) -> Result<EzerAuth, ExternalRefreshError> {
     let mut auth = run_external_refresh(command).await?;
     auth.carry_user_profile_from(prev_auth);
     Ok(auth)
@@ -202,8 +202,8 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn sets_grok_auth_expired_env_on_refresh() {
-        let auth = run_external_refresh("echo $GROK_AUTH_EXPIRED")
+    async fn sets_ezer_auth_expired_env_on_refresh() {
+        let auth = run_external_refresh("echo $EZER_AUTH_EXPIRED")
             .await
             .unwrap();
         assert_eq!(auth.key, "1");
@@ -211,12 +211,12 @@ mod tests {
 
     #[tokio::test]
     async fn refresh_carries_zdr_flags_forward() {
-        let prev = GrokAuth {
+        let prev = EzerAuth {
             user_blocked_reason: Some("BLOCKED_REASON_OTHER".into()),
             team_blocked_reasons: vec!["BLOCKED_REASON_NO_LOGS".into()],
             coding_data_retention_opt_out: true,
             organization_id: Some("org-1".into()),
-            ..GrokAuth::test_default()
+            ..EzerAuth::test_default()
         };
         let auth = refresh_with_command("echo fresh-token", &prev)
             .await

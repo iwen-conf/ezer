@@ -1,5 +1,5 @@
 //! Memory listing, on/off toggling, and the manual flush and Dream commands behind the
-//! `x.ai/memory/{list,toggle,flush,dream}` extension methods.
+//! `ezer/memory/{list,toggle,flush,dream}` extension methods.
 
 use std::sync::Arc;
 
@@ -182,7 +182,7 @@ impl SessionActor {
         })
     }
 
-    /// `x.ai/memory/toggle`: toggle, then attach a fresh listing so an open modal can resync.
+    /// `ezer/memory/toggle`: toggle, then attach a fresh listing so an open modal can resync.
     /// The toggle has already happened by the time listing runs, so a listing failure must not
     /// fail the reply; the modal keeps its rows and shows the toggle message.
     pub(crate) async fn memory_toggle_and_list(
@@ -532,7 +532,7 @@ impl SessionActor {
         );
     }
 
-    /// `x.ai/memory/flush`: capture every completed turn now and wait for it to land.
+    /// `ezer/memory/flush`: capture every completed turn now and wait for it to land.
     pub(crate) async fn memory_flush_command(self: &Arc<Self>) -> MemoryFlushResponse {
         use crate::session::memory::v2_capture::FlushResult;
         if !self.memory.is_enabled() {
@@ -571,7 +571,7 @@ impl SessionActor {
         }
     }
 
-    /// `x.ai/memory/dream`: consolidate now, bypassing the automatic Dream gates.
+    /// `ezer/memory/dream`: consolidate now, bypassing the automatic Dream gates.
     pub(crate) async fn memory_dream_command(self: &Arc<Self>) -> MemoryDreamResponse {
         if !self.memory.is_enabled() {
             return MemoryDreamResponse::new(MemoryDreamDisposition::Disabled);

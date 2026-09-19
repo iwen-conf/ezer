@@ -4,7 +4,7 @@
 //! two harnesses disagree on how to produce one:
 //!
 //! - ezer chat has a real tokenizer (`TextTokenizer` / `ImageTokenizer`) and
-//!   counts whole turns via `GrokTurn::get_num_tokens`.
+//!   counts whole turns via `EzerTurn::get_num_tokens`.
 //! - ezer-build estimates with `bytes / 4`.
 //!
 //! Rather than bake either policy into the shared crate, callers supply an
@@ -13,7 +13,7 @@
 //!
 //! There is intentionally **no** blanket `Arc` forwarding here: each harness
 //! implements the counter directly for the item type its algorithms run on
-//! (ezer chat: `ItemTokenCounter<Arc<GrokTurn>>`), so exactly one mechanism
+//! (ezer chat: `ItemTokenCounter<Arc<EzerTurn>>`), so exactly one mechanism
 //! is in play.
 
 /// Counts tokens for a single conversation item on behalf of the shared

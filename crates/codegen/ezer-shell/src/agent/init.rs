@@ -12,7 +12,7 @@ use indexmap::IndexMap;
 use std::sync::{Arc, Mutex, TryLockError};
 use std::time::Duration;
 use tokio_util::sync::CancellationToken;
-use ezer_login::{AuthManager, GrokAuth};
+use ezer_login::{AuthManager, EzerAuth};
 /// The policy refusal stays typed; stringify only at the process boundary.
 #[derive(Debug, thiserror::Error)]
 pub enum BootstrapError {
@@ -170,7 +170,7 @@ pub fn bootstrap_with_cancel(
                 Some(resolved) => resolved,
                 None => crate::agent::remote_config::fetch_initial_models_blocking(
                     cancel,
-                    Some(cfg.grok_com_config.clone()),
+                    Some(cfg.ezer_com_config.clone()),
                     warmed_auth.clone(),
                 ),
             },
@@ -211,12 +211,12 @@ pub async fn resolve_boot_startup_settings(
     cfg: &mut AgentConfig,
     cancel: &CancellationToken,
     start_models_prefetch: bool,
-    warmed_auth: Option<GrokAuth>,
+    warmed_auth: Option<EzerAuth>,
 ) -> Result<BootstrapPrefetch, BootstrapError> {
     let models_load = if start_models_prefetch {
         crate::agent::remote_config::start_initial_models_load(
             cancel.clone(),
-            Some(cfg.grok_com_config.clone()),
+            Some(cfg.ezer_com_config.clone()),
             warmed_auth.clone(),
         )
     } else {
@@ -268,7 +268,7 @@ fn install_settings_wait(
     deadline: std::time::Duration,
     waited: std::time::Duration,
     wait: &settings_get::SettingsWait,
-    warmed_auth: Option<&GrokAuth>,
+    warmed_auth: Option<&EzerAuth>,
 ) {
     match wait {
         settings_get::SettingsWait::Cancelled => {}
@@ -307,7 +307,7 @@ fn ensure_remote_settings_side_effects(
     cfg: &mut AgentConfig,
     profile: LaunchProfile,
     cancel: &CancellationToken,
-    warmed_auth: Option<&GrokAuth>,
+    warmed_auth: Option<&EzerAuth>,
     boot_wait: Option<&SettingsWait>,
 ) -> Result<StartupPrefetch, BootstrapError> {
     let prefetch = if let Some(wait) = boot_wait {
@@ -366,7 +366,7 @@ fn apply_post_gate_settings(
     pre_gate: StartupPrefetch,
     profile: LaunchProfile,
     cancel: &CancellationToken,
-    warmed_auth: Option<&GrokAuth>,
+    warmed_auth: Option<&EzerAuth>,
     boot_wait: Option<&SettingsWait>,
 ) {
     match (cfg.remote_settings.is_some(), pre_gate) {
@@ -419,7 +419,7 @@ fn resolve_config(
             StorageMode::from_remote_gated(cfg.remote_settings.as_ref(), has_xai_auth);
     }
     if cfg.storage_mode == StorageMode::Writeback && !has_xai_auth {
-        tracing::info!("Writeback is disabled: requires auth with grok.com");
+        tracing::info!("Writeback is disabled: requires auth with ezer.com");
         cfg.storage_mode = StorageMode::Local;
     }
     if let Some(rs) = cfg.remote_settings.as_ref()
@@ -439,14 +439,14 @@ fn init_process(cfg: &AgentConfig, auth_manager: &AuthManager) {
         ezer_telemetry::unified_log::set_version(ezer_version::VERSION);
         let limits = crate::util::limits::ProcessLimits::read();
         limits.log();
-        let grok_home = crate::util::grok_home::grok_home();
-        crate::builtin::extract_builtin_files(&grok_home);
+        let ezer_home = crate::util::ezer_home::ezer_home();
+        crate::builtin::extract_builtin_files(&ezer_home);
         if !cfg!(test) {
-            crate::builtin::purge_stale_extracted_skills(&grok_home);
+            crate::builtin::purge_stale_extracted_skills(&ezer_home);
         }
-        crate::extensions::marketplace::purge_default_skills_installs(&grok_home);
+        crate::extensions::marketplace::purge_default_skills_installs(&ezer_home);
         if cfg.resolve_official_marketplace_auto_register().value {
-            crate::extensions::marketplace::ensure_official_marketplace_source(&grok_home);
+            crate::extensions::marketplace::ensure_official_marketplace_source(&ezer_home);
         }
         let telemetry_mode = cfg.resolve_telemetry_mode();
         let trace_upload = cfg.resolve_trace_upload();
@@ -483,9 +483,9 @@ pub fn update_telemetry_config(config: &AgentConfig, auth_manager: &AuthManager)
         tracing::warn!("telemetry init skipped: EZER_CLIENT_NAME yields an invalid user agent");
         return;
     }
-    let grok_auth = auth_manager.current().filter(|a| a.is_xai_auth());
-    let user_id = grok_auth.as_ref().map(|a| a.user_id.clone());
-    let team_id = grok_auth.as_ref().and_then(|a| a.team_id.clone());
+    let ezer_auth = auth_manager.current().filter(|a| a.is_xai_auth());
+    let user_id = ezer_auth.as_ref().map(|a| a.user_id.clone());
+    let team_id = ezer_auth.as_ref().and_then(|a| a.team_id.clone());
     let subscription_tier = super::mvp_agent::resolve_subscription_tier_for_telemetry(
         config
             .remote_settings
@@ -531,7 +531,7 @@ pub fn build_default_otel_layer_config() -> ezer_telemetry::otel_layer::OtelLaye
 /// Stay quiet about absence or failure during login; confirm only when config was actually applied.
 /// Driven by the login callers here so auth does not reach into managed config.
 pub async fn apply_post_login_config(
-    authenticated: ezer_login::GrokAuth,
+    authenticated: ezer_login::EzerAuth,
 ) -> anyhow::Result<()> {
     let outcome = crate::managed_config::post_login_sync(Some(authenticated)).await;
     match outcome {
@@ -552,11 +552,11 @@ pub async fn apply_post_login_config(
 }
 /// `ezer logout` CLI subcommand: clear the cached session and, when one was cleared, drop any orphaned synced files.
 /// The orphan cleanup runs here in shell so auth stays out of managed config.
-pub fn run_cli_logout(grok_com_config: &ezer_login::GrokComConfig) -> anyhow::Result<()> {
-    let grok_home = ezer_shell_base::util::grok_home::grok_home();
+pub fn run_cli_logout(ezer_com_config: &ezer_login::EzerComConfig) -> anyhow::Result<()> {
+    let ezer_home = ezer_shell_base::util::ezer_home::ezer_home();
     let auth_manager = ezer_login::AuthManager::new_with_proxy_base_url(
-        &grok_home,
-        grok_com_config.clone(),
+        &ezer_home,
+        ezer_com_config.clone(),
         crate::agent::config::EndpointsConfig::from_effective_config().proxy_url(),
     );
     let result =

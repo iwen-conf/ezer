@@ -23,7 +23,7 @@ fn http1_only_client_stays_on_http11_against_an_h2_server() {
     unsafe {
         std::env::remove_var(ezer_extra_ca::ENV_SSL_CERT_FILE);
         std::env::set_var(
-            ezer_extra_ca::ENV_GROK_EXTRA_CA_BUNDLE,
+            ezer_extra_ca::ENV_EZER_EXTRA_CA_BUNDLE,
             ca_path.as_os_str(),
         );
     }

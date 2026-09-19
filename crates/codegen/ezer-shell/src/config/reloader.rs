@@ -7,7 +7,7 @@ use tokio::sync::mpsc;
 use tokio_util::sync::CancellationToken;
 use tracing::{debug, error, info};
 
-use ezer_login::{GrokAuth, read_auth_json};
+use ezer_login::{EzerAuth, read_auth_json};
 
 use super::watcher::ConfigChangeEvent;
 
@@ -15,7 +15,7 @@ use super::watcher::ConfigChangeEvent;
 #[derive(Debug)]
 pub enum ConfigUpdate {
     /// New auth credentials from disk.
-    Auth(Box<GrokAuth>),
+    Auth(Box<EzerAuth>),
     /// Auth scope was removed (user logged out).
     AuthCleared,
     /// A **broadcast** MCP reload; it applies to every active session regardless of cwd. Fires for two cases: The global `[mcp_servers]` table in `~/.ezer/config.toml` changed. The user's home-level `~/.claude.json` changed.
@@ -43,7 +43,7 @@ pub enum ConfigUpdate {
     /// That method content-dedupes self-writes (`persist` / `renew_ttl`) before applying.
     /// The variant carries no payload: validation (TTL, version, auth method) requires `ModelsManager` state the reloader doesn't have.
     ModelsCacheChanged,
-    /// Updated UI settings; the agent broadcasts `x.ai/config_changed` to IPC clients.
+    /// Updated UI settings; the agent broadcasts `ezer/config_changed` to IPC clients.
     Ui {
         theme: Option<String>,
         yolo: bool,
@@ -61,7 +61,7 @@ pub(crate) struct ConfigReloader {
     /// Per-cwd content hash of the project MCP config files.
     /// It drops redundant `ProjectMcpServersChanged` dispatches on mtime-only touches (see `hash_project_mcp_config`).
     last_project_mcp_hashes: HashMap<PathBuf, u64>,
-    grok_home: PathBuf,
+    ezer_home: PathBuf,
     auth_scope: String,
     remote_settings: Option<crate::util::config::RemoteSettings>,
     config_update_tx: mpsc::UnboundedSender<ConfigUpdate>,
@@ -70,7 +70,7 @@ pub(crate) struct ConfigReloader {
 
 impl ConfigReloader {
     pub(crate) fn new(
-        grok_home: PathBuf,
+        ezer_home: PathBuf,
         initial_auth_key_hash: u64,
         initial_config: toml::Value,
         auth_scope: String,
@@ -85,7 +85,7 @@ impl ConfigReloader {
             last_global_config: initial_config,
             last_effective_config,
             last_project_mcp_hashes: HashMap::new(),
-            grok_home,
+            ezer_home,
             auth_scope,
             remote_settings,
             config_update_tx,
@@ -147,7 +147,7 @@ impl ConfigReloader {
                         error!(error = %e, "auth hot-reload failed, keeping previous credentials");
                         // Whole-file deletion (NotFound) and corrupt JSON land here
                         // The resulting memory/disk divergence must be visible in unified.jsonl
-                        let path = self.grok_home.join("auth.json");
+                        let path = self.ezer_home.join("auth.json");
                         ezer_telemetry::unified_log::error(
                             "auth reload: auth.json unreadable, keeping previous credentials",
                             None,
@@ -197,7 +197,7 @@ impl ConfigReloader {
             }
 
             // Fan out one `ProjectMcpServersChanged { cwd }` per affected project root
-            // The legacy unit `McpServersChanged` above stays for global-config edits; both variants can fire in the same tick (e.g. `~/.grok/config.toml` AND `<cwd>/.mcp.json` edited together).
+            // The legacy unit `McpServersChanged` above stays for global-config edits; both variants can fire in the same tick (e.g. `~/.ezer/config.toml` AND `<cwd>/.mcp.json` edited together).
             for cwd in project_cwds {
                 // Skip the dispatch when the project config bytes are unchanged (the watcher fires on mtime-only touches)
                 // On any uncertainty we dispatch; see `hash_project_mcp_config`
@@ -225,7 +225,7 @@ impl ConfigReloader {
     }
 
     pub(crate) fn reload_auth(&mut self) -> anyhow::Result<()> {
-        let auth_path = self.grok_home.join("auth.json");
+        let auth_path = self.ezer_home.join("auth.json");
         let store = read_auth_json(&auth_path)?;
 
         match ezer_login::lookup_auth(&store, &self.auth_scope) {
@@ -275,7 +275,7 @@ impl ConfigReloader {
             }
         };
 
-        // MCP servers: compare the [mcp_servers] table in the **global** config (`~/.grok/config.toml`) via toml::Value. Project- scoped changes (`<cwd>/.grok/config.toml`, `<cwd>/.mcp.json`) go out separately as `ConfigUpdate::ProjectMcpServersChanged { cwd }`
+        // MCP servers: compare the [mcp_servers] table in the **global** config (`~/.ezer/config.toml`) via toml::Value. Project- scoped changes (`<cwd>/.ezer/config.toml`, `<cwd>/.mcp.json`) go out separately as `ConfigUpdate::ProjectMcpServersChanged { cwd }`
         // That per-cwd dispatch (see `collect_project_cwds`) keeps them from sweeping unrelated sessions
         let old_mcp_table = self.last_global_config.get("mcp_servers");
         let new_mcp_table = new_global.get("mcp_servers");
@@ -386,7 +386,7 @@ fn collect_project_cwds(batch: &[ConfigChangeEvent]) -> Vec<PathBuf> {
     for evt in batch {
         let cwd = match evt {
             ConfigChangeEvent::ProjectConfigChanged { path } => {
-                // <cwd>/.grok/config.toml yields <cwd>
+                // <cwd>/.ezer/config.toml yields <cwd>
                 path.parent()
                     .and_then(|p| p.parent())
                     .map(|p| p.to_path_buf())
@@ -478,13 +478,13 @@ fn extract_ui_fields(config: &toml::Value) -> (Option<String>, bool, Option<Stri
 mod tests {
     use super::*;
     use std::collections::BTreeMap;
-    use ezer_login::GrokAuth;
+    use ezer_login::EzerAuth;
 
-    fn make_auth(key: &str) -> GrokAuth {
-        GrokAuth {
+    fn make_auth(key: &str) -> EzerAuth {
+        EzerAuth {
             key: key.to_string(),
             email: Some("test@test.com".to_string()),
-            ..GrokAuth::test_default()
+            ..EzerAuth::test_default()
         }
     }
 
@@ -544,7 +544,7 @@ mod tests {
         reloader.reload_auth().unwrap();
         let update = rx.try_recv().expect("should send Auth update");
         assert!(
-            matches!(update, ConfigUpdate::Auth(a) if a.key == "new-key"), // a is Box<GrokAuth>, Deref coercion
+            matches!(update, ConfigUpdate::Auth(a) if a.key == "new-key"), // a is Box<EzerAuth>, Deref coercion
             "should contain new key"
         );
     }
@@ -767,12 +767,12 @@ mod tests {
         let h2 = hash_project_mcp_config(&child).expect("readable");
         assert_ne!(h1, h2, "ancestor .mcp.json edit must change the hash");
 
-        std::fs::create_dir_all(tmp.path().join(".grok")).unwrap();
-        std::fs::write(tmp.path().join(".grok").join("config.toml"), "x = 1").unwrap();
+        std::fs::create_dir_all(tmp.path().join(".ezer")).unwrap();
+        std::fs::write(tmp.path().join(".ezer").join("config.toml"), "x = 1").unwrap();
         let h3 = hash_project_mcp_config(&child).expect("readable");
         assert_ne!(
             h2, h3,
-            "ancestor .grok/config.toml create must change the hash"
+            "ancestor .ezer/config.toml create must change the hash"
         );
     }
 
@@ -797,7 +797,7 @@ ignore = ["/tmp"]
         )
         .unwrap();
         let skills = parse_skills_config(&config);
-        assert_eq!(skills.paths, vec!["/home/user/.grok/skills".to_string()]);
+        assert_eq!(skills.paths, vec!["/home/user/.ezer/skills".to_string()]);
         assert_eq!(skills.ignore, vec!["/tmp".to_string()]);
     }
 
@@ -839,14 +839,14 @@ ignore = ["/tmp"]
 [ui]
 theme = "dark"
 yolo = true
-fork_secondary_model = "grok-4.5"
+fork_secondary_model = "test-model-4.5"
 "#,
         )
         .unwrap();
         let (theme, yolo, fork) = extract_ui_fields(&config);
         assert_eq!(theme.as_deref(), Some("dark"));
         assert!(yolo);
-        assert_eq!(fork.as_deref(), Some("grok-4.5"));
+        assert_eq!(fork.as_deref(), Some("test-model-4.5"));
     }
 
     #[test]
@@ -869,7 +869,7 @@ fork_secondary_model = "grok-4.5"
         let b: toml::Value = toml::from_str(
             r#"
 [model.my-custom]
-model = "grok-4.5"
+model = "test-model-4.5"
 base_url = "https://api.example.com/v1"
 "#,
         )

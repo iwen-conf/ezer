@@ -22,16 +22,16 @@ pub mod field {
     pub const PATTERN: &str = "pattern";
 }
 /// The single `_meta` key holding the canonical tool identity as one nested
-/// object (mirroring `x.ai/mcp_tool`). Consumers deserialize it into
+/// object (mirroring `ezer/mcp_tool`). Consumers deserialize it into
 /// [`CanonicalToolMeta`].
-pub const TOOL_META_KEY: &str = "x.ai/tool";
+pub const TOOL_META_KEY: &str = "ezer/tool";
 /// Version of the canonical tool `_meta` contract. Bump on any breaking change
 /// to keys or value shapes so consumers can adapt.
 pub const TOOL_META_VERSION: u32 = 1;
 impl ToolKind {
     /// Unified, harness-independent display label for this semantic kind. A pure function of the kind, so equivalent tools
     /// across toolsets share it (`read_file` and `Read` → `Read`; `run_terminal_cmd` and `Shell` → `Run Command`). Display
-    /// only; the model's tool name is `name` in `x.ai/tool`. Exhaustive, so a new `ToolKind` must add a label to compile.
+    /// only; the model's tool name is `name` in `ezer/tool`. Exhaustive, so a new `ToolKind` must add a label to compile.
     pub fn presentation_name(self) -> &'static str {
         match self {
             ToolKind::Read => "Read",
@@ -213,7 +213,7 @@ impl CanonicalToolMeta {
         }
     }
     /// Attach under [`TOOL_META_KEY`], preserving existing `_meta` keys
-    /// (`bash_mode`, `backend`, `x.ai/mcp_tool`, …).
+    /// (`bash_mode`, `backend`, `ezer/mcp_tool`, …).
     pub fn merge_into(&self, existing: Option<serde_json::Value>) -> serde_json::Value {
         debug_assert!(
             matches!(existing, None | Some(serde_json::Value::Object(_))),
@@ -241,7 +241,7 @@ mod tests {
     fn identity(kind: ToolKind) -> ToolIdentity {
         ToolIdentity {
             tool_kind: kind,
-            namespace: ToolNamespace::GrokBuild,
+            namespace: ToolNamespace::EzerBuild,
             presentation_name: kind.presentation_name(),
             read_only: kind.is_read_only(),
         }
@@ -304,9 +304,9 @@ mod tests {
         use strum::IntoEnumIterator;
         fn wire_and_pascal(ns: ToolNamespace) -> (&'static str, &'static str) {
             match ns {
-                ToolNamespace::GrokBuild => ("ezer_build", "Ezer"),
-                ToolNamespace::GrokBuildConcise => ("ezer_concise", "EzerConcise"),
-                ToolNamespace::GrokBuildHashline => ("ezer_hashline", "EzerHashline"),
+                ToolNamespace::EzerBuild => ("ezer_build", "Ezer"),
+                ToolNamespace::EzerBuildConcise => ("ezer_concise", "EzerConcise"),
+                ToolNamespace::EzerBuildHashline => ("ezer_hashline", "EzerHashline"),
                 ToolNamespace::Codex => ("codex", "Codex"),
                 ToolNamespace::OpenCode => ("opencode", "OpenCode"),
                 ToolNamespace::MCP => ("mcp", "MCP"),

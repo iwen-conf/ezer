@@ -356,7 +356,7 @@ pub(super) struct BridgeToolSuccess<'a> {
     pub model_output_override: Option<String>,
 }
 impl SessionActor {
-    /// Merge the canonical `x.ai/tool` identity envelope into a tool-call event's `_meta`, resolving the tool from the live toolset by wire name.
+    /// Merge the canonical `ezer/tool` identity envelope into a tool-call event's `_meta`, resolving the tool from the live toolset by wire name.
     pub(super) fn stamp_tool_meta(
         &self,
         existing: Option<acp::Meta>,
@@ -1968,7 +1968,7 @@ impl SessionActor {
         };
         Ok(Ok(prepared))
     }
-    /// Issue the `x.ai/exit_plan_mode` reverse-request and await the user's decision.
+    /// Issue the `ezer/exit_plan_mode` reverse-request and await the user's decision.
     /// Shared by the mid-turn intercept and the resume re-park.
     /// Marks `awaiting_plan_approval` while the request is outstanding and clears it on every exit path via [`AwaitingApprovalGuard`].
     pub(super) async fn request_plan_approval(
@@ -1993,7 +1993,7 @@ impl SessionActor {
             "exit_plan_mode reverse-request must carry a non-empty sessionId (design §5.4)"
         );
         let ext_request = acp::ExtRequest::new(
-            "x.ai/exit_plan_mode",
+            "ezer/exit_plan_mode",
             serde_json::value::to_raw_value(&ext_req)
                 .expect("ExitPlanModeExtRequest serialization should not fail")
                 .into(),
@@ -3380,7 +3380,7 @@ mod plan_mode_edit_gate_tests {
     }
     /// ezer edit tools are plan-file-only while plan mode is active: the enforcement that makes plan mode read-only even under always-approve.
     #[test]
-    fn grok_edits_outside_plan_file_rejected() {
+    fn ezer_edits_outside_plan_file_rejected() {
         let t = active_tracker();
         assert_eq!(
             gate(&t, &search_replace("/tmp/src/main.rs")),
@@ -3389,7 +3389,7 @@ mod plan_mode_edit_gate_tests {
         assert_eq!(
             gate(&t, &write("/tmp/README.md")),
             PlanEditGate::RejectNonPlanFile,
-            "grok tools get no markdown exception — plan file only"
+            "ezer tools get no markdown exception — plan file only"
         );
     }
     /// The carve-out and the permission bypass share `should_auto_approve_edit`, so the plan file itself stays editable.

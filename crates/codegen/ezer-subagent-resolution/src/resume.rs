@@ -107,7 +107,7 @@ mod tests {
     #[test]
     fn source_model_is_not_validated() {
         // Model is not an identity gate; source model is used only for pinning.
-        let source = make_source("general-purpose", None, Some("grok-3"));
+        let source = make_source("general-purpose", None, Some("test-model-3"));
         let result = validate_resume_identity("general-purpose", None, &source);
         assert!(result.is_ok());
     }

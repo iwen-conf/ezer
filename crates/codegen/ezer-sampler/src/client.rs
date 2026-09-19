@@ -52,7 +52,7 @@ const AGENT_PRODUCT: &str = "ezer-shell";
 const ANTHROPIC_DEFAULT_MAX_TOKENS: u32 = 128_000;
 
 /// Per-request `x-ezer-*` headers. Optional fields are skipped when empty/`None`.
-struct GrokRequestHeaders<'a> {
+struct EzerRequestHeaders<'a> {
     conv_id: &'a str,
     req_id: &'a str,
     model_id: &'a str,
@@ -65,7 +65,7 @@ struct GrokRequestHeaders<'a> {
     user_id: Option<&'a str>,
 }
 
-impl GrokRequestHeaders<'_> {
+impl EzerRequestHeaders<'_> {
     fn apply(&self, builder: reqwest::RequestBuilder) -> reqwest::RequestBuilder {
         let mut b = builder
             .header("x-ezer-conv-id", self.conv_id)
@@ -602,7 +602,7 @@ impl SamplingClient {
             &mut headers,
         );
 
-        // Add x-grok-client-version header for version gating at the proxy.
+        // Add x-ezer-client-version header for version gating at the proxy.
         if let Some(client_version) = config.client_version.as_ref()
             && let Ok(header_value) = HeaderValue::from_str(client_version)
         {
@@ -958,8 +958,8 @@ impl SamplingClient {
         request: ChatCompletionRequest,
     ) -> Result<ChatCompletionResponse> {
         let payload = self.apply_defaults(request)?;
-        let x_grok_conv_id = &payload.x_grok_conv_id.clone().unwrap_or_default();
-        let x_grok_req_id = &payload.x_grok_req_id.clone().unwrap_or_default();
+        let x_ezer_conv_id = &payload.x_ezer_conv_id.clone().unwrap_or_default();
+        let x_ezer_req_id = &payload.x_ezer_req_id.clone().unwrap_or_default();
         let model_id = payload.model.clone().unwrap_or_default();
 
         let request_region = crate::span_timing::Region::from_span(tracing::info_span!(
@@ -975,16 +975,16 @@ impl SamplingClient {
             "Sending chat completion request"
         );
 
-        let grok_headers = GrokRequestHeaders {
-            conv_id: x_grok_conv_id,
-            req_id: x_grok_req_id,
+        let ezer_headers = EzerRequestHeaders {
+            conv_id: x_ezer_conv_id,
+            req_id: x_ezer_req_id,
             model_id: &model_id,
-            session_id: payload.x_grok_session_id.as_deref().unwrap_or_default(),
-            turn_idx: payload.x_grok_turn_idx.as_deref(),
-            transient_retry: payload.x_grok_transient_retry.as_deref(),
-            agent_id: payload.x_grok_agent_id.as_deref().unwrap_or_default(),
-            deployment_id: payload.x_grok_deployment_id.as_deref(),
-            user_id: payload.x_grok_user_id.as_deref(),
+            session_id: payload.x_ezer_session_id.as_deref().unwrap_or_default(),
+            turn_idx: payload.x_ezer_turn_idx.as_deref(),
+            transient_retry: payload.x_ezer_transient_retry.as_deref(),
+            agent_id: payload.x_ezer_agent_id.as_deref().unwrap_or_default(),
+            deployment_id: payload.x_ezer_deployment_id.as_deref(),
+            user_id: payload.x_ezer_user_id.as_deref(),
         };
         self.prepare_bearer().await;
         let SentRequest {
@@ -992,7 +992,7 @@ impl SamplingClient {
             sent_bearer,
         } = self.post(self.endpoint("chat/completions"));
         let built_request = self
-            .build_json_request(grok_headers.apply(builder), &payload)
+            .build_json_request(ezer_headers.apply(builder), &payload)
             .await?;
         let response = self.send(built_request).await?;
 
@@ -1100,8 +1100,8 @@ impl SamplingClient {
     )> {
         let mut span_timing = StreamSpanTiming::start(region);
         let payload = self.apply_defaults(request)?;
-        let x_grok_conv_id = &payload.x_grok_conv_id.clone().unwrap_or_default();
-        let x_grok_req_id = &payload.x_grok_req_id.clone().unwrap_or_default();
+        let x_ezer_conv_id = &payload.x_ezer_conv_id.clone().unwrap_or_default();
+        let x_ezer_req_id = &payload.x_ezer_req_id.clone().unwrap_or_default();
         let model_id = payload.model.clone().unwrap_or_default();
 
         // Wrap the request with streaming fields and serialize once.
@@ -1113,23 +1113,23 @@ impl SamplingClient {
             },
         };
 
-        let grok_headers = GrokRequestHeaders {
-            conv_id: x_grok_conv_id,
-            req_id: x_grok_req_id,
+        let ezer_headers = EzerRequestHeaders {
+            conv_id: x_ezer_conv_id,
+            req_id: x_ezer_req_id,
             model_id: &model_id,
-            session_id: payload.x_grok_session_id.as_deref().unwrap_or_default(),
-            turn_idx: payload.x_grok_turn_idx.as_deref(),
-            transient_retry: payload.x_grok_transient_retry.as_deref(),
-            agent_id: payload.x_grok_agent_id.as_deref().unwrap_or_default(),
-            deployment_id: payload.x_grok_deployment_id.as_deref(),
-            user_id: payload.x_grok_user_id.as_deref(),
+            session_id: payload.x_ezer_session_id.as_deref().unwrap_or_default(),
+            turn_idx: payload.x_ezer_turn_idx.as_deref(),
+            transient_retry: payload.x_ezer_transient_retry.as_deref(),
+            agent_id: payload.x_ezer_agent_id.as_deref().unwrap_or_default(),
+            deployment_id: payload.x_ezer_deployment_id.as_deref(),
+            user_id: payload.x_ezer_user_id.as_deref(),
         };
         self.prepare_bearer().await;
         let SentRequest {
             builder,
             sent_bearer,
         } = self.post(self.endpoint("chat/completions"));
-        let http_request = grok_headers
+        let http_request = ezer_headers
             .apply(builder)
             .header(ACCEPT, HeaderValue::from_static("text/event-stream"));
         let built_request = self
@@ -1315,8 +1315,8 @@ impl SamplingClient {
     ) -> Result<rs::Response> {
         self.apply_response_defaults(&mut request)?;
 
-        let x_grok_conv_id = request.x_grok_conv_id.as_deref().unwrap_or_default();
-        let x_grok_req_id = request.x_grok_req_id.as_deref().unwrap_or_default();
+        let x_ezer_conv_id = request.x_ezer_conv_id.as_deref().unwrap_or_default();
+        let x_ezer_req_id = request.x_ezer_req_id.as_deref().unwrap_or_default();
         let model_id = request.inner.model.clone().unwrap_or_default();
 
         let request_region = crate::span_timing::Region::from_span(tracing::info_span!(
@@ -1333,16 +1333,16 @@ impl SamplingClient {
         tracing::debug!("create_response: {:?}", &request);
         tracing::debug!("endpoint: {:?}", self.endpoint("responses"));
 
-        let grok_headers = GrokRequestHeaders {
-            conv_id: x_grok_conv_id,
-            req_id: x_grok_req_id,
+        let ezer_headers = EzerRequestHeaders {
+            conv_id: x_ezer_conv_id,
+            req_id: x_ezer_req_id,
             model_id: &model_id,
-            session_id: request.x_grok_session_id.as_deref().unwrap_or_default(),
-            turn_idx: request.x_grok_turn_idx.as_deref(),
-            transient_retry: request.x_grok_transient_retry.as_deref(),
-            agent_id: request.x_grok_agent_id.as_deref().unwrap_or_default(),
-            deployment_id: request.x_grok_deployment_id.as_deref(),
-            user_id: request.x_grok_user_id.as_deref(),
+            session_id: request.x_ezer_session_id.as_deref().unwrap_or_default(),
+            turn_idx: request.x_ezer_turn_idx.as_deref(),
+            transient_retry: request.x_ezer_transient_retry.as_deref(),
+            agent_id: request.x_ezer_agent_id.as_deref().unwrap_or_default(),
+            deployment_id: request.x_ezer_deployment_id.as_deref(),
+            user_id: request.x_ezer_user_id.as_deref(),
         };
         let extra_tool_entries = std::mem::take(&mut request.extra_tool_entries);
         let mut request_body = serde_json::to_value(&request.inner).map_err(|e| {
@@ -1360,7 +1360,7 @@ impl SamplingClient {
             sent_bearer,
         } = self.post(self.endpoint("responses"));
         let built_request = self
-            .build_json_request(grok_headers.apply(builder), &request_body)
+            .build_json_request(ezer_headers.apply(builder), &request_body)
             .await?;
         let response = self.send(built_request).await?;
 
@@ -1461,8 +1461,8 @@ impl SamplingClient {
 
         request.inner.stream = Some(true);
 
-        let x_grok_conv_id = request.x_grok_conv_id.as_deref().unwrap_or_default();
-        let x_grok_req_id = request.x_grok_req_id.as_deref().unwrap_or_default();
+        let x_ezer_conv_id = request.x_ezer_conv_id.as_deref().unwrap_or_default();
+        let x_ezer_req_id = request.x_ezer_req_id.as_deref().unwrap_or_default();
         let model_id = request.inner.model.clone().unwrap_or_default();
 
         // Drop process-local trace data (see note in `create_response`).
@@ -1474,16 +1474,16 @@ impl SamplingClient {
             "Sending responses API stream request"
         );
 
-        let grok_headers = GrokRequestHeaders {
-            conv_id: x_grok_conv_id,
-            req_id: x_grok_req_id,
+        let ezer_headers = EzerRequestHeaders {
+            conv_id: x_ezer_conv_id,
+            req_id: x_ezer_req_id,
             model_id: &model_id,
-            session_id: request.x_grok_session_id.as_deref().unwrap_or_default(),
-            turn_idx: request.x_grok_turn_idx.as_deref(),
-            transient_retry: request.x_grok_transient_retry.as_deref(),
-            agent_id: request.x_grok_agent_id.as_deref().unwrap_or_default(),
-            deployment_id: request.x_grok_deployment_id.as_deref(),
-            user_id: request.x_grok_user_id.as_deref(),
+            session_id: request.x_ezer_session_id.as_deref().unwrap_or_default(),
+            turn_idx: request.x_ezer_turn_idx.as_deref(),
+            transient_retry: request.x_ezer_transient_retry.as_deref(),
+            agent_id: request.x_ezer_agent_id.as_deref().unwrap_or_default(),
+            deployment_id: request.x_ezer_deployment_id.as_deref(),
+            user_id: request.x_ezer_user_id.as_deref(),
         };
         let extra_tool_entries = std::mem::take(&mut request.extra_tool_entries);
         let mut request_body = serde_json::to_value(&request.inner).map_err(|e| {
@@ -1509,7 +1509,7 @@ impl SamplingClient {
             builder,
             sent_bearer,
         } = self.post(self.endpoint("responses"));
-        let mut http_request = grok_headers
+        let mut http_request = ezer_headers
             .apply(builder)
             .header(ACCEPT, HeaderValue::from_static("text/event-stream"));
         if let Some(policy) = self.defaults.doom_loop_recovery {
@@ -1683,8 +1683,8 @@ impl SamplingClient {
     ) -> Result<messages::MessagesResponse> {
         self.apply_message_defaults(&mut request)?;
 
-        let x_grok_conv_id = request.x_grok_conv_id.as_deref().unwrap_or_default();
-        let x_grok_req_id = request.x_grok_req_id.as_deref().unwrap_or_default();
+        let x_ezer_conv_id = request.x_ezer_conv_id.as_deref().unwrap_or_default();
+        let x_ezer_req_id = request.x_ezer_req_id.as_deref().unwrap_or_default();
         let model_id = request.inner.model.clone();
 
         let request_region = crate::span_timing::Region::from_span(tracing::info_span!(
@@ -1700,16 +1700,16 @@ impl SamplingClient {
         tracing::debug!("create_message: {:?}", &request.inner);
         tracing::debug!("endpoint: {:?}", self.endpoint("messages"));
 
-        let grok_headers = GrokRequestHeaders {
-            conv_id: x_grok_conv_id,
-            req_id: x_grok_req_id,
+        let ezer_headers = EzerRequestHeaders {
+            conv_id: x_ezer_conv_id,
+            req_id: x_ezer_req_id,
             model_id: &model_id,
-            session_id: request.x_grok_session_id.as_deref().unwrap_or_default(),
-            turn_idx: request.x_grok_turn_idx.as_deref(),
-            transient_retry: request.x_grok_transient_retry.as_deref(),
-            agent_id: request.x_grok_agent_id.as_deref().unwrap_or_default(),
-            deployment_id: request.x_grok_deployment_id.as_deref(),
-            user_id: request.x_grok_user_id.as_deref(),
+            session_id: request.x_ezer_session_id.as_deref().unwrap_or_default(),
+            turn_idx: request.x_ezer_turn_idx.as_deref(),
+            transient_retry: request.x_ezer_transient_retry.as_deref(),
+            agent_id: request.x_ezer_agent_id.as_deref().unwrap_or_default(),
+            deployment_id: request.x_ezer_deployment_id.as_deref(),
+            user_id: request.x_ezer_user_id.as_deref(),
         };
         self.prepare_bearer().await;
         let SentRequest {
@@ -1717,7 +1717,7 @@ impl SamplingClient {
             sent_bearer,
         } = self.post(self.endpoint("messages"));
         let built_request = self
-            .build_json_request(grok_headers.apply(builder), &request.inner)
+            .build_json_request(ezer_headers.apply(builder), &request.inner)
             .await?;
         let response = self.send(built_request).await?;
 
@@ -1813,8 +1813,8 @@ impl SamplingClient {
 
         request.inner.stream = Some(true);
 
-        let x_grok_conv_id = request.x_grok_conv_id.as_deref().unwrap_or_default();
-        let x_grok_req_id = request.x_grok_req_id.as_deref().unwrap_or_default();
+        let x_ezer_conv_id = request.x_ezer_conv_id.as_deref().unwrap_or_default();
+        let x_ezer_req_id = request.x_ezer_req_id.as_deref().unwrap_or_default();
         let model_id = request.inner.model.clone();
 
         // Drop process-local trace data.
@@ -1826,23 +1826,23 @@ impl SamplingClient {
             "Sending Messages API stream request"
         );
 
-        let grok_headers = GrokRequestHeaders {
-            conv_id: x_grok_conv_id,
-            req_id: x_grok_req_id,
+        let ezer_headers = EzerRequestHeaders {
+            conv_id: x_ezer_conv_id,
+            req_id: x_ezer_req_id,
             model_id: &model_id,
-            session_id: request.x_grok_session_id.as_deref().unwrap_or_default(),
-            turn_idx: request.x_grok_turn_idx.as_deref(),
-            transient_retry: request.x_grok_transient_retry.as_deref(),
-            agent_id: request.x_grok_agent_id.as_deref().unwrap_or_default(),
-            deployment_id: request.x_grok_deployment_id.as_deref(),
-            user_id: request.x_grok_user_id.as_deref(),
+            session_id: request.x_ezer_session_id.as_deref().unwrap_or_default(),
+            turn_idx: request.x_ezer_turn_idx.as_deref(),
+            transient_retry: request.x_ezer_transient_retry.as_deref(),
+            agent_id: request.x_ezer_agent_id.as_deref().unwrap_or_default(),
+            deployment_id: request.x_ezer_deployment_id.as_deref(),
+            user_id: request.x_ezer_user_id.as_deref(),
         };
         self.prepare_bearer().await;
         let SentRequest {
             builder,
             sent_bearer,
         } = self.post(self.endpoint("messages"));
-        let http_request = grok_headers
+        let http_request = ezer_headers
             .apply(builder)
             .header(ACCEPT, HeaderValue::from_static("text/event-stream"));
         let built_request = self
@@ -2048,12 +2048,12 @@ impl SamplingClient {
         self.apply_conversation_defaults(&mut request)?;
 
         let trace = request.trace.take();
-        let x_grok_conv_id = request.x_grok_conv_id.clone();
-        let x_grok_req_id = request.x_grok_req_id.clone();
-        let x_grok_session_id = request.x_grok_session_id.clone();
-        let x_grok_turn_idx = request.x_grok_turn_idx.clone();
-        let x_grok_transient_retry = request.x_grok_transient_retry.clone();
-        let x_grok_agent_id = request.x_grok_agent_id.clone();
+        let x_ezer_conv_id = request.x_ezer_conv_id.clone();
+        let x_ezer_req_id = request.x_ezer_req_id.clone();
+        let x_ezer_session_id = request.x_ezer_session_id.clone();
+        let x_ezer_turn_idx = request.x_ezer_turn_idx.clone();
+        let x_ezer_transient_retry = request.x_ezer_transient_retry.clone();
+        let x_ezer_agent_id = request.x_ezer_agent_id.clone();
 
         // The hosted tools travel as raw JSON, spliced in after serialization by `splice_extra_tool_entries`, whose doc explains why each one does
         let extra_tools = ezer_sampling_types::extra_tool_entries(&request.hosted_tools);
@@ -2061,12 +2061,12 @@ impl SamplingClient {
         let responses_request: rs::CreateResponse = (&request).into();
 
         let mut wrapper = CreateResponseWrapper::new(responses_request);
-        wrapper.x_grok_conv_id = x_grok_conv_id;
-        wrapper.x_grok_req_id = x_grok_req_id;
-        wrapper.x_grok_session_id = x_grok_session_id;
-        wrapper.x_grok_turn_idx = x_grok_turn_idx;
-        wrapper.x_grok_transient_retry = x_grok_transient_retry;
-        wrapper.x_grok_agent_id = x_grok_agent_id;
+        wrapper.x_ezer_conv_id = x_ezer_conv_id;
+        wrapper.x_ezer_req_id = x_ezer_req_id;
+        wrapper.x_ezer_session_id = x_ezer_session_id;
+        wrapper.x_ezer_turn_idx = x_ezer_turn_idx;
+        wrapper.x_ezer_transient_retry = x_ezer_transient_retry;
+        wrapper.x_ezer_agent_id = x_ezer_agent_id;
         wrapper.extra_tool_entries = extra_tools;
         wrapper.traceparent = request.traceparent;
 
@@ -2085,12 +2085,12 @@ impl SamplingClient {
         self.apply_conversation_defaults(&mut request)?;
 
         let trace = request.trace.take();
-        let x_grok_conv_id = request.x_grok_conv_id.clone();
-        let x_grok_req_id = request.x_grok_req_id.clone();
-        let x_grok_session_id = request.x_grok_session_id.clone();
-        let x_grok_turn_idx = request.x_grok_turn_idx.clone();
-        let x_grok_transient_retry = request.x_grok_transient_retry.clone();
-        let x_grok_agent_id = request.x_grok_agent_id.clone();
+        let x_ezer_conv_id = request.x_ezer_conv_id.clone();
+        let x_ezer_req_id = request.x_ezer_req_id.clone();
+        let x_ezer_session_id = request.x_ezer_session_id.clone();
+        let x_ezer_turn_idx = request.x_ezer_turn_idx.clone();
+        let x_ezer_transient_retry = request.x_ezer_transient_retry.clone();
+        let x_ezer_agent_id = request.x_ezer_agent_id.clone();
 
         // The hosted tools travel as raw JSON, spliced in by `create_response` via `splice_extra_tool_entries`, whose doc explains why
         let extra_tools = ezer_sampling_types::extra_tool_entries(&request.hosted_tools);
@@ -2098,12 +2098,12 @@ impl SamplingClient {
         let responses_request: rs::CreateResponse = (&request).into();
 
         let mut wrapper = CreateResponseWrapper::new(responses_request);
-        wrapper.x_grok_conv_id = x_grok_conv_id;
-        wrapper.x_grok_req_id = x_grok_req_id;
-        wrapper.x_grok_session_id = x_grok_session_id;
-        wrapper.x_grok_turn_idx = x_grok_turn_idx;
-        wrapper.x_grok_transient_retry = x_grok_transient_retry;
-        wrapper.x_grok_agent_id = x_grok_agent_id;
+        wrapper.x_ezer_conv_id = x_ezer_conv_id;
+        wrapper.x_ezer_req_id = x_ezer_req_id;
+        wrapper.x_ezer_session_id = x_ezer_session_id;
+        wrapper.x_ezer_turn_idx = x_ezer_turn_idx;
+        wrapper.x_ezer_transient_retry = x_ezer_transient_retry;
+        wrapper.x_ezer_agent_id = x_ezer_agent_id;
         wrapper.extra_tool_entries = extra_tools;
 
         if let Some(trace) = trace {
@@ -2124,22 +2124,22 @@ impl SamplingClient {
         self.apply_conversation_defaults(&mut request)?;
 
         let trace = request.trace.take();
-        let x_grok_conv_id = request.x_grok_conv_id.clone();
-        let x_grok_req_id = request.x_grok_req_id.clone();
-        let x_grok_session_id = request.x_grok_session_id.clone();
-        let x_grok_turn_idx = request.x_grok_turn_idx.clone();
-        let x_grok_transient_retry = request.x_grok_transient_retry.clone();
-        let x_grok_agent_id = request.x_grok_agent_id.clone();
+        let x_ezer_conv_id = request.x_ezer_conv_id.clone();
+        let x_ezer_req_id = request.x_ezer_req_id.clone();
+        let x_ezer_session_id = request.x_ezer_session_id.clone();
+        let x_ezer_turn_idx = request.x_ezer_turn_idx.clone();
+        let x_ezer_transient_retry = request.x_ezer_transient_retry.clone();
+        let x_ezer_agent_id = request.x_ezer_agent_id.clone();
 
         let messages_request = build_messages_request(&request);
 
         let mut wrapper = MessagesRequestWrapper::new(messages_request);
-        wrapper.x_grok_conv_id = x_grok_conv_id;
-        wrapper.x_grok_req_id = x_grok_req_id;
-        wrapper.x_grok_session_id = x_grok_session_id;
-        wrapper.x_grok_turn_idx = x_grok_turn_idx;
-        wrapper.x_grok_transient_retry = x_grok_transient_retry;
-        wrapper.x_grok_agent_id = x_grok_agent_id;
+        wrapper.x_ezer_conv_id = x_ezer_conv_id;
+        wrapper.x_ezer_req_id = x_ezer_req_id;
+        wrapper.x_ezer_session_id = x_ezer_session_id;
+        wrapper.x_ezer_turn_idx = x_ezer_turn_idx;
+        wrapper.x_ezer_transient_retry = x_ezer_transient_retry;
+        wrapper.x_ezer_agent_id = x_ezer_agent_id;
         wrapper.traceparent = request.traceparent;
 
         if let Some(trace) = trace {
@@ -2157,22 +2157,22 @@ impl SamplingClient {
         self.apply_conversation_defaults(&mut request)?;
 
         let trace = request.trace.take();
-        let x_grok_conv_id = request.x_grok_conv_id.clone();
-        let x_grok_req_id = request.x_grok_req_id.clone();
-        let x_grok_session_id = request.x_grok_session_id.clone();
-        let x_grok_turn_idx = request.x_grok_turn_idx.clone();
-        let x_grok_transient_retry = request.x_grok_transient_retry.clone();
-        let x_grok_agent_id = request.x_grok_agent_id.clone();
+        let x_ezer_conv_id = request.x_ezer_conv_id.clone();
+        let x_ezer_req_id = request.x_ezer_req_id.clone();
+        let x_ezer_session_id = request.x_ezer_session_id.clone();
+        let x_ezer_turn_idx = request.x_ezer_turn_idx.clone();
+        let x_ezer_transient_retry = request.x_ezer_transient_retry.clone();
+        let x_ezer_agent_id = request.x_ezer_agent_id.clone();
 
         let messages_request = build_messages_request(&request);
 
         let mut wrapper = MessagesRequestWrapper::new(messages_request);
-        wrapper.x_grok_conv_id = x_grok_conv_id;
-        wrapper.x_grok_req_id = x_grok_req_id;
-        wrapper.x_grok_session_id = x_grok_session_id;
-        wrapper.x_grok_turn_idx = x_grok_turn_idx;
-        wrapper.x_grok_transient_retry = x_grok_transient_retry;
-        wrapper.x_grok_agent_id = x_grok_agent_id;
+        wrapper.x_ezer_conv_id = x_ezer_conv_id;
+        wrapper.x_ezer_req_id = x_ezer_req_id;
+        wrapper.x_ezer_session_id = x_ezer_session_id;
+        wrapper.x_ezer_turn_idx = x_ezer_turn_idx;
+        wrapper.x_ezer_transient_retry = x_ezer_transient_retry;
+        wrapper.x_ezer_agent_id = x_ezer_agent_id;
 
         if let Some(trace) = trace {
             wrapper.trace = Some(trace);
@@ -2398,14 +2398,14 @@ mod tests {
             search_parameters: None,
             response_format: None,
             reasoning_effort: None,
-            x_grok_conv_id: None,
-            x_grok_req_id: None,
-            x_grok_session_id: None,
-            x_grok_turn_idx: None,
-            x_grok_transient_retry: None,
-            x_grok_agent_id: None,
-            x_grok_deployment_id: None,
-            x_grok_user_id: None,
+            x_ezer_conv_id: None,
+            x_ezer_req_id: None,
+            x_ezer_session_id: None,
+            x_ezer_turn_idx: None,
+            x_ezer_transient_retry: None,
+            x_ezer_agent_id: None,
+            x_ezer_deployment_id: None,
+            x_ezer_user_id: None,
             trace: None,
             traceparent: None,
         };
@@ -2429,8 +2429,8 @@ mod tests {
             Some(true)
         );
         assert!(
-            !obj.keys().any(|k| k.starts_with("x_grok_")),
-            "x_grok_* are header fields and must never serialize into the body: {:?}",
+            !obj.keys().any(|k| k.starts_with("x_ezer_")),
+            "x_ezer_* are header fields and must never serialize into the body: {:?}",
             obj.keys().collect::<Vec<_>>()
         );
         assert!(
@@ -2657,7 +2657,7 @@ mod tests {
                 );
                 // cli-chat-proxy rejects a zstd body it cannot attribute from headers.
                 assert!(
-                    header(&headers, HeaderName::from_static("x-grok-model-override"))
+                    header(&headers, HeaderName::from_static("x-ezer-model-override"))
                         .is_some_and(|model| !model.is_empty()),
                     "{route}: a compressed body must carry the model override"
                 );
@@ -3047,7 +3047,7 @@ mod tests {
         };
         let ua = user_agent_string_for(&origin);
         // No slash between product and the ezer-shell agent product.
-        assert!(ua.starts_with("my-client grok-shell/"));
+        assert!(ua.starts_with("my-client ezer-shell/"));
     }
 
     #[test]
