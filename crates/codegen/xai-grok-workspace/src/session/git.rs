@@ -2877,12 +2877,13 @@ async fn git_cli_raw_mut(cwd: &Path, args: &[&str]) -> Result<(bool, String)> {
 }
 /// Marker line guarding the default-exclude seed.
 /// Environments may pre-seed the same block at provision time under this marker; whichever side seeds first wins and the other becomes a no-op.
-const DEFAULT_EXCLUDES_MARKER: &str = "grok default excludes";
+const DEFAULT_EXCLUDES_MARKER: &str = "ezer default excludes";
+const LEGACY_EXCLUDES_MARKER: &str = "grok default excludes";
 /// Local-only default excludes so `stage_all` can't sweep in dependency trees, build output, or env files.
 /// Lives in `.git/info/exclude`, which never enters the repo's history. `git add -f` still overrides.
 const DEFAULT_EXCLUDES_BLOCK: &str = "\
-# grok default excludes (local-only; seeded by the workspace git_commit op)
-.grok/
+# ezer default excludes (local-only; seeded by the workspace git_commit op)
+.ezer/
 node_modules/
 .env
 .env.*
@@ -2921,7 +2922,7 @@ async fn seed_default_excludes(git_root: &Path) -> Result<()> {
     let existing = tokio::fs::read_to_string(&exclude_path)
         .await
         .unwrap_or_default();
-    if existing.contains(DEFAULT_EXCLUDES_MARKER) {
+    if existing.contains(DEFAULT_EXCLUDES_MARKER) || existing.contains(LEGACY_EXCLUDES_MARKER) {
         return Ok(());
     }
     if let Some(parent) = exclude_path.parent() {
