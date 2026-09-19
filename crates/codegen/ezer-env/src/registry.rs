@@ -33,6 +33,12 @@ pub fn env_string(name: &str) -> Option<String> {
     }
 }
 
+/// Opt-in xAI / grok.com browser login and xAI-sourced UI (announcements, remote banners, login nudges).
+/// Off by default so BYOK ezer users never see notices fetched from xAI or X.
+pub fn xai_login_enabled() -> bool {
+    env_bool("EZER_ENABLE_XAI_LOGIN") == Some(true)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -57,5 +63,17 @@ mod tests {
         assert_eq!(env_string("EZER_TEST_ENV_STRING"), Some("hi".to_string()));
         guard.set_value("   ");
         assert_eq!(env_string("EZER_TEST_ENV_STRING"), None);
+    }
+
+    #[test]
+    fn xai_login_enabled_is_off_by_default() {
+        let _guard = EnvVarGuard::remove("EZER_ENABLE_XAI_LOGIN");
+        assert!(!xai_login_enabled());
+    }
+
+    #[test]
+    fn xai_login_enabled_reads_truthy_flag() {
+        let _guard = EnvVarGuard::set("EZER_ENABLE_XAI_LOGIN", "1");
+        assert!(xai_login_enabled());
     }
 }

@@ -2364,10 +2364,13 @@ fn welcome_ctrl_u_update_keeps_priority_over_foreign_resume() {
         InputOutcome::Action(Action::ResumeForeignSession)
     ));
     app.pending_update_version = Some("9.9.9".into());
-    assert!(matches!(
-        app.handle_input(&key),
-        InputOutcome::Action(Action::QuitForUpdate)
-    ));
+    assert!(
+        matches!(
+            app.handle_input(&key),
+            InputOutcome::Action(Action::ResumeForeignSession)
+        ),
+        "update notice is informational only; Ctrl+U must not quit-for-update"
+    );
 }
 #[test]
 fn minimal_ctrl_g_edits_prompt_while_full_tui_keeps_tasks() {

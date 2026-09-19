@@ -2,7 +2,8 @@
 //!
 //! Written only when the user home has no `config.toml` yet and this is not a
 //! `$EZER_HOME`-only test override. The template is OpenAI Responses-first and
-//! points at the WorkBuddy2API-Hub style gateway.
+//! points at the WorkBuddy2API-Hub style gateway. Auto-upgrade is off; updates
+//! are a one-shot notice from the non-xAI `gh-release` upstream.
 
 use std::fmt::Write as _;
 use std::path::Path;
@@ -69,6 +70,10 @@ pub fn default_byok_config_toml() -> String {
 
 [auth]
 preferred_method = "api_key"
+
+[cli]
+auto_update = false
+installer = "gh-release"
 
 [endpoints]
 models_base_url = "{base}"
@@ -174,6 +179,8 @@ mod tests {
         assert!(toml.contains("hy3"));
         assert!(!toml.contains("auth.x.ai"));
         assert!(!toml.contains("cli-chat-proxy"));
+        assert!(toml.contains("auto_update = false"));
+        assert!(toml.contains("installer = \"gh-release\""));
     }
 
     #[test]

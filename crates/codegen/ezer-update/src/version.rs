@@ -11,7 +11,32 @@ use ezer_shell::util::grok_home::grok_home;
 
 const TTL_SECONDS_BEFORE_AUTO_UPDATE: Duration = Duration::from_secs(60 * 30);
 const NPM_PACKAGE: &str = "@ezer/ezer";
-pub const GH_RELEASE_REPO: &str = "xai-org-shared/ezer-build";
+/// Default GitHub Releases repo for the ezer fork. Override with `EZER_UPDATE_REPO`.
+pub const GH_RELEASE_REPO: &str = "iwen-conf/ezer";
+/// Historical xAI release repo. Never used for one-shot notices or auto-upgrade.
+pub const XAI_GH_RELEASE_REPO: &str = "xai-org-shared/ezer-build";
+
+/// GitHub Releases repo used by the `gh-release` installer.
+pub fn gh_release_repo() -> String {
+    ezer_env::env_string("EZER_UPDATE_REPO").unwrap_or_else(|| GH_RELEASE_REPO.to_string())
+}
+
+/// True when `repo` is an xAI / xai-org upstream (CDN or GitHub).
+pub fn is_xai_update_repo(repo: &str) -> bool {
+    let repo = repo.trim().to_ascii_lowercase();
+    repo.contains("xai-org") || repo.starts_with("xai/")
+}
+
+/// One-shot update notices are only for a non-xAI ezer GitHub upstream.
+/// `internal` (x.ai CDN) and `npm` never advertise or auto-upgrade.
+pub fn update_notice_allowed_for(installer: &str, repo: &str) -> bool {
+    installer == "gh-release" && !is_xai_update_repo(repo)
+}
+
+/// [`update_notice_allowed_for`] using [`gh_release_repo`].
+pub fn update_notice_allowed(installer: &str) -> bool {
+    update_notice_allowed_for(installer, &gh_release_repo())
+}
 
 /// Primary CLI base URL: Cloudflare-fronted x.ai endpoint with edge caching for binaries and origin-respecting no-cache for channel pointers.
 pub(crate) const CLI_BASE_URL_PRIMARY: &str = "https://x.ai/cli";
@@ -214,11 +239,12 @@ pub async fn fetch_gh_release_version(channel: &str) -> Result<String> {
 }
 
 async fn fetch_gh_release_latest(exclude_pre: bool) -> Result<String> {
+    let repo = gh_release_repo();
     let mut args = vec![
         "release",
         "list",
         "--repo",
-        GH_RELEASE_REPO,
+        repo.as_str(),
         "--limit",
         "1",
         "--exclude-drafts",
@@ -245,7 +271,7 @@ async fn fetch_gh_release_latest(exclude_pre: bool) -> Result<String> {
     // Tags are formatted as "v0.1.141", strip the leading "v"
     let version = tag.strip_prefix('v').unwrap_or(&tag).to_string();
     if version.is_empty() {
-        anyhow::bail!("No releases found in {}", GH_RELEASE_REPO);
+        anyhow::bail!("No releases found in {}", gh_release_repo());
     }
     Ok(version)
 }
@@ -542,6 +568,24 @@ mod tests {
         assert!(!is_loopback_base("https://x.ai/cli"));
         assert!(!is_loopback_base("http://192.168.1.1:80"));
         assert!(!is_loopback_base(""));
+    }
+
+    #[test]
+    fn xai_update_repos_are_detected() {
+        assert!(is_xai_update_repo(XAI_GH_RELEASE_REPO));
+        assert!(is_xai_update_repo("xai-org-shared/ezer-build"));
+        assert!(is_xai_update_repo("xai-org/ezer"));
+        assert!(is_xai_update_repo("XAI-ORG/ezer"));
+        assert!(!is_xai_update_repo("iwen-conf/ezer"));
+        assert!(!is_xai_update_repo("someone/ezer"));
+    }
+
+    #[test]
+    fn update_notice_only_for_non_xai_gh_release() {
+        assert!(update_notice_allowed_for("gh-release", "iwen-conf/ezer"));
+        assert!(!update_notice_allowed_for("gh-release", "xai-org-shared/ezer-build"));
+        assert!(!update_notice_allowed_for("internal", "iwen-conf/ezer"));
+        assert!(!update_notice_allowed_for("npm", "iwen-conf/ezer"));
     }
 
     use super::*;

@@ -1172,21 +1172,16 @@ pub(crate) async fn run(
         .and_then(|s| s.show_resolved_model)
         .unwrap_or(true);
     app.sharing_enabled = false;
+    // BYOK: ignore xAI/X remote banners unless the user opted into grok.com login.
+    let xai_ui = ezer_config::xai_login_enabled();
+    let remote_notices = xai_ui.then(|| remote_settings.as_ref()).flatten();
     app.privacy_notice_rollout = ezer_config::env_bool("EZER_PRIVACY_NOTICE_ROLLOUT")
-        .or_else(|| {
-            remote_settings
-                .as_ref()
-                .and_then(|s| s.privacy_notice_rollout)
-        })
+        .or_else(|| remote_notices.and_then(|s| s.privacy_notice_rollout))
         .unwrap_or(false);
     app.privacy_banner_reshow_days = std::env::var("EZER_PRIVACY_BANNER_RESHOW_DAYS")
         .ok()
         .and_then(|v| v.trim().parse().ok())
-        .or_else(|| {
-            remote_settings
-                .as_ref()
-                .and_then(|s| s.privacy_banner_reshow_days)
-        });
+        .or_else(|| remote_notices.and_then(|s| s.privacy_banner_reshow_days));
     app.privacy_banner_acked = ezer_shell::config::load_from_disk()
         .ok()
         .and_then(|root| {
@@ -1195,7 +1190,7 @@ pub(crate) async fn run(
                 .privacy_banner_acked
         });
     app.plugin_cta_enabled = ezer_config::env_bool("EZER_PLUGIN_CTA")
-        .or_else(|| remote_settings.as_ref().and_then(|s| s.plugin_cta))
+        .or_else(|| remote_notices.and_then(|s| s.plugin_cta))
         .unwrap_or(false);
     app.plugin_cta_marketplace = launch_effective_config
         .as_ref()
@@ -1315,7 +1310,7 @@ pub(crate) async fn run(
         remote_settings.as_ref().and_then(|s| s.dock_enabled),
     ));
     if app.gate.is_none()
-        && let Some(rs) = remote_settings.as_ref()
+        && let Some(rs) = remote_notices
     {
         app.gate = AppView::gate_from_settings(rs);
     }
@@ -1396,9 +1391,8 @@ pub(crate) async fn run(
         )
         .value,
     );
-    app.usage_billing_redirect_url = remote_settings
-        .as_ref()
-        .and_then(|s| s.usage_billing_redirect_url.clone());
+    app.usage_billing_redirect_url =
+        remote_notices.and_then(|s| s.usage_billing_redirect_url.clone());
     if app.is_access_blocked() {
         app.welcome_prompt_focused = false;
     }
@@ -1406,9 +1400,7 @@ pub(crate) async fn run(
         use ezer_shell::util::config::{
             resolve_announcements, resolve_slash_command_tags, resolve_tips,
         };
-        let remote_announcements = remote_settings
-            .as_ref()
-            .and_then(|s| s.announcements.as_deref());
+        let remote_announcements = remote_notices.and_then(|s| s.announcements.as_deref());
         let announcements = resolve_announcements(
             requirements.as_ref(),
             user_config.as_ref(),
@@ -1422,7 +1414,7 @@ pub(crate) async fn run(
             app.announcement = app.active_announcements.get(idx).cloned();
         }
         app.sync_session_announcement_slash_gate();
-        let remote_tips = remote_settings.as_ref().and_then(|s| s.tips.as_deref());
+        let remote_tips = remote_notices.and_then(|s| s.tips.as_deref());
         app.tips = resolve_tips(
             requirements.as_ref(),
             user_config.as_ref(),
@@ -1446,9 +1438,7 @@ pub(crate) async fn run(
         user_config.as_ref(),
         managed_config.as_ref(),
     );
-    app.remote_contextual_hints = remote_settings
-        .as_ref()
-        .and_then(|s| s.contextual_hints.clone());
+    app.remote_contextual_hints = remote_notices.and_then(|s| s.contextual_hints.clone());
     app.new_session_worktree_mode = hints.new_session_worktree_mode.into();
     app.fork_worktree_mode = hints.fork_worktree_mode.into();
     app.cwd_has_git_ancestor = app.cwd.ancestors().any(|p| p.join(".git").exists());

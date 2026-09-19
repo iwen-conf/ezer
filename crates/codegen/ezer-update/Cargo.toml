@@ -20,6 +20,7 @@ tokio = { workspace = true, features = ["fs", "process", "io-util", "macros", "t
 tracing = { workspace = true }
 url = { workspace = true }
 xai-dirs = { workspace = true }
+ezer-env = { workspace = true }
 ezer-login = { workspace = true }
 ezer-shell = { workspace = true }
 ezer-telemetry = { workspace = true }

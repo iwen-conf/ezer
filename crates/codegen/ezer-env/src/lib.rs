@@ -7,7 +7,9 @@
 )]
 #![deny(clippy::indexing_slicing)]
 mod registry;
-pub use registry::{FIRST_PARTY_CREDENTIAL_ENV_VARS, env_bool, env_string};
+pub use registry::{
+    FIRST_PARTY_CREDENTIAL_ENV_VARS, env_bool, env_string, xai_login_enabled,
+};
 /// The endpoint set for one backend environment.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct GrokBuildEndpoints {

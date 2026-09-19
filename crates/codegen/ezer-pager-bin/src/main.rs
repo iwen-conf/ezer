@@ -1584,54 +1584,10 @@ async fn run_agent_command(
         Some(AgentCmd::Leader(a)) => {
             let mut agent_config = agent_config.clone();
             apply_headless_args_to_config(&a.headless, &mut agent_config);
-            let leader_auto_update = if !should_check_for_updates(
-                no_auto_update || a.no_auto_update,
-            ) {
-                tracing::info!("Leader auto-update disabled");
-                None
-            } else {
-                let update_config_for_leader = update_config.clone();
-                Some(ezer_shell::agent::app::LeaderAutoUpdateConfig {
-                    check_interval: std::time::Duration::from_secs(60 * 60),
-                    check_fn: Box::new(move || {
-                        let uc = update_config_for_leader.clone();
-                        Box::pin(async move {
-                            let current_config = ezer_shell::util::config::load_config().await;
-                            if current_config.cli.auto_update == Some(false) {
-                                return false;
-                            }
-                            match auto_update::ensure_latest_on_disk(&uc).await {
-                                Ok(outcome) => {
-                                    if let Some(v) = &outcome.installed {
-                                        if let Err(e) = ezer_shell::managed_config::sync().await
-                                        {
-                                            tracing::warn!(
-                                                "Leader auto-update: managed config refresh failed: {e}"
-                                            );
-                                        }
-                                        tracing::info!(
-                                            "Leader auto-update: v{v} installed successfully"
-                                        );
-                                    } else if outcome.relaunch_needed {
-                                        tracing::info!(
-                                            "Leader auto-update: newer binary already on disk, \
-                                             relaunching without download"
-                                        );
-                                    }
-                                    outcome.relaunch_needed
-                                }
-                                Err(e) => {
-                                    tracing::warn!(
-                                        "Leader auto-update: check/download failed, \
-                                         staying alive: {e:#}"
-                                    );
-                                    false
-                                }
-                            }
-                        })
-                    }),
-                })
-            };
+            // Never auto-upgrade the leader. Explicit `ezer update` is the only install path.
+            let _ = (no_auto_update, a.no_auto_update);
+            tracing::info!("Leader auto-update disabled");
+            let leader_auto_update = None;
             let cursor_worker = None;
             run_leader(
                 &agent_config,
@@ -2558,7 +2514,8 @@ fn build_update_config() -> UpdateConfig {
     }
     config
 }
-/// Central gate for auto-update checks; add new suppression rules here, not at call sites.
+/// Central gate for background update *notices* (never auto-install).
+/// Add new suppression rules here, not at call sites.
 fn should_check_for_updates(no_auto_update_flag: bool) -> bool {
     if cfg!(debug_assertions) {
         return false;

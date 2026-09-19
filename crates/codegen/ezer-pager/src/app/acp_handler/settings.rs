@@ -50,10 +50,13 @@ pub(super) fn handle_settings_update(notif: &acp::ExtNotification, app: &mut App
         return false;
     };
 
+    let xai_ui = ezer_config::xai_login_enabled();
+
     // Reseed this process's remote-campaign cache
     // Without this reseed a remote campaign stays invisible to `resolve_dismissable_campaigns`
     // A `/model` pick then never records its dismissal and the leader re-nudges every new session
-    if let Some(campaigns) = update.campaigns.clone() {
+    // BYOK: drop xAI/X campaign nudges unless grok.com login is opted in.
+    if xai_ui && let Some(campaigns) = update.campaigns.clone() {
         let rs = ezer_shell::util::config::RemoteSettings {
             campaigns,
             ..Default::default()
@@ -115,16 +118,21 @@ pub(super) fn handle_settings_update(notif: &acp::ExtNotification, app: &mut App
     // Env overrides win over live updates too, mirroring the startup resolution in event_loop
     // Otherwise the proxy's explicit `false` (sent as a kill switch) clobbers a local test override moments after launch
     if let Some(v) = update.privacy_notice_rollout {
-        app.privacy_notice_rollout =
-            ezer_config::env_bool("EZER_PRIVACY_NOTICE_ROLLOUT").unwrap_or(v);
+        if let Some(env) = ezer_config::env_bool("EZER_PRIVACY_NOTICE_ROLLOUT") {
+            app.privacy_notice_rollout = env;
+        } else if xai_ui {
+            app.privacy_notice_rollout = v;
+        }
     }
     if let Some(v) = update.privacy_banner_reshow_days {
-        app.privacy_banner_reshow_days = Some(
-            std::env::var("EZER_PRIVACY_BANNER_RESHOW_DAYS")
-                .ok()
-                .and_then(|s| s.trim().parse().ok())
-                .unwrap_or(v),
-        );
+        if let Some(days) = std::env::var("EZER_PRIVACY_BANNER_RESHOW_DAYS")
+            .ok()
+            .and_then(|s| s.trim().parse().ok())
+        {
+            app.privacy_banner_reshow_days = Some(days);
+        } else if xai_ui {
+            app.privacy_banner_reshow_days = Some(v);
+        }
     }
     // Tier before voice: the same payload may set "API Key" and voice_mode_enabled=false
     // Always recompute is_api_key_auth from the tier so a later Free/SuperGrok stamp does not leave the API-key bypass or a hidden billing surface stuck
@@ -207,7 +215,8 @@ pub(super) fn handle_settings_update(notif: &acp::ExtNotification, app: &mut App
 
     // A fresh machine has no auth at startup, so the prefetch never runs and the startup seed sees no settings
     // Welcome only: seeding the gate behind a session would block new sessions on an unseen screen
-    if let Some(gate) = update.consent_gate.as_ref()
+    if xai_ui
+        && let Some(gate) = update.consent_gate.as_ref()
         && matches!(app.consent_state, crate::app::consent::ConsentState::Done)
         && matches!(app.active_view, crate::app::app_view::ActiveView::Welcome)
         && app.only_unused_home_or_empty()
@@ -224,10 +233,11 @@ pub(super) fn handle_settings_update(notif: &acp::ExtNotification, app: &mut App
         }
     }
 
-    if update.allow_access == Some(true) {
+    if xai_ui && update.allow_access == Some(true) {
         let effs = app.lift_gate();
         app.pending_effects.extend(effs);
-    } else if let Some(msg) = update.gate_message.as_ref()
+    } else if xai_ui
+        && let Some(msg) = update.gate_message.as_ref()
         && !msg.is_empty()
     {
         // (An empty gate_message would only clear the gate message text, NOT access, so it does not touch the gate here.)
@@ -311,7 +321,7 @@ pub(super) fn handle_settings_update(notif: &acp::ExtNotification, app: &mut App
     // Applying a pushed flip here would make `/loop` promise a runtime those fires never get
 
     // Re-resolve tips from config layers and the updated remote tips
-    if let Some(remote_tips) = update.tips {
+    if xai_ui && let Some(remote_tips) = update.tips {
         use ezer_shell::util::config::resolve_tips;
 
         app.tips = resolve_tips(

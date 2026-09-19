@@ -13,7 +13,8 @@ use tokio::io::AsyncWriteExt;
 use crate::cleanup_downloads::cleanup_old_downloads;
 use crate::version::{
     UpdateConfig, fetch_latest_version, get_installed_grok_version, get_latest_version,
-    is_version_cache_fresh, try_fetch_stable_pointer, write_version_cache,
+    gh_release_repo, is_version_cache_fresh, try_fetch_stable_pointer, update_notice_allowed,
+    write_version_cache,
 };
 use ezer_shell::util::config;
 use ezer_shell::util::grok_home::{grok_application, grok_home};
@@ -28,9 +29,6 @@ pub enum UpdateRunMode {
     NonBlocking,
 }
 
-const PROMPT_UPDATE_NOW: &str = "Update now? [Y/n/d]";
-const MSG_AUTO_UPDATE_BACKGROUND: &str = "Auto-update running in background.";
-const MSG_RUN_UPDATE_MANUAL: &str = "Run `ezer update` to get the latest version.";
 /// An empty or `"stable"` channel means stable, the installers' default (`CHANNEL="${EZER_CHANNEL:-stable}"` in install.sh).
 fn is_stable_channel(channel: &str) -> bool {
     channel.is_empty() || channel == "stable"
@@ -562,21 +560,20 @@ impl BackgroundUpdateCheck {
 }
 
 /// Check for available updates without blocking the TUI startup. Sets [`BackgroundUpdateCheck::update`] when the running
-/// binary is older than the channel pointer. If `auto_update` is enabled and the on-disk install is also behind the
-/// pointer, kicks off a download (a detached `ezer update` child). Only the restart hint is shown.
+/// binary is older than the channel pointer **and** the installer is a non-xAI ezer upstream.
+/// Never auto-downloads. One-shot TUI notice only; the user must run `ezer update`.
 pub async fn check_update_background(update_config: &UpdateConfig) -> BackgroundUpdateCheck {
     let Some(installer) = get_installer().await else {
         return BackgroundUpdateCheck::none();
     };
 
-    heal_managed_install(installer).await;
-
-    if is_version_cache_fresh().await {
+    if !update_notice_allowed(installer) {
         return BackgroundUpdateCheck::none();
     }
 
-    let current_config = config::load_config().await;
-    if current_config.cli.auto_update == Some(false) {
+    heal_managed_install(installer).await;
+
+    if is_version_cache_fresh().await {
         return BackgroundUpdateCheck::none();
     }
 
@@ -603,171 +600,32 @@ pub async fn check_update_background(update_config: &UpdateConfig) -> Background
         return BackgroundUpdateCheck::none();
     }
 
-    // Only download when the on-disk install is behind the pointer. The running process being stale (checked above) just
-    // means "show the restart hint". The quit-for-update path's `grok update` child resolves to "Already up to date" against
-    // the same disk state. For npm a leftover symlink would wrongly suppress the download (see `disk_version_for_installer`)
-    let disk_needs_download = match disk_version_for_installer(installer) {
-        Some(disk) => needs_update(
-            &disk,
-            &target_version,
-            &update_config.channel,
-            allow_downgrade,
-        )
-        .unwrap_or(true),
-        None => true,
-    };
-
-    // Kick off a non-blocking download so the binary is ready when the user restarts (or accepts the in-TUI restart prompt)
-    let download = if disk_needs_download {
-        match run_update_subcommand(UpdateRunMode::NonBlocking, CliUpdateTrigger::AutoBackground)
-            .await
-        {
-            Ok(child) => child,
-            Err(e) => {
-                tracing::warn!("Background update download failed to start: {e}");
-                None
-            }
-        }
-    } else {
-        tracing::info!(
-            target_version = %target_version,
-            "Background update: target already on disk, skipping download"
-        );
-        None
-    };
-
     BackgroundUpdateCheck {
         update: Some(UpdateAvailable {
             latest_version: target_version,
         }),
-        download,
+        download: None,
     }
 }
 
-/// Returns Ok(true) if a blocking update ran; otherwise Ok(false).
+/// Background / startup auto-update entry. Always a no-op install: ezer never auto-upgrades.
+/// Persists `[cli].auto_update = false` when unset. Explicit `ezer update` still uses [`run_update`].
 pub async fn run_update_if_available(
-    run_mode: UpdateRunMode,
-    interactive: bool,
-    trigger: CliUpdateTrigger,
-    update_config: &UpdateConfig,
+    _run_mode: UpdateRunMode,
+    _interactive: bool,
+    _trigger: CliUpdateTrigger,
+    _update_config: &UpdateConfig,
 ) -> Result<bool> {
-    let Some(inst) = get_installer().await else {
-        return Ok(false);
-    };
-
-    heal_managed_install(inst).await;
-
-    if is_version_cache_fresh().await {
-        return Ok(false);
-    }
-
     let current_config = config::load_config().await;
-
-    if current_config.cli.auto_update == Some(false) {
-        return Ok(false);
-    }
-
-    // Resolve effective auto_update: None defaults to true (first-run).
-    let auto_update = current_config.cli.auto_update.unwrap_or(true);
-
     if current_config.cli.auto_update.is_none()
         && let Err(e) = config::update_config(|st| {
             if st.cli.auto_update.is_none() {
-                st.cli.auto_update = Some(true);
+                st.cli.auto_update = Some(false);
             }
         })
         .await
     {
         tracing::warn!("Failed to save auto-update setting: {}", e);
-    }
-
-    let current_version = get_installed_grok_version();
-    let policy = config::VersionPolicy::resolve();
-    // Don't write version.json here
-    // Only cache after confirming no update is needed or after a successful install
-    // Otherwise a failed background download would suppress retries for the TTL window
-    let latest_version = match fetch_update_plan(inst, update_config, &policy).await {
-        Ok(UpdatePlan::Install { target, .. }) => target,
-        Ok(UpdatePlan::Skip { .. } | UpdatePlan::Unavailable { .. }) | Err(_) => return Ok(false),
-    };
-    if !needs_update(
-        &current_version,
-        &latest_version,
-        &update_config.channel,
-        installer_allows_downgrade(inst),
-    )
-    .unwrap_or(false)
-    {
-        let stable_ptr = try_fetch_stable_pointer().await;
-        write_version_cache(&latest_version, stable_ptr.as_deref()).await;
-        return Ok(false);
-    }
-
-    let channel_label = format!(" [{}]", update_config.channel);
-    if auto_update {
-        eprintln!(
-            "A new version of ezer is available: {} -> {}{}",
-            current_version, latest_version, channel_label
-        );
-        if interactive {
-            if let Err(e) = run_update_subcommand(run_mode, trigger).await {
-                eprintln!("Update failed: {}", e);
-            } else if matches!(run_mode, UpdateRunMode::Blocking) {
-                return Ok(true);
-            } else {
-                eprintln!("{}", MSG_AUTO_UPDATE_BACKGROUND);
-                return Ok(false);
-            }
-        } else if let Err(e) = run_update_subcommand(run_mode, trigger).await {
-            eprintln!("Update failed: {}", e);
-        } else if matches!(run_mode, UpdateRunMode::Blocking) {
-            return Ok(true);
-        }
-        return Ok(false);
-    } else {
-        if current_config
-            .cli
-            .dismissed_version
-            .as_deref()
-            .is_some_and(|v| v == latest_version)
-        {
-            return Ok(false);
-        }
-        eprintln!(
-            "A new version of ezer is available: {} -> {}{}",
-            current_version, latest_version, channel_label
-        );
-        if interactive {
-            eprintln!("{}", PROMPT_UPDATE_NOW);
-            let mut line = String::new();
-            if io::stdin().read_line(&mut line).is_ok() {
-                let ans = line.trim().to_ascii_lowercase();
-                if ans.is_empty() || ans == "y" || ans == "yes" {
-                    // Accepting the prompt is consent, whatever the caller was
-                    if let Err(e) =
-                        run_update_subcommand(run_mode, CliUpdateTrigger::UserCommand).await
-                    {
-                        eprintln!("Update failed: {}", e);
-                    } else if matches!(run_mode, UpdateRunMode::Blocking) {
-                        return Ok(true);
-                    } else {
-                        eprintln!("{}", MSG_AUTO_UPDATE_BACKGROUND);
-                        return Ok(false);
-                    }
-                } else if ans == "d" || ans == "dismiss" {
-                    let dismissed = latest_version.clone();
-                    if let Err(e) = config::update_config(|st| {
-                        st.cli.dismissed_version = Some(dismissed);
-                    })
-                    .await
-                    {
-                        tracing::warn!("Failed to save dismissed version: {}", e);
-                    }
-                }
-            }
-        } else {
-            eprintln!("{}", MSG_RUN_UPDATE_MANUAL);
-        }
     }
     Ok(false)
 }
@@ -2167,17 +2025,19 @@ async fn gh_release_download(tag: &str, pattern: &str, dest: &std::path::Path) -
     );
     pb.enable_steady_tick(Duration::from_millis(100));
 
+    let repo = gh_release_repo();
+    let dest_str = dest.to_string_lossy();
     let mut cmd = tokio::process::Command::new("gh");
     cmd.args([
         "release",
         "download",
         tag,
         "--repo",
-        crate::version::GH_RELEASE_REPO,
+        repo.as_str(),
         "--pattern",
         pattern,
         "--output",
-        &dest.to_string_lossy(),
+        dest_str.as_ref(),
         "--clobber",
     ])
     .stdin(Stdio::null())
@@ -2195,14 +2055,14 @@ async fn gh_release_download(tag: &str, pattern: &str, dest: &std::path::Path) -
             "gh release download failed for {} tag {} from {}: {}",
             pattern,
             tag,
-            crate::version::GH_RELEASE_REPO,
+            gh_release_repo(),
             stderr.trim()
         );
     }
     Ok(())
 }
 
-/// Download and install ezer from GitHub Releases (xai-org-shared/ezer-build). Uses `gh release download` to fetch the
+/// Download and install ezer from GitHub Releases (`EZER_UPDATE_REPO` or `iwen-conf/ezer`). Uses `gh release download` to fetch the
 /// binary matching the current platform. This works anywhere the `gh` CLI is authenticated, without needing npm or
 /// internal network access.
 async fn install_gh_release(target: Option<&str>) -> Result<()> {

@@ -1665,11 +1665,36 @@ impl MvpAgent {
         }
         outcome
     }
+    /// Drop xAI/X-sourced UI notices unless the user opted into grok.com login.
+    fn strip_xai_ui_notices(
+        mut settings: crate::util::config::RemoteSettings,
+    ) -> crate::util::config::RemoteSettings {
+        if ezer_env::xai_login_enabled() {
+            return settings;
+        }
+        settings.announcements = None;
+        settings.tips = None;
+        settings.privacy_notice_rollout = None;
+        settings.privacy_banner_reshow_days = None;
+        settings.plugin_cta = None;
+        settings.usage_billing_redirect_url = None;
+        settings.contextual_hints = None;
+        settings.gate_message = None;
+        settings.gate_url = None;
+        settings.gate_label = None;
+        settings.allow_access = None;
+        settings.consent_gate = None;
+        settings.campaigns.clear();
+        settings.grok_oauth_enabled = None;
+        settings
+    }
+
     /// Writes remote settings into `cfg` along with the fields derived from them, so no derived field drifts between post-fetch callers.
     pub(super) fn store_remote_settings(
         &self,
         settings: crate::util::config::RemoteSettings,
     ) {
+        let settings = Self::strip_xai_ui_notices(settings);
         let mut cfg = self.cfg.borrow_mut();
         cfg.remote_settings = Some(settings);
         crate::util::config::sync_campaign_fields(&mut cfg);
@@ -1868,6 +1893,9 @@ impl MvpAgent {
     /// Spawn the periodic remote-settings poll that pushes mid-session announcement changes to connected clients. Idempotent.
     /// Plain loop (no cancellation) like `ensure_session_supervisor`; the LocalSet drop at process exit ends it. Skipped under `cfg!(test)` like the managed-config sync (PTY e2e runs the real binary and is unaffected).
     pub(super) fn spawn_announcements_refresh(&self) {
+        if !ezer_env::xai_login_enabled() {
+            return;
+        }
         if cfg!(test) || self.announcements_refresh_started.replace(true) {
             return;
         }

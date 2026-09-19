@@ -1734,7 +1734,10 @@ fn minimal_update_notice_commits_a_system_block() {
     assert_eq!(agent_scrollback_len(&app), before + 1);
     let text = last_system_text(&app, AgentId(0));
     assert!(text.contains("Update available: v9.9.9"), "got: {text:?}");
-    assert!(text.contains("Restart to apply."), "got: {text:?}");
+    assert!(
+        text.contains("Run `ezer update` to install."),
+        "got: {text:?}"
+    );
 }
 
 #[test]

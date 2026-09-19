@@ -231,6 +231,8 @@ no longer contains `xai-grok-*` crate paths. Remaining hits:
 | Shell snapshot markers | `__GROK_BASH_STATE_*`, `grok_snap_*` | Persistent-shell replay format |
 | Theme ids | `groknight`, `grokday` | First-party theme names |
 | Optional xAI hosts | `grok.com`, `cli-chat-proxy.grok.com`, `computer-hub.grok.com` | Linked with optional `EZER_ENABLE_XAI_LOGIN` / remote sync; not required for BYOK |
+| xAI/X notices | announcements, privacy banner, plugin CTA, changelog CDN, login nudges | Suppressed unless `EZER_ENABLE_XAI_LOGIN=1`. BYOK users never see them. |
+| Auto-upgrade | `[cli].auto_update` defaults false; no background download | One-shot notice only for non-xAI `gh-release` (`iwen-conf/ezer` or `EZER_UPDATE_REPO`). Never auto-upgrade. |
 | Metrics | `grok_workspace_*`, `grok_leader` | Prometheus series names |
 | Historical `xai-*` crates | `xai-dirs`, `xai-crash-handler`, … | Panic `file!()` paths without `grok` |
 | npm platform packages | `crates/codegen/ezer-pager/npm/grok-*` | Not linked into the Rust CLI |

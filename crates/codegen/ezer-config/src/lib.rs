@@ -92,4 +92,4 @@ pub use validation::{
 };
 pub use version_overrides::{VersionOverrideError, apply_version_overrides};
 
-pub use ezer_env::env_bool;
+pub use ezer_env::{env_bool, xai_login_enabled};

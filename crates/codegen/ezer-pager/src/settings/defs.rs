@@ -1293,12 +1293,12 @@ pub fn default_settings() -> Vec<SettingMeta> {
             category: SettingCategory::Advanced,
             owner: SettingOwner::Shell,
             label: "Auto-update",
-            description: "Automatically download and install pager updates on startup. \
+            description: "Reserved. ezer never auto-upgrades; run `ezer update` to install. \
                           Restart required.",
             keywords: &[
                 "auto", "update", "updates", "upgrade", "version", "install", "channel",
             ],
-            kind: SettingKind::Bool { default: true },
+            kind: SettingKind::Bool { default: false },
             restart_required: true,
             hidden_in_minimal: false,
         },

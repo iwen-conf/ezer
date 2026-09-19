@@ -76,7 +76,15 @@ impl ChangelogManager {
     /// JSON is cached only after a successful parse; the markdown cache is write-through since it's consumed as raw text.
     pub fn fetch(&self) -> Changelog {
         // Always re-resolve from env so a caller holding an older manager (or a stale OnceLock) still reads the live harness home
-        Self::from_env_home().fetch_with(changelog_offline(), CHANGELOG_BASE)
+        let offline = changelog_offline();
+        // BYOK: never fetch or surface the x.ai changelog CDN.
+        if !offline && !ezer_env::xai_login_enabled() {
+            return Changelog {
+                markdown: None,
+                entries: None,
+            };
+        }
+        Self::from_env_home().fetch_with(offline, CHANGELOG_BASE)
     }
 
     /// Fetch using this manager's already-resolved cache paths, an explicit offline flag, and an explicit CDN base. Split out of [`fetch`] so unit tests can drive it against a temp home without touching process-global env.
@@ -215,6 +223,17 @@ mod tests {
             md_cache: home.join("CHANGELOG.md"),
             json_cache: home.join("CHANGELOG.json"),
         }
+    }
+
+    #[test]
+    fn byok_skips_xai_changelog_cdn() {
+        let _guard = crate::env::EnvVarGuard::remove("EZER_CHANGELOG_OFFLINE")
+            .and_remove("EZER_ENABLE_XAI_LOGIN");
+        let changelog = ChangelogManager::new().fetch();
+        assert!(
+            changelog.markdown.is_none() && changelog.entries.is_none(),
+            "BYOK must not fetch or surface the x.ai changelog CDN"
+        );
     }
 
     #[test]

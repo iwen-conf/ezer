@@ -496,14 +496,14 @@ impl acp::Agent for MvpAgent {
         let mcp_servers: Vec<crate::extensions::mcp::McpServerEntry> = Vec::new();
         self.spawn_initialize_launch_mcp_setup();
         self.spawn_managed_gateway_tool_catalog_fetch();
-        {
+        if ezer_env::xai_login_enabled() {
             let agent_ref = LocalRef::new(self);
             tokio::task::spawn_local(async move {
                 tokio::time::sleep(std::time::Duration::from_secs(2)).await;
                 agent_ref.get().emit_announcements(AnnouncementsPushMode::SeedNewClient);
             });
+            self.spawn_announcements_refresh();
         }
-        self.spawn_announcements_refresh();
         self.spawn_heap_profile_monitor();
         let init_model_state = {
             let _t = ezer_telemetry::instrumentation::timer(

@@ -212,11 +212,7 @@ fn build_unpinned(
 
 /// Opt-in xAI / grok.com browser login. Off by default so ezer never blocks on SpaceXAI OAuth.
 fn xai_login_enabled() -> bool {
-    matches!(
-        ezer_env::env_bool("EZER_ENABLE_XAI_LOGIN")
-            .or_else(|| ezer_env::env_bool("EZER_ENABLE_XAI_LOGIN")),
-        Some(true)
-    )
+    ezer_env::xai_login_enabled()
 }
 
 fn push_interactive_login(

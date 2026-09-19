@@ -2469,7 +2469,8 @@ impl AppView {
                     welcome_doc_viewer: &mut self.welcome_doc_viewer,
                     changelog_markdown: &self.changelog_markdown,
                     show_changelog_action: self.welcome_show_changelog_action,
-                    has_pending_update: self.pending_update_version.is_some(),
+                    // Notice is informational only; never auto-upgrade or quit-to-apply.
+                    has_pending_update: false,
                     has_foreign_resume,
                     cwd_has_git_ancestor: self.cwd_has_git_ancestor,
                     session_picker_grouped: self.session_picker_grouped,
