@@ -654,57 +654,6 @@ pub async fn run_update_if_available(
     Ok(false)
 }
 
-/// Launch "ezer update" in blocking or non-blocking mode. Used only by the
-/// explicit `ezer update` command (`run_update`). Default startup never calls this.
-/// `NonBlocking` returns the spawned child's handle. Dropping the handle does not
-/// kill the child (`kill_on_drop` is off).
-async fn run_update_subcommand(
-    run_mode: UpdateRunMode,
-    trigger: CliUpdateTrigger,
-) -> Result<Option<tokio::process::Child>> {
-    let exe = std::env::current_exe()?;
-    let mut cmd = tokio::process::Command::new(exe);
-    // One trigger representation end to end: the enum crosses the process boundary as --trigger=<value> (FromStr on the other side)
-    cmd.arg("update");
-    cmd.arg(format!("--trigger={}", trigger.as_ref()));
-    // Hand the resolved telemetry mode to the child, which cannot see the remote-settings layer (requirement pins still beat env)
-    // None at the startup spawns: they run before the settings prefetch, when this process knows no more than the child
-    // Waiting would let telemetry delay an update
-    if let Some(mode) = xai_grok_telemetry::client::current_mode() {
-        cmd.env("EZER_TELEMETRY_ENABLED", mode.to_string());
-    }
-    match run_mode {
-        UpdateRunMode::Blocking => {
-            // stderr must be null, not piped: `.status()` does not drain pipes, so if the child writes more than the OS pipe buffer
-            // (~16 KB macOS / ~64 KB Linux) to stderr (e.g. download progress bars), the child blocks on the write while the parent
-            // blocks on waitpid — deadlocking both processes. With `panic = "abort"`, the blocked child eventually receives SIGABRT.
-            cmd.stdin(Stdio::null())
-                .stdout(Stdio::null())
-                // inherit, not piped: the TUI is already restored so the parent's stderr fd is a normal terminal inherit lets the
-                // child's diagnostic output reach the user. With piped stderr, `status()` would immediately close the read end. The
-                // child then hits EPIPE and panics, which is SIGABRT (signal 6) under panic=abort
-                .stderr(Stdio::inherit());
-            // No detach: the child must stay in the foreground process group so Ctrl+C cancels it with the parent
-            // The atomic install protocol makes mid-download kills safe
-            let status = cmd.status().await?;
-            if !status.success() {
-                anyhow::bail!("ezer update failed with {}", status);
-            }
-            Ok(None)
-        }
-        UpdateRunMode::NonBlocking => {
-            cmd.stdin(Stdio::null())
-                .stdout(Stdio::null())
-                .stderr(Stdio::null());
-            // Detach means a new session (Ctrl+C isolation), not handle abandonment: the child is still ours to wait() on
-            xai_grok_tools::util::detach_command(&mut cmd);
-            #[allow(clippy::disallowed_methods)] // the caller owns the returned handle
-            let child = cmd.spawn()?;
-            Ok(Some(child))
-        }
-    }
-}
-
 /// Resolve the ezer binary path for re-execution after an update. `current_exe()` resolves symlinks via `/proc/self/exe`
 /// (see proc(5)), so it returns the old versioned target after a symlink swap. Prefer `~/.ezer/bin/ezer` which always
 /// points to the latest version.
@@ -2280,7 +2229,7 @@ fn install_npm(target: Option<&str>, channel: &str, npm_registry: Option<&str>) 
 
     cmd.stdin(Stdio::null())
         .stdout(Stdio::null())
-        // inherit, not piped; same rationale as run_update_subcommand
+        // inherit, not piped: `.status()` does not drain pipes
         .stderr(Stdio::inherit());
     xai_grok_tools::util::detach_std_command(&mut cmd);
     let status = cmd.status()?;
