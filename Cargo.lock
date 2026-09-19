@@ -4614,6 +4614,7 @@ version = "0.1.220-alpha.4"
 dependencies = [
  "anyhow",
  "dunce",
+ "ezer-env",
  "ezer-extra-ca",
  "ezer-login",
  "ezer-shell",
