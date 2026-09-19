@@ -41,13 +41,15 @@ cargo check -p xai-grok-pager-bin            # fast validation
 
 The package is still `xai-grok-pager-bin`; the default binary name is `ezer`.
 
+Internal crate paths (`xai-grok-*`, functions like `grok_home()`) were left in place so TUI, tools, sessions, skills, headless, and ACP keep working. User-facing CLI, `~/.ezer`, and help/version say **ezer**.
+
 ## Configuration
 
-On first launch (when `$EZER_HOME` is unset or points at an empty home), ezer writes a starter `~/.ezer/config.toml`. Edit the API key and model id for your gateway.
+On first launch (when `$EZER_HOME` is unset or points at an empty home), ezer writes a starter `~/.ezer/config.toml` for the WorkBuddy2API-Hub gateway.
 
 ### WorkBuddy2API-Hub / OpenAI Responses gateway
 
-This is the supported default for a local OpenAI-compatible hub:
+Default and primary wire protocol is **`POST /v1/responses`** (SSE). Session title/summary uses this same model — it does **not** call built-in `grok-4.6`.
 
 ```toml
 # ~/.ezer/config.toml
@@ -59,25 +61,54 @@ models_base_url = "http://192.168.0.63:8788/v1"
 
 [models]
 default = "workbuddy"
+session_summary = "workbuddy"
 
 [model.workbuddy]
-model = "deepseek-v4.1-flash"   # or hy4-preview-f / hy3 — whatever /v1/models lists
-name = "WorkBuddy gateway"
+model = "deepseek-v4.1-flash"
+name = "WorkBuddy DeepSeek"
 base_url = "http://192.168.0.63:8788/v1"
 api_backend = "responses"
 context_window = 200000
+reasoning_effort = "max"
+supports_reasoning_effort = true
+api_key = "SrdCiNW_1c1qkc--o6e_Btot7yCwa8JswK3N856Q6ck"
 env_key = ["EZER_API_KEY", "XAI_API_KEY"]
-# api_key = "your-gateway-key"
 ```
+
+Optional models on that hub (also seeded on first run): `deepseek-v4.1-flash-low`, `deepseek-v4.1-flash-high`, `deepseek-v4.1-flash-max`, `hy4-preview-f`, `hy3`.
 
 ```sh
-export EZER_API_KEY="your-gateway-key"
 ezer
+# or: ezer -p "hello" --model workbuddy
 ```
 
-**Auth headers:** every API-key request sends `Authorization: Bearer <key>` and also `x-api-key` / `api-key` (the gateway accepts any of these).
+**Auth headers:** every API-key request sends `Authorization: Bearer <key>` and also `x-api-key` / `api-key`.
 
-**Wire protocol:** default `api_backend = "responses"` → `POST /v1/responses` with streaming SSE (input items, function tools, reasoning fields). Set `api_backend = "chat_completions"` for the secondary Chat Completions path. Empty `finish_reason` on Chat Completions streams is treated as unset.
+**Wire protocol:** `api_backend = "responses"` → `POST /v1/responses` with streaming SSE (input items, function tools, reasoning). `function_call_arguments.delta` events that omit `item_id` and send `call_id` are accepted. Chat Completions remains secondary (`api_backend = "chat_completions"`). Empty `finish_reason` on chat streams is treated as unset.
+
+### LAN smoke (run on the machine that can reach 192.168.0.63)
+
+The cloud agent cannot reach this LAN address. On your Mac:
+
+```sh
+KEY='SrdCiNW_1c1qkc--o6e_Btot7yCwa8JswK3N856Q6ck'
+BASE='http://192.168.0.63:8788/v1'
+
+curl -sS "$BASE/models" \
+  -H "Authorization: Bearer $KEY" \
+  -H "x-api-key: $KEY" \
+  -H "api-key: $KEY"
+
+curl -sS -N "$BASE/responses" \
+  -H "Authorization: Bearer $KEY" \
+  -H "x-api-key: $KEY" \
+  -H "api-key: $KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"model":"deepseek-v4.1-flash","stream":true,"input":[{"role":"user","content":"ping"}]}'
+
+EZER_HOME="$HOME/.ezer" ezer --version
+EZER_HOME="$HOME/.ezer" ezer -p "Reply with the word pong only."
+```
 
 **Home override:**
 

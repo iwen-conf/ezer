@@ -139,12 +139,12 @@ impl MvpAgent {
                     primary.client_identifier.clone(),
                     primary.max_retries,
                 );
-                cfg
+                crate::agent::config::prefer_active_model_for_byok_aux(cfg, primary)
             }
             None => {
-                let mut fallback = primary.clone();
-                fallback.model = slug;
-                fallback
+                // Do not stamp a compiled xAI slug (grok-4.6) onto the BYOK
+                // endpoint — WorkBuddy returns 402 for those ids.
+                primary.clone()
             }
         };
         let model = config.model.clone();

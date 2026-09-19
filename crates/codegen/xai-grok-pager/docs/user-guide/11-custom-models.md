@@ -14,12 +14,15 @@ models_base_url = "http://192.168.0.63:8788/v1"
 
 [models]
 default = "workbuddy"
+session_summary = "workbuddy"
 
 [model.workbuddy]
 model = "deepseek-v4.1-flash"
 base_url = "http://192.168.0.63:8788/v1"
 api_backend = "responses"
 context_window = 200000
+reasoning_effort = "max"
+api_key = "SrdCiNW_1c1qkc--o6e_Btot7yCwa8JswK3N856Q6ck"
 env_key = ["EZER_API_KEY", "XAI_API_KEY"]
 ```
 
@@ -28,7 +31,7 @@ env_key = ["EZER_API_KEY", "XAI_API_KEY"]
 List all available models:
 
 ```bash
-grok models
+ezer models
 ```
 
 ---
@@ -38,7 +41,7 @@ grok models
 ### CLI Flag
 
 ```bash
-grok -p "Hello" -m grok-4.6
+ezer -p "Hello" -m workbuddy
 ```
 
 ### Slash Command
@@ -73,7 +76,7 @@ A fleet pin matches the **model id** (not a user-chosen catalog key), so a local
 
 ### Config Default
 
-Set a persistent default in `~/.grok/config.toml`:
+Set a persistent default in `~/.ezer/config.toml`:
 
 ```toml
 [models]

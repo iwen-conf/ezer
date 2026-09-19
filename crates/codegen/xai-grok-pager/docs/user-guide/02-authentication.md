@@ -21,28 +21,29 @@ Disabled unless you set `EZER_ENABLE_XAI_LOGIN=1` or run `ezer --force-login`. W
 
 ### Credential storage
 
-Tokens in `~/.grok/auth.json` (and MCP OAuth tokens in `~/.grok/mcp_credentials.json`) are written with owner-only permissions (`0600` on Unix). Anyone with filesystem access to those paths can use the credentials, so:
+Tokens in `~/.ezer/auth.json` (and MCP OAuth tokens in `~/.ezer/mcp_credentials.json`) are written with owner-only permissions (`0600` on Unix). Anyone with filesystem access to those paths can use the credentials, so:
 
 - Prefer full-disk encryption (FileVault, BitLocker, LUKS, or equivalent).
 - Do not copy `auth.json` or `mcp_credentials.json` into shared directories, tickets, or chat.
-- On multi-user hosts, keep `$HOME` / `$GROK_HOME` private to your account.
+- On multi-user hosts, keep `$HOME` / `$EZER_HOME` private to your account.
 
 ### Re-authenticate
 
 To switch accounts or resolve an authentication problem, run:
 
 ```bash
-grok login
+ezer --force-login
+# or: EZER_ENABLE_XAI_LOGIN=1 ezer login
 ```
 
-Running `grok login` starts the sign-in flow again, replacing your cached session. By default, it opens your browser and signs in through SpaceXAI OAuth at `auth.x.ai`. Pass a flag to select a different flow:
+This optional flow opens a browser and signs in through SpaceXAI OAuth at `auth.x.ai`. It is **not** required for BYOK. Pass a flag to select a different flow:
 
 | Flag | Description |
 |------|-------------|
 | `--oauth` | Sign in through SpaceXAI OAuth at `auth.x.ai`. This is the default, so the flag is optional. |
 | `--device-auth` (alias `--device-code`) | Sign in with the device-code flow for headless or remote environments. |
 
-To sign out, run `grok logout`. It takes no flags and clears your cached credentials.
+To sign out, run `ezer logout`. It takes no flags and clears your cached credentials.
 
 ---
 
@@ -51,11 +52,11 @@ To sign out, run `grok logout`. It takes no flags and clears your cached credent
 For CI/CD, automation, or environments without browser access, use an API key from [console.x.ai](https://console.x.ai):
 
 ```bash
-export XAI_API_KEY="xai-..."
-grok
+export EZER_API_KEY="your-gateway-key"
+ezer
 ```
 
-Grok uses the API key as a fallback when no session token is active. If you have already signed in interactively, the stored session token takes precedence. To fall back to the API key, run `grok logout` or delete `~/.grok/auth.json`.
+ezer uses the API key as the default BYOK path. Optional grok.com session tokens, if present, still take precedence for xAI routes. To clear them, run `ezer logout` or delete `~/.ezer/auth.json`.
 
 ---
 

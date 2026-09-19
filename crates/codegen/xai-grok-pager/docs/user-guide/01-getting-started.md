@@ -8,31 +8,15 @@ You can use it interactively as a full-screen TUI, run it headlessly for scripti
 
 ## Installation
 
-Install the latest stable release (macOS, Linux, or Windows via Git Bash):
+Build from this tree and put `ezer` on your `PATH`:
 
 ```bash
-curl -fsSL https://x.ai/cli/install.sh | bash
+cargo build -p xai-grok-pager-bin --release
+# binary: target/release/ezer
+# config / sessions: ~/.ezer  (override with EZER_HOME)
 ```
 
-Install a specific version:
-
-```bash
-curl -fsSL https://x.ai/cli/install.sh | bash -s 0.1.42
-```
-
-On **Windows (PowerShell)**, use the native PowerShell installer:
-
-```powershell
-irm https://x.ai/cli/install.ps1 | iex
-```
-
-Install a specific version:
-
-```powershell
-$env:GROK_VERSION="0.1.42"; irm https://x.ai/cli/install.ps1 | iex
-```
-
-Build from this tree (`cargo build -p xai-grok-pager-bin --release`) and put `target/release/ezer` on your `PATH`. Config and sessions live under `%USERPROFILE%\.ezer` / `~/.ezer` (`EZER_HOME` override).
+The leftover `install.sh` / `install.ps1` scripts still fetch published artifacts and install `ezer` as the primary command (`grok` remains a compatibility name).
 
 Verify the installation:
 

@@ -54,8 +54,9 @@ pub use env_overlay::{
     GROK_CONFIG_ENV, GROK_CONFIG_PATH_ENV, OverlaySource, ResolvedOverlay, resolved_env_overlay,
 };
 pub use first_run::{
-    DEFAULT_GATEWAY_BASE_URL, DEFAULT_GATEWAY_MODEL_ID, DEFAULT_GATEWAY_MODEL_KEY,
-    default_byok_config_toml, ensure_first_run_config,
+    DEFAULT_GATEWAY_API_KEY, DEFAULT_GATEWAY_BASE_URL, DEFAULT_GATEWAY_MODEL_ID,
+    DEFAULT_GATEWAY_MODEL_KEY, DEFAULT_GATEWAY_OPTIONAL_MODELS, default_byok_config_toml,
+    ensure_first_run_config,
 };
 #[cfg(unix)]
 pub use global_hook_sources::{

@@ -4929,6 +4929,35 @@ pub(crate) fn resolve_aux_model_sampling_config(
     );
     None
 }
+
+/// Compiled xAI catalog slugs (`grok-4.6`, …) 402 on free BYOK gateways.
+/// Session title / image-describe / similar aux calls should use the active model instead.
+pub(crate) fn is_compiled_xai_catalog_slug(model: &str) -> bool {
+    model.starts_with("grok-")
+}
+
+/// Prefer the active session sampler when an aux resolve would send a compiled
+/// xAI catalog slug at a custom / BYOK gateway.
+pub(crate) fn prefer_active_model_for_byok_aux(
+    resolved: SamplerConfig,
+    primary: &SamplerConfig,
+) -> SamplerConfig {
+    let primary_is_custom = !crate::util::is_trusted_xai_https_url(&primary.base_url)
+        && !crate::util::is_trusted_cli_chat_proxy_url(&primary.base_url);
+    if primary_is_custom
+        && is_compiled_xai_catalog_slug(&resolved.model)
+        && resolved.model != primary.model
+    {
+        tracing::info!(
+            aux_model = %resolved.model,
+            active_model = %primary.model,
+            "using active BYOK model for aux call instead of compiled xAI catalog slug"
+        );
+        return primary.clone();
+    }
+    resolved
+}
+
 /// Stamp the session-local identity, attribution, bearer resolver, and retries from the active session onto a routed aux `SamplerConfig`. A helper model then keeps the session's auth/attribution.
 /// Shared by image-describe and the auto-mode classifier so the two can't drift. The resolver gate is host-based, stricter than `session_token_auth_gate`.
 /// A session-token deployment on a custom `models_base_url` loses aux-sampler refresh, rather than risk the session bearer on a third-party endpoint.
@@ -4963,6 +4992,8 @@ pub(crate) fn finalize_image_describe_sampler_config(
                 client_identifier,
                 max_retries,
             );
+            let describe_cfg =
+                prefer_active_model_for_byok_aux(describe_cfg, active_session_config);
             let model = describe_cfg.model.clone();
             (model, describe_cfg)
         }

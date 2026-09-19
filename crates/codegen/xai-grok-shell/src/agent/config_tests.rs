@@ -22,6 +22,59 @@ fn first_run_byok_template_parses_as_responses_gateway() {
         xai_grok_config::DEFAULT_GATEWAY_BASE_URL
     );
     assert_eq!(model.info.model, xai_grok_config::DEFAULT_GATEWAY_MODEL_ID);
+    assert_eq!(
+        model.info.reasoning_effort,
+        Some(ReasoningEffort::Max)
+    );
+    assert_eq!(
+        model.api_key.as_deref(),
+        Some(xai_grok_config::DEFAULT_GATEWAY_API_KEY)
+    );
+    assert_eq!(
+        cfg.session_summary_model.as_deref(),
+        Some(xai_grok_config::DEFAULT_GATEWAY_MODEL_KEY)
+    );
+    for id in xai_grok_config::DEFAULT_GATEWAY_OPTIONAL_MODELS {
+        let extra = resolved.get(*id).unwrap_or_else(|| panic!("optional model {id}"));
+        assert_eq!(extra.info.model, *id);
+        assert_eq!(extra.info.api_backend, ApiBackend::Responses);
+    }
+}
+
+#[test]
+fn byok_aux_prefers_active_model_over_compiled_grok_slug() {
+    let primary = SamplerConfig {
+        model: "deepseek-v4.1-flash".into(),
+        base_url: "http://192.168.0.63:8788/v1".into(),
+        api_backend: ApiBackend::Responses,
+        ..Default::default()
+    };
+    let aux = SamplerConfig {
+        model: "grok-4.6".into(),
+        base_url: "http://192.168.0.63:8788/v1".into(),
+        api_backend: ApiBackend::Responses,
+        ..Default::default()
+    };
+    let chosen = prefer_active_model_for_byok_aux(aux, &primary);
+    assert_eq!(chosen.model, "deepseek-v4.1-flash");
+}
+
+#[test]
+fn official_xai_aux_keeps_compiled_session_summary_slug() {
+    let primary = SamplerConfig {
+        model: "grok-4.6".into(),
+        base_url: "https://cli-chat-proxy.grok.com/v1".into(),
+        api_backend: ApiBackend::Responses,
+        ..Default::default()
+    };
+    let aux = SamplerConfig {
+        model: "grok-4.6".into(),
+        base_url: "https://cli-chat-proxy.grok.com/v1".into(),
+        api_backend: ApiBackend::Responses,
+        ..Default::default()
+    };
+    let chosen = prefer_active_model_for_byok_aux(aux, &primary);
+    assert_eq!(chosen.model, "grok-4.6");
 }
 #[test]
 fn main_cli_tools_override_preserves_profile_injection_policy() {

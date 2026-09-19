@@ -128,21 +128,53 @@ fn apply_api_key_headers(headers: &mut HeaderMap, api_key: &str, scheme: AuthSch
     Ok(())
 }
 
+/// WorkBuddy2API-Hub and some OpenAI-compat proxies emit
+/// `response.function_call_arguments.delta` / `.done` with `call_id` and no
+/// `item_id`. async-openai requires `item_id`; copy `call_id` (or `""`).
+pub(crate) fn inject_item_id_from_call_id(value: &mut serde_json::Value) {
+    let Some(obj) = value.as_object_mut() else {
+        return;
+    };
+    let item_missing = match obj.get("item_id") {
+        None => true,
+        Some(serde_json::Value::Null) => true,
+        Some(serde_json::Value::String(s)) if s.is_empty() => true,
+        _ => false,
+    };
+    if !item_missing {
+        return;
+    }
+    let fallback = obj
+        .get("call_id")
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.is_empty())
+        .unwrap_or("")
+        .to_owned();
+    obj.insert("item_id".to_owned(), serde_json::Value::String(fallback));
+}
+
+fn strip_unknown_response_tools(value: &mut serde_json::Value) {
+    if let Some(tools) = value
+        .pointer_mut("/response/tools")
+        .and_then(|v| v.as_array_mut())
+    {
+        tools.retain(|t| serde_json::from_value::<rs::Tool>(t.clone()).is_ok());
+    }
+}
+
+/// Gateway-compat rewrite before typed deserialize (item_id + unknown tools).
+pub(crate) fn sanitize_response_event_json(value: &mut serde_json::Value) {
+    inject_item_id_from_call_id(value);
+    strip_unknown_response_tools(value);
+}
+
 /// Deserialize a Responses SSE event, stripping unknown tools and rewriting terminal `total_tokens` from `context_details`.
 pub(crate) fn deserialize_response_event(data: &str) -> Result<rs::ResponseStreamEvent> {
     let mut event = match serde_json::from_str::<rs::ResponseStreamEvent>(data) {
         Ok(event) => event,
         Err(first_err) => {
-            // Try sanitizing: parse as Value, strip unknown tools, retry.
             if let Ok(mut value) = serde_json::from_str::<serde_json::Value>(data) {
-                // Strip tools that async_openai's rs::Tool can't deserialize (e.g., xAI-specific "x_search")
-                // Instead of maintaining a hardcoded allowlist, try deserializing each tool entry; if it fails, drop it
-                if let Some(tools) = value
-                    .pointer_mut("/response/tools")
-                    .and_then(|v| v.as_array_mut())
-                {
-                    tools.retain(|t| serde_json::from_value::<rs::Tool>(t.clone()).is_ok());
-                }
+                sanitize_response_event_json(&mut value);
                 if let Ok(mut event) = serde_json::from_value::<rs::ResponseStreamEvent>(value) {
                     apply_terminal_event_overrides(&mut event, data);
                     return Ok(event);
@@ -3477,6 +3509,74 @@ mod tests {
         };
         let usage = e.response.usage.expect("usage present");
         assert_eq!(usage.total_tokens, 6_714);
+    }
+
+    #[test]
+    fn deserialize_function_call_arguments_delta_injects_item_id_from_call_id() {
+        let sse = r#"{
+            "type": "response.function_call_arguments.delta",
+            "sequence_number": 3,
+            "call_id": "call_wb_1",
+            "output_index": 0,
+            "delta": "{\"path\":\"README.md\"}"
+        }"#;
+        assert!(
+            serde_json::from_str::<rs::ResponseStreamEvent>(sse).is_err(),
+            "async-openai requires item_id; the raw WorkBuddy event must fail first"
+        );
+        let event = deserialize_response_event(sse).expect("item_id injected from call_id");
+        let rs::ResponseStreamEvent::ResponseFunctionCallArgumentsDelta(delta) = event else {
+            panic!("expected function_call_arguments.delta, got {event:?}");
+        };
+        assert_eq!(delta.item_id, "call_wb_1");
+        assert_eq!(delta.delta, "{\"path\":\"README.md\"}");
+        assert_eq!(delta.output_index, 0);
+    }
+
+    #[test]
+    fn deserialize_function_call_arguments_delta_empty_item_id_when_call_id_absent() {
+        let sse = r#"{
+            "type": "response.function_call_arguments.delta",
+            "sequence_number": 4,
+            "output_index": 1,
+            "delta": "{}"
+        }"#;
+        let event = deserialize_response_event(sse).expect("empty item_id fallback");
+        let rs::ResponseStreamEvent::ResponseFunctionCallArgumentsDelta(delta) = event else {
+            panic!("expected function_call_arguments.delta, got {event:?}");
+        };
+        assert_eq!(delta.item_id, "");
+        assert_eq!(delta.delta, "{}");
+    }
+
+    #[test]
+    fn deserialize_function_call_arguments_done_injects_item_id_from_call_id() {
+        let sse = r#"{
+            "type": "response.function_call_arguments.done",
+            "sequence_number": 5,
+            "call_id": "call_wb_done",
+            "output_index": 0,
+            "name": "read_file",
+            "arguments": "{\"path\":\"src/lib.rs\"}"
+        }"#;
+        let event = deserialize_response_event(sse).expect("done event item_id injected");
+        let rs::ResponseStreamEvent::ResponseFunctionCallArgumentsDone(done) = event else {
+            panic!("expected function_call_arguments.done, got {event:?}");
+        };
+        assert_eq!(done.item_id, "call_wb_done");
+        assert_eq!(done.name.as_deref(), Some("read_file"));
+    }
+
+    #[test]
+    fn inject_item_id_from_call_id_leaves_existing_item_id() {
+        let mut value = serde_json::json!({
+            "type": "response.function_call_arguments.delta",
+            "item_id": "fc_keep",
+            "call_id": "call_other",
+            "delta": "x"
+        });
+        inject_item_id_from_call_id(&mut value);
+        assert_eq!(value["item_id"], "fc_keep");
     }
 
     #[test]
