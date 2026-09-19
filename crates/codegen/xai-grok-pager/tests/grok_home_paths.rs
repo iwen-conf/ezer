@@ -57,7 +57,7 @@ fn disk_usage_run_creates_no_grok_home() {
             .expect("a missing home is not an error");
         assert!(
             !ghost.exists(),
-            "grok du must not create the home it reports on (json={json})"
+            "ezer du must not create the home it reports on (json={json})"
         );
     }
 }

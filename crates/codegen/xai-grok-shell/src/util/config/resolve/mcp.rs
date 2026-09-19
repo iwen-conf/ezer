@@ -2,7 +2,7 @@ use toml::Value as TomlValue;
 
 /// Resolve `mcp.liveness_watchers` for a session.
 /// Thin wrapper around the canonical [`crate::agent::config::resolve_mcp_liveness_watchers`].
-/// Pulls each layer from its appropriate TOML / runtime source: | Layer | Source | |--------------|-----------------------------------------------------------------| | requirement | `[features] mcp_liveness_watchers` in `requirements.toml` | | cli | (none — no CLI flag) | | env | `GROK_MCP_LIVENESS_WATCHERS` (handled by `BoolFlag::env`) | | config | `[features] mcp_liveness_watchers` in `~/.grok/config.toml` | | managed | `[features] mcp_liveness_watchers` in `managed_config.toml` | | feature_flag | (none yet — remote settings plumbing TBD) | | default | `true` |
+/// Pulls each layer from its appropriate TOML / runtime source: | Layer | Source | |--------------|-----------------------------------------------------------------| | requirement | `[features] mcp_liveness_watchers` in `requirements.toml` | | cli | (none — no CLI flag) | | env | `EZER_MCP_LIVENESS_WATCHERS` (handled by `BoolFlag::env`) | | config | `[features] mcp_liveness_watchers` in `~/.ezer/config.toml` | | managed | `[features] mcp_liveness_watchers` in `managed_config.toml` | | feature_flag | (none yet — remote settings plumbing TBD) | | default | `true` |
 pub(crate) fn resolve_mcp_liveness_watchers(
     requirements: Option<&TomlValue>,
     user: Option<&TomlValue>,
@@ -44,7 +44,7 @@ pub(crate) fn resolve_mcp_auto_restart(
 
 /// Resolve `mcp.push_server_status` for a session.
 /// Thin wrapper around the canonical [`crate::agent::config::resolve_mcp_push_server_status`] that mirrors [`resolve_mcp_liveness_watchers`].
-/// Pulls each layer from its TOML / runtime source: | Layer | Source | |--------------|-----------------------------------------------------------------| | requirement | `[features] mcp_push_server_status` in `requirements.toml` | | cli | (none — no CLI flag) | | env | `GROK_MCP_PUSH_SERVER_STATUS` (handled by `BoolFlag::env`) | | config | `[features] mcp_push_server_status` in `~/.grok/config.toml` | | managed | `[features] mcp_push_server_status` in `managed_config.toml` | | feature_flag | (none yet — remote settings plumbing TBD) | | default | `true` |
+/// Pulls each layer from its TOML / runtime source: | Layer | Source | |--------------|-----------------------------------------------------------------| | requirement | `[features] mcp_push_server_status` in `requirements.toml` | | cli | (none — no CLI flag) | | env | `EZER_MCP_PUSH_SERVER_STATUS` (handled by `BoolFlag::env`) | | config | `[features] mcp_push_server_status` in `~/.ezer/config.toml` | | managed | `[features] mcp_push_server_status` in `managed_config.toml` | | feature_flag | (none yet — remote settings plumbing TBD) | | default | `true` |
 pub fn resolve_mcp_push_server_status(
     requirements: Option<&TomlValue>,
     user: Option<&TomlValue>,
@@ -65,7 +65,7 @@ pub fn resolve_mcp_push_server_status(
 
 /// Resolve `mcp.recursive_config_watch` for the leader's `ConfigFileWatcher` spawn path.
 /// Thin wrapper around the canonical [`crate::agent::config::resolve_mcp_recursive_config_watch`].
-/// Pulls each layer from its TOML / runtime source: | Layer | Source | |--------------|---------------------------------------------------------------------| | requirement | `[features] mcp_recursive_config_watch` in `requirements.toml` | | cli | (none — no CLI flag) | | env | `GROK_MCP_RECURSIVE_CONFIG_WATCH` (handled by `BoolFlag::env`) | | config | `[features] mcp_recursive_config_watch` in `~/.grok/config.toml` | | managed | `[features] mcp_recursive_config_watch` in `managed_config.toml` | | feature_flag | (none yet — remote settings plumbing TBD) | | default | `true` |
+/// Pulls each layer from its TOML / runtime source: | Layer | Source | |--------------|---------------------------------------------------------------------| | requirement | `[features] mcp_recursive_config_watch` in `requirements.toml` | | cli | (none — no CLI flag) | | env | `EZER_MCP_RECURSIVE_CONFIG_WATCH` (handled by `BoolFlag::env`) | | config | `[features] mcp_recursive_config_watch` in `~/.ezer/config.toml` | | managed | `[features] mcp_recursive_config_watch` in `managed_config.toml` | | feature_flag | (none yet — remote settings plumbing TBD) | | default | `true` |
 pub(crate) fn resolve_mcp_recursive_config_watch(
     requirements: Option<&TomlValue>,
     user: Option<&TomlValue>,
@@ -91,7 +91,7 @@ pub const DEFAULT_MCP_STARTUP_TIMEOUT_SECS: u64 = 30;
 
 /// Env override for the MCP startup timeout, in milliseconds (shared with common third-party tooling, so an existing setting carries over).
 const ENV_MCP_TIMEOUT_MS: &str = "MCP_TIMEOUT";
-const ENV_MCP_STARTUP_TIMEOUT_SECS: &str = "GROK_MCP_STARTUP_TIMEOUT_SECS";
+const ENV_MCP_STARTUP_TIMEOUT_SECS: &str = "EZER_MCP_STARTUP_TIMEOUT_SECS";
 
 /// Cached remote settings `mcp_startup_timeout_secs` (`0` means unset).
 /// MCP servers start from free functions with no handle to the live `RemoteSettings`, so the remote tier is cached here when settings are applied.
@@ -141,7 +141,7 @@ pub(crate) fn resolve_mcp_startup_timeout_secs(remote: Option<u64>) -> u64 {
     )
 }
 
-/// `MCP_TIMEOUT` (ms, rounded up so a sub-second value never becomes 0s) > `GROK_MCP_STARTUP_TIMEOUT_SECS` (secs).
+/// `MCP_TIMEOUT` (ms, rounded up so a sub-second value never becomes 0s) > `EZER_MCP_STARTUP_TIMEOUT_SECS` (secs).
 /// Unparseable/zero values are ignored.
 fn mcp_startup_timeout_from_env() -> Option<u64> {
     if let Some(ms) = std::env::var(ENV_MCP_TIMEOUT_MS)
@@ -208,7 +208,7 @@ fn max_mcp_output_bytes_from_toml(v: &toml::Value) -> Option<usize> {
 
 /// Resolve the MCP tool-result inline cap (bytes) on the **global / atomic path**.
 /// No cwd here, so no project tier; see [`resolve_max_mcp_output_bytes_for_cwd`].
-/// Precedence (highest first): requirements.toml `[mcp] max_output_bytes` env `GROK_MAX_MCP_OUTPUT_BYTES` / `MAX_MCP_OUTPUT_BYTES` (Grok-native wins when both set) effective `config.toml [mcp] max_output_bytes` remote settings `RemoteSettings.max_mcp_output_bytes` [`DEFAULT_MAX_MCP_OUTPUT_BYTES`] (20_000)
+/// Precedence (highest first): requirements.toml `[mcp] max_output_bytes` env `EZER_MAX_MCP_OUTPUT_BYTES` / `MAX_MCP_OUTPUT_BYTES` (ezer-native wins when both set) effective `config.toml [mcp] max_output_bytes` remote settings `RemoteSettings.max_mcp_output_bytes` [`DEFAULT_MAX_MCP_OUTPUT_BYTES`] (20_000)
 pub(crate) fn resolve_max_mcp_output_bytes(remote: Option<u64>) -> usize {
     let remote_usize = remote
         .and_then(|n| usize::try_from(n).ok())
@@ -229,7 +229,7 @@ pub(crate) fn resolve_max_mcp_output_bytes(remote: Option<u64>) -> usize {
     )
 }
 
-/// Project tier of the MCP output cap: `[mcp] max_output_bytes` from the `.grok/config.toml` chain (`cwd` up to the git root), deepest file wins.
+/// Project tier of the MCP output cap: `[mcp] max_output_bytes` from the `.ezer/config.toml` chain (`cwd` up to the git root), deepest file wins.
 /// Folder-trust-gated: an untrusted checkout must not raise or lower the cap (raising it would let the repo stuff context and drive up cost).
 /// Project plugin paths and repo env contributions are gated the same way.
 fn project_max_mcp_output_bytes(cwd: &std::path::Path) -> Option<usize> {
@@ -320,10 +320,10 @@ mod max_mcp_output_bytes_tests {
         // Make it a git repo so the chain walks from the subdir to the root
         git2::Repository::init(root).unwrap();
         let sub = root.join("crates").join("thing");
-        std::fs::create_dir_all(sub.join(".grok")).unwrap();
-        std::fs::create_dir_all(root.join(".grok")).unwrap();
+        std::fs::create_dir_all(sub.join(".ezer")).unwrap();
+        std::fs::create_dir_all(root.join(".ezer")).unwrap();
         std::fs::write(
-            root.join(".grok/config.toml"),
+            root.join(".ezer/config.toml"),
             "[mcp]\nmax_output_bytes = 30000\n",
         )
         .unwrap();
@@ -333,18 +333,18 @@ mod max_mcp_output_bytes_tests {
 
         // The subdir sets it too, so the deeper file wins
         std::fs::write(
-            sub.join(".grok/config.toml"),
+            sub.join(".ezer/config.toml"),
             "[mcp]\nmax_output_bytes = 50000\n",
         )
         .unwrap();
         assert_eq!(super::project_max_mcp_output_bytes(&sub), Some(50_000));
 
         // A deeper file *without* the key does not mask the root value.
-        std::fs::write(sub.join(".grok/config.toml"), "[ui]\nvim_mode = true\n").unwrap();
+        std::fs::write(sub.join(".ezer/config.toml"), "[ui]\nvim_mode = true\n").unwrap();
         assert_eq!(super::project_max_mcp_output_bytes(&sub), Some(30_000));
 
         // No .grok file sets the key anywhere, so the walk returns None
-        std::fs::remove_file(root.join(".grok/config.toml")).unwrap();
+        std::fs::remove_file(root.join(".ezer/config.toml")).unwrap();
         assert_eq!(super::project_max_mcp_output_bytes(&sub), None);
     }
 }

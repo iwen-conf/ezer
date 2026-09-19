@@ -2,7 +2,7 @@
 //!
 //! Tokio defaults to one worker per core and 512 blocking threads *per
 //! runtime*. On many-core shared hosts that pins too many thread slots
-//! against per-user ceilings (`pids.max` / `RLIMIT_NPROC`). Grok runtimes
+//! against per-user ceilings (`pids.max` / `RLIMIT_NPROC`). ezer runtimes
 //! are I/O-bound, so throughput does not scale past a small worker count.
 //!
 //! Blocking pool: `spawn_blocking` panics on `pthread_create` EAGAIN only
@@ -12,7 +12,7 @@
 //! first mid-turn `spawn_blocking` does not take the empty-pool panic arm.
 //!
 //! This is the single home for the policy. Every production multi-thread
-//! runtime (the `grok` binary, `workspace_server`) derives its worker count
+//! runtime (the `ezer` binary, `workspace_server`) derives its worker count
 //! from here.
 
 use std::io;
@@ -21,7 +21,7 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 
-/// Maximum runtime worker threads for any grok process.
+/// Maximum runtime worker threads for any ezer process.
 #[allow(
     clippy::unwrap_used,
     reason = "const unwrap is evaluated at compile time and cannot panic at runtime"

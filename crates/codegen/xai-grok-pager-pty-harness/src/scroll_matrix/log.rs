@@ -1,4 +1,4 @@
-//! `GROK_SCROLL_LOG` JSONL parsing, per-stream grouping, and finalize synchronization.
+//! `EZER_SCROLL_LOG` JSONL parsing, per-stream grouping, and finalize synchronization.
 //!
 //! Wire schema source of truth: the pager's `ScrollLogRecord` in `xai-grok-pager/src/input/scroll_log.rs`.
 //! [`ScrollLogLine`] mirrors it field-for-field with every always-emitted field **required**.

@@ -11,7 +11,7 @@ use std::time::{Duration, Instant};
 
 use serde::Serialize;
 
-const PROMPT_ACK_TIMEOUT_ENV: &str = "GROK_PROMPT_ACK_TIMEOUT_SECS";
+const PROMPT_ACK_TIMEOUT_ENV: &str = "EZER_PROMPT_ACK_TIMEOUT_SECS";
 /// Status-line notice ("waiting for the agent to accept…") before the hard deadline.
 pub(crate) const PROMPT_ACK_SOFT_NOTICE: Duration = Duration::from_secs(10);
 /// Sized above the shell's first-prompt worst case, which acknowledges only after its whole

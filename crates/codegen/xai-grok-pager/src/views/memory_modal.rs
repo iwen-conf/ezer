@@ -67,7 +67,7 @@ fn empty_state_markdown(capture_enabled: bool, dream_enabled: bool) -> String {
         text.push_str("- `/dream` organizes saved notes into topics.\n");
     }
     text.push_str(
-        "\nGrok Build remembers conventions, decisions, and project facts across sessions so you \
+        "\nezer remembers conventions, decisions, and project facts across sessions so you \
          don't have to repeat yourself. Notes live in **workspace** memory for this repository and \
          **global** memory shared across all your projects; each has a generated `MEMORY.md` index \
          that fills in as notes are saved.\n",
@@ -81,7 +81,7 @@ fn disabled_state_markdown(reason: Option<MemoryDisabledReason>) -> &'static str
             "\
 **Memory is off for this session.** Press **t** to turn it back on.
 
-While off, Grok isn't reading or saving notes; anything already remembered is kept on disk. \
+While off, ezer isn't reading or saving notes; anything already remembered is kept on disk. \
 Memory carries conventions, decisions, and project facts between sessions so you don't have \
 to repeat yourself."
         }
@@ -96,9 +96,9 @@ there (or remove the line) to keep memory on. Anything already remembered is kep
         Some(MemoryDisabledReason::ProcessDisabled) => {
             "\
 **Memory is off for this process.** Start a new session without `--no-memory` or \
-`GROK_MEMORY=0` to use it.
+`EZER_MEMORY=0` to use it.
 
-Memory was turned off when Grok Build started, so it can't be turned on here. Anything already \
+Memory was turned off when ezer started, so it can't be turned on here. Anything already \
 remembered is kept on disk."
         }
         Some(MemoryDisabledReason::RolloutRestricted) => {
@@ -118,7 +118,7 @@ No memory storage is set up for this session, so there is nothing to browse or t
             "\
 **Memory is off for this session.** Press **s** for details.
 
-This session reports a reason this version of Grok Build doesn't recognize; press **t** to try \
+This session reports a reason this version of ezer doesn't recognize; press **t** to try \
 turning it back on."
         }
     }
@@ -2123,9 +2123,9 @@ mod tests {
 
     #[test]
     fn file_label_extracts_filename() {
-        assert_eq!(file_label("/home/user/.grok/memory/MEMORY.md"), "MEMORY.md");
+        assert_eq!(file_label("/home/user/.ezer/memory/MEMORY.md"), "MEMORY.md");
         assert_eq!(
-            file_label("/workspace/.grok/memory/sessions/2026-01-15-fix-bug.md"),
+            file_label("/workspace/.ezer/memory/sessions/2026-01-15-fix-bug.md"),
             "2026-01-15-fix-bug.md"
         );
     }

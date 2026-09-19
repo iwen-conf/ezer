@@ -83,7 +83,7 @@ async fn a_crowded_dock_keeps_every_header_inside_its_row_cap() {
         DEFAULT_COLS,
         &content,
         &["--yolo", "--trust"],
-        &[("GROK_DOCK", "1")],
+        &[("EZER_DOCK", "1")],
         Some(content.home()),
     )
     .expect("spawn pager");

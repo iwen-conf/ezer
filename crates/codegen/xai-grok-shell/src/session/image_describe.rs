@@ -1,7 +1,7 @@
 //! Image processing helpers for sessions with image inputs.
 //!
 //! That harness uses a separate vision endpoint to describe images rather than passing them inline.
-//! When a user message contains image content blocks, the session calls a vision-capable Grok model.
+//! When a user message contains image content blocks, the session calls a vision-capable ezer model.
 //! The model's text descriptions are injected into the turn.
 //! The vision model defaults to the agent's current model unless explicitly overridden.
 //! Per-image requests are deduplicated via [`ImageDescribeCache`] (same bytes and same describe prompt fingerprint).

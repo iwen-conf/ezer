@@ -10,7 +10,7 @@ use xai_file_utils::queue::UploadQueue;
 use xai_grok_sampling_types::ReasoningEffort;
 use xai_hunk_tracker::HunkTrackerHandle;
 /// Coarse lifecycle state of a session as known to the leader/agent.
-/// A grok session is a resumable log on disk with no terminal status field of its own, so "liveness" is residency plus turn state, not a pid.
+/// A ezer session is a resumable log on disk with no terminal status field of its own, so "liveness" is residency plus turn state, not a pid.
 /// The agent's join-handle supervisor tracks this per session so a panicked actor is demoted to `Dormant` instead of lingering in the roster.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum SessionLiveState {

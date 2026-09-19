@@ -13,7 +13,7 @@ pub mod stage {
     pub const MOCK_REQ: &str = "mock_req";
 }
 
-pub const ENV: &str = "GROK_SUBAGENT_WATERFALL";
+pub const ENV: &str = "EZER_SUBAGENT_WATERFALL";
 pub const LINE_PREFIX: &str = "WATERFALL";
 pub const T0_LINE_PREFIX: &str = "WATERFALL-T0";
 

@@ -7,7 +7,7 @@ use crate::terminal::TerminalName;
 
 use super::{ClipboardFeedback, ClipboardWriteLegs};
 
-/// Grok's evidence that a clipboard write reached its intended destination.
+/// ezer's evidence that a clipboard write reached its intended destination.
 #[derive(Debug, Clone, Copy, Eq, PartialEq, strum::AsRefStr, strum::IntoStaticStr)]
 #[strum(serialize_all = "snake_case")]
 pub enum ClipboardDelivery {

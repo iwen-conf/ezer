@@ -96,7 +96,7 @@ fn embedded_repository_keeps_the_worktree_whatever_was_captured() {
     );
 
     assert_eq!(
-        reclaim_after_snapshot(&worktree, &fixture.source, "refs/grok/subagents/test"),
+        reclaim_after_snapshot(&worktree, &fixture.source, "refs/ezer/subagents/test"),
         Safety::Keep(KeepReason::EmbeddedRepo("tool".to_string()))
     );
     assert_eq!(
@@ -135,7 +135,7 @@ fn staged_path_no_snapshot_can_carry_keeps_the_worktree() {
     run_git(&worktree, &["add", "-f", ".env"]);
 
     assert_eq!(
-        reclaim_after_snapshot(&worktree, &fixture.source, "refs/grok/subagents/test"),
+        reclaim_after_snapshot(&worktree, &fixture.source, "refs/ezer/subagents/test"),
         Safety::Keep(KeepReason::Dirty)
     );
     assert_eq!(
@@ -176,7 +176,7 @@ fn user_status_untracked_config_does_not_change_the_dirty_verdict() {
 fn git_directory_in_the_working_tree_keeps_the_worktree() {
     let fixture = Fixture::new("");
     let worktree = fixture.linked_worktree("fixtures");
-    let ref_name = "refs/grok/subagents/fixtures";
+    let ref_name = "refs/ezer/subagents/fixtures";
     let fixture_file = worktree.join("testdata/.git/fixture.txt");
     std::fs::create_dir_all(fixture_file.parent().unwrap()).unwrap();
     std::fs::write(&fixture_file, b"the only copy of it\n").unwrap();
@@ -201,7 +201,7 @@ fn pruned_symlink_keeps_the_worktree_and_an_empty_one_does_not() {
     std::fs::write(empty.join("testdata/README"), b"ordinary\n").unwrap();
 
     assert_eq!(
-        reclaim_after_snapshot(&empty, &fixture.source, "refs/grok/subagents/empty-dot-git"),
+        reclaim_after_snapshot(&empty, &fixture.source, "refs/ezer/subagents/empty-dot-git"),
         Safety::Delete,
         "an empty .git holds nothing to lose"
     );
@@ -216,7 +216,7 @@ fn pruned_symlink_keeps_the_worktree_and_an_empty_one_does_not() {
         safe_to_delete_worktree_after_snapshot(
             &linked,
             Some(&fixture.source),
-            "refs/grok/subagents/linked-dot-git"
+            "refs/ezer/subagents/linked-dot-git"
         ),
         Safety::Keep(KeepReason::EmbeddedRepo("testdata".to_string()))
     );
@@ -327,7 +327,7 @@ fn dirty_submodule_keeps_the_worktree_whatever_was_captured() {
     );
 
     assert_eq!(
-        reclaim_after_snapshot(&worktree, &fixture.source, "refs/grok/subagents/sub"),
+        reclaim_after_snapshot(&worktree, &fixture.source, "refs/ezer/subagents/sub"),
         Safety::Keep(KeepReason::EmbeddedRepo("sub".to_string()))
     );
     assert_eq!(

@@ -3,7 +3,7 @@
 use super::common::*;
 
 /// Env var under test; the TestSandbox `env_clear` guarantees it is unset unless a case sets it explicitly.
-const CONNECT_UI_TIMEOUT_ENV: &str = "GROK_CONNECT_UI_TIMEOUT_SECS";
+const CONNECT_UI_TIMEOUT_ENV: &str = "EZER_CONNECT_UI_TIMEOUT_SECS";
 
 /// Unified-log message the pager writes directly (pre-connect, bypassing the ACP forwarder) whenever the env var is set.
 /// Rejected values log too, so the resolution is observable on the startups that fail inside it.

@@ -29,8 +29,8 @@ fn worktree_forked_sets_session_id_eagerly_and_emits_load() {
     assert!(agent.session.session_id.is_none());
     assert!(!agent.session.loading_replay);
 
-    let worktree_path = PathBuf::from("/tmp/grok-worktrees/pager-fork");
-    let session_cwd = PathBuf::from("/tmp/grok-worktrees/pager-fork/sub");
+    let worktree_path = PathBuf::from("/tmp/ezer-worktrees/pager-fork");
+    let session_cwd = PathBuf::from("/tmp/ezer-worktrees/pager-fork/sub");
     let effects = dispatch(
         Action::TaskComplete(TaskResult::WorktreeForked {
             agent_id: id,
@@ -113,7 +113,7 @@ fn worktree_forked_clears_sticky_branch_from_main_repo() {
         agent.is_worktree = false;
     }
 
-    let worktree_path = PathBuf::from("/tmp/grok-worktrees/pager-fork-sticky");
+    let worktree_path = PathBuf::from("/tmp/ezer-worktrees/pager-fork-sticky");
     let session_cwd = worktree_path.join("sub");
     dispatch(
         Action::TaskComplete(TaskResult::WorktreeForked {
@@ -156,8 +156,8 @@ fn worktree_forked_with_restore_shows_summary_in_scrollback() {
     );
     let id = AgentId(0);
 
-    let worktree_path = PathBuf::from("/tmp/grok-worktrees/pager-fork");
-    let session_cwd = PathBuf::from("/tmp/grok-worktrees/pager-fork/sub");
+    let worktree_path = PathBuf::from("/tmp/ezer-worktrees/pager-fork");
+    let session_cwd = PathBuf::from("/tmp/ezer-worktrees/pager-fork/sub");
     let effects = dispatch(
         Action::TaskComplete(TaskResult::WorktreeForked {
             agent_id: id,
@@ -214,8 +214,8 @@ fn worktree_forked_with_strategy_shows_summary_in_scrollback() {
         Action::TaskComplete(TaskResult::WorktreeForked {
             agent_id: id,
             session_id: acp::SessionId::new("forked-sess-strategy"),
-            worktree_path: PathBuf::from("/tmp/grok-worktrees/pager-fork"),
-            session_cwd: PathBuf::from("/tmp/grok-worktrees/pager-fork"),
+            worktree_path: PathBuf::from("/tmp/ezer-worktrees/pager-fork"),
+            session_cwd: PathBuf::from("/tmp/ezer-worktrees/pager-fork"),
             code_restored: false,
             restore_summary: None,
             restore_degree: None,
@@ -255,8 +255,8 @@ fn worktree_forked_with_restore_failure_shows_warning_banner() {
     );
     let id = AgentId(0);
 
-    let worktree_path = PathBuf::from("/tmp/grok-worktrees/pager-fail");
-    let session_cwd = PathBuf::from("/tmp/grok-worktrees/pager-fail/sub");
+    let worktree_path = PathBuf::from("/tmp/ezer-worktrees/pager-fail");
+    let session_cwd = PathBuf::from("/tmp/ezer-worktrees/pager-fail/sub");
     dispatch(
         Action::TaskComplete(TaskResult::WorktreeForked {
             agent_id: id,
@@ -1239,8 +1239,8 @@ fn worktree_forked_retargets_suppress_to_child() {
         Action::TaskComplete(TaskResult::WorktreeForked {
             agent_id: AgentId(0),
             session_id: acp::SessionId::new("forked-sess-1"),
-            worktree_path: PathBuf::from("/tmp/grok-worktrees/pager-fork"),
-            session_cwd: PathBuf::from("/tmp/grok-worktrees/pager-fork/sub"),
+            worktree_path: PathBuf::from("/tmp/ezer-worktrees/pager-fork"),
+            session_cwd: PathBuf::from("/tmp/ezer-worktrees/pager-fork/sub"),
             code_restored: false,
             restore_summary: None,
             restore_degree: None,
@@ -1274,8 +1274,8 @@ fn worktree_forked_does_not_retarget_unrelated_suppress() {
         Action::TaskComplete(TaskResult::WorktreeForked {
             agent_id: AgentId(0),
             session_id: acp::SessionId::new("forked-sess-1"),
-            worktree_path: PathBuf::from("/tmp/grok-worktrees/pager-fork"),
-            session_cwd: PathBuf::from("/tmp/grok-worktrees/pager-fork/sub"),
+            worktree_path: PathBuf::from("/tmp/ezer-worktrees/pager-fork"),
+            session_cwd: PathBuf::from("/tmp/ezer-worktrees/pager-fork/sub"),
             code_restored: false,
             restore_summary: None,
             restore_degree: None,

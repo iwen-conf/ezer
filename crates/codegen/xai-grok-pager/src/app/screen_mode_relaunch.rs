@@ -1,7 +1,7 @@
 //! Rebuild process argv and re-exec the pager into a different screen mode.
 //!
 //! Fallback only: `/minimal`/`/fullscreen` switch in process by default (`super::mode_switch`).
-//! This remains for the startup env override, the `GROK_SCREEN_MODE_SWITCH=exec` escape hatch, and unrecoverable transitions.
+//! This remains for the startup env override, the `EZER_SCREEN_MODE_SWITCH=exec` escape hatch, and unrecoverable transitions.
 //!
 //! On the exec path the event loop quits and the terminal is restored.
 //! This module then replaces the process image with the same binary pointed at the active session under the requested render mode.
@@ -17,7 +17,7 @@ use std::sync::OnceLock;
 /// Env var that forces screen-mode resolution regardless of CLI flag / config.
 /// Set only on the re-exec path so a config `[terminal] minimal = true` cannot keep a `/fullscreen` relaunch stuck in minimal, and vice-versa.
 /// Consumed (read **and removed**) exactly once at startup by [`take_screen_mode_env_override`]; not a public user interface.
-pub(crate) const GROK_SCREEN_MODE_ENV: &str = "GROK_SCREEN_MODE";
+pub(crate) const EZER_SCREEN_MODE_ENV: &str = "EZER_SCREEN_MODE";
 
 /// Derived from the clap definition itself (via [`clap::CommandFactory`]) so the classification can never drift from the CLI.
 /// Boolean switches contribute nothing: a bare word following one is the positional prompt and must be dropped on resume.
@@ -159,8 +159,8 @@ pub(crate) fn build_screen_mode_relaunch_args(
     out
 }
 
-/// `GROK_SCREEN_MODE_SWITCH=exec` forces the legacy re-exec switch.
-pub(crate) const SCREEN_MODE_SWITCH_ENV: &str = "GROK_SCREEN_MODE_SWITCH";
+/// `EZER_SCREEN_MODE_SWITCH=exec` forces the legacy re-exec switch.
+pub(crate) const SCREEN_MODE_SWITCH_ENV: &str = "EZER_SCREEN_MODE_SWITCH";
 
 pub(crate) fn exec_switch_forced() -> bool {
     std::env::var(SCREEN_MODE_SWITCH_ENV).is_ok_and(|v| v.trim().eq_ignore_ascii_case("exec"))
@@ -183,7 +183,7 @@ pub(crate) fn screen_mode_relaunch_resume_hint(session_id: &str, want_minimal: b
     } else {
         "--fullscreen"
     };
-    format!("{GROK_SCREEN_MODE_ENV}={mode} grok {flag} --resume {session_id}")
+    format!("{EZER_SCREEN_MODE_ENV}={mode} ezer {flag} --resume {session_id}")
 }
 
 /// Replace the current process with a relaunch into the requested screen mode.
@@ -196,7 +196,7 @@ pub(crate) fn exec_screen_mode_relaunch(session_id: &str, want_minimal: bool) ->
     let mut cmd = std::process::Command::new(&exe);
     cmd.args(&args);
     // Force mode resolution even when config.toml has the opposite preference.
-    cmd.env(GROK_SCREEN_MODE_ENV, screen_mode_env_value(want_minimal));
+    cmd.env(EZER_SCREEN_MODE_ENV, screen_mode_env_value(want_minimal));
 
     let mode_label = screen_mode_env_value(want_minimal);
     let reverse = if want_minimal {
@@ -248,7 +248,7 @@ pub(crate) fn exec_screen_mode_relaunch(session_id: &str, want_minimal: bool) ->
     }
 }
 
-/// Parse a [`GROK_SCREEN_MODE_ENV`] or config `[ui] screen_mode` value (pure; unit-tested directly).
+/// Parse a [`EZER_SCREEN_MODE_ENV`] or config `[ui] screen_mode` value (pure; unit-tested directly).
 /// Case- and whitespace-insensitive for the known tokens, matching [`crate::settings::canonical_screen_mode`].
 /// Unlike the settings canonicalizer, unknown / absent / legacy values (`default`, `auto`, empty) return `None`.
 pub(crate) fn parse_screen_mode(value: Option<&str>) -> Option<super::ScreenMode> {
@@ -265,14 +265,14 @@ pub(crate) fn parse_screen_mode(value: Option<&str>) -> Option<super::ScreenMode
     }
 }
 
-/// Consume the one-shot screen-mode override env (see [`GROK_SCREEN_MODE_ENV`]).
-/// Every spawned child (tool shells, workers, nested `grok` invocations) would otherwise inherit a forced screen mode the user never asked for.
+/// Consume the one-shot screen-mode override env (see [`EZER_SCREEN_MODE_ENV`]).
+/// Every spawned child (tool shells, workers, nested `ezer` invocations) would otherwise inherit a forced screen mode the user never asked for.
 /// That way `/fullscreen` reopens in alt-screen fullscreen (not inline) even under Zellij, `alt_screen = never`, or a preserved `--no-alt-screen`.
 pub(crate) fn take_screen_mode_env_override() -> Option<super::ScreenMode> {
-    let raw = std::env::var_os(GROK_SCREEN_MODE_ENV);
+    let raw = std::env::var_os(EZER_SCREEN_MODE_ENV);
     if raw.is_some() {
         // SAFETY: called once during pager startup, before the event loop and before this process spawns threads that read the environment. Any set value is removed (even an unparseable one) so children never inherit the override.
-        unsafe { std::env::remove_var(GROK_SCREEN_MODE_ENV) };
+        unsafe { std::env::remove_var(EZER_SCREEN_MODE_ENV) };
     }
     parse_screen_mode(raw.as_deref().and_then(OsStr::to_str))
 }
@@ -360,7 +360,7 @@ mod tests {
 
     #[test]
     fn adds_minimal_and_resume() {
-        let out = build_screen_mode_relaunch_args(args(&["grok", "--no-leader"]), "abc", true);
+        let out = build_screen_mode_relaunch_args(args(&["ezer", "--no-leader"]), "abc", true);
         assert_eq!(
             as_strs(&out),
             vec!["--no-leader", "--resume", "abc", "--minimal"]
@@ -370,7 +370,7 @@ mod tests {
     /// The fullscreen direction appends an explicit `--fullscreen` so mode resolution still works without the env override.
     #[test]
     fn adds_fullscreen_and_resume() {
-        let out = build_screen_mode_relaunch_args(args(&["grok", "--no-leader"]), "abc", false);
+        let out = build_screen_mode_relaunch_args(args(&["ezer", "--no-leader"]), "abc", false);
         assert_eq!(
             as_strs(&out),
             vec!["--no-leader", "--resume", "abc", "--fullscreen"]
@@ -384,7 +384,7 @@ mod tests {
     fn strips_session_id_flag() {
         let out = build_screen_mode_relaunch_args(
             args(&[
-                "grok",
+                "ezer",
                 "--session-id",
                 "11111111-1111-1111-1111-111111111111",
                 "--no-leader",
@@ -398,7 +398,7 @@ mod tests {
         );
 
         let out = build_screen_mode_relaunch_args(
-            args(&["grok", "-s", "11111111-1111-1111-1111-111111111111"]),
+            args(&["ezer", "-s", "11111111-1111-1111-1111-111111111111"]),
             "new",
             false,
         );
@@ -411,7 +411,7 @@ mod tests {
     fn strips_worktree_and_restore_code() {
         let out = build_screen_mode_relaunch_args(
             args(&[
-                "grok",
+                "ezer",
                 "-w",
                 "feature-x",
                 "--worktree-ref",
@@ -435,7 +435,7 @@ mod tests {
     fn strips_eq_forms_of_one_shot_flags() {
         let out = build_screen_mode_relaunch_args(
             args(&[
-                "grok",
+                "ezer",
                 "--session-id=u1",
                 "--worktree=wt",
                 "--worktree-ref=main",
@@ -455,7 +455,7 @@ mod tests {
     #[test]
     fn strips_bare_worktree_without_eating_next_flag() {
         let out = build_screen_mode_relaunch_args(
-            args(&["grok", "--worktree", "--no-leader"]),
+            args(&["ezer", "--worktree", "--no-leader"]),
             "new",
             false,
         );
@@ -468,7 +468,7 @@ mod tests {
     #[test]
     fn strips_prior_minimal_and_resume() {
         let out = build_screen_mode_relaunch_args(
-            args(&["grok", "--minimal", "--resume", "old", "--no-leader"]),
+            args(&["ezer", "--minimal", "--resume", "old", "--no-leader"]),
             "new",
             false,
         );
@@ -484,7 +484,7 @@ mod tests {
     #[test]
     fn strips_prior_fullscreen_flag() {
         let out = build_screen_mode_relaunch_args(
-            args(&["grok", "--fullscreen", "--resume", "old", "--no-leader"]),
+            args(&["ezer", "--fullscreen", "--resume", "old", "--no-leader"]),
             "new",
             true,
         );
@@ -498,7 +498,7 @@ mod tests {
     #[test]
     fn strips_short_resume_and_continue() {
         let out = build_screen_mode_relaunch_args(
-            args(&["grok", "-r", "old", "-c", "--no-leader"]),
+            args(&["ezer", "-r", "old", "-c", "--no-leader"]),
             "sid",
             true,
         );
@@ -511,7 +511,7 @@ mod tests {
     #[test]
     fn strips_resume_equals_form() {
         let out = build_screen_mode_relaunch_args(
-            args(&["grok", "--resume=old-id", "--no-leader"]),
+            args(&["ezer", "--resume=old-id", "--no-leader"]),
             "sid",
             false,
         );
@@ -524,7 +524,7 @@ mod tests {
     #[test]
     fn strips_positional_prompt() {
         let out = build_screen_mode_relaunch_args(
-            args(&["grok", "--no-leader", "fix the bug"]),
+            args(&["ezer", "--no-leader", "fix the bug"]),
             "sid",
             true,
         );
@@ -540,7 +540,7 @@ mod tests {
         // `grok --no-leader -- "fix the bug"`: everything after `--` is the prompt
         // The separator itself must go too, or the appended `--resume <id>` would be parsed as positional prompt words
         let out = build_screen_mode_relaunch_args(
-            args(&["grok", "--no-leader", "--", "fix the bug"]),
+            args(&["ezer", "--no-leader", "--", "fix the bug"]),
             "sid",
             false,
         );
@@ -556,7 +556,7 @@ mod tests {
         // Regression: relaunch argv drops flag values
         let out = build_screen_mode_relaunch_args(
             args(&[
-                "grok",
+                "ezer",
                 "--model",
                 "grok-4",
                 "--cwd",
@@ -594,7 +594,7 @@ mod tests {
     #[test]
     fn keeps_equals_form_and_short_model_flag() {
         let out = build_screen_mode_relaunch_args(
-            args(&["grok", "-m", "grok-4", "--cwd=/tmp/proj", "--no-leader"]),
+            args(&["ezer", "-m", "grok-4", "--cwd=/tmp/proj", "--no-leader"]),
             "sid",
             false,
         );
@@ -616,7 +616,7 @@ mod tests {
     fn boolean_flag_does_not_eat_following_positional() {
         // `--no-leader` is boolean; the bare word after it is the prompt and must be dropped, not attached as a spurious value
         let out = build_screen_mode_relaunch_args(
-            args(&["grok", "--no-leader", "fix the bug"]),
+            args(&["ezer", "--no-leader", "fix the bug"]),
             "sid",
             false,
         );
@@ -630,7 +630,7 @@ mod tests {
     fn resume_without_value_then_flag_is_not_eaten() {
         // `grok --resume --no-leader` (resume most-recent; next token is a flag).
         let out = build_screen_mode_relaunch_args(
-            args(&["grok", "--resume", "--no-leader"]),
+            args(&["ezer", "--resume", "--no-leader"]),
             "sid",
             false,
         );
@@ -685,19 +685,19 @@ mod tests {
     fn take_env_override_consumes_the_variable() {
         // The override is one-shot: children of the relaunched process must not inherit a forced screen mode
         // Sole test touching this env var
-        unsafe { std::env::set_var(GROK_SCREEN_MODE_ENV, "minimal") };
+        unsafe { std::env::set_var(EZER_SCREEN_MODE_ENV, "minimal") };
         assert_eq!(
             take_screen_mode_env_override(),
             Some(super::super::ScreenMode::Minimal)
         );
         assert!(
-            std::env::var_os(GROK_SCREEN_MODE_ENV).is_none(),
+            std::env::var_os(EZER_SCREEN_MODE_ENV).is_none(),
             "env var must be removed after being read"
         );
         // Unparseable values are still removed (never leak to children).
-        unsafe { std::env::set_var(GROK_SCREEN_MODE_ENV, "bogus") };
+        unsafe { std::env::set_var(EZER_SCREEN_MODE_ENV, "bogus") };
         assert_eq!(take_screen_mode_env_override(), None);
-        assert!(std::env::var_os(GROK_SCREEN_MODE_ENV).is_none());
+        assert!(std::env::var_os(EZER_SCREEN_MODE_ENV).is_none());
         // Absent stays absent.
         assert_eq!(take_screen_mode_env_override(), None);
     }
@@ -741,11 +741,11 @@ mod tests {
         // The explicit flag keeps the resume in the right mode if the env is dropped
         assert_eq!(
             screen_mode_relaunch_resume_hint("abc-sid", false),
-            "GROK_SCREEN_MODE=fullscreen grok --fullscreen --resume abc-sid"
+            "EZER_SCREEN_MODE=fullscreen ezer --fullscreen --resume abc-sid"
         );
         assert_eq!(
             screen_mode_relaunch_resume_hint("abc-sid", true),
-            "GROK_SCREEN_MODE=minimal grok --minimal --resume abc-sid"
+            "EZER_SCREEN_MODE=minimal ezer --minimal --resume abc-sid"
         );
     }
 

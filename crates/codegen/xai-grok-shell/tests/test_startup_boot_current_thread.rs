@@ -1,4 +1,4 @@
-//! Its own binary: the grok home resolves once per process.
+//! Its own binary: the ezer home resolves once per process.
 
 mod common;
 

@@ -444,7 +444,7 @@ async fn new_event_types_fire_and_receive_correct_envelope() {
 }
 
 /// Regression: a user JSON hook that declares `env` values for runner-reserved keys must not spoof those values inside the spawned child.
-/// The reserved keys are `GROK_HOOK_EVENT`, `GROK_HOOK_NAME`, `GROK_SESSION_ID`, `GROK_WORKSPACE_ROOT`, and `CLAUDE_PROJECT_DIR`.
+/// The reserved keys are `EZER_HOOK_EVENT`, `EZER_HOOK_NAME`, `EZER_SESSION_ID`, `EZER_WORKSPACE_ROOT`, and `CLAUDE_PROJECT_DIR`.
 /// The runner-injected vars always win at spawn time.
 #[tokio::test]
 async fn runner_injected_vars_override_extra_env_at_spawn() {
@@ -452,7 +452,7 @@ async fn runner_injected_vars_override_extra_env_at_spawn() {
     let output_file = dir.path().join("envcap.txt");
 
     let cmd = format!(
-        r#"echo "EVENT=$GROK_HOOK_EVENT" > {f}; echo "NAME=$GROK_HOOK_NAME" >> {f}; echo "SESSION=$GROK_SESSION_ID" >> {f}; echo "ROOT=$GROK_WORKSPACE_ROOT" >> {f}; echo "PROJ=$CLAUDE_PROJECT_DIR" >> {f}; echo "USER_KEY=$USER_KEY" >> {f}; echo '{{"decision":"allow"}}'"#,
+        r#"echo "EVENT=$EZER_HOOK_EVENT" > {f}; echo "NAME=$EZER_HOOK_NAME" >> {f}; echo "SESSION=$EZER_SESSION_ID" >> {f}; echo "ROOT=$EZER_WORKSPACE_ROOT" >> {f}; echo "PROJ=$CLAUDE_PROJECT_DIR" >> {f}; echo "USER_KEY=$USER_KEY" >> {f}; echo '{{"decision":"allow"}}'"#,
         f = output_file.display(),
     );
 

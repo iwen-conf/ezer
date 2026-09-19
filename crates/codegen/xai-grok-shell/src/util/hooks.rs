@@ -71,7 +71,7 @@ pub(crate) fn discover_hook_source_paths(
                 if let Some(e) = &resolved.configured_error {
                     tracing::warn!(
                         error = %e,
-                        "hooks-paths unreadable; retaining fixed Grok hook discovery sources only"
+                        "hooks-paths unreadable; retaining fixed ezer hook discovery sources only"
                     );
                 }
                 resolved
@@ -82,7 +82,7 @@ pub(crate) fn discover_hook_source_paths(
             Err(e) => {
                 tracing::warn!(
                     error = %e,
-                    "global hook source resolve hard-failed; omitting Grok global sources"
+                    "global hook source resolve hard-failed; omitting ezer global sources"
                 );
                 Vec::new()
             }
@@ -114,7 +114,7 @@ pub(crate) fn discover_hook_source_paths(
                 root.join(".claude").join("settings.local.json"),
             ));
         }
-        project.push(classify_grok_hook_source(root.join(".grok").join("hooks")));
+        project.push(classify_grok_hook_source(root.join(".ezer").join("hooks")));
         if include_cursor {
             project.push(HookSourceConfig::SettingsFile(
                 root.join(".cursor").join("hooks.json"),

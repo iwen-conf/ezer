@@ -1,4 +1,4 @@
-//! Grok-owned direct global hook paths shared by shell discovery and sandbox write-deny.
+//! ezer-owned direct global hook paths shared by shell discovery and sandbox write-deny.
 //! These are `$GROK_HOME/hooks`, `hooks-paths`, and absolute registry targets.
 //! Relative registry lines, project hooks, and vendor compat are out of scope.
 
@@ -68,17 +68,17 @@ pub enum GlobalHookSourceError {
     HardLinkedHookFile { path: PathBuf, nlink: u64 },
     #[error("hook JSON path is not a regular file: {path}")]
     InvalidHookJsonFile { path: PathBuf },
-    #[error("Grok hooks directory has wrong type (expected real directory): {path}")]
+    #[error("ezer hooks directory has wrong type (expected real directory): {path}")]
     InvalidHooksDir { path: PathBuf },
-    #[error("Grok hooks-paths registry has wrong type (expected real file): {path}")]
+    #[error("ezer hooks-paths registry has wrong type (expected real file): {path}")]
     InvalidRegistryFile { path: PathBuf },
-    #[error("cannot create Grok hooks directory {path}: {source}")]
+    #[error("cannot create ezer hooks directory {path}: {source}")]
     CreateHooksDir {
         path: PathBuf,
         #[source]
         source: io::Error,
     },
-    #[error("cannot create Grok hooks-paths registry {path}: {source}")]
+    #[error("cannot create ezer hooks-paths registry {path}: {source}")]
     CreateRegistryFile {
         path: PathBuf,
         #[source]
@@ -451,7 +451,7 @@ fn open_registry_create_new(path: &Path) -> io::Result<std::fs::File> {
     }
 }
 
-/// Resolve Grok-owned direct global hook sources (`reject_symlinks` for sandbox).
+/// Resolve ezer-owned direct global hook sources (`reject_symlinks` for sandbox).
 pub fn resolve_global_hook_sources(
     grok_home: Option<&Path>,
     reject_symlinks: bool,

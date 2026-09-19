@@ -88,7 +88,7 @@ pub struct AcpConnection {
     pub rx: AcpClientRx,
     /// Available models and current selection.
     pub models: ModelState,
-    /// Whether the agent is a grok-shell instance.
+    /// Whether the agent is a ezer-shell instance.
     pub is_grok_shell: bool,
     /// Auth methods advertised by the agent.
     pub auth_methods: Vec<acp::AuthMethod>,
@@ -901,9 +901,9 @@ mod tests {
     /// on a meaningful new code path.
     #[test]
     fn startup_auth_xai_api_key_not_first_still_requires_login() {
-        use xai_grok_shell::agent::auth_method::{GROK_COM_METHOD_ID, XAI_API_KEY_METHOD_ID};
+        use xai_grok_shell::agent::auth_method::{EZER_COM_METHOD_ID, XAI_API_KEY_METHOD_ID};
         let methods = vec![
-            make_auth_method(GROK_COM_METHOD_ID, "Grok", None),
+            make_auth_method(EZER_COM_METHOD_ID, "ezer", None),
             make_auth_method(XAI_API_KEY_METHOD_ID, "xai.api_key", None),
         ];
         let (needs, _, _, _) = startup_auth_metadata(&methods);

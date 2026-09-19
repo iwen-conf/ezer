@@ -6,13 +6,13 @@ use xai_grok_shell::managed_config::LaunchProfile;
 
 macro_rules! connect_ui_timeout_env {
     () => {
-        "GROK_CONNECT_UI_TIMEOUT_SECS"
+        "EZER_CONNECT_UI_TIMEOUT_SECS"
     };
 }
 
 pub(super) const CONNECT_UI_TIMEOUT_ENV: &str = connect_ui_timeout_env!();
 pub(super) const CONNECT_UI_TIMEOUT_TRY_COMMAND: &str =
-    concat!(connect_ui_timeout_env!(), "=60 grok");
+    concat!(connect_ui_timeout_env!(), "=60 ezer");
 pub(super) const DEFAULT_CONNECT_UI_TIMEOUT: Duration = Duration::from_secs(30);
 const MIN_CONNECT_UI_TIMEOUT_SECS: u64 = 6;
 const PERSONAL_CONNECT_UI_SLACK: Duration = Duration::from_secs(2);

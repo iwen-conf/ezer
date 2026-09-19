@@ -504,8 +504,8 @@ async fn handle_replacement(
 }
 
 // Note: `replace_at_positions`, `render_snippet`, and `build_edit_details`
-// are imported from `grok_build::search_replace::helpers` — shared across
-// both the grok_build and opencode edit tools.
+// are imported from `ezer_build::search_replace::helpers` — shared across
+// both the ezer_build and opencode edit tools.
 
 // ───────────────────────────────────────────────────────────────────────────
 // Tests

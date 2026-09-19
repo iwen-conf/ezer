@@ -494,7 +494,7 @@ mod tests {
     }
     #[tokio::test]
     async fn test_grok_render_embedded_resource_uses_file_contents_tag() {
-        let _info = test_info("grok-text");
+        let _info = test_info("ezer-text");
         let resource = EmbeddedResource::new(EmbeddedResourceResource::TextResourceContents(
             agent_client_protocol::TextResourceContents::new(
                 "const x = 1;\nconst y = 2;\n",

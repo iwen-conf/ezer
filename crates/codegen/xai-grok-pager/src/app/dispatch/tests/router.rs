@@ -611,15 +611,15 @@ fn shown_banner_id(app: &AppView) -> Option<String> {
     .and_then(|a| a.id.clone())
 }
 /// `AnnouncementsOpenCta(surface)` re-resolves through the slot gate and opens the promo url from every surface.
-/// The opens are observed through the file named by `GROK_TEST_OPEN_URL_FILE`.
+/// The opens are observed through the file named by `EZER_TEST_OPEN_URL_FILE`.
 /// A critical owning the slot, or no usable cta, makes it a silent no-op, so a stale prior-frame click cannot open the promo url.
 #[serial_test::serial(GROK_TEST_OPEN_URL_FILE)]
 #[test]
 fn announcements_open_cta_opens_promo_and_noops_under_critical() {
     use xai_grok_telemetry::events::AnnouncementCtaSurface;
-    let url_file = std::env::temp_dir().join(format!("grok-cta-open-{}.txt", std::process::id()));
+    let url_file = std::env::temp_dir().join(format!("ezer-cta-open-{}.txt", std::process::id()));
     let _ = std::fs::remove_file(&url_file);
-    unsafe { std::env::set_var("GROK_TEST_OPEN_URL_FILE", &url_file) };
+    unsafe { std::env::set_var("EZER_TEST_OPEN_URL_FILE", &url_file) };
     let opened = || std::fs::read_to_string(&url_file).unwrap_or_default();
     let mut app = test_app_with_agent();
     app.active_announcements = vec![promo_announcement("promo-open")];
@@ -660,7 +660,7 @@ fn announcements_open_cta_opens_promo_and_noops_under_critical() {
         &mut app,
     );
     assert!(opened().trim().is_empty(), "no cta → no open");
-    unsafe { std::env::remove_var("GROK_TEST_OPEN_URL_FILE") };
+    unsafe { std::env::remove_var("EZER_TEST_OPEN_URL_FILE") };
     let _ = std::fs::remove_file(&url_file);
 }
 /// `AnnouncementCtaShown` latches once per (announcement, surface) pair.
@@ -1422,7 +1422,7 @@ fn tick_propagates_available_commands_to_bootstrap() {
     app.active_view = crate::app::app_view::ActiveView::Agent(id);
     let skill_meta = serde_json::json!({
         "scope": "user",
-        "path": "/home/user/.grok/skills/pick-best/SKILL.md",
+        "path": "/home/user/.ezer/skills/pick-best/SKILL.md",
     });
     app.agents.get_mut(&id).unwrap().session.available_commands = vec![
         acp::AvailableCommand::new("compact".to_string(), "Builtin".to_string()),
@@ -2823,7 +2823,7 @@ fn welcome_expand_skips_conversation_and_routes_build_card_detail() {
     assert_eq!(
         welcome_card_detail(&app),
         None,
-        "Headless must not resurrect a cleared Grok row from card detail"
+        "Headless must not resurrect a cleared ezer row from card detail"
     );
 }
 fn system_texts(app: &AppView, id: AgentId) -> Vec<String> {
@@ -2896,11 +2896,11 @@ fn toggle_scroll_log_flips_recorder_and_reports_path() {
 fn open_managed_connectors_starts_wait_when_modal_open() {
     use crate::views::extensions_modal::{ExtensionsModalState, ExtensionsTab};
     let url_file = std::env::temp_dir().join(format!(
-        "grok-managed-connectors-open-{}.txt",
+        "ezer-managed-connectors-open-{}.txt",
         std::process::id()
     ));
     let _ = std::fs::remove_file(&url_file);
-    unsafe { std::env::set_var("GROK_TEST_OPEN_URL_FILE", &url_file) };
+    unsafe { std::env::set_var("EZER_TEST_OPEN_URL_FILE", &url_file) };
     let mut app = test_app_with_agent();
     let id = AgentId(0);
     app.agents.get_mut(&id).unwrap().extensions_modal =
@@ -2920,7 +2920,7 @@ fn open_managed_connectors_starts_wait_when_modal_open() {
             .any(|line| line == crate::views::mcps_modal::managed_connectors_url(None)),
         "opener seam must record the connectors URL; got {recorded:?}"
     );
-    unsafe { std::env::remove_var("GROK_TEST_OPEN_URL_FILE") };
+    unsafe { std::env::remove_var("EZER_TEST_OPEN_URL_FILE") };
     let _ = std::fs::remove_file(&url_file);
 }
 #[test]

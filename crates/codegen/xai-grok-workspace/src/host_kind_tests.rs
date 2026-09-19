@@ -144,9 +144,9 @@ fn with_workspace<F: Future<Output = ()>>(
 ) {
     let root = tempfile::tempdir().expect("workspace root");
     let _env = LockedTestEnv::lock()
-        .set("GROK_WORKSPACE_HOME", &root.path().join("home"))
+        .set("EZER_WORKSPACE_HOME", &root.path().join("home"))
         .set(
-            "GROK_WORKSPACE_DATA_COLLECTION_DISABLED",
+            "EZER_WORKSPACE_DATA_COLLECTION_DISABLED",
             Path::new("false"),
         );
     tokio::runtime::Runtime::new()
@@ -187,9 +187,9 @@ fn a_daemon_host_serves_pinned_toolsets_only_and_can_neither_upload_nor_deploy()
         let served = resolver(
             SessionId::new("daemon-pinned").unwrap(),
             Some(pinned(&[
-                "GrokBuild:read_file",
-                "GrokBuild:web_search",
-                "GrokBuild:image_gen",
+                "Ezer:read_file",
+                "Ezer:web_search",
+                "Ezer:image_gen",
             ])),
         )
         .await
@@ -202,8 +202,8 @@ fn a_daemon_host_serves_pinned_toolsets_only_and_can_neither_upload_nor_deploy()
         );
         assert_eq!(
             vec![
-                "GrokBuild:image_gen".to_owned(),
-                "GrokBuild:web_search".to_owned()
+                "Ezer:image_gen".to_owned(),
+                "Ezer:web_search".to_owned()
             ],
             served.unserved_tool_ids
         );
@@ -235,7 +235,7 @@ fn a_sandbox_host_keeps_uploads_the_credential_and_lax_binds() {
         let resolver = bind_resolver_fixture(&handle);
         let served = resolver(
             SessionId::new("sandbox-pinned").unwrap(),
-            Some(pinned(&["GrokBuild:read_file", "GrokBuild:web_search"])),
+            Some(pinned(&["Ezer:read_file", "Ezer:web_search"])),
         )
         .await
         .expect("bind");

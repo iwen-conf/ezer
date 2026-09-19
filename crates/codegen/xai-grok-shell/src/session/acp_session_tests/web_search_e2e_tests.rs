@@ -73,7 +73,7 @@ async fn web_search_uses_model_override_from_config_end_to_end() {
     let builder = crate::tools::bridge::ToolBridge::get_builder();
     let config = ToolServerConfig {
         tools: vec![ToolConfig {
-            id: "GrokBuild:web_search".into(),
+            id: "Ezer:web_search".into(),
             params: None,
             name_override: None,
             params_name_overrides: None,
@@ -90,14 +90,14 @@ async fn web_search_uses_model_override_from_config_end_to_end() {
         backend: terminal,
         fs,
         cwd: std::env::temp_dir(),
-        session_folder: std::env::temp_dir().join("grok-web-search-e2e"),
+        session_folder: std::env::temp_dir().join("ezer-web-search-e2e"),
         session_env: std::sync::Arc::new(std::collections::HashMap::new()),
         notification_handle: ToolNotificationHandle::noop(),
         owner_session_id: None,
         subagent: None,
         parent_scheduler_handle: None,
         skills: vec![],
-        state_path: std::env::temp_dir().join("grok-web-search-e2e/state.json"),
+        state_path: std::env::temp_dir().join("ezer-web-search-e2e/state.json"),
         memory_backend: None,
         web_search_config: xai_grok_tools::implementations::web_search::WebSearchConfig::Enabled {
             api_key: web_search_sampling.api_key.clone().unwrap(),
@@ -154,7 +154,7 @@ async fn web_search_errors_when_configured_model_cannot_be_resolved() {
     let builder = crate::tools::bridge::ToolBridge::get_builder();
     let config = ToolServerConfig {
         tools: vec![ToolConfig {
-            id: "GrokBuild:web_search".into(),
+            id: "Ezer:web_search".into(),
             params: None,
             name_override: None,
             params_name_overrides: None,
@@ -171,14 +171,14 @@ async fn web_search_errors_when_configured_model_cannot_be_resolved() {
         backend: terminal,
         fs,
         cwd: std::env::temp_dir(),
-        session_folder: std::env::temp_dir().join("grok-web-search-disabled"),
+        session_folder: std::env::temp_dir().join("ezer-web-search-disabled"),
         session_env: std::sync::Arc::new(std::collections::HashMap::new()),
         notification_handle: ToolNotificationHandle::noop(),
         owner_session_id: None,
         subagent: None,
         parent_scheduler_handle: None,
         skills: vec![],
-        state_path: std::env::temp_dir().join("grok-web-search-disabled/state.json"),
+        state_path: std::env::temp_dir().join("ezer-web-search-disabled/state.json"),
         memory_backend: None,
         web_search_config: xai_grok_tools::implementations::web_search::WebSearchConfig::Disabled,
         web_fetch_config: Default::default(),

@@ -6,7 +6,7 @@
 //! - Team non-admin (`team_role` = `MEMBER`): the value shows `Opt out · Admin Managed` and no chevron.
 //!   Expanding shows only "Managed by your team admin."
 //!
-//! Both accounts also suppress the welcome privacy banner even with `GROK_PRIVACY_NOTICE_ROLLOUT=1`.
+//! Both accounts also suppress the welcome privacy banner even with `EZER_PRIVACY_NOTICE_ROLLOUT=1`.
 //! That is asserted on the authenticated welcome screen before opening settings.
 //! Row/input details are unit-tested in `xai-grok-pager` (`views/settings_modal/tests.rs`, `locked_coding_*`).
 //! This suite covers the auth-to-render pipeline.
@@ -27,7 +27,7 @@ use xai_grok_pager_pty_harness::{
 
 const ROWS: u16 = 50;
 const COLS: u16 = 120;
-const BANNER_TITLE: &str = "Help improve Grok";
+const BANNER_TITLE: &str = "Help improve ezer";
 /// Head of the row's label (`Coding data, retention, and training`).
 /// The modal truncates long labels, so match the stable prefix.
 const ROW_LABEL: &str = "Coding data";
@@ -55,8 +55,8 @@ async fn team_member_sees_admin_managed_row_and_no_banner() {
 /// ZDR access must be enabled or the blocked welcome never reaches settings. Lock and suppression key off `is_zdr`.
 fn locked_row_env_ops() -> [EnvOp<'static>; 3] {
     [
-        EnvOp::set("GROK_PRIVACY_NOTICE_ROLLOUT", "1"),
-        EnvOp::set("GROK_ZDR_ACCESS_ENABLED", "1"),
+        EnvOp::set("EZER_PRIVACY_NOTICE_ROLLOUT", "1"),
+        EnvOp::set("EZER_ZDR_ACCESS_ENABLED", "1"),
         EnvOp::remove("XAI_API_KEY"),
     ]
 }

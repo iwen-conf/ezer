@@ -385,12 +385,12 @@ fn transport_failure_maps_to_managed_config_error() {
 #[test]
 fn certificate_detail_names_the_bundle_env_only_when_set() {
     assert_eq!(
-        certificate_detail("UnknownIssuer".into(), Some("GROK_EXTRA_CA_BUNDLE"), 2),
-        "UnknownIssuer; GROK_EXTRA_CA_BUNDLE is set: verify it includes the issuing root CA"
+        certificate_detail("UnknownIssuer".into(), Some("EZER_EXTRA_CA_BUNDLE"), 2),
+        "UnknownIssuer; EZER_EXTRA_CA_BUNDLE is set: verify it includes the issuing root CA"
     );
     assert_eq!(
-        certificate_detail("UnknownIssuer".into(), Some("GROK_EXTRA_CA_BUNDLE"), 0),
-        "UnknownIssuer; GROK_EXTRA_CA_BUNDLE is set but no usable roots were loaded from it: check that the file is readable, contains PEM certificates, and is under the size cap"
+        certificate_detail("UnknownIssuer".into(), Some("EZER_EXTRA_CA_BUNDLE"), 0),
+        "UnknownIssuer; EZER_EXTRA_CA_BUNDLE is set but no usable roots were loaded from it: check that the file is readable, contains PEM certificates, and is under the size cap"
     );
     assert_eq!(
         certificate_detail("UnknownIssuer".into(), None, 0),

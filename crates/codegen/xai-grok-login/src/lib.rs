@@ -5,7 +5,7 @@
     unreachable_code,
     dead_code
 )]
-//! Authentication subsystem for the grok shell crate family.
+//! Authentication subsystem for the ezer shell crate family.
 //!
 //! Extracted from `xai-grok-shell::auth`; the shell re-exports this crate as
 //! `xai_grok_shell::auth` so existing `crate::*` paths keep resolving.

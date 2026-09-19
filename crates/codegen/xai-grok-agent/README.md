@@ -13,14 +13,14 @@ object that any host can consume — whether that host is
 ### From a definition file
 
 Agent definitions are **Markdown files with YAML frontmatter**, stored
-in `.grok/agents/` (project-level) or `~/.grok/agents/` (user-level).
+in `.ezer/agents/` (project-level) or `~/.ezer/agents/` (user-level).
 
 ```rust
 use xai_grok_agent::{AgentDefinition, AgentBuilder};
 use xai_grok_tools::notification::ToolNotificationHandle;
 
 // 1. Parse the definition file
-let def = AgentDefinition::from_file(".grok/agents/code-reviewer.md")?;
+let def = AgentDefinition::from_file(".ezer/agents/code-reviewer.md")?;
 
 // 2. Build the agent
 let agent = AgentBuilder::new(cwd, None, ToolNotificationHandle::noop())
@@ -50,7 +50,7 @@ let agent = AgentBuilder::new(cwd, None, ToolNotificationHandle::noop())
 ```rust
 use xai_grok_agent::discovery;
 
-// Find all .md files in .grok/agents/ directories
+// Find all .md files in .ezer/agents/ directories
 let definitions = discovery::discover(&cwd);
 
 // Find a specific agent by name (checks built-ins, then user dirs)
@@ -227,16 +227,16 @@ The block is omitted when that kind is disabled. Canonical keys such as
 
 Agent definitions are discovered from multiple locations with priority:
 
-1. **Project-level** (highest priority): `.grok/agents/*.md` — walk
+1. **Project-level** (highest priority): `.ezer/agents/*.md` — walk
    from `cwd` up to the git repository root. Files found closer to
    `cwd` take priority.
-2. **User-level**: `~/.grok/agents/*.md`
+2. **User-level**: `~/.ezer/agents/*.md`
 3. **Compat paths** (lowest priority): additional vendor agent
    directories under the user home (when enabled)
-4. **Built-in**: `default_grok_build()`, `browser_use()`
+4. **Built-in**: `default_ezer_build()`, `browser_use()`
 
 Name-based dedup ensures the highest-priority definition wins. For
-example, a project `.grok/agents/code-reviewer.md` shadows a
+example, a project `.ezer/agents/code-reviewer.md` shadows a
 user-level definition with the same name.
 
 ## Crate Relationships
@@ -274,7 +274,7 @@ user-level definition with the same name.
 
 | Name | Prompt Mode | Description |
 |---|---|---|
-| `grok-build` | extend | Default agent for software engineering tasks |
+| `ezer-build` | extend | Default agent for software engineering tasks |
 | `browser-use` | full | Web browsing and interaction agent |
 
 ## Error Handling

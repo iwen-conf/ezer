@@ -42,7 +42,7 @@ fn returns_none_for_different_parent() {
     assert!(found.is_none());
 }
 
-/// Regression: a second `grok -r <remote_id>` must return the existing child without creating a new restore, not return `None`.
+/// Regression: a second `ezer -r <remote_id>` must return the existing child without creating a new restore, not return `None`.
 #[test]
 fn repeated_resume_returns_existing_child() {
     let tmp = TempDir::new().unwrap();

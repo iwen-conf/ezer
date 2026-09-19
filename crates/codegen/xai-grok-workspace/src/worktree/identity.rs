@@ -1,20 +1,20 @@
-//! Path-derived identity of a grok-managed worktree.
+//! Path-derived identity of a ezer-managed worktree.
 //!
-//! Every creation path resolves its destination to `<grok home>/worktrees/<repo slug>/<label>`, with the label as the last path component.
+//! Every creation path resolves its destination to `<ezer home>/worktrees/<repo slug>/<label>`, with the label as the last path component.
 //! A session cwd anywhere inside a worktree is therefore enough to recover the label.
 //! The worktree DB only enriches the result with the recorded source repo.
 //! It is a cache, never a dependency, so identity can be stamped on summaries even when the DB is missing or empty.
 
 use std::path::{Path, PathBuf};
 
-/// Identity of the grok-managed worktree containing a cwd.
+/// Identity of the ezer-managed worktree containing a cwd.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WorktreeIdentity {
     pub label: String,
     pub source_workspace_dir: Option<String>,
 }
 
-/// [`worktree_identity_in`] against the default `<grok home>/worktrees`.
+/// [`worktree_identity_in`] against the default `<ezer home>/worktrees`.
 pub fn worktree_identity_for_cwd(cwd: &str) -> Option<WorktreeIdentity> {
     worktree_identity_in(&super::grok_home().join("worktrees"), cwd)
 }
@@ -67,7 +67,7 @@ pub fn worktree_identity_in(worktrees_dir: &Path, cwd: &str) -> Option<WorktreeI
 // Only standalone clones carry it: their `.git` is a directory; a linked worktree's `.git` file makes the read fail and fall through to git
 fn standalone_source_marker(worktree_root: &Path) -> Option<PathBuf> {
     let contents =
-        std::fs::read_to_string(worktree_root.join(".git").join("grok-worktree-source")).ok()?;
+        std::fs::read_to_string(worktree_root.join(".git").join("ezer-worktree-source")).ok()?;
     let trimmed = contents.trim();
     (!trimmed.is_empty()).then(|| PathBuf::from(trimmed))
 }

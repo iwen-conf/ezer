@@ -121,7 +121,7 @@ fn not_found_hooks_paths_is_ok_empty_configured() {
 #[test]
 fn ensure_creates_hooks_dir_and_empty_registry() {
     let tmp = TempDir::new().unwrap();
-    let dir = tmp.path().join("grok");
+    let dir = tmp.path().join("ezer");
     std::fs::create_dir_all(&dir).unwrap();
     ensure_grok_hook_slots(&dir).unwrap();
     let hooks = dir.join("hooks");
@@ -152,7 +152,7 @@ fn ensure_creates_hooks_dir_and_empty_registry() {
 #[test]
 fn trust_boundary_sources_are_not_discovery() {
     let tmp = TempDir::new().unwrap();
-    let dir = tmp.path().join("grok");
+    let dir = tmp.path().join("ezer");
     std::fs::create_dir_all(&dir).unwrap();
     ensure_grok_trust_boundary_slots(&dir).unwrap();
     let sources = resolve_trust_boundary_sources(&dir).unwrap();
@@ -173,7 +173,7 @@ fn trust_boundary_sources_are_not_discovery() {
 #[cfg(unix)]
 fn ensure_rejects_preexisting_symlink_hooks_dir() {
     let tmp = TempDir::new().unwrap();
-    let dir = tmp.path().join("grok");
+    let dir = tmp.path().join("ezer");
     std::fs::create_dir_all(&dir).unwrap();
     let real = tmp.path().join("real-hooks");
     std::fs::create_dir_all(&real).unwrap();
@@ -190,7 +190,7 @@ fn ensure_rejects_preexisting_symlink_hooks_dir() {
 #[cfg(unix)]
 fn ensure_rejects_preexisting_symlink_registry() {
     let tmp = TempDir::new().unwrap();
-    let dir = tmp.path().join("grok");
+    let dir = tmp.path().join("ezer");
     std::fs::create_dir_all(&dir).unwrap();
     let target = tmp.path().join("evil-registry");
     std::fs::write(&target, b"attacker\n").unwrap();
@@ -211,7 +211,7 @@ fn ensure_rejects_preexisting_symlink_registry() {
 #[cfg(unix)]
 fn ensure_trust_boundary_rejects_preexisting_symlink_persist_file() {
     let tmp = TempDir::new().unwrap();
-    let dir = tmp.path().join("grok");
+    let dir = tmp.path().join("ezer");
     std::fs::create_dir_all(&dir).unwrap();
     let target = tmp.path().join("evil-persist");
     std::fs::write(&target, b"attacker\n").unwrap();
@@ -238,7 +238,7 @@ fn ensure_trust_boundary_rejects_preexisting_symlink_persist_file() {
 #[cfg(unix)]
 fn ensure_rejects_directory_named_hooks_paths() {
     let tmp = TempDir::new().unwrap();
-    let dir = tmp.path().join("grok");
+    let dir = tmp.path().join("ezer");
     std::fs::create_dir_all(dir.join("hooks-paths")).unwrap();
     let err = ensure_grok_hook_slots(&dir).unwrap_err();
     assert!(matches!(
@@ -251,7 +251,7 @@ fn ensure_rejects_directory_named_hooks_paths() {
 #[cfg(unix)]
 fn ensure_rejects_file_named_hooks_dir() {
     let tmp = TempDir::new().unwrap();
-    let dir = tmp.path().join("grok");
+    let dir = tmp.path().join("ezer");
     std::fs::create_dir_all(&dir).unwrap();
     std::fs::write(dir.join("hooks"), b"not-a-dir").unwrap();
     let err = ensure_grok_hook_slots(&dir).unwrap_err();

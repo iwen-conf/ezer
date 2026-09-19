@@ -31,7 +31,7 @@ async fn empty_enter_force_sends_top_queued() {
         DEFAULT_COLS,
         &content,
         &[],
-        &[("GROK_DOCK", "1")],
+        &[("EZER_DOCK", "1")],
         Some(content.home()),
     )
     .expect("spawn pager");

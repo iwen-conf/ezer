@@ -1,10 +1,10 @@
-//! In dev mode, watches ~/.grok/pager.toml for changes and hot-reloads.
+//! In dev mode, watches ~/.ezer/pager.toml for changes and hot-reloads.
 //! In prod mode, returns static defaults (no file operations).
 use super::config::AppearanceConfig;
 use std::io;
 use std::path::PathBuf;
 use tokio::sync::watch;
-/// In dev mode: reads from ~/.grok/pager.toml, watches for changes.
+/// In dev mode: reads from ~/.ezer/pager.toml, watches for changes.
 /// In prod mode: returns static defaults, `.changed()` never fires.
 pub struct ConfigWatcher {
     rx: watch::Receiver<AppearanceConfig>,
@@ -19,7 +19,7 @@ enum WatcherState {
     },
 }
 impl ConfigWatcher {
-    /// - In dev mode: reads/creates ~/.grok/pager.toml, watches for changes
+    /// - In dev mode: reads/creates ~/.ezer/pager.toml, watches for changes
     /// - In prod mode: returns default config, no file operations
     pub async fn start() -> io::Result<Self> {
         Self::start_static()
@@ -31,7 +31,7 @@ impl ConfigWatcher {
     pub async fn changed(&mut self) -> Result<(), watch::error::RecvError> {
         self.rx.changed().await
     }
-    /// Path to `$GROK_HOME/pager.toml`.
+    /// Path to `$EZER_HOME/pager.toml`.
     fn pager_config_path() -> PathBuf {
         crate::util::pager_toml_path()
     }
@@ -92,7 +92,7 @@ mod tests {
     };
     #[test]
     fn pager_reload_matches_differently_named_dest() {
-        let slot = std::path::Path::new("/home/u/.grok/pager.toml");
+        let slot = std::path::Path::new("/home/u/.ezer/pager.toml");
         let dest = std::path::Path::new("/dotfiles/appearance.toml");
         assert!(pager_event_is_watched_config(
             &[dest.to_path_buf()],

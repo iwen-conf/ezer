@@ -1,6 +1,6 @@
 //! The published external-auth contract, end to end.
 //!
-//! Operator binaries live outside this repo and read `GROK_AUTH_EXPIRED=1` as "headless, don't prompt".
+//! Operator binaries live outside this repo and read `EZER_AUTH_EXPIRED=1` as "headless, don't prompt".
 //! They decline a run they cannot complete silently.
 //! So a binary that declines the boot probe must still be able to sign the user in.
 //! The two runs have to reach it in the order boot produces them.
@@ -35,8 +35,8 @@ fn write_conforming_provider(home: &Path) -> String {
         &script,
         format!(
             "#!/bin/sh\n\
-             echo \"expired=${{GROK_AUTH_EXPIRED:-unset}}\" >> {log}\n\
-             if [ \"$GROK_AUTH_EXPIRED\" = \"1\" ]; then\n\
+             echo \"expired=${{EZER_AUTH_EXPIRED:-unset}}\" >> {log}\n\
+             if [ \"$EZER_AUTH_EXPIRED\" = \"1\" ]; then\n\
              \x20   echo 'SSO session lapsed; cannot mint without the user' >&2\n\
              \x20   exit 1\n\
              fi\n\
@@ -85,7 +85,7 @@ fn dead_endpoint() -> String {
 
 #[tokio::test]
 async fn a_provider_that_declines_the_headless_run_can_still_sign_the_user_in() {
-    let home = tempfile::tempdir().expect("grok home");
+    let home = tempfile::tempdir().expect("ezer home");
     let provider = write_conforming_provider(home.path());
     let dead = dead_endpoint();
 
@@ -94,13 +94,13 @@ async fn a_provider_that_declines_the_headless_run_can_still_sign_the_user_in() 
     // only test in the binary.
     unsafe {
         std::env::set_var("GROK_HOME", home.path());
-        std::env::set_var("GROK_CLI_CHAT_PROXY_BASE_URL", &dead);
-        std::env::set_var("GROK_XAI_API_BASE_URL", &dead);
+        std::env::set_var("EZER_CLI_CHAT_PROXY_BASE_URL", &dead);
+        std::env::set_var("EZER_XAI_API_BASE_URL", &dead);
         std::env::remove_var("XAI_API_KEY");
-        std::env::remove_var("GROK_CODE_XAI_API_KEY");
-        std::env::set_var("GROK_TELEMETRY_ENABLED", "false");
-        std::env::set_var("GROK_FEEDBACK_ENABLED", "false");
-        std::env::set_var("GROK_TRACE_UPLOAD", "false");
+        std::env::remove_var("EZER_CODE_XAI_API_KEY");
+        std::env::set_var("EZER_TELEMETRY_ENABLED", "false");
+        std::env::set_var("EZER_FEEDBACK_ENABLED", "false");
+        std::env::set_var("EZER_TRACE_UPLOAD", "false");
     }
 
     let config = GrokComConfig {

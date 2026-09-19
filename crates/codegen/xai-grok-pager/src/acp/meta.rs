@@ -1,7 +1,7 @@
 //! Strongly-typed notification metadata.
 //!
 //! Parses the `_meta` JSON from `SessionNotification` into a struct with typed fields.
-//! All fields are `Option`, so parsing degrades gracefully when grok-shell hasn't been updated or meta is absent.
+//! All fields are `Option`, so parsing degrades gracefully when ezer-shell hasn't been updated or meta is absent.
 
 use serde::{Deserialize, Serialize};
 

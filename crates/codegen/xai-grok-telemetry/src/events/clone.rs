@@ -1,4 +1,4 @@
-//! grok-clone and worktree product telemetry events (utility process).
+//! ezer-clone and worktree product telemetry events (utility process).
 
 use serde::Serialize;
 
@@ -10,7 +10,7 @@ pub enum CloneHistoryMode {
     Full,
 }
 
-/// Whether `grok clone` finished the mount.
+/// Whether `ezer clone` finished the mount.
 #[derive(Serialize, Clone, Copy, Debug, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 pub enum CloneOutcome {
@@ -19,7 +19,7 @@ pub enum CloneOutcome {
     Cancelled,
 }
 
-/// Where a failed `grok clone` stopped.
+/// Where a failed `ezer clone` stopped.
 /// Closed set: no freeform strings.
 #[derive(Serialize, Clone, Copy, Debug, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
@@ -186,7 +186,7 @@ impl CloneDaemonCapabilityClass {
     }
 }
 
-/// One `grok clone` attempt. Content-free: no URL, dest, store, or repo name.
+/// One `ezer clone` attempt. Content-free: no URL, dest, store, or repo name.
 #[derive(Serialize, Debug, Clone, PartialEq)]
 pub struct CloneEnded {
     pub requested_history: CloneHistoryMode,

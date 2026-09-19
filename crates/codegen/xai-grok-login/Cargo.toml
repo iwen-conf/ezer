@@ -3,7 +3,7 @@ license = "Apache-2.0"
 name = "xai-grok-login"
 version = "0.1.0"
 edition.workspace = true
-description = "Authentication subsystem for the grok shell crate family: login flows, token refresh, credential providers, and auth storage."
+description = "Authentication subsystem for the ezer shell crate family: login flows, token refresh, credential providers, and auth storage."
 
 [features]
 # Loom model-checking for src/manager/lock/flock_wait.rs; test-only

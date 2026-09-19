@@ -23,7 +23,7 @@ use std::sync::OnceLock;
 pub const EZER_HOME_ENV: &str = "EZER_HOME";
 /// Deprecated alias for [`EZER_HOME_ENV`]. Honored when `EZER_HOME` is unset.
 pub const GROK_HOME_ENV: &str = "GROK_HOME";
-/// Default directory name under `$HOME`. Never `.grok`.
+/// Default directory name under `$HOME`.
 pub const DEFAULT_DOT_DIR: &str = ".ezer";
 
 /// Where a resolved ezer home came from, so "why did ezer pick this
@@ -66,7 +66,7 @@ fn home_env_override(
 
 /// `$EZER_HOME` / `$GROK_HOME` verbatim when non-empty, else `<home>/.ezer`.
 /// Used as-is (not canonicalized) so literal prefix checks and symlink guards still see original components.
-/// Never falls back to `~/.grok`.
+/// Never falls back to `~/.ezer`.
 fn resolve_grok_home_from(
     ezer_home_env: Option<&OsStr>,
     grok_home_env: Option<&OsStr>,
@@ -127,7 +127,7 @@ mod tests {
     fn ezer_env_wins_over_os_home() {
         let resolved = resolve_grok_home_from(
             Some(OsStr::new("/custom/ezer")),
-            Some(OsStr::new("/legacy/grok")),
+            Some(OsStr::new("/legacy/ezer")),
             Some(Path::new("/home/u")),
         );
         assert_eq!(
@@ -140,12 +140,12 @@ mod tests {
     fn grok_home_env_is_deprecated_override_only() {
         let resolved = resolve_grok_home_from(
             None,
-            Some(OsStr::new("/legacy/grok")),
+            Some(OsStr::new("/legacy/ezer")),
             Some(Path::new("/home/u")),
         );
         assert_eq!(
             resolved,
-            Some((PathBuf::from("/legacy/grok"), GrokHomeSource::EnvOverride))
+            Some((PathBuf::from("/legacy/ezer"), GrokHomeSource::EnvOverride))
         );
     }
 
@@ -183,7 +183,7 @@ mod tests {
         let home = default_grok_home();
         assert!(!home.to_string_lossy().starts_with(r"\\?\"));
         assert!(home.ends_with(".ezer"));
-        assert!(!home.ends_with(".grok"));
+        assert!(!home.ends_with(".ezer"));
     }
 
     #[test]

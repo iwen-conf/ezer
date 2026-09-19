@@ -12,7 +12,7 @@ use std::process::{Command, Stdio};
 
 use xai_grok_pager_pty_harness::pager_binary;
 
-/// `grok <args>` in an isolated, credential-less home.
+/// `ezer <args>` in an isolated, credential-less home.
 fn grok_command(home: &std::path::Path, args: &[&str]) -> Command {
     let mut cmd = Command::new(pager_binary().expect("resolve pager binary"));
     cmd.args(args)
@@ -20,7 +20,7 @@ fn grok_command(home: &std::path::Path, args: &[&str]) -> Command {
         .env("HOME", home)
         .env("GROK_HOME", home)
         .env("PATH", std::env::var("PATH").unwrap_or_default())
-        .env("GROK_MANAGED_CONFIG", "0")
+        .env("EZER_MANAGED_CONFIG", "0")
         .stdin(Stdio::null())
         .stdout(Stdio::null());
     cmd

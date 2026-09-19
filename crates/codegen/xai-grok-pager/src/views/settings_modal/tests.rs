@@ -174,7 +174,7 @@ fn enum_choice_gated_off_covers_voice_permission_and_terminal_theme() {
     for key in ["theme", "auto_dark_theme", "auto_light_theme"] {
         assert!(enum_choice_gated_off(key, "terminal", theme_off));
         assert!(!enum_choice_gated_off(key, "terminal", on));
-        assert!(!enum_choice_gated_off(key, "groknight", theme_off));
+        assert!(!enum_choice_gated_off(key, "ezernight", theme_off));
     }
 }
 
@@ -1573,8 +1573,8 @@ fn editor_render_fixture(buffer: &str, cursor_byte: usize) -> SettingsModalState
     let registry = SettingsRegistry::from_entries(vec![synthetic_meta]);
     let snapshot = PagerLocalSnapshot {
         available_models: vec![(
-            "Grok Test".to_string(),
-            acp::ModelId::new(Arc::from("grok-test")),
+            "ezer Test".to_string(),
+            acp::ModelId::new(Arc::from("ezer-test")),
         )],
         ..PagerLocalSnapshot::default()
     };
@@ -1599,7 +1599,7 @@ fn editor_render_fixture(buffer: &str, cursor_byte: usize) -> SettingsModalState
 /// Cursor lands at the visual column matching `cursor_byte` for buffers that fit entirely within the visible window.
 #[test]
 fn render_editing_value_cursor_at_logical_position_when_buffer_fits() {
-    let mut s = editor_render_fixture("Grok Test", 4); // cursor between "Grok" and " Test"
+    let mut s = editor_render_fixture("ezer Test", 4); // cursor between "ezer" and " Test"
     let area = Rect {
         x: 0,
         y: 0,
@@ -2255,9 +2255,9 @@ fn int_editing_value_click_on_value_text_is_noop() {
 #[test]
 fn picking_enum_esc_dispatches_preview_revert_for_each_key() {
     let cases: &[(&str, &str)] = &[
-        ("theme", "groknight"),
-        ("auto_dark_theme", "groknight"),
-        ("auto_light_theme", "grokday"),
+        ("theme", "ezernight"),
+        ("auto_dark_theme", "ezernight"),
+        ("auto_light_theme", "ezerday"),
     ];
     for &(key, original) in cases {
         let mut s = make_state();
@@ -2293,16 +2293,16 @@ fn picking_enum_esc_dispatches_preview_revert_for_each_key() {
 #[test]
 fn picking_enum_esc_returns_to_browse() {
     let mut s = make_state();
-    s.transition_to_picking_enum("theme", 0, SettingValue::Enum("groknight"), true);
+    s.transition_to_picking_enum("theme", 0, SettingValue::Enum("ezernight"), true);
     let outcome = handle_settings_key(&mut s, &KeyEvent::new(KeyCode::Esc, KeyModifiers::NONE));
     match outcome {
         SettingsKeyOutcome::Action(Action::PreviewTheme(name)) => {
             assert_eq!(
-                name, "groknight",
+                name, "ezernight",
                 "Esc revert must dispatch the original canonical"
             );
         }
-        other => panic!("expected Action::PreviewTheme(\"groknight\") on Esc, got {other:?}"),
+        other => panic!("expected Action::PreviewTheme(\"ezernight\") on Esc, got {other:?}"),
     }
     assert!(matches!(s.mode(), SettingsModalMode::Browse));
 }
@@ -2567,7 +2567,7 @@ fn browse_path_enter_commit_returns_to_browse() {
 #[test]
 fn deep_link_theme_commit_closes_with_set() {
     let mut s = make_state();
-    s.transition_to_picking_enum("theme", 0, SettingValue::Enum("groknight"), true);
+    s.transition_to_picking_enum("theme", 0, SettingValue::Enum("ezernight"), true);
     s.close_on_picker_exit = true;
 
     let outcome = handle_settings_key(&mut s, &KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE));
@@ -2584,13 +2584,13 @@ fn deep_link_theme_commit_closes_with_set() {
 #[test]
 fn deep_link_picker_esc_reverts_preview_and_closes() {
     let mut s = make_state();
-    s.transition_to_picking_enum("theme", 0, SettingValue::Enum("groknight"), true);
+    s.transition_to_picking_enum("theme", 0, SettingValue::Enum("ezernight"), true);
     s.close_on_picker_exit = true;
 
     let outcome = handle_settings_key(&mut s, &KeyEvent::new(KeyCode::Esc, KeyModifiers::NONE));
     match outcome {
         SettingsKeyOutcome::ActionThenClose(Action::PreviewTheme(name)) => {
-            assert_eq!(name, "groknight");
+            assert_eq!(name, "ezernight");
         }
         other => panic!("expected ActionThenClose(PreviewTheme), got {other:?}"),
     }
@@ -3001,9 +3001,9 @@ fn fork_secondary_model_picker_opens_on_persisted_model() {
     assert_ne!(slug, xai_grok_shell::models::default_model());
     let snapshot = PagerLocalSnapshot {
         available_models: vec![
-            ("Grok 3".to_string(), acp::ModelId::new(Arc::from("grok-3"))),
+            ("ezer 3".to_string(), acp::ModelId::new(Arc::from("grok-3"))),
             (
-                "Grok 4.5 Fast".to_string(),
+                "ezer 4.5 Fast".to_string(),
                 acp::ModelId::new(Arc::from(slug)),
             ),
         ],
@@ -3018,7 +3018,7 @@ fn fork_secondary_model_picker_opens_on_persisted_model() {
     // Row value shows the display name, matching the default_model row.
     assert_eq!(
         s.value_for("fork_secondary_model"),
-        Some(SettingValue::String("Grok 4.5 Fast".to_string())),
+        Some(SettingValue::String("ezer 4.5 Fast".to_string())),
     );
 
     assert!(s.focus_key("fork_secondary_model"));
@@ -3038,7 +3038,7 @@ fn fork_secondary_model_picker_opens_on_persisted_model() {
             );
             assert_eq!(
                 original_value,
-                &SettingValue::String("Grok 4.5 Fast".to_string()),
+                &SettingValue::String("ezer 4.5 Fast".to_string()),
                 "original_value must carry the display name so Esc-revert round-trips",
             );
         }
@@ -4216,7 +4216,7 @@ fn editing_value_chars_mutate_buffer_and_invalid_enter_is_noop() {
     assert!(
         s.editing_validation_error().is_some(),
         "validation_error must be Some for unknown model 'a' \
-         (catalog has 'Grok 4 Fast' only)",
+         (catalog has 'ezer 4 Fast' only)",
     );
 
     // Enter on a buffer that fails the KnownModel validator (catalog has 'Grok 4 Fast'; "a" doesn't match) is Unchanged; commit refused
@@ -4241,7 +4241,7 @@ fn string_editor_uses_canonical_edits_policy_and_live_validation() {
     assert!(matches!(outcome, SettingsKeyOutcome::Changed));
     assert_eq!(state.editing_buffer(), Some("alpha-"));
 
-    let mut state = editor_render_fixture("Grok Tes", "Grok Tes".len());
+    let mut state = editor_render_fixture("ezer Tes", "ezer Tes".len());
     assert!(state.editing_validation_error().is_some());
     let _ = handle_settings_key(
         &mut state,
@@ -4256,7 +4256,7 @@ fn string_editor_uses_canonical_edits_policy_and_live_validation() {
         &mut state,
         &KeyEvent::new(KeyCode::Char('t'), KeyModifiers::NONE),
     );
-    assert_eq!(state.editing_buffer(), Some("Grok Test"));
+    assert_eq!(state.editing_buffer(), Some("ezer Test"));
     assert!(state.editing_validation_error().is_none());
 
     let cursor = state.editing_cursor_byte();
@@ -4265,7 +4265,7 @@ fn string_editor_uses_canonical_edits_policy_and_live_validation() {
         &KeyEvent::new(KeyCode::Char('\u{202e}'), KeyModifiers::NONE),
     );
     assert!(matches!(outcome, SettingsKeyOutcome::Changed));
-    assert_eq!(state.editing_buffer(), Some("Grok Test"));
+    assert_eq!(state.editing_buffer(), Some("ezer Test"));
     assert_eq!(state.editing_cursor_byte(), cursor);
 
     let outcome = handle_settings_key(
@@ -5044,7 +5044,7 @@ fn row_layout_bool_without_chevron() {
     assert_eq!(row_layout(39, label, value, false), RowLayout::TwoLine);
 }
 
-// User-feedback follow-up: always reserve a blank line between the "Tip · Ask Grok…" docs footer
+// User-feedback follow-up: always reserve a blank line between the "Tip · Ask ezer…" docs footer
 // and the keybindings hints. The chrome sets `footer_lines` to `predicted_hint_rows + 1`, so a
 // blank row always separates the tip from the first hint line.
 
@@ -5407,15 +5407,15 @@ fn ctrl_u_clears_the_entire_filter_from_mid_query() {
 
 #[test]
 fn string_editor_paste_sanitizes_validates_and_consumes_rejected_text() {
-    let mut state = editor_render_fixture("Grok Tst", "Grok T".len());
+    let mut state = editor_render_fixture("ezer Tst", "ezer T".len());
     let outcome = handle_settings_paste(&mut state, "e\r\n");
     assert!(matches!(outcome, SettingsKeyOutcome::Changed));
-    assert_eq!(state.editing_buffer(), Some("Grok Test"));
+    assert_eq!(state.editing_buffer(), Some("ezer Test"));
     assert!(state.editing_validation_error().is_none());
 
     let outcome = handle_settings_paste(&mut state, "\u{202e}\r\n");
     assert!(matches!(outcome, SettingsKeyOutcome::Changed));
-    assert_eq!(state.editing_buffer(), Some("Grok Test"));
+    assert_eq!(state.editing_buffer(), Some("ezer Test"));
     assert!(state.editing_validation_error().is_none());
 }
 
@@ -5796,15 +5796,15 @@ fn docs_footer_tip_is_centered() {
     );
 
     // SHORT path: width that fits SHORT but not LONG.
-    // SHORT is "Tip · Ask Grok to change a setting" (34 cells); LONG is ~73 cells. width=40 lands in the SHORT band.
+    // SHORT is "Tip · Ask ezer to change a setting" (34 cells); LONG is ~73 cells. width=40 lands in the SHORT band.
     let (row_short, tip_start_short, trailing_short) = render(40);
     assert!(
         row_short.contains("change a setting"),
         "width=40 must render SHORT path (contains `change a setting`): {row_short:?}",
     );
     assert!(
-        !row_short.contains("grokday"),
-        "width=40 must NOT render LONG path (no `grokday`): {row_short:?}",
+        !row_short.contains("ezerday"),
+        "width=40 must NOT render LONG path (no `ezerday`): {row_short:?}",
     );
     assert!(
         tip_start_short.abs_diff(trailing_short) <= 1,
@@ -5844,7 +5844,7 @@ fn tip_line_has_blank_row_above() {
     let mut tip_y: Option<u16> = None;
     for y in 0..area.height {
         let txt = buf_row_text(&buf, y, area.x, area.width);
-        if txt.contains("Tip") && txt.contains("Ask Grok") {
+        if txt.contains("Tip") && txt.contains("Ask ezer") {
             tip_y = Some(y);
             break;
         }
@@ -6095,16 +6095,16 @@ fn click_settings_breadcrumb_collapses_picker_to_browse() {
         click_y,
     );
     // For preview-supporting enums (theme), the breadcrumb-click revert dispatches `Action::PreviewTheme(original)`
-    // The default theme's original canonical is `"groknight"`
+    // The default theme's original canonical is `"ezernight"`
     match outcome {
         SettingsKeyOutcome::Action(Action::PreviewTheme(orig)) => {
             assert_eq!(
-                orig, "groknight",
+                orig, "ezernight",
                 "breadcrumb-click revert must carry the original canonical",
             );
         }
         other => panic!(
-            "expected Action(PreviewTheme(\"groknight\")) — the keyboard \
+            "expected Action(PreviewTheme(\"ezernight\")) — the keyboard \
              Esc-equivalent revert — got {other:?}",
         ),
     }
@@ -6147,7 +6147,7 @@ fn click_settings_breadcrumb_ignores_close_on_picker_exit() {
     );
     match outcome {
         SettingsKeyOutcome::Action(Action::PreviewTheme(orig)) => {
-            assert_eq!(orig, "groknight");
+            assert_eq!(orig, "ezernight");
         }
         other => panic!("expected preview revert Action, got {other:?}"),
     }
@@ -6247,7 +6247,7 @@ fn d_key_in_picking_enum_dispatches_open_reset_confirm() {
             // Default theme is `groknight`
             // Entering the picker captures `original_value = current value = groknight`, so the revert dispatches with that canonical
             assert_eq!(
-                orig, "groknight",
+                orig, "ezernight",
                 "PreviewTheme revert must carry the original canonical",
             );
         }
@@ -6450,7 +6450,7 @@ fn consent_chooser_drops_tip_and_reset() {
     let mut consent = enter_picker_for("coding_data_sharing");
     let text = screen(&mut consent);
     assert!(
-        !text.contains("Ask Grok"),
+        !text.contains("Ask ezer"),
         "consent chooser must not render the docs tip:\n{text}"
     );
     assert!(
@@ -6479,7 +6479,7 @@ fn consent_chooser_drops_tip_and_reset() {
     let mut ordinary = enter_picker_for("theme");
     let text = screen(&mut ordinary);
     assert!(
-        text.contains("d reset") && text.contains("Ask Grok"),
+        text.contains("d reset") && text.contains("Ask ezer"),
         "ordinary pickers keep the tip and the reset hint:\n{text}"
     );
     assert!(

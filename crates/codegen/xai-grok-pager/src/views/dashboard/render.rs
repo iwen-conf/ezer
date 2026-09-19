@@ -2190,7 +2190,7 @@ fn render_empty_state(buf: &mut Buffer, area: Rect, theme: &Theme, loading: bool
 }
 
 /// On a 1-row rect (very short terminals) we fall back to the bare `❯ {text}` line so the input
-/// stays usable. Examples: `✗ Session no longer exists`, `✓ Theme: Grok Day`. The badge therefore
+/// stays usable. Examples: `✗ Session no longer exists`, `✓ Theme: ezer Day`. The badge therefore
 /// neither prepends a glyph nor forces a colour.
 fn paint_dispatch_feedback_badge(
     buf: &mut Buffer,

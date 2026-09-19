@@ -67,9 +67,9 @@ impl SettingCategory {
 /// One choice in an `Enum` setting.
 #[derive(Debug, Clone, Copy)]
 pub struct EnumChoice {
-    /// Canonical persisted value (e.g. `"groknight"`).
+    /// Canonical persisted value (e.g. `"ezernight"`).
     pub canonical: &'static str,
-    /// Display label shown in the chooser (e.g. `"Grok Night"`).
+    /// Display label shown in the chooser (e.g. `"ezer Night"`).
     pub display: &'static str,
     /// Sub-text shown in the chooser sheet (e.g. `"Dark + magenta accent"`).
     pub description: &'static str,
@@ -311,7 +311,7 @@ pub fn canonical_voice_capture_mode(value: Option<&str>) -> &'static str {
 
 /// Canonicalize a raw voice STT language to a settings choice. Delegates to
 /// [`xai_grok_voice::canonicalize_stt_language`] so the pager and the STT client share one catalog. The catalog is
-/// the official Grok STT languages plus the client-only `auto`.
+/// the official ezer STT languages plus the client-only `auto`.
 pub fn canonical_voice_stt_language(value: Option<&str>) -> &'static str {
     xai_grok_voice::canonicalize_stt_language(value)
 }
@@ -573,21 +573,21 @@ pub fn current_value_for(
             ui.theme
                 .as_deref()
                 .and_then(crate::theme::canonical_name)
-                .unwrap_or("groknight"),
+                .unwrap_or("ezernight"),
         )),
         "auto_dark_theme" => Some(SettingValue::Enum(
             ui.auto_dark_theme
                 .as_deref()
                 .and_then(crate::theme::canonical_name)
                 .filter(|s| *s != "auto")
-                .unwrap_or("groknight"),
+                .unwrap_or("ezernight"),
         )),
         "auto_light_theme" => Some(SettingValue::Enum(
             ui.auto_light_theme
                 .as_deref()
                 .and_then(crate::theme::canonical_name)
                 .filter(|s| *s != "auto")
-                .unwrap_or("grokday"),
+                .unwrap_or("ezerday"),
         )),
         // render_mermaid: SHELL-owned (persisted to `[ui].render_mermaid`).
         // Read from the process-wide cache mirror, which reflects the live value the render path uses
@@ -832,7 +832,7 @@ mod tests {
                         .theme
                         .as_deref()
                         .and_then(crate::theme::canonical_name)
-                        .unwrap_or("groknight");
+                        .unwrap_or("ezernight");
                     assert_eq!(
                         *default, expected,
                         "theme default drifts from UiConfig::default()",
@@ -848,7 +848,7 @@ mod tests {
                         .as_deref()
                         .and_then(crate::theme::canonical_name)
                         .filter(|s| *s != "auto")
-                        .unwrap_or("groknight");
+                        .unwrap_or("ezernight");
                     assert_eq!(
                         *default, expected,
                         "auto_dark_theme default drifts from UiConfig::default()",
@@ -864,7 +864,7 @@ mod tests {
                         .as_deref()
                         .and_then(crate::theme::canonical_name)
                         .filter(|s| *s != "auto")
-                        .unwrap_or("grokday");
+                        .unwrap_or("ezerday");
                     assert_eq!(
                         *default, expected,
                         "auto_light_theme default drifts from UiConfig::default()",
@@ -1391,7 +1391,7 @@ mod tests {
         let value = current_value_for("auto_dark_theme", &ui, &pager).expect("must resolve");
         assert_eq!(
             value,
-            SettingValue::Enum("groknight"),
+            SettingValue::Enum("ezernight"),
             "corrupted `auto_dark_theme = \"auto\"` must fall back to canonical default",
         );
     }
@@ -1406,7 +1406,7 @@ mod tests {
         let value = current_value_for("auto_light_theme", &ui, &pager).expect("must resolve");
         assert_eq!(
             value,
-            SettingValue::Enum("grokday"),
+            SettingValue::Enum("ezerday"),
             "corrupted `auto_light_theme = \"auto\"` must fall back to canonical default",
         );
     }
@@ -1420,7 +1420,7 @@ mod tests {
         };
         let pager = PagerLocalSnapshot::default();
         let value = current_value_for("auto_dark_theme", &ui, &pager).expect("must resolve");
-        assert_eq!(value, SettingValue::Enum("groknight"));
+        assert_eq!(value, SettingValue::Enum("ezernight"));
     }
 
     /// The persisted `fork_secondary_model` slug resolves to the catalog display name.
@@ -1436,7 +1436,7 @@ mod tests {
         );
         let pager = PagerLocalSnapshot {
             available_models: vec![(
-                "Grok 4.5 Fast".to_string(),
+                "ezer 4.5 Fast".to_string(),
                 acp::ModelId::new(std::sync::Arc::from(slug)),
             )],
             ..Default::default()
@@ -1447,7 +1447,7 @@ mod tests {
         };
         assert_eq!(
             current_value_for("fork_secondary_model", &ui, &pager),
-            Some(SettingValue::String("Grok 4.5 Fast".to_string())),
+            Some(SettingValue::String("ezer 4.5 Fast".to_string())),
         );
 
         // The baseline folds to the empty "no override" sentinel

@@ -185,7 +185,7 @@ mod shell_suggestion_key_tests {
         agent
     }
 
-    /// Same, with the pipeline OFF (`GROK_SUGGESTIONS` unset): the always-on Tab surface under test.
+    /// Same, with the pipeline OFF (`EZER_SUGGESTIONS` unset): the always-on Tab surface under test.
     fn bash_agent_always_on(text: &str) -> AgentView {
         let mut agent = super::test_fixtures::make_agent();
         agent.prompt_input_mode = PromptInputMode::Bash;

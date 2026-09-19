@@ -254,12 +254,12 @@ fn session_tracker(
         .ok_or_else(|| WorkspaceError::SessionNotFound(sid.to_owned()))?;
     Ok(session.hunk_tracker().clone())
 }
-/// Ancestor hop budget when locating `.grok/repos.json`.
+/// Ancestor hop budget when locating `.ezer/repos.json`.
 /// A single-repo sandbox rewrite is one hop (`/workspace/app` to `/workspace`); desktop workspaces can sit deeper, so this is a backstop only.
-/// Primary bounds are the sandbox root (`/workspace`) and the user-global grok home.
+/// Primary bounds are the sandbox root (`/workspace`) and the user-global ezer home.
 const REPOS_MANIFEST_MAX_ANCESTOR_HOPS: usize = 16;
 /// Directories to probe for [`REPOS_MANIFEST_RELATIVE_PATH`], starting at `root_cwd` (the agent cwd after a single-repo rewrite) and walking up.
-/// Does not escape the sandbox workspace or load `~/.grok/repos.json` / `$GROK_HOME/repos.json` (user-global, not a provisioned workspace).
+/// Does not escape the sandbox workspace or load `~/.ezer/repos.json` / `$GROK_HOME/repos.json` (user-global, not a provisioned workspace).
 fn repos_manifest_search_dirs(start: &std::path::Path) -> Vec<std::path::PathBuf> {
     let rel = xai_grok_workspace_types::rpc::repos::REPOS_MANIFEST_RELATIVE_PATH;
     let home = xai_dirs::home_dir();
@@ -1858,7 +1858,7 @@ mod tests {
             session_branch: "conv/1".into(),
             repo_backend: None,
         }]);
-        std::fs::create_dir_all(tmp.path().join(".grok")).unwrap();
+        std::fs::create_dir_all(tmp.path().join(".ezer")).unwrap();
         std::fs::write(
             tmp.path()
                 .join(xai_grok_workspace_types::rpc::repos::REPOS_MANIFEST_RELATIVE_PATH),
@@ -1910,7 +1910,7 @@ mod tests {
             session_branch: "conv/1".into(),
             repo_backend: None,
         }]);
-        std::fs::create_dir_all(sandbox_ws.join(".grok")).unwrap();
+        std::fs::create_dir_all(sandbox_ws.join(".ezer")).unwrap();
         std::fs::write(
             sandbox_ws.join(xai_grok_workspace_types::rpc::repos::REPOS_MANIFEST_RELATIVE_PATH),
             one.to_json_bytes().unwrap(),
@@ -1969,7 +1969,7 @@ mod tests {
         assert!(dirs.contains(&home.path().join("src")));
         assert!(
             !dirs.iter().any(|d| d == home.path()),
-            "must not probe $HOME/.grok/repos.json: {dirs:?}"
+            "must not probe $HOME/.ezer/repos.json: {dirs:?}"
         );
     }
     /// The test is sync and uses `block_on` so `ENV_TEST_LOCK` is not held across `.await` (clippy `await_holding_lock`).
@@ -1989,9 +1989,9 @@ mod tests {
             session_branch: "x".into(),
             repo_backend: None,
         }]);
-        std::fs::create_dir_all(home.path().join(".grok")).unwrap();
+        std::fs::create_dir_all(home.path().join(".ezer")).unwrap();
         std::fs::write(
-            home.path().join(".grok").join("repos.json"),
+            home.path().join(".ezer").join("repos.json"),
             global.to_json_bytes().unwrap(),
         )
         .unwrap();
@@ -2005,7 +2005,7 @@ mod tests {
         let listed = rt.block_on(ops.repos_list()).expect("list");
         assert!(
             listed.repos.is_empty(),
-            "missing workspace manifest must not fall back to ~/.grok/repos.json: {:?}",
+            "missing workspace manifest must not fall back to ~/.ezer/repos.json: {:?}",
             listed.repos
         );
     }
@@ -2256,7 +2256,7 @@ mod tests {
             url: None,
             url_raw: None,
             timeout_ms: 5000,
-            source_dir: std::path::PathBuf::from("/home/u/.grok/hooks"),
+            source_dir: std::path::PathBuf::from("/home/u/.ezer/hooks"),
             extra_env: std::collections::HashMap::from([("FOO".to_string(), "bar".to_string())]),
             layer: xai_grok_hooks::config::HookProvenance::File,
         };
@@ -2374,7 +2374,7 @@ mod tests {
             url: None,
             url_raw: None,
             timeout_ms: 5000,
-            source_dir: std::path::PathBuf::from("/home/u/.grok/hooks"),
+            source_dir: std::path::PathBuf::from("/home/u/.ezer/hooks"),
             extra_env: std::collections::HashMap::from([("FOO".to_string(), "bar".to_string())]),
             layer: xai_grok_hooks::config::HookProvenance::Managed,
         };

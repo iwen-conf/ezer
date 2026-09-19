@@ -1,33 +1,33 @@
-# grok clone
+# ezer clone
 
-`grok clone` fetches a Git repository into a Grove content store and mounts a
+`ezer clone` fetches a Git repository into a Grove content store and mounts a
 projected working tree (NFS on macOS, FUSE on Linux). Each invocation reads
-`GROK_CLONE` / `GROVE_CLONE` in this process, then grok enable-all
-(`GROK_GROVE` or `[cli] grove` in `~/.grok/config.toml`), then `[clone] enabled`
+`EZER_CLONE` / `GROVE_CLONE` in this process, then ezer enable-all
+(`EZER_GROVE` or `[cli] grove` in `~/.ezer/config.toml`), then `[clone] enabled`
 authorize Clone IPC.
 
 This does **not** enable Grove for session / `-w` worktrees. Those use a
-separate gate (`GROK_WORKTREE_TYPE` and `[cli] grove_worktree` in
-`~/.grok/config.toml`; see [Configuration reference](26-config-reference.md)).
-`GROK_WORKTREE_TYPE` and `[cli] grove_worktree` do **not** enable `grok clone`.
-`GROK_CLONE` / `GROVE_CLONE` / `[clone] enabled` do **not** enable session /
+separate gate (`EZER_WORKTREE_TYPE` and `[cli] grove_worktree` in
+`~/.ezer/config.toml`; see [Configuration reference](26-config-reference.md)).
+`EZER_WORKTREE_TYPE` and `[cli] grove_worktree` do **not** enable `ezer clone`.
+`EZER_CLONE` / `GROVE_CLONE` / `[clone] enabled` do **not** enable session /
 `-w` Grove.
 
 To turn **both** surfaces on without touching the specific knobs:
 
 ```bash
-export GROK_GROVE=1
-# or in ~/.grok/config.toml:
+export EZER_GROVE=1
+# or in ~/.ezer/config.toml:
 # [cli]
 # grove = true
 ```
 
-Specific knobs still win: `GROK_WORKTREE_TYPE=copy` keeps session worktrees on
-copy while clone can stay on; `GROK_CLONE=0` keeps `grok clone` off while
+Specific knobs still win: `EZER_WORKTREE_TYPE=copy` keeps session worktrees on
+copy while clone can stay on; `EZER_CLONE=0` keeps `ezer clone` off while
 worktrees can stay on.
 
 ```bash
-grok clone <url> [dir] [--branch NAME] [--cone PATH]... [--full-history]
+ezer clone <url> [dir] [--branch NAME] [--cone PATH]... [--full-history]
 ```
 
 ## History
@@ -70,12 +70,12 @@ The two are separate worlds:
 
 | World | Covers | Commands | Store |
 |-------|--------|----------|-------|
-| Grok | the model and API | `grok login`, `grok logout` | `~/.grok/auth.json` |
+| ezer | the model and API | `ezer login`, `ezer logout` | `~/.ezer/auth.json` |
 
-`grok clone` never reads `~/.grok/auth.json` for Git. Signing into Grok does not
+`ezer clone` never reads `~/.ezer/auth.json` for Git. Signing into ezer does not
 give the daemon a credential for the remote, and neither does
 `[clone] enabled = true`: that flag is a **product gate** deciding whether
-`grok clone` runs at all, not authorization for GitHub.
+`ezer clone` runs at all, not authorization for GitHub.
 
 When Grove classifies a failure as a credential problem, the clone prints the
 class and the commands that own it, without the remote URL:
@@ -126,10 +126,10 @@ carrier token, configure `git credential` or `gh auth` first, then reload.
 
 ## Daemon
 
-`grok` does not take the daemon or its mounts down) and waits for the socket.
+`ezer` does not take the daemon or its mounts down) and waits for the socket.
 
 The `grove` binary is resolved from `PATH`, then from the directory of the
-`grok` executable (for example `~/.grok/bin/grove` next to `grok`). There is
+`ezer` executable (for example `~/.ezer/bin/grove` next to `ezer`). There is
 no separate install location. macOS has no PATH package for grove; build it
 from the monorepo:
 
@@ -143,4 +143,4 @@ error with install commands, not a hang. When a daemon is already running the
 check is skipped, since that daemon may hold privileges this process does not.
 
 Windows is not supported (no ProjFS backend). Use `git clone`, or run
-`grok clone` on macOS or Linux.
+`ezer clone` on macOS or Linux.

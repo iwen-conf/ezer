@@ -914,7 +914,7 @@ fn headless_page_content_search_uses_only_policy() {
     let mut app = test_app();
     app.session_picker_entries = Some(vec![make_picker_entry("native", "/repo")]);
     app.session_picker_state.set_query("batch");
-    app.session_picker_content_results = Some(vec![content_hit("grok-page-hit")]);
+    app.session_picker_content_results = Some(vec![content_hit("ezer-page-hit")]);
 
     let effects = dispatch(Action::CycleSessionSourceFilter, &mut app);
     assert_eq!(app.session_picker_source_filter, SourceFilter::Headless);

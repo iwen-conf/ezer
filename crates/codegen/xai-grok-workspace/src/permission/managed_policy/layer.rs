@@ -12,13 +12,13 @@ pub(super) enum PolicyLayerTier {
     SystemManaged,
     UserRequirements,
     UserManaged,
-    /// The Claude `managed-settings.json`; sorts (applies) after every grok
+    /// The Claude `managed-settings.json`; sorts (applies) after every ezer
     /// layer.
     Vendor,
 }
 
 impl PolicyLayerTier {
-    /// Vendor files configure Claude, not grok — advisory to grok-native
+    /// Vendor files configure Claude, not ezer — advisory to ezer-native
     /// subjects.
     pub fn authority(self) -> PolicySourceAuthority {
         match self {
@@ -28,7 +28,7 @@ impl PolicyLayerTier {
     }
 
     /// Who can write the layer: MDM/system TOML and the root-owned vendor
-    /// file are admin-controlled; `~/.grok` layers are user-writable.
+    /// file are admin-controlled; `~/.ezer` layers are user-writable.
     pub fn ownership(self) -> PolicyLayerOwnership {
         match self {
             Self::UserRequirements | Self::UserManaged => PolicyLayerOwnership::User,
@@ -48,7 +48,7 @@ pub(super) struct PolicyLayer {
     pub(super) value: toml::Value,
 }
 
-/// Whether a source binds everything (grok's own TOML layers, `Native`) or only
+/// Whether a source binds everything (ezer's own TOML layers, `Native`) or only
 /// foreign-defined subjects (the vendor Claude managed-settings.json, `Advisory`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum PolicySourceAuthority {

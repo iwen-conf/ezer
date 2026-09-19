@@ -190,10 +190,10 @@ pub fn resolve_repo_sources(
 }
 
 /// Default `.gitignore` seeded into a fresh app workspace (secrets never enter git).
-/// Kept in lockstep with the export seed (`.project_id`, `.github_repo`) and local `info/exclude` (`.grok/`).
+/// Kept in lockstep with the export seed (`.project_id`, `.github_repo`) and local `info/exclude` (`.ezer/`).
 /// That keeps machine state out of BYO remotes and user commits.
 pub const DEFAULT_GITIGNORE: &str = "\
-# Seeded by Grok app workspaces. Secrets and machine state never belong in git;
+# Seeded by ezer app workspaces. Secrets and machine state never belong in git;
 # they live in the env/secret store, not the working tree.
 
 # Secrets / env
@@ -225,7 +225,7 @@ build/
 # App-workspace machine state (must not enter BYO remotes)
 .project_id
 .github_repo
-.grok/
+.ezer/
 ";
 
 #[cfg(test)]

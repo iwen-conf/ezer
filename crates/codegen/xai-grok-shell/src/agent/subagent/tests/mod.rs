@@ -275,7 +275,7 @@ fn wedged_child_handle() -> (
         force_compact: std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false)),
         permission_handle: xai_grok_workspace::permission::PermissionHandle::allow_all(),
         attribution_callback: None,
-        agent_name: "grok-build".to_string(),
+        agent_name: "ezer-build".to_string(),
         managed_mcp_proxy_base_url: String::new(),
         session_default_agent_profile: None,
         allowed_subagent_types: None,
@@ -665,11 +665,11 @@ fn subagent_max_turns_definition_wins_else_inherits_parent() {
 fn resume_worktree_action_covers_three_outcomes() {
     use super::{ResumeWorktreeAction, resume_worktree_action};
     assert_eq!(
-            resume_worktree_action(true, Some("refs/grok/subagents/x")),
+            resume_worktree_action(true, Some("refs/ezer/subagents/x")),
             ResumeWorktreeAction::Rehydrate
         );
     assert_eq!(
-            resume_worktree_action(false, Some("refs/grok/subagents/x")),
+            resume_worktree_action(false, Some("refs/ezer/subagents/x")),
             ResumeWorktreeAction::Rehydrate
         );
     assert_eq!(
@@ -2053,7 +2053,7 @@ fn validate_subagent_type_recognizes_cli_agent_by_name() {
 fn summarize_tool_config_uses_name_override_and_strips_namespace() {
     use xai_grok_tools::registry::types::{ToolConfig, ToolServerConfig};
     use xai_grok_tools::types::tool::ToolKind;
-    let mut read = ToolConfig::from_id("GrokBuild:read_file");
+    let mut read = ToolConfig::from_id("Ezer:read_file");
     read.kind = Some(ToolKind::Read);
     let mut read_dup = ToolConfig::from_id("Codex:read_file");
     read_dup.kind = Some(ToolKind::Read);
@@ -2091,7 +2091,7 @@ fn describe_subagent_type_unknown_returns_sorted_available() {
         other => panic!("expected Unknown, got {other:?}"),
     }
 }
-/// Regression guard for the DEFAULT grok-build host, the primary `/goal` host. There the only `general-purpose` tool that edits files is `search_replace` (`ToolKind::Edit`).
+/// Regression guard for the DEFAULT ezer-build host, the primary `/goal` host. There the only `general-purpose` tool that edits files is `search_replace` (`ToolKind::Edit`).
 /// The `write` tool (`ToolKind::Write`) is only injected later, so the pre-injection describe probe never lists it. The planner gate must therefore key on the Edit capability.
 #[test]
 fn describe_default_host_general_purpose_has_edit_not_write() {
@@ -2496,8 +2496,8 @@ fn subagent_auth_type_rule() {
     use xai_chat_state::AuthType;
     let session = acp::AuthMethodId::new(CACHED_TOKEN_AUTH_METHOD_ID);
     let api_key = acp::AuthMethodId::new(XAI_API_KEY_METHOD_ID);
-    let byok = byok_model_entry("grok-byok");
-    let plain = test_model_entry("grok-plain");
+    let byok = byok_model_entry("ezer-byok");
+    let plain = test_model_entry("ezer-plain");
     assert_eq!(
             super::subagent_auth_type(Some(&byok), &session),
             AuthType::ApiKey
@@ -2631,7 +2631,7 @@ fn fresh_tool_model_rejects_unknown_and_nonavailable_entries() {
                      Omit `model` to inherit the parent model."
                 )
             );
-        assert!(!error.contains("grok models"));
+        assert!(!error.contains("ezer models"));
     }
     assert!(
             super::handle_request::task_model_override_error(

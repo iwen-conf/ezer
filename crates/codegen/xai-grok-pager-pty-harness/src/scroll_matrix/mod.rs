@@ -1,4 +1,4 @@
-//! The scroll matrix drives the pager binary in a PTY with `GROK_SCROLL_LOG` pointed at a tempfile.
+//! The scroll matrix drives the pager binary in a PTY with `EZER_SCROLL_LOG` pointed at a tempfile.
 //! It then validates the pager's flight-recorder JSONL (producer: `xai-grok-pager/src/input/scroll_log.rs`) against gesture invariants.
 //!
 //! [`runner::run_cell`] executes the per-cell flow.

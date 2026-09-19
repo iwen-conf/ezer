@@ -1575,7 +1575,7 @@ mod tests {
         let persisted: serde_json::Value =
             serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
         assert_eq!(
-            json_at(&persisted, &["state", "grok_build.Scheduler", "tasks"]),
+            json_at(&persisted, &["state", "ezer_build.Scheduler", "tasks"]),
             &serde_json::json!([]),
             "expired task must not survive on disk"
         );
@@ -2720,11 +2720,11 @@ mod tests {
         )
         .unwrap();
         assert_eq!(
-            json_at(&persisted, &["state", "grok_build.WebCitation", "counter"]),
+            json_at(&persisted, &["state", "ezer_build.WebCitation", "counter"]),
             &serde_json::json!(7)
         );
         assert_eq!(
-            json_at(&persisted, &["state", "grok_build.Scheduler", "tasks"]),
+            json_at(&persisted, &["state", "ezer_build.Scheduler", "tasks"]),
             &serde_json::json!([])
         );
         cancel.cancel();
@@ -2944,7 +2944,7 @@ mod tests {
                 save = next_event(&mut saves) => save,
             };
             assert_eq!(
-                json_at(&snapshot, &["state", "grok_build.Scheduler", "tasks"]),
+                json_at(&snapshot, &["state", "ezer_build.Scheduler", "tasks"]),
                 &serde_json::json!([])
             );
             assert!(notifications.try_recv().is_err());
@@ -3093,7 +3093,7 @@ mod tests {
         let persisted: serde_json::Value =
             serde_json::from_str(&std::fs::read_to_string(state_path).unwrap()).unwrap();
         assert!(
-            json_at(&persisted, &["state", "grok_build.Scheduler", "tasks"])
+            json_at(&persisted, &["state", "ezer_build.Scheduler", "tasks"])
                 .as_array()
                 .is_some_and(|tasks| {
                     tasks

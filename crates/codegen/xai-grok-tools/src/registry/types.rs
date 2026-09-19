@@ -570,14 +570,14 @@ impl ToolRegistryBuilder {
         );
     }
     /// Whether this registry knows the fully-qualified tool id
-    /// (`"GrokBuild:read_file"`).
+    /// (`"Ezer:read_file"`).
     pub fn has_tool_id(&self, id: &str) -> bool {
         self.tools.contains_key(id)
     }
     pub fn known_tool_ids(&self) -> std::collections::HashSet<String> {
         self.tools.keys().cloned().collect()
     }
-    /// Fully-qualified tool id (`"GrokBuild:read_file"`) → declared [`ToolKind`], for every
+    /// Fully-qualified tool id (`"Ezer:read_file"`) → declared [`ToolKind`], for every
     /// registered tool. Lets consumers that receive kind-less tool configs (e.g. hub `session.bind`
     /// wire entries) backfill the kind from the binary's own registry before capability filtering.
     pub fn known_tool_kinds(&self) -> HashMap<String, ToolKind> {
@@ -807,14 +807,14 @@ impl ToolRegistryBuilder {
         }
         {
             let standard_file_ids: &[&str] = &[
-                "GrokBuild:read_file",
-                "GrokBuild:search_replace",
-                "GrokBuild:grep",
+                "Ezer:read_file",
+                "Ezer:search_replace",
+                "Ezer:grep",
             ];
             let hashline_file_ids: &[&str] = &[
-                "GrokBuildHashline:hashline_read",
-                "GrokBuildHashline:hashline_edit",
-                "GrokBuildHashline:hashline_grep",
+                "EzerHashline:hashline_read",
+                "EzerHashline:hashline_edit",
+                "EzerHashline:hashline_grep",
             ];
             let has_standard = config
                 .tools
@@ -1888,16 +1888,16 @@ fn explain_requirement_failure(
 ) -> RequirementError {
     let fq_tool_id = format!("{}:{}", entry.namespace, entry.id);
     match fq_tool_id.as_str() {
-        "GrokBuild:run_terminal_cmd" if params
+        "Ezer:run_terminal_cmd" if params
             .get("enabled_background")
             .and_then(|value| value.as_bool())
             .unwrap_or(true) => {
             let mut missing = vec![];
             if !has_tool_kind(proposed, ToolKind::BackgroundTaskAction) {
-                missing.push("GrokBuild:get_task_output");
+                missing.push("Ezer:get_task_output");
             }
             if !has_tool_kind(proposed, ToolKind::KillTaskAction) {
-                missing.push("GrokBuild:kill_task");
+                missing.push("Ezer:kill_task");
             }
             let message = if missing.is_empty() {
                 "unsatisfied requirements".to_string()
@@ -1915,13 +1915,13 @@ fn explain_requirement_failure(
                 .with_bad_value(serde_json::Value::Bool(true))
                 .with_category("requirements")
         }
-        "GrokBuild:task" => {
+        "Ezer:task" => {
             let mut missing = vec![];
             if !has_tool_kind(proposed, ToolKind::BackgroundTaskAction) {
-                missing.push("GrokBuild:get_task_output");
+                missing.push("Ezer:get_task_output");
             }
             if !has_tool_kind(proposed, ToolKind::KillTaskAction) {
-                missing.push("GrokBuild:kill_task");
+                missing.push("Ezer:kill_task");
             }
             RequirementError::new(
                     fq_tool_id,
@@ -1934,41 +1934,41 @@ fn explain_requirement_failure(
                 .with_expected("include get_task_output and kill_task")
                 .with_category("requirements")
         }
-        "GrokBuild:get_task_output" => {
+        "Ezer:get_task_output" => {
             let has_grok_build_bash = has_tool_with_bool_param(
                 proposed,
-                "GrokBuild",
+                "Ezer",
                 "run_terminal_cmd",
                 "enabled_background",
                 true,
             );
             let has_grok_build_concise_bash = has_tool_with_bool_param(
                 proposed,
-                "GrokBuildConcise",
+                "EzerConcise",
                 "run_terminal_cmd",
                 "enabled_background",
                 true,
             );
             let has_opencode_bash = has_tool(proposed, "OpenCode", "bash");
-            let has_task = has_tool(proposed, "GrokBuild", "task");
+            let has_task = has_tool(proposed, "Ezer", "task");
             let mut notes = vec![];
-            if has_tool(proposed, "GrokBuild", "run_terminal_cmd")
+            if has_tool(proposed, "Ezer", "run_terminal_cmd")
                 && !has_grok_build_bash
             {
                 notes
                     .push(
-                        "GrokBuild:run_terminal_cmd is present but enabled_background=false",
+                        "Ezer:run_terminal_cmd is present but enabled_background=false",
                     );
             }
-            if has_tool(proposed, "GrokBuildConcise", "run_terminal_cmd")
+            if has_tool(proposed, "EzerConcise", "run_terminal_cmd")
                 && !has_grok_build_concise_bash
             {
                 notes
                     .push(
-                        "GrokBuildConcise:run_terminal_cmd is present but enabled_background=false",
+                        "EzerConcise:run_terminal_cmd is present but enabled_background=false",
                     );
             }
-            let mut message = "get_task_output requires a background-capable bash tool (GrokBuild:run_terminal_cmd or GrokBuildConcise:run_terminal_cmd with enabled_background=true), OpenCode:bash, or GrokBuild:task"
+            let mut message = "get_task_output requires a background-capable bash tool (Ezer:run_terminal_cmd or EzerConcise:run_terminal_cmd with enabled_background=true), OpenCode:bash, or Ezer:task"
                 .to_string();
             let has_provider = has_grok_build_bash || has_grok_build_concise_bash
                 || has_opencode_bash || has_task;
@@ -1978,11 +1978,11 @@ fn explain_requirement_failure(
             RequirementError::new(fq_tool_id, message)
                 .with_field_path("tools")
                 .with_expected(
-                    "include a background-capable bash tool, OpenCode:bash, or GrokBuild:task",
+                    "include a background-capable bash tool, OpenCode:bash, or Ezer:task",
                 )
                 .with_category("requirements")
         }
-        "GrokBuild:search_replace" if !params
+        "Ezer:search_replace" if !params
             .get("skip_read_before_edit")
             .and_then(|value| value.as_bool())
             .unwrap_or(false) && !has_tool_kind(proposed, ToolKind::Read) => {
@@ -1992,27 +1992,27 @@ fn explain_requirement_failure(
                 )
                 .with_field_path("params.skip_read_before_edit")
                 .with_expected(
-                    "set skip_read_before_edit=true or include a Read tool such as GrokBuild:read_file",
+                    "set skip_read_before_edit=true or include a Read tool such as Ezer:read_file",
                 )
                 .with_bad_value(serde_json::Value::Bool(false))
                 .with_category("requirements")
         }
-        "GrokBuild:enter_plan_mode" => {
+        "Ezer:enter_plan_mode" => {
             RequirementError::new(
                     fq_tool_id,
-                    "enter_plan_mode requires GrokBuild:exit_plan_mode so plan mode can always be exited",
+                    "enter_plan_mode requires Ezer:exit_plan_mode so plan mode can always be exited",
                 )
                 .with_field_path("tools")
-                .with_expected("include GrokBuild:exit_plan_mode")
+                .with_expected("include Ezer:exit_plan_mode")
                 .with_category("requirements")
         }
-        "GrokBuild:exit_plan_mode" => {
+        "Ezer:exit_plan_mode" => {
             RequirementError::new(
                     fq_tool_id,
-                    "exit_plan_mode requires GrokBuild:enter_plan_mode so plan mode can be entered before exiting",
+                    "exit_plan_mode requires Ezer:enter_plan_mode so plan mode can be entered before exiting",
                 )
                 .with_field_path("tools")
-                .with_expected("include GrokBuild:enter_plan_mode")
+                .with_expected("include Ezer:enter_plan_mode")
                 .with_category("requirements")
         }
         _ => {
@@ -2129,7 +2129,7 @@ mod tests {
                     kind: None,
                 },
                 ToolConfig {
-                    id: "GrokBuild:search_replace".to_string(),
+                    id: "Ezer:search_replace".to_string(),
                     params: Some(
                         serde_json::json!({ "skip_read_before_edit": true })
                             .as_object()
@@ -2181,7 +2181,7 @@ mod tests {
         let config = ToolServerConfig {
             tools: vec![
                 ToolConfig {
-                    id: "GrokBuild:read_file".to_string(),
+                    id: "Ezer:read_file".to_string(),
                     params: None,
                     name_override: None,
                     params_name_overrides: None,
@@ -2190,7 +2190,7 @@ mod tests {
                     kind: None,
                 },
                 ToolConfig {
-                    id: "GrokBuild:search_replace".to_string(),
+                    id: "Ezer:search_replace".to_string(),
                     params: None,
                     name_override: None,
                     params_name_overrides: None,
@@ -2225,7 +2225,7 @@ mod tests {
             "rendered description must not contain raw template placeholders"
         );
     }
-    /// Smoke test: finalize the full GrokBuild toolset and verify every tool description is fully
+    /// Smoke test: finalize the full Ezer toolset and verify every tool description is fully
     /// rendered -- no unresolved MiniJinja vars, no stale `{max_*}` placeholders, no empty
     /// tool-name references from missing conditional guards.
     #[tokio::test]
@@ -2263,7 +2263,7 @@ mod tests {
                 "scheduler_list",
             ]
             .into_iter()
-            .map(|id| ToolConfig::from_id(format!("GrokBuild:{id}")))
+            .map(|id| ToolConfig::from_id(format!("Ezer:{id}")))
             .chain(std::iter::empty::<ToolConfig>())
             .chain(std::iter::empty::<ToolConfig>())
             .collect(),
@@ -2361,7 +2361,7 @@ mod tests {
         }
     }
     /// Bash mode resolves the toolset's execute tool by kind, not a hardcoded
-    /// name: `run_terminal_cmd` (grok).
+    /// name: `run_terminal_cmd` (ezer).
     #[tokio::test]
     async fn tool_name_for_kind_resolves_execute() {
         use crate::types::tool::ToolKind;
@@ -2370,15 +2370,15 @@ mod tests {
             .finalize(
                 ToolServerConfig {
                     tools: vec![
-                        ToolConfig::from_id("GrokBuild:run_terminal_cmd".to_string()),
-                        ToolConfig::from_id("GrokBuild:get_task_output".to_string()),
-                        ToolConfig::from_id("GrokBuild:kill_task".to_string()),
+                        ToolConfig::from_id("Ezer:run_terminal_cmd".to_string()),
+                        ToolConfig::from_id("Ezer:get_task_output".to_string()),
+                        ToolConfig::from_id("Ezer:kill_task".to_string()),
                     ],
                     behavior_preset: None,
                 },
                 test_session_context(&tmp),
             )
-            .expect("grok toolset should finalize");
+            .expect("ezer toolset should finalize");
         assert_eq!(
             grok.tool_name_for_kind(ToolKind::Execute).as_deref(),
             Some("run_terminal_cmd")
@@ -2394,9 +2394,9 @@ mod tests {
         use crate::types::tool_io::ToolInput;
         let config = ToolServerConfig {
             tools: vec![
-                ToolConfig::from_id("GrokBuild:run_terminal_cmd".to_string()),
-                ToolConfig::from_id("GrokBuild:get_task_output".to_string()),
-                ToolConfig::from_id("GrokBuild:kill_task".to_string()),
+                ToolConfig::from_id("Ezer:run_terminal_cmd".to_string()),
+                ToolConfig::from_id("Ezer:get_task_output".to_string()),
+                ToolConfig::from_id("Ezer:kill_task".to_string()),
             ],
             behavior_preset: None,
         };
@@ -2480,9 +2480,9 @@ mod tests {
     async fn identity_read_only_honors_per_tool_override() {
         let config = ToolServerConfig {
             tools: vec![
-                ToolConfig::from_id("GrokBuild:run_terminal_cmd".to_string()),
-                ToolConfig::from_id("GrokBuild:get_task_output".to_string()),
-                ToolConfig::from_id("GrokBuild:kill_task".to_string()),
+                ToolConfig::from_id("Ezer:run_terminal_cmd".to_string()),
+                ToolConfig::from_id("Ezer:get_task_output".to_string()),
+                ToolConfig::from_id("Ezer:kill_task".to_string()),
             ],
             behavior_preset: None,
         };
@@ -2505,11 +2505,11 @@ mod tests {
         let parse = |v: serde_json::Value| -> ToolConfig {
             serde_json::from_value(v).expect("ToolConfig deserializes")
         };
-        let known = parse(serde_json::json!({"id": "GrokBuild:read_file", "kind": "read"}));
+        let known = parse(serde_json::json!({"id": "Ezer:read_file", "kind": "read"}));
         assert_eq!(known.kind, Some(ToolKind::Read));
-        let typo = parse(serde_json::json!({"id": "GrokBuild:read_file", "kind": "raed"}));
+        let typo = parse(serde_json::json!({"id": "Ezer:read_file", "kind": "raed"}));
         assert_eq!(typo.kind, Some(ToolKind::Other));
-        let absent = parse(serde_json::json!({"id": "GrokBuild:read_file"}));
+        let absent = parse(serde_json::json!({"id": "Ezer:read_file"}));
         assert_eq!(absent.kind, None);
     }
     /// End-to-end: a `params_name_overrides` rename of `old_string` must flow
@@ -2522,7 +2522,7 @@ mod tests {
             tools: vec![
                 // read_file satisfies search_replace's Read requirement.
                 ToolConfig {
-                    id: "GrokBuild:read_file".to_string(),
+                    id: "Ezer:read_file".to_string(),
                     params: None,
                     name_override: None,
                     params_name_overrides: None,
@@ -2531,7 +2531,7 @@ mod tests {
                     kind: None,
                 },
                 ToolConfig {
-                    id: "GrokBuild:search_replace".to_string(),
+                    id: "Ezer:search_replace".to_string(),
                     params: None,
                     name_override: None,
                     params_name_overrides: Some(std::collections::HashMap::from([(
@@ -2615,9 +2615,9 @@ mod tests {
             (desc, field_desc)
         };
         let ids = [
-            "GrokBuild:run_terminal_cmd",
-            "GrokBuild:get_task_output",
-            "GrokBuild:kill_task",
+            "Ezer:run_terminal_cmd",
+            "Ezer:get_task_output",
+            "Ezer:kill_task",
         ];
         let tmp = TempDir::new().unwrap();
         let toolset = ToolRegistryBuilder::new()
@@ -2655,7 +2655,7 @@ mod tests {
         let config = ToolServerConfig {
             tools: vec![
                 ToolConfig {
-                    id: "GrokBuild:read_file".to_string(),
+                    id: "Ezer:read_file".to_string(),
                     params: None,
                     name_override: None,
                     params_name_overrides: None,
@@ -2664,7 +2664,7 @@ mod tests {
                     kind: None,
                 },
                 ToolConfig {
-                    id: "GrokBuild:search_replace".to_string(),
+                    id: "Ezer:search_replace".to_string(),
                     params: None, // default: skip_read_before_edit = false
                     name_override: None,
                     params_name_overrides: None,
@@ -2743,7 +2743,7 @@ mod tests {
             other => panic!("Expected SearchReplace(NoMatchesFound), got: {other:?}"),
         }
     }
-    /// Verify GrokBuildConcise tools can be finalized and produce concise output.
+    /// Verify EzerConcise tools can be finalized and produce concise output.
     #[tokio::test]
     async fn test_concise_namespace_tools() {
         use crate::types::output::{ReadFileOutput, ToolOutput};
@@ -2753,7 +2753,7 @@ mod tests {
         let config = ToolServerConfig {
             tools: vec![
                 ToolConfig {
-                    id: "GrokBuildConcise:read_file".to_string(),
+                    id: "EzerConcise:read_file".to_string(),
                     params: None,
                     name_override: None,
                     params_name_overrides: None,
@@ -2762,7 +2762,7 @@ mod tests {
                     kind: None,
                 },
                 ToolConfig {
-                    id: "GrokBuildConcise:search_replace".to_string(),
+                    id: "EzerConcise:search_replace".to_string(),
                     params: None,
                     name_override: None,
                     params_name_overrides: None,
@@ -2771,7 +2771,7 @@ mod tests {
                     kind: None,
                 },
                 ToolConfig {
-                    id: "GrokBuildConcise:run_terminal_cmd".to_string(),
+                    id: "EzerConcise:run_terminal_cmd".to_string(),
                     params: Some(
                         serde_json::json!({ "enabled_background": true })
                             .as_object()
@@ -2788,7 +2788,7 @@ mod tests {
                 ToolConfig::for_tool::<grok_build::KillTaskTool>(),
                 ToolConfig::for_tool::<grok_build::TaskOutputTool>(),
                 ToolConfig {
-                    id: "GrokBuild:list_dir".to_string(),
+                    id: "Ezer:list_dir".to_string(),
                     params: None,
                     name_override: None,
                     params_name_overrides: None,
@@ -2832,13 +2832,13 @@ mod tests {
     fn has_tool_id_knows_pinned_tool_config_ids() {
         let builder = ToolRegistryBuilder::new();
         for id in [
-            "GrokBuild:run_terminal_cmd",
-            "GrokBuild:read_file",
-            "GrokBuild:search_replace",
-            "GrokBuild:list_dir",
-            "GrokBuild:grep",
-            "GrokBuild:get_terminal_command_output",
-            "GrokBuild:kill_terminal_command",
+            "Ezer:run_terminal_cmd",
+            "Ezer:read_file",
+            "Ezer:search_replace",
+            "Ezer:list_dir",
+            "Ezer:grep",
+            "Ezer:get_terminal_command_output",
+            "Ezer:kill_terminal_command",
         ] {
             assert!(
                 builder.has_tool_id(id),
@@ -2846,7 +2846,7 @@ mod tests {
             );
         }
         assert!(
-            !builder.has_tool_id("GrokBuild:does_not_exist"),
+            !builder.has_tool_id("Ezer:does_not_exist"),
             "unknown ids must not be reported as known"
         );
         assert!(
@@ -2861,11 +2861,11 @@ mod tests {
     fn known_tool_kinds_maps_pinned_tool_config_ids() {
         let kinds = ToolRegistryBuilder::new().known_tool_kinds();
         for (id, expected) in [
-            ("GrokBuild:run_terminal_cmd", ToolKind::Execute),
-            ("GrokBuild:read_file", ToolKind::Read),
-            ("GrokBuild:search_replace", ToolKind::Edit),
-            ("GrokBuild:grep", ToolKind::Search),
-            ("GrokBuild:list_dir", ToolKind::List),
+            ("Ezer:run_terminal_cmd", ToolKind::Execute),
+            ("Ezer:read_file", ToolKind::Read),
+            ("Ezer:search_replace", ToolKind::Edit),
+            ("Ezer:grep", ToolKind::Search),
+            ("Ezer:list_dir", ToolKind::List),
         ] {
             assert_eq!(
                 kinds.get(id),
@@ -2874,12 +2874,12 @@ mod tests {
             );
         }
         assert!(
-            !kinds.contains_key("GrokBuild:does_not_exist"),
+            !kinds.contains_key("Ezer:does_not_exist"),
             "unknown ids must be absent"
         );
     }
     /// Regression test: `validate_config` must reject configurations where two tools resolve to the same `client_name`. Without `name_override`,
-    /// the client_name defaults to `entry.id` (e.g. `"read_file"`). If both `GrokBuild:read_file` and `Codex:read_file` are in the config, both
+    /// the client_name defaults to `entry.id` (e.g. `"read_file"`). If both `Ezer:read_file` and `Codex:read_file` are in the config, both
     /// would get `client_name = "read_file"`, making the second unreachable at dispatch time.
     #[test]
     fn validate_config_rejects_duplicate_client_name() {
@@ -2887,7 +2887,7 @@ mod tests {
         let config = ToolServerConfig {
             tools: vec![
                 ToolConfig {
-                    id: "GrokBuild:read_file".to_string(),
+                    id: "Ezer:read_file".to_string(),
                     params: None,
                     name_override: None,
                     params_name_overrides: None,
@@ -2921,7 +2921,7 @@ mod tests {
         let builder = ToolRegistryBuilder::new();
         let config = ToolServerConfig {
             tools: vec![ToolConfig {
-                id: "GrokBuild:run_terminal_cmd".to_string(),
+                id: "Ezer:run_terminal_cmd".to_string(),
                 params: Some(
                     serde_json::from_value(serde_json::json!({
                         "enabled_background": "yes"
@@ -2941,7 +2941,7 @@ mod tests {
         let Some(error) = errors.first() else {
             panic!("expected one validation error");
         };
-        assert_eq!(error.tool, "GrokBuild:run_terminal_cmd");
+        assert_eq!(error.tool, "Ezer:run_terminal_cmd");
         assert_eq!(
             error.field_path.as_deref(),
             Some("params.enabled_background")
@@ -2954,7 +2954,7 @@ mod tests {
         let builder = ToolRegistryBuilder::new();
         let config = ToolServerConfig {
             tools: vec![ToolConfig {
-                id: "GrokBuildHashline:hashline_read".to_string(),
+                id: "EzerHashline:hashline_read".to_string(),
                 params: Some(
                     serde_json::from_value(serde_json::json!({
                         "hash_len": 0
@@ -2987,7 +2987,7 @@ mod tests {
         let config = ToolServerConfig {
             tools: vec![
                 ToolConfig {
-                    id: "GrokBuild:read_file".to_string(),
+                    id: "Ezer:read_file".to_string(),
                     params: None,
                     name_override: None, // client_name = "read_file"
                     params_name_overrides: None,
@@ -3026,7 +3026,7 @@ mod tests {
         let config = ToolServerConfig {
             tools: vec![
                 ToolConfig {
-                    id: "GrokBuild:read_file".to_string(),
+                    id: "Ezer:read_file".to_string(),
                     params: None,
                     name_override: None,
                     params_name_overrides: None,
@@ -3534,7 +3534,7 @@ mod tests {
         let builder = ToolRegistryBuilder::new();
         let config = ToolServerConfig {
             tools: vec![ToolConfig {
-                id: "GrokBuild:task".to_string(),
+                id: "Ezer:task".to_string(),
                 params: None,
                 name_override: None,
                 params_name_overrides: None,
@@ -3550,9 +3550,9 @@ mod tests {
             "task tool should be rejected without get_task_output and kill_task"
         );
         assert!(
-            errors.iter().any(|e| e.tool == "GrokBuild:task"
-                && e.message.contains("GrokBuild:get_task_output")
-                && e.message.contains("GrokBuild:kill_task")),
+            errors.iter().any(|e| e.tool == "Ezer:task"
+                && e.message.contains("Ezer:get_task_output")
+                && e.message.contains("Ezer:kill_task")),
             "error should mention missing background task tools: {errors:?}",
         );
     }
@@ -3564,7 +3564,7 @@ mod tests {
         let config = ToolServerConfig {
             tools: vec![
                 ToolConfig {
-                    id: "GrokBuild:task".to_string(),
+                    id: "Ezer:task".to_string(),
                     params: None,
                     name_override: None,
                     params_name_overrides: None,
@@ -3573,7 +3573,7 @@ mod tests {
                     kind: None,
                 },
                 ToolConfig {
-                    id: "GrokBuild:get_task_output".to_string(),
+                    id: "Ezer:get_task_output".to_string(),
                     params: None,
                     name_override: None,
                     params_name_overrides: None,
@@ -3588,7 +3588,7 @@ mod tests {
         assert!(
             errors
                 .iter()
-                .any(|e| e.tool == "GrokBuild:task" && e.message.contains("GrokBuild:kill_task")),
+                .any(|e| e.tool == "Ezer:task" && e.message.contains("Ezer:kill_task")),
             "task tool should be rejected without kill_task: {errors:?}",
         );
     }
@@ -3600,7 +3600,7 @@ mod tests {
         let config = ToolServerConfig {
             tools: vec![
                 ToolConfig {
-                    id: "GrokBuild:task".to_string(),
+                    id: "Ezer:task".to_string(),
                     params: None,
                     name_override: None,
                     params_name_overrides: None,
@@ -3609,7 +3609,7 @@ mod tests {
                     kind: None,
                 },
                 ToolConfig {
-                    id: "GrokBuild:kill_task".to_string(),
+                    id: "Ezer:kill_task".to_string(),
                     params: None,
                     name_override: None,
                     params_name_overrides: None,
@@ -3624,8 +3624,8 @@ mod tests {
         assert!(
             errors
                 .iter()
-                .any(|e| e.tool == "GrokBuild:task"
-                    && e.message.contains("GrokBuild:get_task_output")),
+                .any(|e| e.tool == "Ezer:task"
+                    && e.message.contains("Ezer:get_task_output")),
             "task tool should be rejected without get_task_output: {errors:?}",
         );
     }
@@ -3638,7 +3638,7 @@ mod tests {
         let config = ToolServerConfig {
             tools: vec![
                 ToolConfig {
-                    id: "GrokBuild:task".to_string(),
+                    id: "Ezer:task".to_string(),
                     params: None,
                     name_override: None,
                     params_name_overrides: None,
@@ -3647,7 +3647,7 @@ mod tests {
                     kind: None,
                 },
                 ToolConfig {
-                    id: "GrokBuild:get_task_output".to_string(),
+                    id: "Ezer:get_task_output".to_string(),
                     params: None,
                     name_override: None,
                     params_name_overrides: None,
@@ -3656,7 +3656,7 @@ mod tests {
                     kind: None,
                 },
                 ToolConfig {
-                    id: "GrokBuild:kill_task".to_string(),
+                    id: "Ezer:kill_task".to_string(),
                     params: None,
                     name_override: None,
                     params_name_overrides: None,
@@ -3691,56 +3691,56 @@ mod tests {
     }
     #[test]
     fn scheduler_create_rejected_without_delete_list_and_poll() {
-        let errors = scheduler_validate(&["GrokBuild:scheduler_create"]);
+        let errors = scheduler_validate(&["Ezer:scheduler_create"]);
         assert!(
             errors
                 .iter()
-                .any(|e| e.tool == "GrokBuild:scheduler_create"),
+                .any(|e| e.tool == "Ezer:scheduler_create"),
             "{errors:?}"
         );
     }
     #[test]
     fn scheduler_trio_rejected_without_poll_tool() {
         let errors = scheduler_validate(&[
-            "GrokBuild:scheduler_create",
-            "GrokBuild:scheduler_delete",
-            "GrokBuild:scheduler_list",
+            "Ezer:scheduler_create",
+            "Ezer:scheduler_delete",
+            "Ezer:scheduler_list",
         ]);
         assert!(!errors.is_empty(), "{errors:?}");
     }
     #[test]
     fn scheduler_bundle_accepted_with_get_task_output() {
         let errors = scheduler_validate(&[
-            "GrokBuild:scheduler_create",
-            "GrokBuild:scheduler_delete",
-            "GrokBuild:scheduler_list",
-            "GrokBuild:get_task_output",
-            "GrokBuild:kill_task",
-            "GrokBuild:run_terminal_cmd",
+            "Ezer:scheduler_create",
+            "Ezer:scheduler_delete",
+            "Ezer:scheduler_list",
+            "Ezer:get_task_output",
+            "Ezer:kill_task",
+            "Ezer:run_terminal_cmd",
         ]);
         assert!(errors.is_empty(), "{errors:?}");
     }
     #[test]
     fn scheduler_bundle_accepted_with_terminal_command_output() {
         let errors = scheduler_validate(&[
-            "GrokBuild:scheduler_create",
-            "GrokBuild:scheduler_delete",
-            "GrokBuild:scheduler_list",
-            "GrokBuild:get_terminal_command_output",
-            "GrokBuild:kill_terminal_command",
-            "GrokBuild:run_terminal_cmd",
+            "Ezer:scheduler_create",
+            "Ezer:scheduler_delete",
+            "Ezer:scheduler_list",
+            "Ezer:get_terminal_command_output",
+            "Ezer:kill_terminal_command",
+            "Ezer:run_terminal_cmd",
         ]);
         assert!(errors.is_empty(), "{errors:?}");
     }
     /// Verify that the task tool description renders correctly with the default
-    /// grok-build agent config (all tools present) and that the new examples
+    /// ezer-build agent config (all tools present) and that the new examples
     /// section is included with no unresolved template placeholders.
     #[tokio::test]
     async fn bash_definition_hides_is_background_when_disabled() {
         let builder = ToolRegistryBuilder::new();
         let config = ToolServerConfig {
             tools: vec![ToolConfig {
-                id: "GrokBuild:run_terminal_cmd".to_string(),
+                id: "Ezer:run_terminal_cmd".to_string(),
                 params: Some(
                     serde_json::json!({ "enabled_background": false })
                         .as_object()
@@ -3791,7 +3791,7 @@ mod tests {
         let config = ToolServerConfig {
             tools: vec![
                 ToolConfig {
-                    id: "GrokBuild:run_terminal_cmd".to_string(),
+                    id: "Ezer:run_terminal_cmd".to_string(),
                     params: Some(
                         serde_json::json!({ "enabled_background": true })
                             .as_object()
@@ -3805,7 +3805,7 @@ mod tests {
                     kind: None,
                 },
                 ToolConfig {
-                    id: "GrokBuild:get_task_output".to_string(),
+                    id: "Ezer:get_task_output".to_string(),
                     params: None,
                     name_override: None,
                     params_name_overrides: None,
@@ -3814,7 +3814,7 @@ mod tests {
                     kind: None,
                 },
                 ToolConfig {
-                    id: "GrokBuild:kill_task".to_string(),
+                    id: "Ezer:kill_task".to_string(),
                     params: None,
                     name_override: None,
                     params_name_overrides: None,
@@ -3872,11 +3872,11 @@ mod tests {
         };
         let config = ToolServerConfig {
             tools: vec![
-                tool("GrokBuild:run_terminal_cmd"),
-                tool("GrokBuild:task"),
-                tool("GrokBuild:get_task_output"),
-                tool("GrokBuild:wait_tasks"),
-                tool("GrokBuild:kill_task"),
+                tool("Ezer:run_terminal_cmd"),
+                tool("Ezer:task"),
+                tool("Ezer:get_task_output"),
+                tool("Ezer:wait_tasks"),
+                tool("Ezer:kill_task"),
             ],
             behavior_preset: None,
         };
@@ -3943,7 +3943,7 @@ mod tests {
         let builder = ToolRegistryBuilder::new();
         let config = ToolServerConfig {
             tools: vec![ToolConfig {
-                id: "GrokBuild:run_terminal_cmd".to_string(),
+                id: "Ezer:run_terminal_cmd".to_string(),
                 params: Some(
                     serde_json::json!({ "enabled_background": false, "auto_background_on_timeout": true })
                         .as_object()
@@ -3981,7 +3981,7 @@ mod tests {
         let builder = ToolRegistryBuilder::new();
         let config = ToolServerConfig {
             tools: vec![ToolConfig {
-                id: "GrokBuild:run_terminal_cmd".to_string(),
+                id: "Ezer:run_terminal_cmd".to_string(),
                 params: Some(
                     serde_json::json!({ "enabled_background": false, "auto_background_on_timeout": false })
                         .as_object()
@@ -4026,7 +4026,7 @@ mod tests {
         let builder = ToolRegistryBuilder::new();
         let config = ToolServerConfig {
             tools: vec![ToolConfig {
-                id: "GrokBuild:run_terminal_cmd".to_string(),
+                id: "Ezer:run_terminal_cmd".to_string(),
                 params: Some(
                     serde_json::json!({ "enabled_background": false, "auto_background_on_timeout": false })
                         .as_object()
@@ -4052,7 +4052,7 @@ mod tests {
         let builder = ToolRegistryBuilder::new();
         let config = ToolServerConfig {
             tools: vec![ToolConfig {
-                id: "GrokBuild:run_terminal_cmd".to_string(),
+                id: "Ezer:run_terminal_cmd".to_string(),
                 params: None,
                 name_override: None,
                 params_name_overrides: None,
@@ -4071,15 +4071,15 @@ mod tests {
         let Some(error) = errors.first() else {
             panic!("expected one bash requirement error: {errors:?}");
         };
-        assert_eq!(error.tool, "GrokBuild:run_terminal_cmd");
+        assert_eq!(error.tool, "Ezer:run_terminal_cmd");
         assert_eq!(error.category.as_deref(), Some("requirements"));
         assert_eq!(
             error.field_path.as_deref(),
             Some("params.enabled_background")
         );
         assert_eq!(error.bad_value, Some(serde_json::json!(true)));
-        assert!(error.message.contains("GrokBuild:get_task_output"));
-        assert!(error.message.contains("GrokBuild:kill_task"));
+        assert!(error.message.contains("Ezer:get_task_output"));
+        assert!(error.message.contains("Ezer:kill_task"));
         assert!(
             error
                 .expected
@@ -4093,7 +4093,7 @@ mod tests {
         let builder = ToolRegistryBuilder::new();
         let config = ToolServerConfig {
             tools: vec![ToolConfig {
-                id: "GrokBuild:task".to_string(),
+                id: "Ezer:task".to_string(),
                 params: None,
                 name_override: None,
                 params_name_overrides: None,
@@ -4112,9 +4112,9 @@ mod tests {
         let Some(error) = errors.first() else {
             panic!("expected one task requirement error: {errors:?}");
         };
-        assert_eq!(error.tool, "GrokBuild:task");
-        assert!(error.message.contains("GrokBuild:get_task_output"));
-        assert!(error.message.contains("GrokBuild:kill_task"));
+        assert_eq!(error.tool, "Ezer:task");
+        assert!(error.message.contains("Ezer:get_task_output"));
+        assert!(error.message.contains("Ezer:kill_task"));
         assert_eq!(error.field_path.as_deref(), Some("tools"));
     }
     #[test]
@@ -4122,7 +4122,7 @@ mod tests {
         let builder = ToolRegistryBuilder::new();
         let config = ToolServerConfig {
             tools: vec![ToolConfig {
-                id: "GrokBuild:get_task_output".to_string(),
+                id: "Ezer:get_task_output".to_string(),
                 params: None,
                 name_override: None,
                 params_name_overrides: None,
@@ -4141,17 +4141,17 @@ mod tests {
         let Some(error) = errors.first() else {
             panic!("expected one get_task_output requirement error: {errors:?}");
         };
-        assert_eq!(error.tool, "GrokBuild:get_task_output");
+        assert_eq!(error.tool, "Ezer:get_task_output");
         assert!(error.message.contains("background-capable bash tool"));
         assert!(error.message.contains("OpenCode:bash"));
-        assert!(error.message.contains("GrokBuild:task"));
+        assert!(error.message.contains("Ezer:task"));
     }
     #[test]
     fn search_replace_requirement_error_mentions_read_tool() {
         let builder = ToolRegistryBuilder::new();
         let config = ToolServerConfig {
             tools: vec![ToolConfig {
-                id: "GrokBuild:search_replace".to_string(),
+                id: "Ezer:search_replace".to_string(),
                 params: None,
                 name_override: None,
                 params_name_overrides: None,
@@ -4168,7 +4168,7 @@ mod tests {
         );
         let error = errors
             .iter()
-            .find(|error| error.tool == "GrokBuild:search_replace")
+            .find(|error| error.tool == "Ezer:search_replace")
             .expect("search_replace error should be present");
         assert!(error.message.contains("Read tool"));
         assert_eq!(
@@ -4183,7 +4183,7 @@ mod tests {
         let builder = ToolRegistryBuilder::new();
         let config = ToolServerConfig {
             tools: vec![ToolConfig {
-                id: "GrokBuild:ask_user_question".to_string(),
+                id: "Ezer:ask_user_question".to_string(),
                 params: None,
                 name_override: None,
                 params_name_overrides: None,
@@ -4205,7 +4205,7 @@ mod tests {
         let config = ToolServerConfig {
             tools: vec![
                 ToolConfig {
-                    id: "GrokBuild:run_terminal_cmd".to_string(),
+                    id: "Ezer:run_terminal_cmd".to_string(),
                     params: None,
                     name_override: None,
                     params_name_overrides: None,
@@ -4214,7 +4214,7 @@ mod tests {
                     kind: None,
                 },
                 ToolConfig {
-                    id: "GrokBuild:read_file".to_string(),
+                    id: "Ezer:read_file".to_string(),
                     params: None,
                     name_override: None,
                     params_name_overrides: None,
@@ -4223,7 +4223,7 @@ mod tests {
                     kind: None,
                 },
                 ToolConfig {
-                    id: "GrokBuild:search_replace".to_string(),
+                    id: "Ezer:search_replace".to_string(),
                     params: None,
                     name_override: None,
                     params_name_overrides: None,
@@ -4232,7 +4232,7 @@ mod tests {
                     kind: None,
                 },
                 ToolConfig {
-                    id: "GrokBuild:list_dir".to_string(),
+                    id: "Ezer:list_dir".to_string(),
                     params: None,
                     name_override: None,
                     params_name_overrides: None,
@@ -4241,7 +4241,7 @@ mod tests {
                     kind: None,
                 },
                 ToolConfig {
-                    id: "GrokBuild:grep".to_string(),
+                    id: "Ezer:grep".to_string(),
                     params: None,
                     name_override: None,
                     params_name_overrides: None,
@@ -4250,7 +4250,7 @@ mod tests {
                     kind: None,
                 },
                 ToolConfig {
-                    id: "GrokBuild:web_search".to_string(),
+                    id: "Ezer:web_search".to_string(),
                     params: None,
                     name_override: None,
                     params_name_overrides: None,
@@ -4259,7 +4259,7 @@ mod tests {
                     kind: None,
                 },
                 ToolConfig {
-                    id: "GrokBuild:task".to_string(),
+                    id: "Ezer:task".to_string(),
                     params: None,
                     name_override: None,
                     params_name_overrides: None,
@@ -4268,7 +4268,7 @@ mod tests {
                     kind: None,
                 },
                 ToolConfig {
-                    id: "GrokBuild:get_task_output".to_string(),
+                    id: "Ezer:get_task_output".to_string(),
                     params: None,
                     name_override: None,
                     params_name_overrides: None,
@@ -4277,7 +4277,7 @@ mod tests {
                     kind: None,
                 },
                 ToolConfig {
-                    id: "GrokBuild:kill_task".to_string(),
+                    id: "Ezer:kill_task".to_string(),
                     params: None,
                     name_override: None,
                     params_name_overrides: None,
@@ -4292,7 +4292,7 @@ mod tests {
         let ctx = test_session_context(&tmp);
         let toolset = builder
             .finalize(config, ctx)
-            .expect("finalize should succeed with default grok-build tools");
+            .expect("finalize should succeed with default ezer-build tools");
         let defs = toolset.tool_definitions();
         let task_def = defs
             .iter()
@@ -4326,19 +4326,19 @@ mod tests {
         assert!(
             builder
                 .tools
-                .contains_key("GrokBuildHashline:hashline_read"),
+                .contains_key("EzerHashline:hashline_read"),
             "hashline_read should be registered"
         );
         assert!(
             builder
                 .tools
-                .contains_key("GrokBuildHashline:hashline_edit"),
+                .contains_key("EzerHashline:hashline_edit"),
             "hashline_edit should be registered"
         );
         assert!(
             builder
                 .tools
-                .contains_key("GrokBuildHashline:hashline_grep"),
+                .contains_key("EzerHashline:hashline_grep"),
             "hashline_grep should be registered"
         );
     }
@@ -4348,9 +4348,9 @@ mod tests {
         let builder = ToolRegistryBuilder::new();
         let config = ToolServerConfig {
             tools: vec![
-                hashline_tool_config("GrokBuildHashline:hashline_read"),
-                hashline_tool_config("GrokBuildHashline:hashline_edit"),
-                hashline_tool_config("GrokBuildHashline:hashline_grep"),
+                hashline_tool_config("EzerHashline:hashline_read"),
+                hashline_tool_config("EzerHashline:hashline_edit"),
+                hashline_tool_config("EzerHashline:hashline_grep"),
             ],
             behavior_preset: None,
         };
@@ -4373,9 +4373,9 @@ mod tests {
         let builder = ToolRegistryBuilder::new();
         let standard_config = ToolServerConfig {
             tools: vec![
-                hashline_tool_config("GrokBuild:read_file"),
-                hashline_tool_config("GrokBuild:search_replace"),
-                hashline_tool_config("GrokBuild:grep"),
+                hashline_tool_config("Ezer:read_file"),
+                hashline_tool_config("Ezer:search_replace"),
+                hashline_tool_config("Ezer:grep"),
             ],
             behavior_preset: None,
         };
@@ -4386,9 +4386,9 @@ mod tests {
         let builder2 = ToolRegistryBuilder::new();
         let hashline_config = ToolServerConfig {
             tools: vec![
-                hashline_tool_config("GrokBuildHashline:hashline_read"),
-                hashline_tool_config("GrokBuildHashline:hashline_edit"),
-                hashline_tool_config("GrokBuildHashline:hashline_grep"),
+                hashline_tool_config("EzerHashline:hashline_read"),
+                hashline_tool_config("EzerHashline:hashline_edit"),
+                hashline_tool_config("EzerHashline:hashline_grep"),
             ],
             behavior_preset: None,
         };
@@ -4403,9 +4403,9 @@ mod tests {
         let builder = ToolRegistryBuilder::new();
         let config = ToolServerConfig {
             tools: vec![
-                hashline_tool_config("GrokBuildHashline:hashline_read"),
-                hashline_tool_config("GrokBuildHashline:hashline_edit"),
-                hashline_tool_config("GrokBuildHashline:hashline_grep"),
+                hashline_tool_config("EzerHashline:hashline_read"),
+                hashline_tool_config("EzerHashline:hashline_edit"),
+                hashline_tool_config("EzerHashline:hashline_grep"),
             ],
             behavior_preset: None,
         };
@@ -4425,9 +4425,9 @@ mod tests {
         let builder = ToolRegistryBuilder::new();
         let config = ToolServerConfig {
             tools: vec![
-                hashline_tool_config("GrokBuild:read_file"),
-                hashline_tool_config("GrokBuildHashline:hashline_edit"),
-                hashline_tool_config("GrokBuild:grep"),
+                hashline_tool_config("Ezer:read_file"),
+                hashline_tool_config("EzerHashline:hashline_edit"),
+                hashline_tool_config("Ezer:grep"),
             ],
             behavior_preset: None,
         };
@@ -4482,7 +4482,7 @@ mod tests {
         let config = ToolServerConfig {
             tools: vec![
                 ToolConfig {
-                    id: "GrokBuildHashline:hashline_read".to_owned(),
+                    id: "EzerHashline:hashline_read".to_owned(),
                     params: Some(
                         serde_json::json!({"scheme": "chunk", "hash_len": 2, "chunk_size": 16})
                             .as_object()
@@ -4521,7 +4521,7 @@ mod tests {
     }
     fn bash_config_with_background() -> ToolConfig {
         ToolConfig {
-            id: "GrokBuild:run_terminal_cmd".to_owned(),
+            id: "Ezer:run_terminal_cmd".to_owned(),
             params: Some(
                 serde_json::json!({ "enabled_background": true })
                     .as_object()
@@ -4830,7 +4830,7 @@ mod tests {
         let builder = ToolRegistryBuilder::new();
         let config = ToolServerConfig {
             tools: vec![ToolConfig {
-                id: "GrokBuild:read_file".to_string(),
+                id: "Ezer:read_file".to_string(),
                 params: None,
                 name_override: None,
                 params_name_overrides: None,
@@ -4903,7 +4903,7 @@ mod tests {
         let builder = ToolRegistryBuilder::new();
         let config = ToolServerConfig {
             tools: vec![ToolConfig {
-                id: "GrokBuild:run_terminal_cmd".to_string(),
+                id: "Ezer:run_terminal_cmd".to_string(),
                 params: Some(
                     serde_json::json!({"enabled_background": false})
                         .as_object()

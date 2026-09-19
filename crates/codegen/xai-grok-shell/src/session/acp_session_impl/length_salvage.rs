@@ -14,7 +14,7 @@ pub(super) const LENGTH_CONTINUE_REMINDER_BODY: &str = "Your previous response e
      message follows this note, answer that instead.";
 
 /// Pure form of [`SessionActor::length_salvage_budget`].
-/// Kill switches are absolute and outrank every tier, including the always-on cursor one: an explicit `GROK_LENGTH_SALVAGE=0` locally, and the remote `length_salvage_budget = 0` fleet-wide.
+/// Kill switches are absolute and outrank every tier, including the always-on cursor one: an explicit `EZER_LENGTH_SALVAGE=0` locally, and the remote `length_salvage_budget = 0` fleet-wide.
 /// Otherwise the precedence is cursor, then env opt-in, then remote budget, then off.
 pub(super) fn resolve_length_salvage_budget(
     is_cursor: bool,
@@ -35,11 +35,11 @@ pub(super) fn resolve_length_salvage_budget(
 
 impl SessionActor {
     /// `Some(budget)` salvages Length truncations (partial commit and bounded continues); `None` hard-fails.
-    /// Always on when [`SessionActor::is_cursor_agent`]; otherwise the `GROK_LENGTH_SALVAGE` env var (debug override), then the `length_salvage_budget` remote setting.
+    /// Always on when [`SessionActor::is_cursor_agent`]; otherwise the `EZER_LENGTH_SALVAGE` env var (debug override), then the `length_salvage_budget` remote setting.
     pub(super) fn length_salvage_budget(&self) -> Option<u32> {
         resolve_length_salvage_budget(
             self.is_cursor_agent(),
-            xai_grok_config::env_bool("GROK_LENGTH_SALVAGE"),
+            xai_grok_config::env_bool("EZER_LENGTH_SALVAGE"),
             self.length_salvage_remote_budget,
         )
     }

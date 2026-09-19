@@ -1,4 +1,4 @@
-//! The `grok agent stdio` child that `GrokStdioClient` and `AcpTestClient` drive: the sandbox it runs in, what
+//! The `ezer agent stdio` child that `GrokStdioClient` and `AcpTestClient` drive: the sandbox it runs in, what
 //! is applied on top of the sandbox's hermetic baseline, and the spawn that hands the sandbox back together
 //! with the child.
 
@@ -61,13 +61,13 @@ impl AgentProcessOptions {
             cmd,
             &sandbox,
             TestProcessConfig::new()
-                .label("grok agent stdio")
+                .label("ezer agent stdio")
                 .stdin(TestStdin::Piped)
                 .stdout(TestOutput::Piped),
         )
         .unwrap_or_else(|error| {
             panic!(
-                "failed to spawn grok agent stdio at {}: {error}\n{}",
+                "failed to spawn ezer agent stdio at {}: {error}\n{}",
                 binary.display(),
                 sandbox.diagnostic_summary(),
             )

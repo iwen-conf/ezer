@@ -100,7 +100,7 @@ pub(crate) fn ctx_with_toggle(toggle: HashMap<String, bool>) -> SubagentSpawnCon
         image_description_model: crate::test_support::TEST_MODEL.to_owned(),
         workspace_ops: xai_grok_workspace::WorkspaceOps::for_test(),
         auth_manager: Arc::new(xai_grok_login::AuthManager::new(
-            std::path::Path::new("/tmp/nonexistent-grok-test"),
+            std::path::Path::new("/tmp/nonexistent-ezer-test"),
             xai_grok_login::GrokComConfig::default(),
         )),
         attribution_callback: None,

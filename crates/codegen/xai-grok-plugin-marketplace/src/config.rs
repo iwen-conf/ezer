@@ -1,4 +1,4 @@
-//! Parse marketplace sources from `~/.grok/config.toml`.
+//! Parse marketplace sources from `~/.ezer/config.toml`.
 //!
 //! Expected format:
 //! ```toml
@@ -29,7 +29,7 @@ struct RawSource {
 }
 
 /// Whether remote plugin installs/updates must pin a full commit sha.
-/// Tighten-only: either `[marketplace] require_sha = true` in config.toml or `GROK_MARKETPLACE_REQUIRE_SHA=1` enables it; neither can turn it off.
+/// Tighten-only: either `[marketplace] require_sha = true` in config.toml or `EZER_MARKETPLACE_REQUIRE_SHA=1` enables it; neither can turn it off.
 /// Defaults off so existing unpinned catalogs keep installing.
 pub fn load_require_sha(config: &toml::Value) -> bool {
     env_require_sha()
@@ -41,7 +41,7 @@ pub fn load_require_sha(config: &toml::Value) -> bool {
 }
 
 pub fn env_require_sha() -> bool {
-    xai_grok_config::env_bool("GROK_MARKETPLACE_REQUIRE_SHA").unwrap_or(false)
+    xai_grok_config::env_bool("EZER_MARKETPLACE_REQUIRE_SHA").unwrap_or(false)
 }
 
 /// Reads `[marketplace].sources` array. Returns empty vec if not configured.
@@ -173,8 +173,8 @@ fn extract_marketplace_entries(
         });
     }
 }
-/// Settings roots grok itself owns (`~/.grok`); sources found here are
-/// grok-native for policy scoping.
+/// Settings roots ezer itself owns (`~/.ezer`); sources found here are
+/// ezer-native for policy scoping.
 pub fn native_settings_roots() -> Vec<PathBuf> {
     xai_grok_config::user_grok_home().into_iter().collect()
 }
@@ -189,7 +189,7 @@ pub fn foreign_settings_roots() -> Vec<PathBuf> {
 }
 
 /// Loads additional marketplace sources from `settings.json` (`extraKnownMarketplaces`)
-/// and `known_marketplaces.json` files under `~/.grok/` and `~/.claude/`.
+/// and `known_marketplaces.json` files under `~/.ezer/` and `~/.claude/`.
 pub fn load_extra_sources_from_settings(existing: &[MarketplaceSource]) -> Vec<MarketplaceSource> {
     let roots: Vec<PathBuf> = native_settings_roots()
         .into_iter()
@@ -198,7 +198,7 @@ pub fn load_extra_sources_from_settings(existing: &[MarketplaceSource]) -> Vec<M
     load_extra_sources_from_settings_in(existing, &roots)
 }
 
-/// Like [`load_extra_sources_from_settings`] but reads from explicit `roots` instead of `~/.grok`/`~/.claude`. Each root is checked for `settings.local.json`, `settings.json` (`extraKnownMarketplaces` key), and `plugins/known_marketplaces.json`. Lets callers stay isolated from the developer's real home dir.
+/// Like [`load_extra_sources_from_settings`] but reads from explicit `roots` instead of `~/.ezer`/`~/.claude`. Each root is checked for `settings.local.json`, `settings.json` (`extraKnownMarketplaces` key), and `plugins/known_marketplaces.json`. Lets callers stay isolated from the developer's real home dir.
 pub fn load_extra_sources_from_settings_in(
     existing: &[MarketplaceSource],
     roots: &[PathBuf],
@@ -274,7 +274,7 @@ mod tests {
         x
     }
 
-    /// Serializes every test that touches the process-global `GROK_MARKETPLACE_REQUIRE_SHA`, so they cannot race each other.
+    /// Serializes every test that touches the process-global `EZER_MARKETPLACE_REQUIRE_SHA`, so they cannot race each other.
     static REQUIRE_SHA_ENV_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
 
     #[test]

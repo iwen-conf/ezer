@@ -1360,7 +1360,7 @@ impl PromptWidget {
                 false
             }
         } else {
-            // Replace the args range (e.g., "gr" becomes "Grok 4 Fast")
+            // Replace the args range (e.g., "gr" becomes "ezer 4 Fast")
             if let Some(ref range) = snap.args_range
                 && range.end <= text_len
                 && self.textarea.text().is_char_boundary(range.start)

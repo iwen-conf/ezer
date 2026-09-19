@@ -8,39 +8,39 @@ fn main() {
         // where sparse payloads must deserialize. Defaults are applied per optional field (not type-level) so the required
         // `id` field still fails deserialization when missing instead of silently becoming "". See tests/wire_shape.rs.
         .field_attribute(
-            ".xai.grok.tools.v1.ToolConfigEntry.params_json",
+            ".xai.ezer.tools.v1.ToolConfigEntry.params_json",
             "#[serde(default)]",
         )
         .field_attribute(
-            ".xai.grok.tools.v1.ToolConfigEntry.name_override",
+            ".xai.ezer.tools.v1.ToolConfigEntry.name_override",
             "#[serde(default)]",
         )
         .field_attribute(
-            ".xai.grok.tools.v1.ToolConfigEntry.params_name_overrides",
+            ".xai.ezer.tools.v1.ToolConfigEntry.params_name_overrides",
             "#[serde(default)]",
         )
         .field_attribute(
-            ".xai.grok.tools.v1.ToolConfigEntry.behavior_version",
+            ".xai.ezer.tools.v1.ToolConfigEntry.behavior_version",
             "#[serde(default)]",
         )
         .field_attribute(
-            ".xai.grok.tools.v1.ToolConfigEntry.description_override",
+            ".xai.ezer.tools.v1.ToolConfigEntry.description_override",
             "#[serde(default)]",
         )
         .field_attribute(
-            ".xai.grok.tools.v1.FinalizeToolServerConfigRequest.client_callback_addr",
+            ".xai.ezer.tools.v1.FinalizeToolServerConfigRequest.client_callback_addr",
             "#[serde(default)]",
         )
         .field_attribute(
-            ".xai.grok.tools.v1.FinalizeToolServerConfigRequest.session_id",
+            ".xai.ezer.tools.v1.FinalizeToolServerConfigRequest.session_id",
             "#[serde(default)]",
         )
         .field_attribute(
-            ".xai.grok.tools.v1.FinalizeToolServerConfigRequest.client_callback_secret",
+            ".xai.ezer.tools.v1.FinalizeToolServerConfigRequest.client_callback_secret",
             "#[serde(default)]",
         )
         .field_attribute(
-            ".xai.grok.tools.v1.FinalizeToolServerConfigResponse.callback_status",
+            ".xai.ezer.tools.v1.FinalizeToolServerConfigResponse.callback_status",
             "#[serde(default)]",
         )
         .compile_protos(&["proto/grok-tools.proto"], &["proto/"])

@@ -225,8 +225,8 @@ impl WorktreeDb {
             .with_context(|| format!("failed to set journal mode {}", mode.as_ref()))
     }
 
-    /// Open `~/.grok/worktrees.db` via `resolve_grok_home` (`$GROK_HOME`, else
-    /// `<home>/.grok`). Resolved fresh each call for test overrides. Each call
+    /// Open `~/.ezer/worktrees.db` via `resolve_grok_home` (`$GROK_HOME`, else
+    /// `<home>/.ezer`). Resolved fresh each call for test overrides. Each call
     /// opens its own connection — hot paths should cache the instance.
     pub fn open_default() -> Result<Self> {
         Self::open(&resolve_grok_home()?)
@@ -445,7 +445,7 @@ pub fn now_epoch_secs() -> i64 {
     crate::time::epoch_secs()
 }
 
-/// Resolve the grok home: `$GROK_HOME`, else `<home>/.grok`.
+/// Resolve the ezer home: `$GROK_HOME`, else `<home>/.ezer`.
 pub fn resolve_grok_home() -> Result<PathBuf> {
     xai_dirs::resolve_grok_home()
         .context("neither $GROK_HOME nor a home directory could be resolved")
@@ -468,7 +468,7 @@ pub(crate) struct GrokHomeFixture {
     prev_grove_data_dir: Option<std::ffi::OsString>,
     prev_home: Option<std::ffi::OsString>,
     touched_grove_env: bool,
-    /// The isolated grok home; pass to `WorktreeDb::open` to read the same DB
+    /// The isolated ezer home; pass to `WorktreeDb::open` to read the same DB
     /// `open_default()` writes to.
     pub home: PathBuf,
     _tmp: tempfile::TempDir,
@@ -479,7 +479,7 @@ impl GrokHomeFixture {
     pub(crate) fn new() -> Self {
         let lock = GROK_HOME_ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
         let tmp = tempfile::TempDir::new().unwrap();
-        let home = tmp.path().join("grok-home");
+        let home = tmp.path().join("ezer-home");
         std::fs::create_dir_all(&home).unwrap();
         // Warm journal-mode + schema before GROK_HOME is visible, so the hot
         // loop skips retry sleeps. This open is exclusive; the retry is the

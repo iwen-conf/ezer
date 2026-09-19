@@ -1078,10 +1078,10 @@ mod tests {
         let tmp = tempfile::TempDir::new().unwrap();
         std::fs::write(tmp.path().join("notes.md"), "").unwrap();
 
-        let _env = xai_grok_test_support::EnvGuard::set("GROK_SUGGEST_TEST_DIR", tmp.path());
+        let _env = xai_grok_test_support::EnvGuard::set("EZER_SUGGEST_TEST_DIR", tmp.path());
         let ctx = SuggestContext::new(
-            "cat $GROK_SUGGEST_TEST_DIR/no".into(),
-            "cat $GROK_SUGGEST_TEST_DIR/no".len(),
+            "cat $EZER_SUGGEST_TEST_DIR/no".into(),
+            "cat $EZER_SUGGEST_TEST_DIR/no".len(),
             "/ignored".into(),
         );
         let results = FilePathProvider.suggest(&ctx).await;
@@ -1091,7 +1091,7 @@ mod tests {
         };
         assert_eq!(
             r.token_text.as_deref(),
-            Some("$GROK_SUGGEST_TEST_DIR/notes.md")
+            Some("$EZER_SUGGEST_TEST_DIR/notes.md")
         );
     }
 

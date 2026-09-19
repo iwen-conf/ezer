@@ -158,7 +158,7 @@ fn remaining_millis_ceil(remaining: Duration) -> i32 {
 }
 
 /// The descriptor crossterm reads key events from (`tty_fd`): stdin when it is a terminal, else the controlling tty.
-/// A drain must read that same source; `grok </dev/null` would otherwise hit EOF at once and leave the reply to the shell.
+/// A drain must read that same source; `ezer </dev/null` would otherwise hit EOF at once and leave the reply to the shell.
 #[cfg(unix)]
 pub(crate) enum TtyInput {
     Stdin,

@@ -3,7 +3,7 @@ use super::*;
 #[test]
 fn revalidate_refuses_replaced_directory() {
     let root = std::env::temp_dir().join(format!(
-        "grok-id-race-{}-{}",
+        "ezer-id-race-{}-{}",
         std::process::id(),
         std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
@@ -30,7 +30,7 @@ fn revalidate_refuses_replaced_directory() {
 #[test]
 fn revalidate_refuses_symlink_swap() {
     let root = std::env::temp_dir().join(format!(
-        "grok-id-symlink-{}-{}",
+        "ezer-id-symlink-{}-{}",
         std::process::id(),
         std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
@@ -59,7 +59,7 @@ fn revalidate_refuses_symlink_swap() {
 #[test]
 fn capture_refuses_hardlinked_regular_file() {
     let root = std::env::temp_dir().join(format!(
-        "grok-hardlink-{}-{}",
+        "ezer-hardlink-{}-{}",
         std::process::id(),
         std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
@@ -84,7 +84,7 @@ fn capture_refuses_hardlinked_regular_file() {
 #[cfg(target_os = "linux")]
 fn revalidate_rejects_late_json_file_after_plan_capture() {
     let root = std::env::temp_dir().join(format!(
-        "grok-late-json-{}-{}",
+        "ezer-late-json-{}-{}",
         std::process::id(),
         std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
@@ -124,7 +124,7 @@ fn revalidate_rejects_late_json_file_after_plan_capture() {
 #[test]
 fn hardlinked_discovery_json_under_hooks_dir_refused() {
     let root = std::env::temp_dir().join(format!(
-        "grok-hl-json-{}-{}",
+        "ezer-hl-json-{}-{}",
         std::process::id(),
         std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
@@ -152,7 +152,7 @@ fn hardlinked_discovery_json_under_hooks_dir_refused() {
 #[test]
 fn reject_hardlinked_files_on_registry_source() {
     let root = std::env::temp_dir().join(format!(
-        "grok-hl-src-{}-{}",
+        "ezer-hl-src-{}-{}",
         std::process::id(),
         std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)

@@ -134,13 +134,13 @@ pub struct PromptContext {
     /// Whether the agent is running in a non-interactive session (headless / SDK / stdio / generic-ACP).
     #[serde(default)]
     pub is_non_interactive: bool,
-    /// Identity in the primary grok-build system prompt (`You are <label>…`).
+    /// Identity in the primary ezer-build system prompt (`You are <label>…`).
     /// Not the UI picker name. Defaults to [`DEFAULT_SYSTEM_PROMPT_LABEL`].
     #[serde(default = "default_system_prompt_label")]
     pub system_prompt_label: String,
 }
-/// Default identity on trim-tool-descriptions (`You are Grok released by xAI`).
-pub const DEFAULT_SYSTEM_PROMPT_LABEL: &str = "Grok";
+/// Default identity on trim-tool-descriptions (`You are ezer`).
+pub const DEFAULT_SYSTEM_PROMPT_LABEL: &str = "ezer";
 fn default_system_prompt_label() -> String {
     DEFAULT_SYSTEM_PROMPT_LABEL.to_string()
 }
@@ -928,7 +928,7 @@ mod tests {
     #[test]
     fn test_agents_md_paths_use_display_cwd_in_rendered_section() {
         let display_path = "/home/user/my-project";
-        let overlay_path = "/root/.grok/worktrees/my-project/ab-123-a-overlay";
+        let overlay_path = "/root/.ezer/worktrees/my-project/ab-123-a-overlay";
         let ctx = PromptContext {
             agents_md_files: vec![AgentConfigFile {
                 file_name: "AGENTS.md".to_string(),

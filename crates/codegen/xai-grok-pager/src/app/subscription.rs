@@ -14,7 +14,7 @@ use super::actions::Effect;
 use super::app_view::{AppView, AuthState};
 
 /// Default watch cadence.
-/// Overridable via the remote settings `grok_build_settings.subscription_watch_interval_secs` field.
+/// Overridable via the remote settings `ezer_build_settings.subscription_watch_interval_secs` field.
 pub(crate) const SUBSCRIPTION_WATCH_INTERVAL: std::time::Duration =
     std::time::Duration::from_secs(60);
 
@@ -22,7 +22,7 @@ pub(crate) const SUBSCRIPTION_WATCH_INTERVAL: std::time::Duration =
 /// `0` means "disabled" and is special-cased before this clamp.
 pub(crate) const SUBSCRIPTION_WATCH_MIN_INTERVAL_SECS: u64 = 30;
 
-/// Floor for the `GROK_SUBSCRIPTION_WATCH_INTERVAL_SECS` env override (for tests and power users; deliberately below the server floor).
+/// Floor for the `EZER_SUBSCRIPTION_WATCH_INTERVAL_SECS` env override (for tests and power users; deliberately below the server floor).
 const SUBSCRIPTION_WATCH_ENV_MIN_SECS: u64 = 1;
 
 /// Cap on the spacing between watch/focus-triggered checks.
@@ -55,7 +55,7 @@ impl AppView {
     /// Effective watch cadence; `None` means disabled.
     /// Precedence: env override (`0` disables), server override (`0` disables, floor-clamped), default.
     pub fn subscription_watch_interval(&self) -> Option<std::time::Duration> {
-        if let Ok(v) = std::env::var("GROK_SUBSCRIPTION_WATCH_INTERVAL_SECS")
+        if let Ok(v) = std::env::var("EZER_SUBSCRIPTION_WATCH_INTERVAL_SECS")
             && let Ok(secs) = v.trim().parse::<u64>()
         {
             return match secs {

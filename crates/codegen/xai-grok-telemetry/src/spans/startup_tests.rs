@@ -364,7 +364,7 @@ fn slow_phase_warning_fires_once_per_open_phase() {
     );
 }
 
-// phase_durations_ms feeds grok_code.startup.phase_duration; it must key a completed and a still-open phase alike.
+// phase_durations_ms feeds ezer.startup.phase_duration; it must key a completed and a still-open phase alike.
 #[test]
 fn phase_durations_ms_keys_completed_and_open_phases() {
     let p = StartupTimer::new();

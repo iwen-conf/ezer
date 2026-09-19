@@ -106,7 +106,7 @@ pub struct WorkspaceEnvironment {
     pub principal_id: Option<String>,
     /// Sandbox id that provisioned this workspace server (from server metadata).
     pub sandbox_id: Option<String>,
-    /// Sandbox profile name (`$GROK_SANDBOX_PROFILE`), e.g. `"devbox"`.
+    /// Sandbox profile name (`$EZER_SANDBOX_PROFILE`), e.g. `"devbox"`.
     pub sandbox_profile: Option<String>,
     /// Whether the workspace is running inside a bubblewrap sandbox.
     pub inside_bwrap: bool,
@@ -141,7 +141,7 @@ impl WorkspaceEnvironment {
             identity,
             server_id,
             sandbox_id,
-            std::env::var("GROK_SANDBOX_PROFILE").ok(),
+            std::env::var("EZER_SANDBOX_PROFILE").ok(),
             xai_grok_sandbox::is_inside_bwrap(),
             std::env::var("HOSTNAME").ok().filter(|h| !h.is_empty()),
             repo_root,

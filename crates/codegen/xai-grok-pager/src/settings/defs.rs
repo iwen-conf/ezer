@@ -34,13 +34,13 @@ const THEME_CHOICES: &[EnumChoice] = &[
         description: "Follow system dark/light appearance.",
     },
     EnumChoice {
-        canonical: "groknight",
-        display: "Grok Night",
+        canonical: "ezernight",
+        display: "ezer Night",
         description: "Neutral dark with magenta accent.",
     },
     EnumChoice {
-        canonical: "grokday",
-        display: "Grok Day",
+        canonical: "ezerday",
+        display: "ezer Day",
         description: "Light theme for bright environments.",
     },
     EnumChoice {
@@ -258,12 +258,12 @@ const SCREEN_MODE_CHOICES: &[EnumChoice] = &[
     EnumChoice {
         canonical: "fullscreen",
         display: "Fullscreen",
-        description: "Open plain grok in the standard fullscreen TUI. Default when unset.",
+        description: "Open plain ezer in the standard fullscreen TUI. Default when unset.",
     },
     EnumChoice {
         canonical: "minimal",
         display: "Minimal",
-        description: "Open plain grok in scrollback-native (minimal) mode.",
+        description: "Open plain ezer in scrollback-native (minimal) mode.",
     },
 ];
 
@@ -422,13 +422,13 @@ const VOICE_STT_LANGUAGE_CHOICES: &[EnumChoice] = &[
 /// There is no dark/light filtering: the user can pair any theme with any system-appearance bucket.
 const CONCRETE_THEME_CHOICES: &[EnumChoice] = &[
     EnumChoice {
-        canonical: "groknight",
-        display: "Grok Night",
+        canonical: "ezernight",
+        display: "ezer Night",
         description: "Neutral dark with magenta accent.",
     },
     EnumChoice {
-        canonical: "grokday",
-        display: "Grok Day",
+        canonical: "ezerday",
+        display: "ezer Day",
         description: "Light theme for bright environments.",
     },
     EnumChoice {
@@ -493,7 +493,7 @@ pub fn default_settings() -> Vec<SettingMeta> {
             category: SettingCategory::Appearance,
             owner: SettingOwner::Shell,
             label: "Default screen mode",
-            description: "How plain grok opens next time: Fullscreen (default when unset) or \
+            description: "How plain ezer opens next time: Fullscreen (default when unset) or \
                           Minimal. Writes [ui] screen_mode in config.toml. Restart required. \
                           Switch this session only with /minimal or /fullscreen.",
             keywords: &[
@@ -686,8 +686,8 @@ pub fn default_settings() -> Vec<SettingMeta> {
                 "light",
             ],
             kind: SettingKind::Enum {
-                // `Option<String>`: `None` resolves to "groknight"
-                default: "groknight",
+                // `Option<String>`: `None` resolves to "ezernight"
+                default: "ezernight",
                 choices: THEME_CHOICES,
                 supports_preview: true,
             },
@@ -702,8 +702,8 @@ pub fn default_settings() -> Vec<SettingMeta> {
             description: "Theme to use when the system is in dark mode (only with theme=auto).",
             keywords: &["auto", "dark", "theme", "system", "appearance", "night"],
             kind: SettingKind::Enum {
-                // `Option<String>`: `None` falls back to "groknight"
-                default: "groknight",
+                // `Option<String>`: `None` falls back to "ezernight"
+                default: "ezernight",
                 choices: CONCRETE_THEME_CHOICES,
                 supports_preview: true,
             },
@@ -718,8 +718,8 @@ pub fn default_settings() -> Vec<SettingMeta> {
             description: "Theme to use when the system is in light mode (only with theme=auto).",
             keywords: &["auto", "light", "theme", "system", "appearance", "day"],
             kind: SettingKind::Enum {
-                // `Option<String>`: `None` falls back to "grokday"
-                default: "grokday",
+                // `Option<String>`: `None` falls back to "ezerday"
+                default: "ezerday",
                 choices: CONCRETE_THEME_CHOICES,
                 supports_preview: true,
             },
@@ -834,7 +834,7 @@ pub fn default_settings() -> Vec<SettingMeta> {
             owner: SettingOwner::Shell,
             label: "Default model",
             description: "Model used for new sessions. Changing this also switches the active session. Pick `(no override)` to clear.",
-            keywords: &["model", "default", "agent", "llm", "grok", "switch"],
+            keywords: &["model", "default", "agent", "llm", "ezer", "switch"],
             kind: SettingKind::DynamicEnum {
                 default: "",
                 source: DynamicEnumSource::ActiveModelCatalog,
@@ -1392,7 +1392,7 @@ pub fn default_settings() -> Vec<SettingMeta> {
             category: SettingCategory::Editor,
             owner: SettingOwner::Shell,
             label: "Voice language",
-            description: "Speech-to-text language for voice dictation (Grok STT). \
+            description: "Speech-to-text language for voice dictation (ezer STT). \
                           English by default; System uses your locale when supported. \
                           Sets formatting language for numbers and currencies.",
             keywords: &["voice", "language", "locale", "dictation", "stt", "speech"],
@@ -1527,7 +1527,7 @@ pub fn default_settings() -> Vec<SettingMeta> {
             category: SettingCategory::Advanced,
             owner: SettingOwner::Shell,
             label: "SSH wrap",
-            description: "Show a `/doctor` tip when an SSH session is not using `grok wrap`.",
+            description: "Show a `/doctor` tip when an SSH session is not using `ezer wrap`.",
             keywords: &[
                 "ssh",
                 "wrap",

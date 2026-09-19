@@ -1,4 +1,4 @@
-//! The Grok Build backend: xAI OAuth2, enterprise OIDC, the operator's auth binary, or a devbox.
+//! The ezer backend: xAI OAuth2, enterprise OIDC, the operator's auth binary, or a devbox.
 
 use std::sync::Arc;
 

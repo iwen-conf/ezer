@@ -2,9 +2,9 @@
 
 <h1>ezer</h1>
 
-**ezer** is a standalone terminal AI coding agent, forked from Grok Build.
+**ezer** is a standalone terminal AI coding agent.
 It keeps the TUI, agent orchestration, tools, sessions, skills, headless mode,
-and ACP — without requiring an xAI / grok.com account.
+and ACP — without requiring an xAI account.
 
 [Building from source](#building-from-source) ·
 [Configuration](#configuration) ·
@@ -16,14 +16,14 @@ and ACP — without requiring an xAI / grok.com account.
 
 ---
 
-## What changed from Grok Build
+## Standalone defaults
 
-- Config home is **`~/.ezer/`** (`EZER_HOME` override). ezer does **not** default-read or write `~/.grok`.
+- Config home is **`~/.ezer/`** (`EZER_HOME` override).
 - First launch is **BYOK-first**: OpenAI-compatible Responses API, no browser login wall.
 - Default wire protocol for custom models is **`POST /v1/responses`** (Chat Completions remains available).
 - The CLI binary is **`ezer`**.
 
-Optional xAI / grok.com OAuth still exists behind `EZER_ENABLE_XAI_LOGIN=1` (or `ezer login --force-login`) and never blocks startup.
+Optional xAI OAuth still exists behind `EZER_ENABLE_XAI_LOGIN=1` (or `ezer login --force-login`) and never blocks startup.
 
 ## Building from source
 
@@ -49,7 +49,7 @@ On first launch (when `$EZER_HOME` is unset or points at an empty home), ezer wr
 
 ### WorkBuddy2API-Hub / OpenAI Responses gateway
 
-Default and primary wire protocol is **`POST /v1/responses`** (SSE). Session title/summary uses this same model — it does **not** call built-in `grok-4.6`.
+Default and primary wire protocol is **`POST /v1/responses`** (SSE). Session title/summary uses the active BYOK model.
 
 ```toml
 # ~/.ezer/config.toml
@@ -175,16 +175,15 @@ ezer client inject (do not remove): `xai_grok_sampler::client::inject_item_id_fr
 | `function_call_arguments.*` omits `item_id`, sends `call_id` | Inject `item_id` from `call_id` (or `""`) | Emit `item_id` as above |
 | Empty `finish_reason` on some Chat Completions streams | Treat as unset | Prefer Responses; or omit empty `finish_reason` |
 | Rich `/v1/models` (`id` only, dotted slugs) | Parse `id` as the wire model; default `api_backend = responses` | Keep `id` as the wire slug (`deepseek-v4.1-flash`, `hy4-preview-f`, `hy3`) |
-| Session title using compiled `grok-4.6` | Use the active BYOK model (avoids 402 on free models) | n/a (client-only) |
+| Session title using a compiled-in aux slug | Use the active BYOK model (avoids 402 on free models) | n/a (client-only) |
 
 **Home override:**
 
 ```sh
 export EZER_HOME="$HOME/.ezer"   # default
-# $GROK_HOME is a deprecated alias and is not the default path
 ```
 
-Project-local config is read from `.ezer/config.toml` first, then `.grok/config.toml`.
+Project-local config is read from `.ezer/config.toml` in the workspace, then `~/.ezer/config.toml`.
 
 ## Documentation
 
@@ -227,7 +226,7 @@ cargo fmt --all               # rustfmt.toml at the repo root
 First-party code in this repository is licensed under the **Apache License,
 Version 2.0** — see [`LICENSE`](LICENSE).
 
-This tree is a fork of SpaceXAI Grok Build. Third-party and vendored code remains under its original licenses. See:
+Third-party and vendored code remains under its original licenses. See:
 
 - [`THIRD-PARTY-NOTICES`](THIRD-PARTY-NOTICES)
 - [`crates/codegen/xai-grok-tools/THIRD_PARTY_NOTICES.md`](crates/codegen/xai-grok-tools/THIRD_PARTY_NOTICES.md)

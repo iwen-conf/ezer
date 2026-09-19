@@ -207,7 +207,7 @@ fn workspace_dashboard_renders_snapshot_member_with_archive_control() {
             origin: xai_grok_dashboard_store::MemberOrigin::Local,
             cwd: Some("/tmp/saved".to_owned()),
             title: Some("Saved workspace session".to_owned()),
-            model: Some("grok-test".to_owned()),
+            model: Some("ezer-test".to_owned()),
             last_turn_summary: Some("Stored summary".to_owned()),
             is_worktree: false,
             last_change_unix_ms: 1_725_000_000_000,
@@ -2198,14 +2198,14 @@ fn feedback_badge_renders_verbatim_in_neutral_color() {
     let theme = Theme::current();
     let mut state = DashboardState::new();
     let check = crate::glyphs::check_mark();
-    state.error_toast = Some(format!("{check} Theme: Grok Day"));
+    state.error_toast = Some(format!("{check} Theme: ezer Day"));
     let _ = render_dispatch(&mut buf, Rect::new(0, 0, 80, 3), &theme, &mut state, None);
 
     let top_row: String = (0..80)
         .map(|x| buf_cell(&buf, x, 0).symbol().to_string())
         .collect();
     assert!(
-        top_row.contains(&format!("{check} Theme: Grok Day")),
+        top_row.contains(&format!("{check} Theme: ezer Day")),
         "badge must paint the message verbatim, got: {top_row:?}",
     );
     assert!(
@@ -3416,7 +3416,7 @@ fn render_location_picker_shows_worktree_toggle_in_repo() {
     let theme = Theme::current();
     let area = Rect::new(0, 0, 80, 24);
     // A temp dir with a `.git` child so the toggle is eligible (hermetic, unlike depending on the test's real cwd being a repo)
-    let repo = std::env::temp_dir().join("grok-loc-wt-toggle-repo-test");
+    let repo = std::env::temp_dir().join("ezer-loc-wt-toggle-repo-test");
     std::fs::create_dir_all(repo.join(".git")).expect("mk .git");
     let mut modal =
         LocationPickerState::new(vec![], repo.clone(), std::collections::HashMap::new());
@@ -3474,7 +3474,7 @@ fn render_location_picker_hides_worktree_toggle_outside_repo() {
     let area = Rect::new(0, 0, 80, 24);
     let mut modal = LocationPickerState::new(
         vec![],
-        std::path::PathBuf::from("/grok-not-a-repo-xyz-12345"),
+        std::path::PathBuf::from("/ezer-not-a-repo-xyz-12345"),
         std::collections::HashMap::new(),
     );
     let mut buf = Buffer::empty(area);

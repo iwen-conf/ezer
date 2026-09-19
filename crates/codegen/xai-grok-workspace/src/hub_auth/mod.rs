@@ -1,7 +1,7 @@
-//! Hub [`AuthProvider`] from `~/.grok/auth.json` for the standalone
+//! Hub [`AuthProvider`] from `~/.ezer/auth.json` for the standalone
 //! `workspace_server` binary: loopback `ws://` uses a plain bearer, otherwise an auto-refreshing OIDC provider that persists rotated tokens.
 //!
-//! The in-leader `grok workspace` exposure does NOT use this path.
+//! The in-leader `ezer workspace` exposure does NOT use this path.
 //! It gets an in-memory provider from the leader's `AuthManager` (see `LeaderAuthProvider`) so it never races the leader's own auth.json writer.
 
 use std::collections::BTreeMap;
@@ -82,11 +82,11 @@ struct AuthEntry {
 
 pub fn default_auth_path() -> anyhow::Result<PathBuf> {
     let grok = xai_grok_config::user_grok_home()
-        .ok_or_else(|| anyhow::anyhow!("no user grok home (set $GROK_HOME or $HOME)"))?;
+        .ok_or_else(|| anyhow::anyhow!("no user ezer home (set $GROK_HOME or $HOME)"))?;
     Ok(grok.join("auth.json"))
 }
 
-/// The `grok login` session [`provider`] would build from an auth file: which scope entry, and whose.
+/// The `ezer login` session [`provider`] would build from an auth file: which scope entry, and whose.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct LoginSession {
     /// The `auth.json` scope key the entry lives under; refreshes are persisted back to it.
@@ -119,7 +119,7 @@ pub fn login_session(auth_path: &Path) -> anyhow::Result<Option<LoginSession>> {
 
 /// The session under one scope key of `auth_path`, or `None` when there is no file, no such entry,
 /// or the entry is not an OIDC session. For watching the entry a provider was built from: a
-/// `grok logout` removes it, a `grok login` as someone else replaces its identity.
+/// `ezer logout` removes it, a `ezer login` as someone else replaces its identity.
 ///
 /// # Errors
 ///
@@ -143,13 +143,13 @@ pub fn login_session_at(auth_path: &Path, scope_key: &str) -> anyhow::Result<Opt
 fn read_auth_entry(path: &Path) -> anyhow::Result<(String, AuthEntry)> {
     let Some(entries) = read_auth_entries_if_present(path)? else {
         anyhow::bail!(
-            "No auth credentials found at {}. Run `grok login` first.",
+            "No auth credentials found at {}. Run `ezer login` first.",
             path.display()
         );
     };
     select_login_entry(entries).ok_or_else(|| {
         anyhow::anyhow!(
-            "no OIDC auth entry found in {}. Run `grok login` first.",
+            "no OIDC auth entry found in {}. Run `ezer login` first.",
             path.display()
         )
     })
@@ -293,7 +293,7 @@ fn build_oidc_provider(
 /// Losing one persist is recoverable (see [`write_refreshed_token`]); stalling the persist thread for a minute is not worth it.
 const AUTH_LOCK_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(15);
 
-/// RAII flock on the sibling `auth.json.lock`, the same advisory lock every grok-shell `auth.json` writer takes.
+/// RAII flock on the sibling `auth.json.lock`, the same advisory lock every ezer-shell `auth.json` writer takes.
 /// Polls `try_lock` rather than a blocking `flock` to bound the wait.
 /// Never breaks a held lock: a stale holder here would be the shell mid-refresh, exactly the writer we must not race.
 struct AuthFileLockGuard {
@@ -351,7 +351,7 @@ fn lock_inode_is_live(_file: &std::fs::File, _path: &Path) -> bool {
 }
 
 /// `owner_user_id` is the account this provider was built for: an entry that has since changed hands
-/// (a `grok login` as someone else reusing the scope key) is left alone, because writing this
+/// (a `ezer login` as someone else reusing the scope key) is left alone, because writing this
 /// session's rotated chain over theirs would leave a hybrid entry — their identity, our tokens.
 /// An empty owner (the entry named no account) disables that check.
 pub(crate) fn write_refreshed_token(
@@ -461,7 +461,7 @@ fn write_json_atomic(path: &Path, value: &serde_json::Value) -> anyhow::Result<(
     Ok(())
 }
 
-/// Hub auth provider for `hub_url`. `auth_config` overrides `~/.grok/auth.json`.
+/// Hub auth provider for `hub_url`. `auth_config` overrides `~/.ezer/auth.json`.
 /// `refresh_cfg.enabled` selects the workspace refresher; the SDK provider is the kill-switch. Loopback `ws://` stays on a static bearer.
 pub fn provider(
     hub_url: &Url,
@@ -547,9 +547,9 @@ mod tests {
         let path = write_auth_json(
             dir.path(),
             r#"{
-                "grok-shell": { "key": "eyJ.older", "user_id": "u-old", "refresh_token": "rt1", "oidc_issuer": "https://auth.x.ai", "oidc_client_id": "grok-cli", "expires_at": "2026-01-01T00:00:00Z" },
+                "ezer-shell": { "key": "eyJ.older", "user_id": "u-old", "refresh_token": "rt1", "oidc_issuer": "https://auth.x.ai", "oidc_client_id": "ezer-cli", "expires_at": "2026-01-01T00:00:00Z" },
                 "other": { "key": "eyJ.newer", "user_id": "u-new", "refresh_token": "rt2", "oidc_issuer": "https://auth.x.ai", "expires_at": "2026-06-01T00:00:00Z" },
-                "grok-desktop": { "key": "eyJ.bearer-only", "user_id": "u-app" }
+                "ezer-desktop": { "key": "eyJ.bearer-only", "user_id": "u-app" }
             }"#,
         );
         let session = login_session(&path).unwrap().expect("a session");
@@ -569,7 +569,7 @@ mod tests {
             }
         );
 
-        let bearer_only = write_auth_json(dir.path(), r#"{ "grok-desktop": { "key": "eyJ.x" } }"#);
+        let bearer_only = write_auth_json(dir.path(), r#"{ "ezer-desktop": { "key": "eyJ.x" } }"#);
         assert_eq!(
             login_session(&bearer_only).unwrap(),
             None,
@@ -615,8 +615,8 @@ mod tests {
         let path = write_auth_json(
             dir.path(),
             r#"{
-                "grok-shell": { "key": "eyJ.a", "user_id": "u-a", "refresh_token": "rt", "oidc_issuer": "https://auth.x.ai", "oidc_client_id": "grok-cli" },
-                "grok-desktop": { "key": "eyJ.bearer-only", "user_id": "u-app" }
+                "ezer-shell": { "key": "eyJ.a", "user_id": "u-a", "refresh_token": "rt", "oidc_issuer": "https://auth.x.ai", "oidc_client_id": "ezer-cli" },
+                "ezer-desktop": { "key": "eyJ.bearer-only", "user_id": "u-app" }
             }"#,
         );
         let session = login_session_at(&path, "grok-shell")
@@ -831,7 +831,7 @@ mod tests {
         );
     }
 
-    /// A refresh that lands after `grok login` as someone else reused the scope key must not write
+    /// A refresh that lands after `ezer login` as someone else reused the scope key must not write
     /// the old account's chain into the new account's entry.
     #[test]
     fn write_refreshed_token_leaves_an_entry_that_changed_hands_alone() {
@@ -891,7 +891,7 @@ mod tests {
         );
     }
 
-    /// With several OIDC entries (personal and enterprise login), the latest `expires_at` wins; the user's grok sessions refresh that entry.
+    /// With several OIDC entries (personal and enterprise login), the latest `expires_at` wins; the user's ezer sessions refresh that entry.
     /// Alphabetical selection could adopt a different principal's refresh token and rotate it out from under the shell.
     #[test]
     fn read_auth_entry_prefers_latest_expiry() {

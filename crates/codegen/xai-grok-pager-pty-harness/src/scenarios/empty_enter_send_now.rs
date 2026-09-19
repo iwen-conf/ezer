@@ -73,7 +73,7 @@ pub async fn assert_empty_enter_force_sends_top_queued() -> Result<()> {
         DEFAULT_COLS,
         &content,
         &[],
-        &[("GROK_DOCK", "1")],
+        &[("EZER_DOCK", "1")],
         Some(content.home()),
     )
     .context("spawn pager")?;

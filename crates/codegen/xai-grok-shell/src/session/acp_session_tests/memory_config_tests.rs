@@ -928,7 +928,7 @@ async fn process_force_disable_hides_memory_command_and_refuses_toggle() {
                 !actor
                     .build_local_command_availability(&[])
                     .memory_configured,
-                "`--no-memory` / `GROK_MEMORY=0` hide /memory"
+                "`--no-memory` / `EZER_MEMORY=0` hide /memory"
             );
             let message = actor.memory_toggle(true).await;
             assert!(

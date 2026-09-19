@@ -55,7 +55,7 @@ async fn rewind_after_compaction_with_missing_checkpoint() {
         DEFAULT_COLS,
         &content,
         &[],
-        &[("GROK_COMPACTION_MODE", "summary")],
+        &[("EZER_COMPACTION_MODE", "summary")],
     )
     .expect("spawn pager");
 

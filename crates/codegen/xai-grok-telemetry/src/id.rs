@@ -1,12 +1,12 @@
 use std::sync::{Once, OnceLock};
 
 /// Overrides the agent ID for this process; nothing is computed or persisted.
-const ENV_AGENT_ID: &str = "GROK_AGENT_ID";
+const ENV_AGENT_ID: &str = "EZER_AGENT_ID";
 
 static AGENT_ID: OnceLock<String> = OnceLock::new();
 static AGENT_INSTANCE_ID: OnceLock<String> = OnceLock::new();
 
-/// Returns the stable agent ID: `GROK_AGENT_ID` if set, else the value cached in `$GROK_HOME/agent_id`.
+/// Returns the stable agent ID: `EZER_AGENT_ID` if set, else the value cached in `$GROK_HOME/agent_id`.
 /// Otherwise a machine-derived UUID is computed once and persisted there.
 /// The first call in a process may block while the computation runs; [`prefetch_agent_id`] starts it early.
 pub fn agent_id() -> String {
@@ -319,7 +319,7 @@ mod tests {
 
     #[test]
     fn eacces_parent_is_not_replaceable() {
-        let missing_parent = std::path::Path::new("/no/such/grok/agent_id");
+        let missing_parent = std::path::Path::new("/no/such/ezer/agent_id");
         assert!(
             !cache_error_is_replaceable_leaf(
                 &std::io::Error::new(std::io::ErrorKind::PermissionDenied, "eacces"),
@@ -373,10 +373,10 @@ pub fn has_workspace_env_markers() -> bool {
     std::env::var("XAI_ROOT").is_ok() && std::env::var("XAI_USER").is_ok()
 }
 
-/// Opt-in special-user gate for telemetry (`GROK_TELEMETRY_SPECIAL_USER`).
+/// Opt-in special-user gate for telemetry (`EZER_TELEMETRY_SPECIAL_USER`).
 pub fn is_special_user() -> bool {
     matches!(
-        std::env::var("GROK_TELEMETRY_SPECIAL_USER").as_deref(),
+        std::env::var("EZER_TELEMETRY_SPECIAL_USER").as_deref(),
         Ok("1") | Ok("true") | Ok("TRUE")
     )
 }

@@ -32,7 +32,7 @@ const TRAVEL_FLOOR: usize = 20;
 async fn misclassified_wheel_flood_does_not_teleport_viewport() {
     let (mut harness, _content, top_before) = spawn_bottom_pinned_marker_scrollback_with_env(
         MARKER_COUNT,
-        &[("GROK_SCROLL_SPEED", "100")],
+        &[("EZER_SCROLL_SPEED", "100")],
     )
     .await;
 

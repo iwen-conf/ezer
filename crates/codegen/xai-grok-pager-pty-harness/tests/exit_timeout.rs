@@ -1,5 +1,5 @@
 //! A requested quit exits within the exit timeout even when teardown hangs.
-//! `GROK_TEST_HOLD_TEARDOWN_SECS` supplies the hang; a real `SessionEnd` hook cannot hold teardown past `SESSION_FLUSH_GRACE`.
+//! `EZER_TEST_HOLD_TEARDOWN_SECS` supplies the hang; a real `SessionEnd` hook cannot hold teardown past `SESSION_FLUSH_GRACE`.
 //!
 //! ```bash
 //! cargo test -p xai-grok-pager-pty-harness --test exit_timeout -- --ignored
@@ -68,8 +68,8 @@ async fn spawn_pager_with_teardown_hold() -> Result<(PtyHarness, tempfile::TempD
         &content,
         &[],
         &[
-            ("GROK_EXIT_TIMEOUT_SECS", TIMEOUT_SECS),
-            ("GROK_TEST_HOLD_TEARDOWN_SECS", HOLD_SECS),
+            ("EZER_EXIT_TIMEOUT_SECS", TIMEOUT_SECS),
+            ("EZER_TEST_HOLD_TEARDOWN_SECS", HOLD_SECS),
         ],
         Some(project.path()),
     )?;

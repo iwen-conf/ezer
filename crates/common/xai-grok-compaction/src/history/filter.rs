@@ -1,7 +1,7 @@
 //! Item filtering and user-query extraction for history compaction —
 //! generic over [`CompactionItem`] / [`CompactionItemBuilder`].
 //!
-//! Behavior is byte-for-byte identical for Grok chat (`T = Arc<GrokTurn>`).
+//! Behavior is byte-for-byte identical for ezer chat (`T = Arc<GrokTurn>`).
 
 use tracing::info;
 
@@ -88,15 +88,23 @@ pub fn filter_turns_for_inter_compaction<T: CompactionItemBuilder>(turns: &[T]) 
 /// Everything outside these blocks is returned as `rest`.
 /// If no blocks are found, returns `(None, full_text)`.
 pub fn split_prior_compaction_text(text: &str) -> (Option<String>, String) {
-    let start_tag = "<grok_user_queries>";
-    let end_tag = "</grok_user_queries>";
+    const TAGS: &[(&str, &str)] = &[
+        ("<ezer_user_queries>", "</ezer_user_queries>"),
+        // Legacy transcript prefix from pre-rebrand sessions.
+        ("<grok_user_queries>", "</grok_user_queries>"),
+    ];
+    fn next_block(text: &str, from: usize) -> Option<(usize, &'static str, &'static str)> {
+        TAGS.iter()
+            .filter_map(|(start, end)| text[from..].find(*start).map(|i| (from + i, *start, *end)))
+            .min_by_key(|(abs, _, _)| *abs)
+    }
 
     let mut user_sections = Vec::new();
     let mut rest = String::new();
     let mut cursor = 0;
 
     loop {
-        let Some(start) = text[cursor..].find(start_tag) else {
+        let Some((abs_start, _start_tag, end_tag)) = next_block(text, cursor) else {
             // No more blocks — append remaining text to rest.
             let remaining = text[cursor..].trim();
             if !remaining.is_empty() {
@@ -107,7 +115,6 @@ pub fn split_prior_compaction_text(text: &str) -> (Option<String>, String) {
             }
             break;
         };
-        let abs_start = cursor + start;
 
         let Some(end) = text[abs_start..].find(end_tag) else {
             // Malformed: opening tag without closing tag. Treat rest as non-user content.
@@ -171,7 +178,7 @@ pub fn extract_user_queries_from_turns<T: CompactionItem>(
     user_truncate_chars: u32,
 ) -> Option<String> {
     let threshold = user_truncate_chars as usize;
-    let mut result = String::from("<grok_user_queries>\n");
+    let mut result = String::from("<ezer_user_queries>\n");
     let mut emitted_any = false;
 
     for turn in turns {
@@ -188,7 +195,7 @@ pub fn extract_user_queries_from_turns<T: CompactionItem>(
         }
         emitted_any = true;
 
-        result.push_str("<grok_query>");
+        result.push_str("<ezer_query>");
         match truncate_middle(&text, threshold) {
             Some(truncated) => {
                 info!(
@@ -204,18 +211,18 @@ pub fn extract_user_queries_from_turns<T: CompactionItem>(
             result.push('\n');
             for att_ref in attachments {
                 result.push_str(&format!(
-                    "<grok_file id=\"{}\" name=\"{}\" />\n",
+                    "<ezer_file id=\"{}\" name=\"{}\" />\n",
                     att_ref.id, att_ref.name
                 ));
             }
         }
-        result.push_str("</grok_query>\n");
+        result.push_str("</ezer_query>\n");
     }
 
     if !emitted_any {
         return None;
     }
-    result.push_str("</grok_user_queries>");
+    result.push_str("</ezer_user_queries>");
     Some(result)
 }
 
@@ -501,9 +508,9 @@ mod tests {
     fn extract_user_queries_wraps_single_user_turn() {
         let turns = vec![MockItem::user("hello world")];
         let out = extract_user_queries_from_turns(&turns, 3_000).expect("got block");
-        assert!(out.starts_with("<grok_user_queries>"));
-        assert!(out.ends_with("</grok_user_queries>"));
-        assert!(out.contains("<grok_query>hello world</grok_query>"));
+        assert!(out.starts_with("<ezer_user_queries>"));
+        assert!(out.ends_with("</ezer_user_queries>"));
+        assert!(out.contains("<ezer_query>hello world</ezer_query>"));
     }
 
     #[test]

@@ -1,9 +1,9 @@
 //! Standalone flag resolvers with no `[toolset.*]` key.
 
-const ENV_UNCHARGED_401_PARK: &str = "GROK_UNCHARGED_401_PARK";
+const ENV_UNCHARGED_401_PARK: &str = "EZER_UNCHARGED_401_PARK";
 
 /// Credential-less-401 park kill switch: remote `uncharged_401_park` > default `true`;
-/// `GROK_UNCHARGED_401_PARK=0` forces off. Env (and any config/pin tier — hence not in
+/// `EZER_UNCHARGED_401_PARK=0` forces off. Env (and any config/pin tier — hence not in
 /// `FEATURES`) must never mask a fleet-wide remote kill.
 pub fn resolve_uncharged_401_park(remote: Option<bool>) -> bool {
     resolve_uncharged_401_park_tiers(xai_grok_config::env_bool(ENV_UNCHARGED_401_PARK), remote)

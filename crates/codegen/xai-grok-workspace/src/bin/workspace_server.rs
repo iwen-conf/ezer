@@ -1,6 +1,6 @@
 //! Standalone workspace ToolServer for remote sandboxes.
 //!
-//! Reads OIDC credentials from `~/.grok/auth.json`, connects to a
+//! Reads OIDC credentials from `~/.ezer/auth.json`, connects to a
 //! server, exposes workspace tools, and refreshes tokens automatically.
 #![deny(clippy::indexing_slicing)]
 use clap::Parser;
@@ -103,10 +103,10 @@ struct Args {
     allow_insecure_ws: bool,
     /// Route per-turn uploads through the durable on-disk upload queue (retries and spill-to-disk) instead of the legacy `gcs::upload_bytes` path.
     /// Enabled by default. Accepts `true`/`false`.
-    /// Pass `--upload-queue-enabled false` (or set `GROK_WORKSPACE_UPLOAD_QUEUE_ENABLED=false`) to fall back to the legacy inline path.
+    /// Pass `--upload-queue-enabled false` (or set `EZER_WORKSPACE_UPLOAD_QUEUE_ENABLED=false`) to fall back to the legacy inline path.
     #[arg(
         long,
-        env = "GROK_WORKSPACE_UPLOAD_QUEUE_ENABLED",
+        env = "EZER_WORKSPACE_UPLOAD_QUEUE_ENABLED",
         default_value_t = true,
         action = clap::ArgAction::Set,
     )]
@@ -114,21 +114,21 @@ struct Args {
     /// Fail `session.bind`s without an explicit toolset closed (RPC-only) instead of widening to the built-in default catalog.
     #[arg(long)]
     require_explicit_toolset: bool,
-    /// Trust project-scoped LSP servers from `<repo>/.grok/lsp.json`.
+    /// Trust project-scoped LSP servers from `<repo>/.ezer/lsp.json`.
     /// Defaults off; sandbox opts in only after workspace trust is established.
     #[arg(
         long,
-        env = "GROK_WORKSPACE_PROJECT_LSP_TRUSTED",
+        env = "EZER_WORKSPACE_PROJECT_LSP_TRUSTED",
         default_value_t = false,
         action = clap::ArgAction::Set,
     )]
     project_lsp_trusted: bool,
     /// Confine `x.ai/fs/*` resolution to the workspace root (reject `..`, absolute-outside-root, symlink escapes).
     /// On by default: the standalone server always backs a remote-sandbox workspace, a real tenant boundary.
-    /// Override with `GROK_WORKSPACE_CONFINE_FS_TO_ROOT=false` (e.g. local dev).
+    /// Override with `EZER_WORKSPACE_CONFINE_FS_TO_ROOT=false` (e.g. local dev).
     #[arg(
         long,
-        env = "GROK_WORKSPACE_CONFINE_FS_TO_ROOT",
+        env = "EZER_WORKSPACE_CONFINE_FS_TO_ROOT",
         default_value_t = true,
         action = clap::ArgAction::Set,
     )]
@@ -145,7 +145,7 @@ struct Args {
     #[arg(long, default_value = daemonize::DEFAULT_PIDFILE_PATH)]
     pid_file: PathBuf,
     /// Record `workspace_oom_protect_applied` and lower or recheck `oom_score_adj` to -900.
-    /// Force `GROK_TOOLS_RESET_CHILD_OOM` so shell/pty children reset to 0.
+    /// Force `EZER_TOOLS_RESET_CHILD_OOM` so shell/pty children reset to 0.
     /// Complements always-on self-protect after pre-unshare inheritance; forces the child reset even if the early write failed. Off by default.
     #[arg(long)]
     oom_protect: bool,
@@ -283,8 +283,8 @@ fn main() -> anyhow::Result<()> {
 }
 /// The same binary serves sandbox containers and headless user machines. Only the sandbox launcher
 /// passes a `sandbox_id` in `--metadata`, so that is the opt-in to the sandbox's full catalog and
-/// credential reach; the environment is not a policy input (a `grok --local-workspace` spawned by a
-/// hook or MCP child inherits `GROK_SESSION_ID`). Pickers label the server by the same kind.
+/// credential reach; the environment is not a policy input (a `ezer --local-workspace` spawned by a
+/// hook or MCP child inherits `EZER_SESSION_ID`). Pickers label the server by the same kind.
 fn host_kind_for(metadata: Option<&serde_json::Value>) -> WorkspaceHostKind {
     let is_sandbox = metadata
         .map(WorkspaceServerMetadata::from_metadata)
@@ -295,7 +295,7 @@ fn host_kind_for(metadata: Option<&serde_json::Value>) -> WorkspaceHostKind {
         WorkspaceHostKind::Daemon
     }
 }
-/// Whether to set `GROK_TOOLS_RESET_CHILD_OOM` after the always-on protect attempt.
+/// Whether to set `EZER_TOOLS_RESET_CHILD_OOM` after the always-on protect attempt.
 /// Always-on success must set it so children do not inherit -900.
 /// `--oom-protect` forces the env even when the early write failed (pre-unshare may still have left the score at -900).
 fn should_set_reset_child_oom(early_protect_ok: bool, oom_protect_flag: bool) -> bool {
@@ -331,7 +331,7 @@ async fn run(
     } else {
         tracing::info!("kernel OOM-kill protection not active");
     }
-    let direct_otlp = match std::env::var("GROK_WORKSPACE_OTLP_ENDPOINT") {
+    let direct_otlp = match std::env::var("EZER_WORKSPACE_OTLP_ENDPOINT") {
         Ok(endpoint) if !endpoint.is_empty() => {
             match xai_tracing::init_fastrace(endpoint.clone(), SERVICE_NAME.to_owned(), None) {
                 Ok(()) => {
@@ -349,14 +349,14 @@ async fn run(
     let url = Url::parse(&args.hub_url).map_err(|e| anyhow::anyhow!("invalid --hub-url: {e}"))?;
     {
         use xai_grok_sandbox::{ProfileName, SandboxManager};
-        let profile = match std::env::var("GROK_SANDBOX_PROFILE").ok() {
+        let profile = match std::env::var("EZER_SANDBOX_PROFILE").ok() {
             Some(val) => {
                 let parsed = val
                     .parse::<ProfileName>()
                     .expect("ProfileName::from_str is infallible");
                 if matches!(parsed, ProfileName::Custom(_)) {
                     tracing::warn!(value = %val,
-                        "Unrecognized GROK_SANDBOX_PROFILE, defaulting to workspace");
+                        "Unrecognized EZER_SANDBOX_PROFILE, defaulting to workspace");
                     ProfileName::Workspace
                 } else {
                     parsed
@@ -367,7 +367,7 @@ async fn run(
         };
         let profile_name = profile.to_string();
         if profile == ProfileName::Off {
-            tracing::info!(profile = %profile_name, "Sandbox explicitly disabled via GROK_SANDBOX_PROFILE=off");
+            tracing::info!(profile = %profile_name, "Sandbox explicitly disabled via EZER_SANDBOX_PROFILE=off");
         } else {
             let mut sandbox = SandboxManager::new(profile, &cwd);
             if let Err(e) = sandbox.apply(&cwd) {
@@ -403,7 +403,7 @@ async fn run(
         "Starting workspace server"
     );
     let cwd_display = cwd.display().to_string();
-    let session_id = std::env::var("GROK_SESSION_ID").ok();
+    let session_id = std::env::var("EZER_SESSION_ID").ok();
     let parsed_metadata = match args.metadata {
         Some(json_str) => Some(
             serde_json::from_str(&json_str)

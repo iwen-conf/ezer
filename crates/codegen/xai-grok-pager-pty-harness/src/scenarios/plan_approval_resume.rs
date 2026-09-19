@@ -127,7 +127,7 @@ pub async fn assert_plan_approval_restored_after_resume() -> Result<()> {
 
 /// For every session dir under the sandbox home, write `plan.md` and flip `awaiting_plan_approval` to `true` in `plan_mode.json`.
 fn seed_parked_approval(home: &Path) -> Result<usize> {
-    let sessions_root = home.join(".grok").join("sessions");
+    let sessions_root = home.join(".ezer").join("sessions");
     if !sessions_root.is_dir() {
         bail!(
             "expected sessions under {} after first turn",

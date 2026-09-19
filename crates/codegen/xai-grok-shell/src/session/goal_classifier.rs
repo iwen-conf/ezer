@@ -30,10 +30,10 @@ use xai_grok_tools::implementations::grok_build::task::types::{
 
 /// Default per-goal classifier run cap, a backstop on runaway cost.
 /// The stall early-exit ([`crate::session::goal_tracker::GOAL_CLASSIFIER_STALL_THRESHOLD`]) is the primary, cheaper stop for stuck loops.
-/// `GROK_GOAL_CLASSIFIER_MAX` or remote `goal_classifier_max_runs` can raise it arbitrarily.
+/// `EZER_GOAL_CLASSIFIER_MAX` or remote `goal_classifier_max_runs` can raise it arbitrarily.
 pub(crate) const GOAL_CLASSIFIER_MAX_RUNS_DEFAULT: u32 = 10;
 
-/// Floor for `GROK_GOAL_CLASSIFIER_MAX` / remote `goal_classifier_max_runs`.
+/// Floor for `EZER_GOAL_CLASSIFIER_MAX` / remote `goal_classifier_max_runs`.
 /// Floor 1 keeps the gate live (0 would disable rejection entirely).
 /// There is deliberately no upper ceiling so the cap can be raised arbitrarily via remote/env.
 pub(crate) const GOAL_CLASSIFIER_MAX_RUNS_MIN: u32 = 1;
@@ -72,12 +72,12 @@ const GOAL_CLASSIFIER_SUBAGENT_DESCRIPTION: &str = "goal achievement skeptic";
 
 const GOAL_VERIFIER_PROMPT_TEMPLATE: &str = include_str!("templates/goal_verifier_prompt.md");
 
-/// Override via `GROK_GOAL_VERIFIER_N` (clamped 1..=5) or the remote `goal_verifier_count` setting.
+/// Override via `EZER_GOAL_VERIFIER_N` (clamped 1..=5) or the remote `goal_verifier_count` setting.
 /// A lone outlier in either direction (one rubber-stamp or one false refute) cannot decide the outcome.
 /// At N=2 a 1-1 tie survives, so a single lenient skeptic passes what a single strict one refutes.
 pub(crate) const GOAL_VERIFIER_SKEPTIC_COUNT: u32 = 3;
 
-/// Lower/upper bounds for `GROK_GOAL_VERIFIER_N` / remote `goal_verifier_count`.
+/// Lower/upper bounds for `EZER_GOAL_VERIFIER_N` / remote `goal_verifier_count`.
 /// Five is the practical ceiling: any more is pointless cost and saturates the subagent coordinator.
 pub(crate) const GOAL_VERIFIER_SKEPTIC_MIN: u32 = 1;
 pub(crate) const GOAL_VERIFIER_SKEPTIC_MAX: u32 = 5;

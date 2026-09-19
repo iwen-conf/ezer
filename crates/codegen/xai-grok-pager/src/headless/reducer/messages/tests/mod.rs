@@ -41,7 +41,7 @@ fn web_search_call(id: &str) -> ToolCallEvent {
     }
 }
 
-/// A terminal backend `web_search` `ToolCallUpdate` carrying Grok's nested `WebSearchCall` `raw_output` (`action.query` and `action.sources[].url`).
+/// A terminal backend `web_search` `ToolCallUpdate` carrying ezer's nested `WebSearchCall` `raw_output` (`action.query` and `action.sources[].url`).
 fn web_search_done(id: &str) -> ToolCallUpdateEvent {
     ToolCallUpdateEvent {
         tool_call_id: id.into(),

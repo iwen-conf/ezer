@@ -1,7 +1,7 @@
 //! `lsp` tool - code intelligence via language servers.
 //!
 //! Implementation is in `implementations::lsp`. This module provides the
-//! `LspTool` (Tool trait impl) under the `GrokBuild` namespace.
+//! `LspTool` (Tool trait impl) under the `Ezer` namespace.
 
 use std::sync::Arc;
 
@@ -96,7 +96,7 @@ impl xai_tool_runtime::Tool for LspTool {
                 .ok_or_else(|| {
                     xai_tool_runtime::ToolError::custom(
                         "process_manager",
-                        "LSP tool is unavailable. Configure ~/.grok/lsp.json or <cwd>/.grok/lsp.json and ensure the language server can start.",
+                        "LSP tool is unavailable. Configure ~/.ezer/lsp.json or <cwd>/.ezer/lsp.json and ensure the language server can start.",
                     )
                 })?
                 .clone();

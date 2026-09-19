@@ -126,7 +126,7 @@ fn detect_raw() -> ColorLevel {
     })
 }
 
-/// This never consults stdout, because `grok doctor --json` is commonly piped.
+/// This never consults stdout, because `ezer doctor --json` is commonly piped.
 /// Stderr or an independently opened controlling terminal is sufficient evidence that the process is diagnosing that terminal.
 /// A fully headless invocation is honest about having no color evidence.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

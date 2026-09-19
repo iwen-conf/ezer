@@ -1,4 +1,4 @@
-//! Leader-mode (`grok agent --leader stdio`) test harness.
+//! Leader-mode (`ezer agent --leader stdio`) test harness.
 //!
 //! The fixture owns only subprocess handles it created: one initial persistent leader and each returned stdio client.
 //! Lock-file PIDs are observations only; a detached replacement leader is never adopted or signaled.
@@ -26,11 +26,11 @@ const LEADER_RECONNECTED_METHOD: &str = "x.ai/leader_reconnected";
 
 /// Env var naming the binary that elects/hosts the leader in a two-binary (version-skew) test.
 /// Falls back to [`grok_binary`]'s resolution.
-pub const LEADER_BINARY_ENV: &str = "GROK_BINARY_LEADER";
+pub const LEADER_BINARY_ENV: &str = "EZER_BINARY_LEADER";
 
 /// Env var naming the binary for the second (usually newer) client in a two-binary test.
 /// Falls back to [`grok_binary`]'s resolution.
-pub const CLIENT_BINARY_ENV: &str = "GROK_BINARY_CLIENT";
+pub const CLIENT_BINARY_ENV: &str = "EZER_BINARY_CLIENT";
 
 fn role_binary(env_key: &str) -> PathBuf {
     if let Ok(path) = std::env::var(env_key) {
@@ -101,7 +101,7 @@ impl Drop for FixtureClientRegistration {
     }
 }
 
-/// A `grok agent --leader stdio` client subprocess speaking ACP over pipes. It answers the agent with the
+/// A `ezer agent --leader stdio` client subprocess speaking ACP over pipes. It answers the agent with the
 /// default [`ClientPolicy`], reads its counters from the transcript, and runs every request under a scaled
 /// budget; a timeout, or a failed setup request, panics with the child's stderr.
 pub struct LeaderStdioClient {
@@ -184,13 +184,13 @@ impl LeaderFixture {
         .stdout(std::process::Stdio::null());
         sandbox.apply_to_std_command(&mut cmd);
         cmd.envs(xai_tty_utils::pager_env())
-            .env("GROK_CLI_CHAT_PROXY_BASE_URL", base_url)
-            .env("GROK_XAI_API_BASE_URL", base_url)
-            .env("GROK_MODELS_BASE_URL", base_url)
-            .env("GROK_FEEDBACK_BASE_URL", base_url)
-            .env("GROK_TRACE_UPLOAD_URL", base_url)
+            .env("EZER_CLI_CHAT_PROXY_BASE_URL", base_url)
+            .env("EZER_XAI_API_BASE_URL", base_url)
+            .env("EZER_MODELS_BASE_URL", base_url)
+            .env("EZER_FEEDBACK_BASE_URL", base_url)
+            .env("EZER_TRACE_UPLOAD_URL", base_url)
             .env("XAI_API_KEY", "test-key-for-ci")
-            .env("GROK_LEADER_SOCKET", &socket)
+            .env("EZER_LEADER_SOCKET", &socket)
             .env("RUST_LOG", "xai_grok_shell=debug,xai_grok_login=debug");
         let log_path = sandbox.grok_home().join("leader.log");
         match std::fs::File::create(&log_path) {
@@ -205,7 +205,7 @@ impl LeaderFixture {
         #[allow(clippy::disallowed_methods)]
         let mut child = cmd.spawn()?;
         let pid = child.id();
-        let tree = match TestProcessTree::try_attach(pid, "persistent grok test leader") {
+        let tree = match TestProcessTree::try_attach(pid, "persistent ezer test leader") {
             Ok(tree) => tree,
             Err(error) => {
                 let _ = child.kill();
@@ -564,16 +564,16 @@ impl LeaderStdioClient {
             cmd,
             sandbox,
             TestProcessConfig::new()
-                .label("grok leader stdio client")
+                .label("ezer leader stdio client")
                 .stdin(TestStdin::Piped)
                 .stdout(TestOutput::Piped)
-                .env("GROK_CLI_CHAT_PROXY_BASE_URL", base_url)
-                .env("GROK_XAI_API_BASE_URL", base_url)
-                .env("GROK_MODELS_BASE_URL", base_url)
-                .env("GROK_FEEDBACK_BASE_URL", base_url)
-                .env("GROK_TRACE_UPLOAD_URL", base_url)
+                .env("EZER_CLI_CHAT_PROXY_BASE_URL", base_url)
+                .env("EZER_XAI_API_BASE_URL", base_url)
+                .env("EZER_MODELS_BASE_URL", base_url)
+                .env("EZER_FEEDBACK_BASE_URL", base_url)
+                .env("EZER_TRACE_UPLOAD_URL", base_url)
                 .env("XAI_API_KEY", "test-key-for-ci")
-                .env("GROK_LEADER_SOCKET", leader_socket)
+                .env("EZER_LEADER_SOCKET", leader_socket)
                 .env("RUST_LOG", "xai_grok_shell=debug,xai_grok_login=debug"),
         )
         .map_err(|error| {
@@ -738,7 +738,7 @@ impl LeaderStdioClient {
 }
 
 pub fn leader_lock_path(home: &Path) -> PathBuf {
-    home.join(".grok").join("leader.lock")
+    home.join(".ezer").join("leader.lock")
 }
 
 pub fn read_leader_pid(home: &Path) -> Option<u32> {
@@ -792,7 +792,7 @@ pub async fn wait_for_replay_notifications(
 }
 
 pub fn leader_log(home: &Path) -> String {
-    std::fs::read_to_string(home.join(".grok").join("leader.log")).unwrap_or_default()
+    std::fs::read_to_string(home.join(".ezer").join("leader.log")).unwrap_or_default()
 }
 
 #[cfg(test)]

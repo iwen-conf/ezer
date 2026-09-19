@@ -360,7 +360,7 @@ mod tests {
                 .tools
                 .iter()
                 .any(|tool| tool.kind == Some(ToolKind::Read)),
-            "general-purpose must keep the rest of the grok-build child tools"
+            "general-purpose must keep the rest of the ezer-build child tools"
         );
     }
     #[test]
@@ -427,7 +427,7 @@ mod tests {
         definition
             .tool_config
             .tools
-            .push(ToolConfig::from_id("GrokBuild:workflow"));
+            .push(ToolConfig::from_id("Ezer:workflow"));
         apply_child_tool_policy(&mut definition, None, true);
         assert!(definition.tool_config.tools.iter().all(|tool| {
             tool.kind != Some(ToolKind::Workflow)

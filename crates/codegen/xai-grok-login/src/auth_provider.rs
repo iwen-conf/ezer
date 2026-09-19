@@ -229,7 +229,7 @@ fn scrub_first_party_credentials(cmd: &mut tokio::process::Command) {
 
 /// Spawn `cmd`, capture stdout and stderr under byte caps, and bound the whole run by `timeout`; exceeding the stdout cap is an error. The pipes are read concurrently so a full pipe on one can't deadlock the other.
 /// Past the cap a runaway helper drains to a sink, so it can't wedge the wait. On timeout the child's entire process group is killed.
-/// The helper is a group leader (`detach_command`'s `setsid`), so even a compound `sh -c` helper's grandchildren die with the timeout. That keeps the `GROK_AUTH_PROVIDER_*` credentials in their env from outliving the reported timeout. `kill_on_drop` alone would reap only the direct child.
+/// The helper is a group leader (`detach_command`'s `setsid`), so even a compound `sh -c` helper's grandchildren die with the timeout. That keeps the `EZER_AUTH_PROVIDER_*` credentials in their env from outliving the reported timeout. `kill_on_drop` alone would reap only the direct child.
 async fn run_capped(
     cmd: &mut tokio::process::Command,
     timeout: std::time::Duration,
@@ -346,16 +346,16 @@ async fn mint_provider_token(
         // Reaps the direct child if the future is dropped; `run_capped` additionally kills the whole process group on timeout
         .kill_on_drop(true);
     if mark_expired {
-        cmd.env("GROK_AUTH_EXPIRED", "1");
+        cmd.env("EZER_AUTH_EXPIRED", "1");
     }
     // Like a git credential helper, the command gets the last stored credential back so it can refresh instead of re-authenticating
     if let Some(prev) = previous {
-        cmd.env("GROK_AUTH_PROVIDER_ACCESS_TOKEN", &prev.token);
+        cmd.env("EZER_AUTH_PROVIDER_ACCESS_TOKEN", &prev.token);
         if let Some(refresh) = &prev.refresh_token {
-            cmd.env("GROK_AUTH_PROVIDER_REFRESH_TOKEN", refresh);
+            cmd.env("EZER_AUTH_PROVIDER_REFRESH_TOKEN", refresh);
         }
         if let Some(expires_at) = prev.expires_at {
-            cmd.env("GROK_AUTH_PROVIDER_EXPIRES_AT", expires_at.to_rfc3339());
+            cmd.env("EZER_AUTH_PROVIDER_EXPIRES_AT", expires_at.to_rfc3339());
         }
     }
     xai_grok_tools::util::detach_command(&mut cmd);

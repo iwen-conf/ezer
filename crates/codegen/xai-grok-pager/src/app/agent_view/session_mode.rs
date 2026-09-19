@@ -7,7 +7,7 @@ use crate::app::agent_view::AgentView;
 
 impl AgentView {
     /// Stores the agent's offered modes. A published list drops permission staged by the
-    /// pre-session Grok ring, which has no arm here and would otherwise stick on the prompt row.
+    /// pre-session ezer ring, which has no arm here and would otherwise stick on the prompt row.
     pub(crate) fn apply_session_modes(&mut self, modes: Option<acp::SessionModeState>) -> bool {
         let Some(modes) = modes else {
             return false;

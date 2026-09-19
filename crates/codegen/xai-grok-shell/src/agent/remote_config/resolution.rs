@@ -73,7 +73,7 @@ pub(crate) fn resolve_default_model(
 
     let model_pref = config::resolve_string_flag(
         cfg.default_model_override.as_deref(),
-        "GROK_DEFAULT_MODEL",
+        "EZER_DEFAULT_MODEL",
         cfg.models.default.as_deref(),
         cfg.remote_settings
             .as_ref()

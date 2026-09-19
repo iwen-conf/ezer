@@ -2446,7 +2446,7 @@ fn published_modes_drop_the_permission_the_pre_session_ring_staged() {
     let agent = test_agent(&app, AgentId(0));
     assert!(
         agent.session.is_yolo(),
-        "the Grok ring staged Always-Approve"
+        "the ezer ring staged Always-Approve"
     );
     assert_eq!(Some("always-approve"), agent.deferred_permission_mode);
     assert_eq!(

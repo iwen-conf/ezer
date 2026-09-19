@@ -3,7 +3,7 @@
 use super::common::*;
 
 /// Switching mid-session between models whose agent types differ shows the "requires starting a new session" modal in both directions.
-/// This drives the reverse leg, cursor to grok-build.
+/// This drives the reverse leg, cursor to ezer-build.
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 #[ignore]
 async fn reverse_agent_type_mismatch_cursor_to_default() {

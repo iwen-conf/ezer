@@ -123,7 +123,7 @@ impl ContentController {
 
         let mut sandbox = TestSandbox::builder().mock_url(server.url()).build();
         // Keep unrelated autocomplete work out of PTY timing assertions.
-        sandbox.set_env("GROK_PROMPT_SUGGESTIONS", "false");
+        sandbox.set_env("EZER_PROMPT_SUGGESTIONS", "false");
 
         Ok(Self { server, sandbox })
     }
@@ -133,7 +133,7 @@ impl ContentController {
         self.server.url()
     }
 
-    /// Isolated `$HOME` directory that the pager should use (keeps its ~/.grok
+    /// Isolated `$HOME` directory that the pager should use (keeps its ~/.ezer
     /// cache/state out of the real home during tests).
     pub fn home(&self) -> &Path {
         self.sandbox.home()
@@ -310,7 +310,7 @@ impl ContentController {
         self.server.feedback_posts()
     }
 
-    /// Snapshot of every product-telemetry event posted to `/v1/events` (point `GROK_TELEMETRY_EVENTS_URL` at `{url()}/events`).
+    /// Snapshot of every product-telemetry event posted to `/v1/events` (point `EZER_TELEMETRY_EVENTS_URL` at `{url()}/events`).
     pub fn telemetry_events(&self) -> Vec<serde_json::Value> {
         self.server.telemetry_events()
     }
@@ -351,8 +351,8 @@ mod tests {
         let (path, body) = foreground_request(endpoint);
         reqwest::Client::new()
             .post(format!("{url}{path}"))
-            .header("x-grok-turn-idx", "1")
-            .header("x-grok-req-id", format!("direct-{endpoint:?}"))
+            .header("x-ezer-turn-idx", "1")
+            .header("x-ezer-req-id", format!("direct-{endpoint:?}"))
             .json(&body)
             .send()
             .await

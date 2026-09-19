@@ -126,7 +126,7 @@ impl Default for SearchReplaceParams {
         }
     }
 }
-register_resource!("grok_build", "SearchReplace", SearchReplaceParams);
+register_resource!("ezer_build", "SearchReplace", SearchReplaceParams);
 /// SearchReplace tool — new architecture.
 ///
 /// Replaces an exact string in a file.

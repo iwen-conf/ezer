@@ -7,7 +7,7 @@ use unicode_width::{UnicodeWidthChar, UnicodeWidthStr};
 pub use xai_grok_config::grok_home;
 pub use xai_grok_tools::util::format_bytes;
 
-/// A closed stdout (`grok du | head`) is a clean stop, not a failure.
+/// A closed stdout (`ezer du | head`) is a clean stop, not a failure.
 pub fn ignore_broken_pipe(result: std::io::Result<()>) -> std::io::Result<()> {
     match result {
         Err(e) if e.kind() == std::io::ErrorKind::BrokenPipe => Ok(()),
@@ -15,7 +15,7 @@ pub fn ignore_broken_pipe(result: std::io::Result<()>) -> std::io::Result<()> {
     }
 }
 
-/// Path to `$GROK_HOME/pager.toml`.
+/// Path to `$EZER_HOME/pager.toml`.
 pub fn pager_toml_path() -> PathBuf {
     grok_home().join("pager.toml")
 }
@@ -81,7 +81,7 @@ pub fn display_location_path(path: impl AsRef<Path>) -> String {
     crate::location_path::shorten_location_path(&abbreviate_path(&lossy)).into_owned()
 }
 
-/// True when `path` is under user [`grok_home()`] (not project `{cwd}/.grok`).
+/// True when `path` is under user [`grok_home()`] (not project `{cwd}/.ezer`).
 pub fn is_under_user_grok_home(path: &Path) -> bool {
     path.starts_with(grok_home())
 }
@@ -412,14 +412,14 @@ mod tests {
 
     #[test]
     fn display_user_grok_path_for_custom_home_uses_override_label() {
-        let custom = std::env::temp_dir().join("grok-home-display-regression");
+        let custom = std::env::temp_dir().join("ezer-home-display-regression");
         assert_eq!(
             display_user_grok_path_for(&custom, xai_grok_config::USER_CONFIG_FILENAME),
             "$EZER_HOME/config.toml"
         );
         assert_eq!(
             display_user_grok_path_for(&custom, xai_grok_config::SANDBOX_CONFIG_FILENAME),
-            format!("$GROK_HOME/{}", xai_grok_config::SANDBOX_CONFIG_FILENAME)
+            format!("$EZER_HOME/{}", xai_grok_config::SANDBOX_CONFIG_FILENAME)
         );
     }
 
@@ -432,7 +432,7 @@ mod tests {
         if home.is_empty() {
             return;
         }
-        let full = format!("{home}/.grok/memory/MEMORY.md");
+        let full = format!("{home}/.ezer/memory/MEMORY.md");
         let abbreviated = abbreviate_path(&full);
         assert!(
             abbreviated.contains("memory/MEMORY.md"),
@@ -449,12 +449,12 @@ mod tests {
             return;
         }
         // Stay outside grok_home so this hits the $HOME branch, not ~/.grok.
-        let full = home.join("not-grok-home").join("file.txt");
+        let full = home.join("not-ezer-home").join("file.txt");
         let full_str = full.to_string_lossy();
         let abbreviated = abbreviate_path(&full_str);
         let expected = format!(
             "~/{}",
-            Path::new("not-grok-home").join("file.txt").display()
+            Path::new("not-ezer-home").join("file.txt").display()
         );
         assert_eq!(abbreviated.as_ref(), expected);
     }

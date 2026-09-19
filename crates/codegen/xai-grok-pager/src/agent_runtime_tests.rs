@@ -4,7 +4,7 @@ use clap::Parser;
 use pretty_assertions::assert_eq;
 fn agent_args(mode: &[&str]) -> Box<AgentArgs> {
     let parsed =
-        PagerArgs::try_parse_from(["grok", "agent"].into_iter().chain(mode.iter().copied()))
+        PagerArgs::try_parse_from(["ezer", "agent"].into_iter().chain(mode.iter().copied()))
             .expect("parse agent arguments");
     let Some(Command::Agent(args)) = parsed.command else {
         panic!("agent subcommand required");

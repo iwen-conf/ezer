@@ -1,4 +1,4 @@
-//! Actor-based sampling layer for xAI grok.
+//! Actor-based sampling layer for xAI ezer.
 //!
 //! This crate holds the HTTP streaming and retry logic extracted from `xai-grok-shell`'s session actor.
 //! It is built on the same actor pattern as `xai-hunk-tracker`.

@@ -41,9 +41,9 @@ pub const SESSION_START_AUTH_DEADLINE: std::time::Duration = std::time::Duration
 
 pub const SESSION_START_SYNC_DEADLINE: std::time::Duration = std::time::Duration::from_secs(8);
 
-/// Base 1s; `GROK_DEPLOYMENT_CONFIG_BACKOFF_MS` overrides it for tests.
+/// Base 1s; `EZER_DEPLOYMENT_CONFIG_BACKOFF_MS` overrides it for tests.
 fn retry_backoff(attempt: u32) -> std::time::Duration {
-    let base = std::env::var("GROK_DEPLOYMENT_CONFIG_BACKOFF_MS")
+    let base = std::env::var("EZER_DEPLOYMENT_CONFIG_BACKOFF_MS")
         .ok()
         .and_then(|s| s.parse::<u64>().ok())
         .unwrap_or(1000);
@@ -151,7 +151,7 @@ async fn fetch_managed_config_once(
 
 /// Clamped >= 1s: `tokio::time::interval` panics on a zero period.
 fn managed_config_sync_interval() -> std::time::Duration {
-    if let Ok(s) = std::env::var("GROK_DEPLOYMENT_CONFIG_REFRESH_INTERVAL_SECS")
+    if let Ok(s) = std::env::var("EZER_DEPLOYMENT_CONFIG_REFRESH_INTERVAL_SECS")
         && let Ok(secs) = s.parse::<u64>()
     {
         return std::time::Duration::from_secs(secs.max(1));

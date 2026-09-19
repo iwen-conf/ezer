@@ -14,14 +14,14 @@ const SETTINGS_CACHE_MAX_BYTES: u64 = 1 << 20;
 /// Current signing key. To rotate: set this to the new key and keep the old
 /// key in SETTINGS_CACHE_READ_HMAC_KEYS so already written caches still verify.
 const SETTINGS_CACHE_WRITE_HMAC_KEY: &[u8] =
-    b"grok-shell-settings-cache-hmac-v1-ba6c43d3-404f-4b5c-b0cd-df09b2f5bdf4";
+    b"ezer-shell-settings-cache-hmac-v1-ba6c43d3-404f-4b5c-b0cd-df09b2f5bdf4";
 /// Keys accepted on read, newest first: the write key plus any superseded key
 /// retained for a rotation window.
 const SETTINGS_CACHE_READ_HMAC_KEYS: &[&[u8]] = &[SETTINGS_CACHE_WRITE_HMAC_KEY];
 
-/// The disk settings cache is off when `GROK_SETTINGS_CACHE=false`.
+/// The disk settings cache is off when `EZER_SETTINGS_CACHE=false`.
 pub(in crate::agent::remote_config) fn settings_cache_disabled() -> bool {
-    crate::agent::config::env_bool("GROK_SETTINGS_CACHE") == Some(false)
+    crate::agent::config::env_bool("EZER_SETTINGS_CACHE") == Some(false)
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -531,7 +531,7 @@ mod settings_cache_tests {
     #[test]
     fn read_keys_accept_a_superseded_signing_key() {
         use hmac::Mac;
-        let old_key: &[u8] = b"grok-shell-settings-cache-hmac-v0-superseded";
+        let old_key: &[u8] = b"ezer-shell-settings-cache-hmac-v0-superseded";
         let payload = b"cache-payload";
         let mut mac = HmacSha256::new_from_slice(old_key).unwrap();
         mac.update(payload);

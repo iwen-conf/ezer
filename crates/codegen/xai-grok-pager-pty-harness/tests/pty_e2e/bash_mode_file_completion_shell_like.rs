@@ -12,7 +12,7 @@ const INNER_SENTINEL: &str = "INNER-NOTE-SENTINEL-4173";
 fn suggestions_env(content: &ContentController) -> Vec<(String, String)> {
     vec![
         ("SHELL".into(), "/bin/bash".into()),
-        ("GROK_SUGGESTIONS".into(), "0".into()),
+        ("EZER_SUGGESTIONS".into(), "0".into()),
         (
             "HISTFILE".into(),
             content

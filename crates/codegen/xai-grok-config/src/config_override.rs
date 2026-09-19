@@ -97,7 +97,7 @@ pub const CAMPAIGN_STRIP_KEYS: &[&str] = &[
     "grok_com_config",
 ];
 
-/// Dotted paths the `GROK_CONFIG` / `GROK_CONFIG_PATH` overlay may set.
+/// Dotted paths the `EZER_CONFIG` / `EZER_CONFIG_PATH` overlay may set.
 /// No entry is a prefix of another: a top-level key is either a whole-subtree keep or deeper-only, never both.
 /// Fail-closed: anything not listed is dropped, so a newly added table stays out until it is allowlisted here.
 pub const OVERLAY_ALLOW_PATHS: &[&[&str]] = &[

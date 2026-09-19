@@ -1,4 +1,4 @@
-//! `grok update` is a recovery command: a config failure must not block it.
+//! `ezer update` is a recovery command: a config failure must not block it.
 //!
 //! A local server serves the binary's own version as the channel pointer, so a healthy run exits 0 ("already up to date").
 //! A run with a corrupt config must exit 0 too; reintroducing a config `?` fails exactly that run.
@@ -34,7 +34,7 @@ fn spawn_pointer_server(body: Arc<Mutex<String>>) -> (std::net::TcpListener, Str
     (listener, base)
 }
 
-/// Run `grok update` in an isolated home against the local pointer base.
+/// Run `ezer update` in an isolated home against the local pointer base.
 fn run_update(base: &str, config_toml: &str, extra_args: &[&str]) -> std::process::Output {
     let home = tempfile::tempdir().unwrap();
     std::fs::write(home.path().join("config.toml"), config_toml).unwrap();
@@ -45,9 +45,9 @@ fn run_update(base: &str, config_toml: &str, extra_args: &[&str]) -> std::proces
         .env("HOME", home.path())
         .env("GROK_HOME", home.path())
         .env("PATH", std::env::var("PATH").unwrap_or_default())
-        .env("GROK_CLI_BASE_URL", base)
+        .env("EZER_CLI_BASE_URL", base)
         .output()
-        .expect("spawn grok update")
+        .expect("spawn ezer update")
 }
 
 /// The valid run proves the environment resolves to success, so a nonzero corrupt run can only mean a config failure aborted the update.
@@ -69,7 +69,7 @@ fn corrupt_config_never_changes_update_outcome() {
     let valid = run_update(&base, "[cli]\n", &[]);
     assert!(
         valid.status.success(),
-        "healthy grok update against the local base must exit 0\nstdout:\n{}\nstderr:\n{}",
+        "healthy ezer update against the local base must exit 0\nstdout:\n{}\nstderr:\n{}",
         String::from_utf8_lossy(&valid.stdout),
         String::from_utf8_lossy(&valid.stderr)
     );
@@ -77,7 +77,7 @@ fn corrupt_config_never_changes_update_outcome() {
     let corrupt = run_update(&base, "this is not toml {{{[[[", &[]);
     assert!(
         corrupt.status.success(),
-        "a corrupt config.toml must not block grok update\nstdout:\n{}\nstderr:\n{}",
+        "a corrupt config.toml must not block ezer update\nstdout:\n{}\nstderr:\n{}",
         String::from_utf8_lossy(&corrupt.stdout),
         String::from_utf8_lossy(&corrupt.stderr)
     );

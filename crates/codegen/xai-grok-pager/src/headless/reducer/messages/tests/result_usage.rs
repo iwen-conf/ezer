@@ -154,13 +154,13 @@ fn messages_model_usage_maps_and_zero_fills() {
 fn messages_model_usage_attributes_web_search_to_current_model() {
     let rows = json!({
         "grok-4": {"inputTokens": 90, "outputTokens": 7, "costUSD": 0.02},
-        "grok-mini": {"inputTokens": 5, "outputTokens": 1},
+        "ezer-mini": {"inputTokens": 5, "outputTokens": 1},
     });
     let out = messages_model_usage(Some(&rows), Some("grok-4"), 3, Some(131_072));
     assert_eq!(at(&out, "/grok-4/webSearchRequests"), 3);
-    assert_eq!(at(&out, "/grok-mini/webSearchRequests"), 0);
+    assert_eq!(at(&out, "/ezer-mini/webSearchRequests"), 0);
     assert_eq!(at(&out, "/grok-4/contextWindow"), 131_072);
-    assert!(at(&out, "/grok-mini/contextWindow").is_null());
+    assert!(at(&out, "/ezer-mini/contextWindow").is_null());
 }
 
 #[test]

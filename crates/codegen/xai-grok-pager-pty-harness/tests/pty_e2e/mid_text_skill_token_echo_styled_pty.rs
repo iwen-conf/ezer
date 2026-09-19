@@ -33,11 +33,11 @@ fn run_fg_on_row(rows: &[StyledLine], row_marker: &str, needle: &str) -> Option<
     None
 }
 
-/// Seed a user-invocable skill under `dir/.grok/skills`. The workspace must
-/// be a git repo: the live session advertises workspace-local skills only for git workspaces (offline `grok inspect` scans plain dirs too).
+/// Seed a user-invocable skill under `dir/.ezer/skills`. The workspace must
+/// be a git repo: the live session advertises workspace-local skills only for git workspaces (offline `ezer inspect` scans plain dirs too).
 /// The mid_text_skill_token_echo.yaml scenario sets `git_init: true` for the same reason.
 fn seed_test_skill(dir: &Path) {
-    let skill_dir = dir.join(".grok").join("skills").join("test-skill");
+    let skill_dir = dir.join(".ezer").join("skills").join("test-skill");
     std::fs::create_dir_all(&skill_dir).expect("create skill dir");
     std::fs::write(
         skill_dir.join("SKILL.md"),

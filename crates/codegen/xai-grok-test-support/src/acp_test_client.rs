@@ -1,4 +1,4 @@
-//! [`AcpTestClient`] drives `grok agent stdio` with verbatim JSON-RPC lines, backed by the same
+//! [`AcpTestClient`] drives `ezer agent stdio` with verbatim JSON-RPC lines, backed by the same
 //! [`TestProcess`] as the typed `GrokStdioClient`.
 
 use std::path::Path;

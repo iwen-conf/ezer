@@ -17,7 +17,7 @@ use crate::watched::{WaitOutcome, Watched};
 
 #[derive(Debug, PartialEq, thiserror::Error)]
 pub enum OtelRecorderError {
-    /// `timeout` is the budget the wait ran for, after `GROK_TEST_TIMEOUT_SCALE`.
+    /// `timeout` is the budget the wait ran for, after `EZER_TEST_TIMEOUT_SCALE`.
     #[error(
         "no matching OpenTelemetry event within {timeout:?}; {events_recorded} events recorded, log record names {event_names:?}"
     )]
@@ -229,7 +229,7 @@ impl OtelRecorder {
 
     /// Resolves with every event recorded so far, not only the ones `is_satisfied` matched.
     /// `is_satisfied` sees a snapshot, so it may read the recorder. `timeout` is scaled by
-    /// `GROK_TEST_TIMEOUT_SCALE` like every harness budget.
+    /// `EZER_TEST_TIMEOUT_SCALE` like every harness budget.
     pub async fn wait_for_events(
         &self,
         timeout: Duration,

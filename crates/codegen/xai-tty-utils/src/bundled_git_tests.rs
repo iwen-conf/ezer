@@ -299,7 +299,7 @@ fn prepend_honors_explicit_path_and_removal() {
 }
 
 /// A replaced environment (`env_clear`) is invisible to `get_envs`; the caller
-/// must say `ExplicitOnly` so grok's own PATH is not resurrected into it.
+/// must say `ExplicitOnly` so ezer's own PATH is not resurrected into it.
 #[test]
 fn explicit_only_never_resurrects_the_process_path() {
     let dir = Path::new("/bundled/cmd");

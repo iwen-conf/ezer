@@ -1,14 +1,14 @@
 #
-# Grok CLI installer for PowerShell - https://x.ai/cli/install.ps1
+# ezer CLI installer for PowerShell - https://x.ai/cli/install.ps1
 #
-# Auth: GROK_DEPLOYMENT_KEY env var (takes precedence) or ~/.grok/auth.json from `grok login`.
-# Env: GROK_CHANNEL (stable|alpha|enterprise, default: stable), GROK_BIN_DIR, GROK_PROXY_URL
+# Auth: EZER_DEPLOYMENT_KEY env var (takes precedence) or ~/.ezer/auth.json from `ezer login`.
+# Env: EZER_CHANNEL (stable|alpha|enterprise, default: stable), EZER_BIN_DIR, EZER_PROXY_URL
 #
 # Usage:
 #   irm https://x.ai/cli/install.ps1 | iex                                       # latest stable
 #   & ([scriptblock]::Create((irm https://x.ai/cli/install.ps1))) -Version 0.1.42 # specific version
-#   $env:GROK_VERSION="0.1.42"; irm https://x.ai/cli/install.ps1 | iex           # specific version (alt)
-#   $env:GROK_DEPLOYMENT_KEY="<key>"; irm https://x.ai/cli/install.ps1 | iex
+#   $env:EZER_VERSION="0.1.42"; irm https://x.ai/cli/install.ps1 | iex           # specific version (alt)
+#   $env:EZER_DEPLOYMENT_KEY="<key>"; irm https://x.ai/cli/install.ps1 | iex
 #
 
 param(
@@ -25,8 +25,8 @@ $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
 
 # Accept version from environment variable (useful with irm | iex).
-if (-not $Version -and $env:GROK_VERSION) {
-    $Version = $env:GROK_VERSION
+if (-not $Version -and $env:EZER_VERSION) {
+    $Version = $env:EZER_VERSION
 }
 
 # This script is Windows-only. PS 5.1 has no Platform property and only runs on Windows.
@@ -127,11 +127,11 @@ function Test-MinGitUsable([string]$VersionDir) {
 
 function Install-WindowsPayload([string]$BaseUrl, [string]$Version, [string]$Platform, [string]$BinDir, [string]$DownloadDir) {
     # Windows git hooks expect grove.exe, grove-fsmonitor.exe and grove-credential.exe as
-    # siblings of grok.exe; grok resolves the bundled git from
-    # %LOCALAPPDATA%\grok\git\<mingit-version>\ (newest usable version wins, so older
+    # siblings of ezer.exe; ezer resolves the bundled git from
+    # %LOCALAPPDATA%\ezer\git\<mingit-version>\ (newest usable version wins, so older
     # version dirs are left alone here). Releases before the payload shipped have none
     # of these objects: a miss is a note, not a failure.
-    # Same shape as xai-grok-update's windows_payload (which cannot run before grok.exe
+    # Same shape as xai-grok-update's windows_payload (which cannot run before ezer.exe
     # exists): download all three hook exes or none, install them with capture/restore.
 
     $groveExes = @('grove', 'grove-fsmonitor', 'grove-credential')
@@ -205,8 +205,8 @@ function Install-WindowsPayload([string]$BaseUrl, [string]$Version, [string]$Pla
     }
 
     if (-not $env:LOCALAPPDATA) { return }
-    $gitRoot = Join-Path (Join-Path $env:LOCALAPPDATA 'grok') 'git'
-    $mingitBase = "$BaseUrl/grok-$Version-$Platform-mingit"
+    $gitRoot = Join-Path (Join-Path $env:LOCALAPPDATA 'ezer') 'git'
+    $mingitBase = "$BaseUrl/ezer-$Version-$Platform-mingit"
     $mingitVersion = Download-String "$mingitBase.version"
     if ($mingitVersion) { $mingitVersion = $mingitVersion.Trim() }
     # The version names a directory; refuse anything that is not a plain name.
@@ -219,7 +219,7 @@ function Install-WindowsPayload([string]$BaseUrl, [string]$Version, [string]$Pla
         Write-Host "  Bundled git $mingitVersion already installed." -ForegroundColor DarkGray
         return
     }
-    $zipPath = Join-Path $DownloadDir "grok-$Platform-mingit.zip"
+    $zipPath = Join-Path $DownloadDir "ezer-$Platform-mingit.zip"
     $staging = Join-Path $gitRoot ".staging-$Version"
     try {
         Write-Host "  Downloading bundled git $mingitVersion..." -ForegroundColor DarkGray
@@ -269,7 +269,7 @@ $OidcScope = 'https://auth.x.ai::b1a00492-073a-47ea-816f-4c329264a828'
 $LegacyScope = 'https://accounts.x.ai/sign-in'
 $AuthSource = ''
 
-if ($env:GROK_DEPLOYMENT_KEY) {
+if ($env:EZER_DEPLOYMENT_KEY) {
     $AuthSource = 'deployment key'
     Write-Host 'Auth: using deployment key.' -ForegroundColor DarkGray
 } else {
@@ -277,10 +277,10 @@ if ($env:GROK_DEPLOYMENT_KEY) {
     $legacyToken = Read-GrokToken $LegacyScope
     if ($oidcToken) {
         $AuthSource = 'auth.json (oidc)'
-        Write-Host 'Auth: using OIDC token from ~/.grok/auth.json.' -ForegroundColor DarkGray
+        Write-Host 'Auth: using OIDC token from ~/.ezer/auth.json.' -ForegroundColor DarkGray
     } elseif ($legacyToken) {
         $AuthSource = 'auth.json (legacy)'
-        Write-Host 'Auth: using legacy token from ~/.grok/auth.json.' -ForegroundColor DarkGray
+        Write-Host 'Auth: using legacy token from ~/.ezer/auth.json.' -ForegroundColor DarkGray
     }
 }
 
@@ -303,16 +303,16 @@ $platform = "windows-$arch"
 # --- Resolve version and channel ---
 
 $BaseUrlPrimary = 'https://x.ai/cli'
-$BaseUrlFallback = 'https://storage.googleapis.com/grok-build-public-artifacts/cli'
+$BaseUrlFallback = 'https://storage.googleapis.com/ezer-build-public-artifacts/cli'
 $DownloadDir = Join-Path $GrokDir 'downloads'
-$BinDir = if ($env:GROK_BIN_DIR) { $env:GROK_BIN_DIR } else { Join-Path $GrokDir 'bin' }
+$BinDir = if ($env:EZER_BIN_DIR) { $env:EZER_BIN_DIR } else { Join-Path $GrokDir 'bin' }
 
 New-Item -ItemType Directory -Path $DownloadDir -Force | Out-Null
 New-Item -ItemType Directory -Path $BinDir -Force | Out-Null
 
-$Channel = if ($env:GROK_CHANNEL) { $env:GROK_CHANNEL } else { 'stable' }
+$Channel = if ($env:EZER_CHANNEL) { $env:EZER_CHANNEL } else { 'stable' }
 if ($Channel -cnotmatch '^(stable|alpha|enterprise)$') {
-    Write-Error "Invalid GROK_CHANNEL: '$Channel' (expected stable, alpha, or enterprise)"
+    Write-Error "Invalid EZER_CHANNEL: '$Channel' (expected stable, alpha, or enterprise)"
     exit 1
 }
 
@@ -346,8 +346,8 @@ if ($AuthSource) {
 
 # --- Download binary ---
 
-$binaryPath = Join-Path $DownloadDir "grok-$platform.exe"
-$artifactBase = "$BaseUrl/grok-$resolvedVersion-$platform"
+$binaryPath = Join-Path $DownloadDir "ezer-$platform.exe"
+$artifactBase = "$BaseUrl/ezer-$resolvedVersion-$platform"
 
 $downloaded = $false
 foreach ($url in @("$artifactBase.exe", $artifactBase)) {
@@ -368,7 +368,7 @@ if (-not $downloaded) {
 
 # --- Install binary (locked-file safe) ---
 
-foreach ($binName in @('ezer.exe', 'grok.exe', 'agent.exe')) {
+foreach ($binName in @('ezer.exe', 'ezer.exe', 'agent.exe')) {
     try {
         Install-Exe $binaryPath (Join-Path $BinDir $binName)
     } catch {
@@ -377,9 +377,9 @@ foreach ($binName in @('ezer.exe', 'grok.exe', 'agent.exe')) {
     }
 }
 
-Write-Host "  Installed to $BinDir\ezer.exe (compat: grok.exe) and $BinDir\agent.exe." -ForegroundColor DarkGray
+Write-Host "  Installed to $BinDir\ezer.exe (compat: ezer.exe) and $BinDir\agent.exe." -ForegroundColor DarkGray
 
-# --- Windows payload (best-effort): grove hook exes beside grok.exe + bundled MinGit ---
+# --- Windows payload (best-effort): grove hook exes beside ezer.exe + bundled MinGit ---
 
 Install-WindowsPayload $BaseUrl $resolvedVersion $platform $BinDir $DownloadDir
 
@@ -388,9 +388,9 @@ Install-WindowsPayload $BaseUrl $resolvedVersion $platform $BinDir $DownloadDir
 $completionsDir = Join-Path (Join-Path $GrokDir 'completions') 'powershell'
 try {
     New-Item -ItemType Directory -Path $completionsDir -Force | Out-Null
-    $cli = if (Test-Path (Join-Path $BinDir 'ezer.exe')) { Join-Path $BinDir 'ezer.exe' } else { Join-Path $BinDir 'grok.exe' }
+    $cli = if (Test-Path (Join-Path $BinDir 'ezer.exe')) { Join-Path $BinDir 'ezer.exe' } else { Join-Path $BinDir 'ezer.exe' }
     & $cli completions powershell 2>$null |
-        Set-Content (Join-Path $completionsDir 'grok.ps1') -ErrorAction SilentlyContinue
+        Set-Content (Join-Path $completionsDir 'ezer.ps1') -ErrorAction SilentlyContinue
 } catch {}
 
 # --- Persist installer config ---
@@ -435,22 +435,22 @@ if (-not (Test-Path $ConfigFile)) {
 
 # --- Fetch deployment config (deployment key only) ---
 
-if ($env:GROK_DEPLOYMENT_KEY) {
-    $ProxyUrl = if ($env:GROK_PROXY_URL) { $env:GROK_PROXY_URL } else { 'https://cli-chat-proxy.grok.com/v1' }
+if ($env:EZER_DEPLOYMENT_KEY) {
+    $ProxyUrl = if ($env:EZER_PROXY_URL) { $env:EZER_PROXY_URL } else { 'https://cli-chat-proxy.grok.com/v1' }
     # Refuse cleartext / userinfo / empty-host proxies before attaching the key.
     try {
         $proxyUri = [Uri]$ProxyUrl
     } catch {
-        Write-Error "GROK_PROXY_URL must be an https:// URL."
+        Write-Error "EZER_PROXY_URL must be an https:// URL."
         exit 1
     }
     if (-not $proxyUri.IsAbsoluteUri -or $proxyUri.Scheme -ne 'https' -or -not $proxyUri.Host -or $proxyUri.UserInfo) {
-        Write-Error "GROK_PROXY_URL must be an https:// URL."
+        Write-Error "EZER_PROXY_URL must be an https:// URL."
         exit 1
     }
     Write-Host '  Fetching deployment config...' -ForegroundColor DarkGray
     try {
-        $headers = @{ 'Authorization' = "Bearer $($env:GROK_DEPLOYMENT_KEY)" }
+        $headers = @{ 'Authorization' = "Bearer $($env:EZER_DEPLOYMENT_KEY)" }
         # IRM follows redirects and would resend the Bearer token.
         $deployResponse = Invoke-RestMethod -Uri "$ProxyUrl/deployment/config" -Headers $headers -UseBasicParsing -MaximumRedirection 0
     } catch {

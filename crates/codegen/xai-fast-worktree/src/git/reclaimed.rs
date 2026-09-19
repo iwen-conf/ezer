@@ -9,7 +9,7 @@ use gix::ObjectId;
 use super::probe::{ProbeError, oids_to_stdin, run_probe};
 use super::safety::{self, KeepReason, Safety};
 
-const RECLAIMED: &str = "refs/grok/reclaimed";
+const RECLAIMED: &str = "refs/ezer/reclaimed";
 
 #[cfg(any(test, feature = "metadata"))]
 pub const RECLAIMED_LIFETIME: Duration = Duration::from_secs(30 * 24 * 60 * 60);
@@ -83,7 +83,7 @@ fn name_discarded_commits(worktree: &Path) -> std::io::Result<usize> {
     tracing::info!(
         path = %worktree.display(),
         named = tips.len(),
-        "named reflog-only commits under refs/grok/reclaimed"
+        "named reflog-only commits under refs/ezer/reclaimed"
     );
     Ok(tips.len())
 }

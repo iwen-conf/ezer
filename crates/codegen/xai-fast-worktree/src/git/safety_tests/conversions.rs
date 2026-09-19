@@ -12,7 +12,7 @@ fn snapshotted_subagent_worktree_goes_and_its_work_stays() {
         Safety::Keep(KeepReason::Dirty)
     );
 
-    let ref_name = "refs/grok/subagents/test";
+    let ref_name = "refs/ezer/subagents/test";
     assert_eq!(
         reclaim_after_snapshot(&worktree, &fixture.source, ref_name),
         Safety::Delete
@@ -70,7 +70,7 @@ fn content_a_snapshot_cannot_capture_keeps_the_worktree() {
         disturb(&worktree, &fixture.source.join(".git/worktrees").join(case));
 
         assert_eq!(
-            reclaim_after_snapshot(&worktree, &fixture.source, "refs/grok/subagents/test"),
+            reclaim_after_snapshot(&worktree, &fixture.source, "refs/ezer/subagents/test"),
             Safety::Keep(want.clone()),
             "{case}"
         );
@@ -82,7 +82,7 @@ fn content_a_snapshot_cannot_capture_keeps_the_worktree() {
 fn work_written_after_the_snapshot_keeps_the_worktree() {
     let fixture = Fixture::new("");
     let worktree = fixture.linked_worktree("late-writer");
-    let ref_name = "refs/grok/subagents/late";
+    let ref_name = "refs/ezer/subagents/late";
     snapshot_into(&worktree, &fixture.source, ref_name);
     assert_eq!(
         safe_to_delete_worktree_after_snapshot(&worktree, Some(&fixture.source), ref_name),
@@ -144,7 +144,7 @@ fn a_converted_file_keeps_a_snapshotted_worktree() {
         let fixture = Fixture::new("");
         let worktree = fixture.linked_worktree(case);
         disturb(&worktree);
-        let ref_name = format!("refs/grok/subagents/{case}");
+        let ref_name = format!("refs/ezer/subagents/{case}");
         snapshot_into(&worktree, &fixture.source, &ref_name);
 
         assert_eq!(
@@ -165,7 +165,7 @@ fn a_converted_file_keeps_a_snapshotted_worktree() {
 fn a_converted_file_whose_name_reads_as_a_pathspec_keeps_the_worktree() {
     let fixture = Fixture::new("");
     let worktree = fixture.linked_worktree("pathspec-magic");
-    let ref_name = "refs/grok/subagents/pathspec-magic";
+    let ref_name = "refs/ezer/subagents/pathspec-magic";
     attributes(&worktree, "*.log filter=stripout\n", "pathspec-magic");
     run_git(
         &worktree,
@@ -194,7 +194,7 @@ fn paths_that_differ_only_outside_utf8_are_told_apart() {
 
     let fixture = Fixture::new("");
     let worktree = fixture.linked_worktree("not-quite-text");
-    let ref_name = "refs/grok/subagents/not-quite-text";
+    let ref_name = "refs/ezer/subagents/not-quite-text";
     let exempt = worktree.join(std::ffi::OsStr::from_bytes(b"a\xff.csv"));
     std::fs::write(&exempt, b"a,b\r\n").unwrap();
     let mut rules = Vec::new();
@@ -219,7 +219,7 @@ fn paths_that_differ_only_outside_utf8_are_told_apart() {
 fn commit_made_after_the_snapshot_keeps_the_worktree() {
     let fixture = Fixture::new("");
     let worktree = fixture.linked_worktree("committed-late");
-    let ref_name = "refs/grok/subagents/committed-late";
+    let ref_name = "refs/ezer/subagents/committed-late";
     std::fs::write(worktree.join("tracked.txt"), "three hours of work\n").unwrap();
     snapshot_into(&worktree, &fixture.source, ref_name);
     run_git(&worktree, &["commit", "-am", "the message a human wrote"]);
@@ -257,7 +257,7 @@ fn hashes_line_up_only_when_hash_and_path_counts_match() {
 fn probe_that_cannot_run_keeps_a_snapshotted_worktree() {
     let fixture = Fixture::new("");
     let worktree = fixture.linked_worktree("unrunnable");
-    let ref_name = "refs/grok/subagents/unrunnable";
+    let ref_name = "refs/ezer/subagents/unrunnable";
     std::fs::write(worktree.join("notes.txt"), b"three hours of work\n").unwrap();
     snapshot_into(&worktree, &fixture.source, ref_name);
     run_git(&worktree, &["config", "status.renameLimit", "not-a-number"]);

@@ -34,7 +34,7 @@ pub trait SessionSource: Send + Sync {
     ) -> io::Result<Option<IndexableSession>>;
 }
 
-/// Opens the session store rooted at one grok home.
+/// Opens the session store rooted at one ezer home.
 pub type SessionSourceFactory = fn(PathBuf) -> Box<dyn SessionSource>;
 
 /// Blocking extraction of a transcript's searchable text plus the bytes read.

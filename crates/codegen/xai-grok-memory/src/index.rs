@@ -533,7 +533,7 @@ impl MemoryIndex {
 
     /// An empty string means no claim is active.
     /// A non-empty claim means a session currently owns the reindex lock (or a crashed session left a stale one).
-    /// `grok memory doctor` uses this to detect stuck states.
+    /// `ezer memory doctor` uses this to detect stuck states.
     pub fn get_reindex_claim(&self) -> String {
         self.db
             .query_row(
@@ -546,7 +546,7 @@ impl MemoryIndex {
 
     /// Return all distinct file paths that have at least one indexed chunk.
     ///
-    /// `grok memory doctor` uses this to detect orphaned chunks (chunks whose source file has since been deleted).
+    /// `ezer memory doctor` uses this to detect orphaned chunks (chunks whose source file has since been deleted).
     pub fn all_indexed_paths(&self) -> Result<Vec<String>, rusqlite::Error> {
         let mut stmt = self
             .db
@@ -903,7 +903,7 @@ mod tests {
     #[test]
     fn test_open_or_create_uses_wal_on_local_fs() {
         // GROK_SQLITE_JOURNAL_MODE overrides the journal-mode decision; skip when it is set
-        if std::env::var("GROK_SQLITE_JOURNAL_MODE").is_ok() {
+        if std::env::var("EZER_SQLITE_JOURNAL_MODE").is_ok() {
             return;
         }
         let tmp = TempDir::new().unwrap();
@@ -1297,8 +1297,8 @@ mod tests {
     // reindex maintenance path regression tests
     // -----------------------------------------------------------------------
 
-    /// Index a file; Delete the file from disk (simulates a user removing a session log); Run the same orphan-removal logic as `grok memory reindex`: compare `all_indexed_paths()` against current files and call `delete_path()` for paths that no longer exist; Verify the stale chunks are gone and are no longer searchable.
-    /// This proves that `grok memory reindex`'s Phase 1 fixes the state that `grok memory doctor` warns about.
+    /// Index a file; Delete the file from disk (simulates a user removing a session log); Run the same orphan-removal logic as `ezer memory reindex`: compare `all_indexed_paths()` against current files and call `delete_path()` for paths that no longer exist; Verify the stale chunks are gone and are no longer searchable.
+    /// This proves that `ezer memory reindex`'s Phase 1 fixes the state that `ezer memory doctor` warns about.
     #[test]
     fn test_reindex_maintenance_removes_orphaned_chunks() {
         let tmp = TempDir::new().unwrap();
@@ -1337,7 +1337,7 @@ mod tests {
     }
 
     /// A fresh (non-stale) reindex claim blocks `try_claim_reindex`.
-    /// Verifies that `grok memory reindex` Phase 0 bails when a live session holds a fresh claim.
+    /// Verifies that `ezer memory reindex` Phase 0 bails when a live session holds a fresh claim.
     /// The CLI cannot steal a live session's lock and then mutate the index concurrently.
     #[test]
     fn test_try_claim_reindex_fails_when_fresh_claim_held() {
@@ -1365,9 +1365,9 @@ mod tests {
         idx.release_claim();
     }
 
-    /// `grok memory reindex` Phase 3 resets the stale reindex claim.
+    /// `ezer memory reindex` Phase 3 resets the stale reindex claim.
     ///
-    /// Verifies that `release_claim()` clears `meta.reindex_claim` so that `grok memory doctor` no longer reports a stale lock after reindex runs.
+    /// Verifies that `release_claim()` clears `meta.reindex_claim` so that `ezer memory doctor` no longer reports a stale lock after reindex runs.
     #[test]
     fn test_reindex_maintenance_resets_stale_claim() {
         let tmp = TempDir::new().unwrap();

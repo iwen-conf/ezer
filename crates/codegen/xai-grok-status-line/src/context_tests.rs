@@ -31,7 +31,7 @@ fn every_field_survives_a_round_trip_through_the_shared_fixture() {
         transcript_path: Some("/home/user/sessions/019fa651/updates.jsonl".into()),
         model: StatusLineModel {
             id: Some("grok-4.5".into()),
-            display_name: Some("Grok 4.5".into()),
+            display_name: Some("ezer 4.5".into()),
         },
         workspace: StatusLineWorkspace {
             current_dir: DIR.into(),
@@ -121,7 +121,7 @@ fn unknown_data_is_omitted_rather_than_faked() {
             "cost": { "total_duration_ms": 0 },
             "context_window": {},
         }),
-        "what Grok cannot source is omitted; a context window reported as 0 \
+        "what ezer cannot source is omitted; a context window reported as 0 \
          would paint `0% ctx` over a full one"
     );
 }

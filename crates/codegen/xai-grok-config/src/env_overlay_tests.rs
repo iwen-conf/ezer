@@ -204,8 +204,8 @@ fn malformed_overlay_parse_errors_do_not_carry_the_value() {
             .contains(secret),
         "guard: the raw TOML error echoes the offending line, so it must never be logged"
     );
-    assert!(parse_overlay(&bad_toml, OverlayFormat::Toml, GROK_CONFIG_PATH_ENV).is_none());
+    assert!(parse_overlay(&bad_toml, OverlayFormat::Toml, EZER_CONFIG_PATH_ENV).is_none());
 
     let bad_json = format!("{{\"models\": \"{secret}\",}}");
-    assert!(parse_overlay(&bad_json, OverlayFormat::Json, GROK_CONFIG_ENV).is_none());
+    assert!(parse_overlay(&bad_json, OverlayFormat::Json, EZER_CONFIG_ENV).is_none());
 }

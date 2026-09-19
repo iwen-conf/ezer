@@ -53,7 +53,7 @@ fn session_primary_model_is_the_most_used_not_the_last_turn() {
         &live(&[
             ("grok-4", 100, 20, Some(50)),
             ("grok-4", 80, 10, Some(40)),
-            ("grok-fast", 10, 2, Some(1)),
+            ("ezer-fast", 10, 2, Some(1)),
         ]),
         Some(&first),
     );
@@ -62,7 +62,7 @@ fn session_primary_model_is_the_most_used_not_the_last_turn() {
         file.turns
             .get(1)
             .and_then(|t| t.usage.primary_model_id.as_deref()),
-        Some("grok-fast")
+        Some("ezer-fast")
     );
     assert_eq!(file.session.primary_model_id.as_deref(), Some("grok-4"));
 }

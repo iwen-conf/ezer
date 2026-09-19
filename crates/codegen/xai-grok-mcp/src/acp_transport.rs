@@ -1,6 +1,6 @@
 //! rmcp transport bridge over the ACP reverse channel.
 //!
-//! In-process SDK MCP servers (the official `grok-agent-sdk`'s `@tool` / `create_sdk_mcp_server`) run in the SDK-host process, not behind a socket.
+//! In-process SDK MCP servers (the official `ezer-agent-sdk`'s `@tool` / `create_sdk_mcp_server`) run in the SDK-host process, not behind a socket.
 //! The agent reaches them by sending each MCP JSON-RPC message to the client as a reverse `x.ai/mcp/sdk_call` request and feeding the response back.
 //! This module adapts that request/response channel into an rmcp transport.
 //! An in-process server then reuses the same `RunningService` tool-dispatch path as HTTP/stdio servers for tool calls.

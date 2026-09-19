@@ -11,7 +11,7 @@ use crate::db::{
 pub const WORKTREES_DIR: &str = "worktrees";
 pub const WORKTREE_POOL_DIR: &str = "worktree_pool";
 /// Depth of a worktree below its managed root: `<root>/<repo>/<worktree>`.
-/// [`scan_two_level_dir`] and `grok du`'s bucketing have to agree on it.
+/// [`scan_two_level_dir`] and `ezer du`'s bucketing have to agree on it.
 pub const WORKTREE_DEPTH: usize = 2;
 
 #[derive(Debug)]
@@ -269,7 +269,7 @@ fn rebuild_worktree_db_from_grove_dirs(
         if !path_under_worktree_roots(&path, &roots) {
             tracing::warn!(
                 path = %path.display(),
-                "rebuild skipped path outside grok worktrees/worktree_pool"
+                "rebuild skipped path outside ezer worktrees/worktree_pool"
             );
             continue;
         }
@@ -491,7 +491,7 @@ fn grove_metadata_from_identity(idn: &crate::nfs::NfsIdentity) -> serde_json::Va
             "mount_id": idn.mount_id,
             "backing": idn.backing.as_ref().map(|p| p.display().to_string()).unwrap_or_default(),
             "source_pin": idn.pin_ref.clone().unwrap_or_else(|| {
-                format!("refs/grok/worktrees/{}", idn.worktree_id)
+                format!("refs/ezer/worktrees/{}", idn.worktree_id)
             }),
         }
     })
@@ -662,7 +662,7 @@ mod tests {
     #[test]
     fn rebuild_nfs_under_managed_roots_is_not_labeled_linked() {
         let tmp = tempfile::TempDir::new().unwrap();
-        let grok_home = tmp.path().join("grok");
+        let grok_home = tmp.path().join("ezer");
         let data = tmp.path().join("grove");
         let dest = grok_home.join("worktrees/repo/nfs-sess");
         let local = grok_home.join("worktrees/repo/local-sess");
@@ -676,12 +676,12 @@ mod tests {
             "worktree_id": id,
             "dest": dest,
             "source_repo": tmp.path().join("src-repo"),
-            "pin_ref": format!("refs/grok/worktrees/{id}"),
+            "pin_ref": format!("refs/ezer/worktrees/{id}"),
             "mount_id": 3,
             "created_at": 9,
         });
         std::fs::write(
-            backing.join("grok-nfs-worktree.json"),
+            backing.join("ezer-nfs-worktree.json"),
             serde_json::to_vec(&marker).unwrap(),
         )
         .unwrap();
@@ -734,7 +734,7 @@ mod tests {
     #[test]
     fn rebuild_registers_nfs_from_backing_marker() {
         let tmp = tempfile::TempDir::new().unwrap();
-        let grok_home = tmp.path().join("grok");
+        let grok_home = tmp.path().join("ezer");
         let data = tmp.path().join("grove");
         std::fs::create_dir_all(grok_home.join("worktrees")).unwrap();
         // Dest is outside managed roots so FS discovery does not register a
@@ -749,12 +749,12 @@ mod tests {
             "worktree_id": id,
             "dest": dest,
             "source_repo": tmp.path().join("src-repo"),
-            "pin_ref": format!("refs/grok/worktrees/{id}"),
+            "pin_ref": format!("refs/ezer/worktrees/{id}"),
             "mount_id": 42,
             "created_at": 9,
         });
         std::fs::write(
-            backing.join("grok-nfs-worktree.json"),
+            backing.join("ezer-nfs-worktree.json"),
             serde_json::to_vec(&marker).unwrap(),
         )
         .unwrap();
@@ -780,7 +780,7 @@ mod tests {
     #[test]
     fn rebuild_dest_equivalent_does_not_overwrite_live_nfs_metadata() {
         let tmp = tempfile::TempDir::new().unwrap();
-        let grok_home = tmp.path().join("grok");
+        let grok_home = tmp.path().join("ezer");
         let data = tmp.path().join("grove");
         std::fs::create_dir_all(grok_home.join("worktrees")).unwrap();
         let dest = tmp.path().join("shared-dest");
@@ -792,13 +792,13 @@ mod tests {
         std::fs::create_dir_all(&live_backing).unwrap();
         std::fs::create_dir_all(&stale_backing).unwrap();
         std::fs::write(
-            stale_backing.join("grok-nfs-worktree.json"),
+            stale_backing.join("ezer-nfs-worktree.json"),
             serde_json::to_vec(&serde_json::json!({
                 "schema": 1,
                 "worktree_id": stale_id,
                 "dest": dest,
                 "source_repo": tmp.path().join("src-repo"),
-                "pin_ref": format!("refs/grok/worktrees/{stale_id}"),
+                "pin_ref": format!("refs/ezer/worktrees/{stale_id}"),
                 "mount_id": 99,
                 "created_at": 1,
             }))
@@ -825,7 +825,7 @@ mod tests {
                 "nfs": {
                     "mount_id": 1,
                     "backing": live_backing.display().to_string(),
-                    "source_pin": format!("refs/grok/worktrees/{live_id}"),
+                    "source_pin": format!("refs/ezer/worktrees/{live_id}"),
                 }
             })),
         };
@@ -841,7 +841,7 @@ mod tests {
         );
         assert_eq!(
             nfs.get("source_pin").and_then(|b| b.as_str()),
-            Some(format!("refs/grok/worktrees/{live_id}")).as_deref()
+            Some(format!("refs/ezer/worktrees/{live_id}")).as_deref()
         );
         assert!(
             db.get_by_id(stale_id).unwrap().is_none(),
@@ -868,7 +868,7 @@ mod tests {
     #[test]
     fn rebuild_skips_symlink_escape_outside_managed_roots() {
         let tmp = tempfile::TempDir::new().unwrap();
-        let grok_home = tmp.path().join("grok");
+        let grok_home = tmp.path().join("ezer");
         let outside = tmp.path().join("outside-real");
         make_fake_standalone_worktree(&outside);
         let link_parent = grok_home.join("worktrees/repo");
@@ -910,12 +910,12 @@ mod tests {
             "worktree_id": id,
             "dest": dest,
             "source_repo": grok_home.join("src"),
-            "pin_ref": format!("refs/grok/worktrees/{id}"),
+            "pin_ref": format!("refs/ezer/worktrees/{id}"),
             "mount_id": 7,
             "created_at": 1,
         });
         std::fs::write(
-            backing.join("grok-nfs-worktree.json"),
+            backing.join("ezer-nfs-worktree.json"),
             serde_json::to_vec(&marker).unwrap(),
         )
         .unwrap();
@@ -930,13 +930,13 @@ mod tests {
     #[test]
     fn rebuild_skips_destless_nfs_identity() {
         let tmp = tempfile::TempDir::new().unwrap();
-        let grok_home = tmp.path().join("grok");
+        let grok_home = tmp.path().join("ezer");
         std::fs::create_dir_all(grok_home.join("worktrees")).unwrap();
         let data = tmp.path().join("grove");
         std::fs::create_dir_all(&data).unwrap();
         std::fs::write(
             data.join("mounts.toml"),
-            "[[mounts]]\nkind = \"worktree\"\npin_ref = \"refs/grok/worktrees/no-dest\"\nbacking = \"/unused/worktree-backing/no-dest\"\n",
+            "[[mounts]]\nkind = \"worktree\"\npin_ref = \"refs/ezer/worktrees/no-dest\"\nbacking = \"/unused/worktree-backing/no-dest\"\n",
         )
         .unwrap();
         let db = crate::db::WorktreeDb::open_in_memory().unwrap();

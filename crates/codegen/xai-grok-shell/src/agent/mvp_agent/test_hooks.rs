@@ -61,8 +61,8 @@ pub(crate) async fn pause_at(point: AttachPause) {
     }
 }
 
-/// `GROK_TEST_PROMPT_BLACKHOLE=1` parks `session/prompt` forever after the dispatch lock is taken.
-pub(crate) const PROMPT_BLACKHOLE_ENV: &str = "GROK_TEST_PROMPT_BLACKHOLE";
+/// `EZER_TEST_PROMPT_BLACKHOLE=1` parks `session/prompt` forever after the dispatch lock is taken.
+pub(crate) const PROMPT_BLACKHOLE_ENV: &str = "EZER_TEST_PROMPT_BLACKHOLE";
 
 /// Reproduce a shell whose prompt intake never reaches the session actor. The caller holds the session's
 /// dispatch lock, so a follow-up `session/cancel` parks behind it too; that is the wedge shape the client's

@@ -1457,7 +1457,7 @@ mod tests {
             field("Title", "t", false),
             field("Session ID", "sid-123", false),
             field("Working directory", "/tmp", false),
-            field("Model", "Grok", true),
+            field("Model", "ezer", true),
             field("Context", "1 / 2", true),
         ]);
         let theme = Theme::current();
@@ -1477,7 +1477,7 @@ mod tests {
                 "Working directory:",
                 "/tmp",
                 "",
-                "Model: Grok",
+                "Model: ezer",
                 "Context: 1 / 2",
             ]
         );

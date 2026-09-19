@@ -23,10 +23,10 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 /// Marker trait for types that can be stored in `Resources`. Each implementor must provide a unique `ID` string of the
-/// form `"namespace.Name"` (e.g., `"grok_build.ReadFile"`). The ID is used as the serialization key when persisting
+/// form `"namespace.Name"` (e.g., `"ezer_build.ReadFile"`). The ID is used as the serialization key when persisting
 /// resources. Use the `register_resource!` macro to implement this.
 pub trait ResourceType: Any + 'static {
-    /// Unique identifier, e.g. `"grok_build.ReadFile"`.
+    /// Unique identifier, e.g. `"ezer_build.ReadFile"`.
     const ID: &'static str;
     /// Additional semantic validation for finalize-time params.
     fn validate_params_value(
@@ -128,7 +128,7 @@ type DeserializeFn =
 /// and type-erased serialize/deserialize closures so `Resources` can round-trip through JSON.
 struct ResourceEntry {
     type_id: TypeId,
-    /// The `ResourceType::ID` string (e.g., `"grok_build.ReadFile"`).
+    /// The `ResourceType::ID` string (e.g., `"ezer_build.ReadFile"`).
     id: String,
     category: ResourceCategory,
     /// Serialize the value stored at `type_id` to JSON.
@@ -352,12 +352,12 @@ impl std::fmt::Debug for Resources {
 pub struct Cwd(pub PathBuf);
 /// Absolute path to the plan file for this session. Set by the session layer (from
 /// `PlanModeTracker::plan_file_path()`); read by `ExitPlanMode` to locate the plan on disk. When
-/// absent the tool falls back to `Cwd/.grok/plan.md`.
+/// absent the tool falls back to `Cwd/.ezer/plan.md`.
 #[derive(Debug, Clone)]
 pub struct PlanFilePath(pub PathBuf);
 /// Default plan-file path (relative to the workspace root) used when no
 /// explicit [`PlanFilePath`] is set. Shared by the plan-mode tools.
-pub const PLAN_FILE_RELATIVE_PATH: &str = ".grok/plan.md";
+pub const PLAN_FILE_RELATIVE_PATH: &str = ".ezer/plan.md";
 /// Resolve the session plan-file path from resources as `(absolute_target, display)`. `absolute_target` is `Some` ONLY
 /// when the resolved path is absolute, so callers that write/seed never create a file under the process CWD; it is
 /// `None` for the display-only relative fallback. `display` is the model-facing path string.
@@ -715,7 +715,7 @@ impl WebCitationCounter {
         val
     }
 }
-register_resource!("grok_build", "WebCitation", WebCitationCounter);
+register_resource!("ezer_build", "WebCitation", WebCitationCounter);
 impl std::fmt::Debug for Terminal {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Terminal").finish()
@@ -808,17 +808,17 @@ mod tests {
         skip_read_before_edit: bool,
         max_file_size: Option<usize>,
     }
-    register_resource!("grok_build", "Edit", EditConfig);
+    register_resource!("ezer_build", "Edit", EditConfig);
     #[derive(Debug, Clone, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
     struct ReadHistory {
         files_read: Vec<String>,
     }
-    register_resource!("grok_build", "ReadFile", ReadHistory);
+    register_resource!("ezer_build", "ReadFile", ReadHistory);
     #[derive(Debug, Clone, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
     struct TodoData {
         items: Vec<String>,
     }
-    register_resource!("grok_build", "Todo", TodoData);
+    register_resource!("ezer_build", "Todo", TodoData);
     #[test]
     fn params_and_state_coexist_without_collision() {
         let mut res = Resources::new();
@@ -892,7 +892,7 @@ mod tests {
         let json = res.serialize();
         assert!(json.get("state").is_some());
         let state = json.get("state").unwrap();
-        assert!(state.get("grok_build.ReadFile").is_some());
+        assert!(state.get("ezer_build.ReadFile").is_some());
         let json_str = serde_json::to_string(&json).unwrap();
         assert!(!json_str.contains("/home/user"));
     }
@@ -903,12 +903,12 @@ mod tests {
         res.register_params::<EditConfig>();
         let mut state_map = HashMap::new();
         state_map.insert(
-            "grok_build.ReadFile".to_string(),
+            "ezer_build.ReadFile".to_string(),
             serde_json::json!({"files_read": ["loaded.rs"]}),
         );
         let mut params_map = HashMap::new();
         params_map.insert(
-            "grok_build.Edit".to_string(),
+            "ezer_build.Edit".to_string(),
             serde_json::json!({"skip_read_before_edit": true, "max_file_size": 512}),
         );
         let mut data = HashMap::new();
@@ -931,7 +931,7 @@ mod tests {
             serde_json::json!({"foo": "bar"}),
         );
         state_map.insert(
-            "grok_build.ReadFile".to_string(),
+            "ezer_build.ReadFile".to_string(),
             serde_json::json!({"files_read": ["ok.rs"]}),
         );
         let mut data = HashMap::new();
@@ -948,7 +948,7 @@ mod tests {
             skip_read_before_edit: true,
             max_file_size: None,
         }));
-        let val = res.get_json("params", "grok_build.Edit").unwrap();
+        let val = res.get_json("params", "ezer_build.Edit").unwrap();
         assert_eq!(
             val.get("skip_read_before_edit").and_then(|v| v.as_bool()),
             Some(true)
@@ -963,7 +963,7 @@ mod tests {
     fn get_json_returns_none_for_missing_value() {
         let mut res = Resources::new();
         res.register_params::<EditConfig>();
-        assert!(res.get_json("params", "grok_build.Edit").is_none());
+        assert!(res.get_json("params", "ezer_build.Edit").is_none());
     }
     #[test]
     fn set_json_updates_registered_value() {
@@ -971,7 +971,7 @@ mod tests {
         res.register_params::<EditConfig>();
         let ok = res.set_json(
             "params",
-            "grok_build.Edit",
+            "ezer_build.Edit",
             serde_json::json!({"skip_read_before_edit": true}),
         );
         assert!(ok);

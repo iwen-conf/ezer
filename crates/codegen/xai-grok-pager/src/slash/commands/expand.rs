@@ -1,6 +1,6 @@
 //! `/expand`: re-print the last collapsed block, fully expanded (minimal mode).
 //!
-//! In minimal mode (`grok --minimal`) finalized blocks are printed once into the terminal's native scrollback.
+//! In minimal mode (`ezer --minimal`) finalized blocks are printed once into the terminal's native scrollback.
 //! They print with reasoning collapsed and large tool output truncated.
 //! Committed terminal text can't be mutated, so "expanding" a block re-prints it in full below the conversation.
 //! `/expand` and the `Ctrl+E` chord do the same thing; both walk backwards through the most-recently committed folded blocks.

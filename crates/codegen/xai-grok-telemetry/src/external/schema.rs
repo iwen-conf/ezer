@@ -12,12 +12,12 @@ use std::str::FromStr;
 use super::config::ContentGates;
 use crate::events;
 
-/// Wire schema version, exported as resource attr `grok_code.schema.version`.
+/// Wire schema version, exported as resource attr `ezer.schema.version`.
 /// Additive changes (new events/attrs) do not bump it; renames/removals do.
 pub const SCHEMA_VERSION: &str = "v1";
 
 /// Meter/logger instrumentation scope name.
-pub const SCOPE_NAME: &str = "ai.xai.grok_code";
+pub const SCOPE_NAME: &str = "ai.xai.ezer";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Event names
@@ -28,43 +28,43 @@ pub const SCOPE_NAME: &str = "ai.xai.grok_code";
     Debug, Clone, Copy, PartialEq, Eq, strum::EnumCount, strum::AsRefStr, strum::IntoStaticStr,
 )]
 pub enum ExternalEventName {
-    #[strum(serialize = "grok_code.session_start")]
+    #[strum(serialize = "ezer.session_start")]
     SessionStart,
-    #[strum(serialize = "grok_code.session_end")]
+    #[strum(serialize = "ezer.session_end")]
     SessionEnd,
-    #[strum(serialize = "grok_code.user_prompt")]
+    #[strum(serialize = "ezer.user_prompt")]
     UserPrompt,
-    #[strum(serialize = "grok_code.turn_completed")]
+    #[strum(serialize = "ezer.turn_completed")]
     TurnCompleted,
-    #[strum(serialize = "grok_code.api_request")]
+    #[strum(serialize = "ezer.api_request")]
     ApiRequest,
-    #[strum(serialize = "grok_code.api_error")]
+    #[strum(serialize = "ezer.api_error")]
     ApiError,
-    #[strum(serialize = "grok_code.tool_result")]
+    #[strum(serialize = "ezer.tool_result")]
     ToolResult,
-    #[strum(serialize = "grok_code.tool_decision")]
+    #[strum(serialize = "ezer.tool_decision")]
     ToolDecision,
-    #[strum(serialize = "grok_code.mcp_server_connection")]
+    #[strum(serialize = "ezer.mcp_server_connection")]
     McpServerConnection,
-    #[strum(serialize = "grok_code.permission_mode_changed")]
+    #[strum(serialize = "ezer.permission_mode_changed")]
     PermissionModeChanged,
-    #[strum(serialize = "grok_code.skill_activated")]
+    #[strum(serialize = "ezer.skill_activated")]
     SkillActivated,
-    #[strum(serialize = "grok_code.plugin_loaded")]
+    #[strum(serialize = "ezer.plugin_loaded")]
     PluginLoaded,
-    #[strum(serialize = "grok_code.compaction")]
+    #[strum(serialize = "ezer.compaction")]
     Compaction,
-    #[strum(serialize = "grok_code.subagent")]
+    #[strum(serialize = "ezer.subagent")]
     Subagent,
-    #[strum(serialize = "grok_code.auth")]
+    #[strum(serialize = "ezer.auth")]
     Auth,
-    #[strum(serialize = "grok_code.internal_error")]
+    #[strum(serialize = "ezer.internal_error")]
     InternalError,
-    #[strum(serialize = "grok_code.model_switched")]
+    #[strum(serialize = "ezer.model_switched")]
     ModelSwitched,
-    #[strum(serialize = "grok_code.contextual_tip")]
+    #[strum(serialize = "ezer.contextual_tip")]
     ContextualTip,
-    #[strum(serialize = "grok_code.assistant_response")]
+    #[strum(serialize = "ezer.assistant_response")]
     AssistantResponse,
 }
 // ─────────────────────────────────────────────────────────────────────────────
@@ -428,13 +428,13 @@ pub(crate) const METRIC_ALLOWED_ATTR_KEYS: &[&str] = &[
 /// The underlying field is externally controlled free text from ACP client metadata, so it must never pass verbatim.
 /// Unknown values collapse to `"other"`.
 pub(crate) const KNOWN_CLIENT_IDENTIFIERS: &[&str] = &[
-    "grok-pager",
-    "grok-tui",
-    "grok-shell",
-    "grok-web",
-    "grok-desktop",
-    "grok-code-extension",
-    "grok-agent-sdk",
+    "ezer",
+    "ezer-tui",
+    "ezer-shell",
+    "ezer-web",
+    "ezer-desktop",
+    "ezer-code-extension",
+    "ezer-agent-sdk",
     "nebula",
     "zed",
 ];
@@ -537,7 +537,7 @@ pub(crate) fn file_extension(path: &str) -> Option<String> {
 // Mapping functions (`telemetry_event!(…, external = …)` targets)
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// `SessionHarness` maps to `grok_code.session_start`.
+/// `SessionHarness` maps to `ezer.session_start`.
 /// Emitted from a spawn outside `TELEMETRY_CTX`, so `session.id` is mapped from the struct's own field.
 pub fn map_session_start(ev: &events::SessionHarness) -> Option<ExternalRecord> {
     Some(
@@ -563,7 +563,7 @@ pub fn map_session_start(ev: &events::SessionHarness) -> Option<ExternalRecord> 
     )
 }
 
-/// `SessionNew` increments `grok_code.session.count` (metric only; the `session_start` log record comes from the richer `SessionHarness`).
+/// `SessionNew` increments `ezer.session.count` (metric only; the `session_start` log record comes from the richer `SessionHarness`).
 pub fn map_session_new(ev: &events::SessionNew) -> Option<ExternalRecord> {
     Some(
         ExternalRecord::default()
@@ -572,7 +572,7 @@ pub fn map_session_new(ev: &events::SessionNew) -> Option<ExternalRecord> {
     )
 }
 
-/// `SessionEnded` maps to `grok_code.session_end`.
+/// `SessionEnded` maps to `ezer.session_end`.
 pub fn map_session_end(ev: &events::SessionEnded) -> Option<ExternalRecord> {
     Some(
         ExternalRecord::event(ExternalEventName::SessionEnd)
@@ -637,7 +637,7 @@ fn attach_tool_input(
     rec
 }
 
-/// `PromptSubmitted` maps to `grok_code.user_prompt`.
+/// `PromptSubmitted` maps to `ezer.user_prompt`.
 /// Prompt text rides the `UserPrompts` gate (60 KB cap applied at emit time).
 /// `command_name` is always-on slash/skill metadata, never the user prompt body.
 pub fn map_user_prompt(ev: &events::PromptSubmitted) -> Option<ExternalRecord> {
@@ -658,7 +658,7 @@ pub fn map_user_prompt(ev: &events::PromptSubmitted) -> Option<ExternalRecord> {
     Some(rec)
 }
 
-/// `TurnCompleted` maps to `grok_code.turn_completed` and increments `turn.count` (and `error.count` on error outcomes).
+/// `TurnCompleted` maps to `ezer.turn_completed` and increments `turn.count` (and `error.count` on error outcomes).
 pub fn map_turn_completed(ev: &events::TurnCompleted) -> Option<ExternalRecord> {
     let outcome: &'static str = ev.outcome.into();
     let mut rec = ExternalRecord::event(ExternalEventName::TurnCompleted)
@@ -708,7 +708,7 @@ pub fn map_prompt_latency(ev: &events::PromptLatency) -> Option<ExternalRecord> 
     (!rec.metrics.is_empty()).then_some(rec)
 }
 
-/// `ModelResponseReceived` maps to `grok_code.api_request` and increments `token.usage`.
+/// `ModelResponseReceived` maps to `ezer.api_request` and increments `token.usage`.
 pub fn map_api_request(ev: &events::ModelResponseReceived) -> Option<ExternalRecord> {
     let mut rec = ExternalRecord::event(ExternalEventName::ApiRequest)
         .attr(ExternalKey::Model, ev.model_id.as_str())
@@ -746,7 +746,7 @@ pub fn map_api_request(ev: &events::ModelResponseReceived) -> Option<ExternalRec
     Some(rec)
 }
 
-/// `RateLimitHit` maps to `grok_code.api_error` (`error_category = rate_limit`).
+/// `RateLimitHit` maps to `ezer.api_error` (`error_category = rate_limit`).
 /// No `error.count` increment: a rate-limited turn (retries exhausted) also ends in `TurnCompleted{outcome: Error}`, the single increment source.
 /// Incrementing here too would double-count the failure.
 pub fn map_rate_limit_hit(ev: &events::RateLimitHit) -> Option<ExternalRecord> {
@@ -770,7 +770,7 @@ pub fn map_api_error(ev: &events::ApiError) -> Option<ExternalRecord> {
     )
 }
 
-/// `ToolCallCompleted` maps to `grok_code.tool_result` and increments `tool.usage`.
+/// `ToolCallCompleted` maps to `ezer.tool_result` and increments `tool.usage`.
 pub fn map_tool_result(ev: &events::ToolCallCompleted) -> Option<ExternalRecord> {
     let sanitized = sanitize_tool_name(&ev.tool_name);
     // The snake_case wire label from `strum::IntoStaticStr`, so a new variant cannot drift from a hand-written arm
@@ -813,7 +813,7 @@ pub fn map_tool_result(ev: &events::ToolCallCompleted) -> Option<ExternalRecord>
     ))
 }
 
-/// `PermissionDecisionRecord` maps to `grok_code.tool_decision` and increments `tool.decision`.
+/// `PermissionDecisionRecord` maps to `ezer.tool_decision` and increments `tool.decision`.
 /// Mixpanel serializes only [`events::PermissionDecisionPayload`]; tool args
 /// ride [`events::ExternalToolInput`] into [`attach_tool_input`].
 pub fn map_tool_decision(ev: &events::PermissionDecisionRecord) -> Option<ExternalRecord> {
@@ -846,7 +846,7 @@ pub fn map_tool_decision(ev: &events::PermissionDecisionRecord) -> Option<Extern
     ))
 }
 
-/// `AssistantResponse` → `grok_code.assistant_response`. `response_length` is
+/// `AssistantResponse` → `ezer.assistant_response`. `response_length` is
 /// always-on; `response` rides `AssistantResponses` and is omitted on
 /// tool-only turns (`response_length == 0`) even when the gate is on.
 pub fn map_assistant_response(ev: &events::AssistantResponse) -> Option<ExternalRecord> {
@@ -860,7 +860,7 @@ pub fn map_assistant_response(ev: &events::AssistantResponse) -> Option<External
     Some(rec)
 }
 
-/// `McpServerConnected` maps to `grok_code.mcp_server_connection` (`status=connected`).
+/// `McpServerConnected` maps to `ezer.mcp_server_connection` (`status=connected`).
 /// Server name collapses to `"mcp_server"` by default (name is details-gated).
 pub fn map_mcp_server_connected(ev: &events::McpServerConnected) -> Option<ExternalRecord> {
     Some(
@@ -881,7 +881,7 @@ pub fn map_mcp_server_connected(ev: &events::McpServerConnected) -> Option<Exter
     )
 }
 
-/// `McpServerFailed` maps to `grok_code.mcp_server_connection` (`status=failed`).
+/// `McpServerFailed` maps to `ezer.mcp_server_connection` (`status=failed`).
 pub fn map_mcp_server_failed(ev: &events::McpServerFailed) -> Option<ExternalRecord> {
     Some(
         ExternalRecord::event(ExternalEventName::McpServerConnection)
@@ -902,7 +902,7 @@ pub fn map_mcp_server_failed(ev: &events::McpServerFailed) -> Option<ExternalRec
     )
 }
 
-/// `PlanModeToggled` maps to `grok_code.permission_mode_changed`.
+/// `PlanModeToggled` maps to `ezer.permission_mode_changed`.
 pub fn map_plan_mode_toggled(ev: &events::PlanModeToggled) -> Option<ExternalRecord> {
     Some(
         ExternalRecord::event(ExternalEventName::PermissionModeChanged)
@@ -918,7 +918,7 @@ pub fn map_plan_mode_toggled(ev: &events::PlanModeToggled) -> Option<ExternalRec
     )
 }
 
-/// `ContextualTip` maps to `grok_code.contextual_tip`.
+/// `ContextualTip` maps to `ezer.contextual_tip`.
 /// The attrs are labels only (no user content), so nothing here is gated.
 pub fn map_contextual_tip(ev: &events::ContextualTip) -> Option<ExternalRecord> {
     Some(
@@ -928,7 +928,7 @@ pub fn map_contextual_tip(ev: &events::ContextualTip) -> Option<ExternalRecord> 
     )
 }
 
-/// `YoloToggled` maps to `grok_code.permission_mode_changed`.
+/// `YoloToggled` maps to `ezer.permission_mode_changed`.
 pub fn map_yolo_toggled(ev: &events::YoloToggled) -> Option<ExternalRecord> {
     Some(
         ExternalRecord::event(ExternalEventName::PermissionModeChanged)
@@ -952,7 +952,7 @@ pub fn map_yolo_toggled(ev: &events::YoloToggled) -> Option<ExternalRecord> {
     )
 }
 
-/// `SkillDispatched` maps to `grok_code.skill_activated`.
+/// `SkillDispatched` maps to `ezer.skill_activated`.
 /// Skill names are details-gated; source and trigger export by default.
 pub fn map_skill_activated(ev: &events::SkillDispatched) -> Option<ExternalRecord> {
     Some(
@@ -967,7 +967,7 @@ pub fn map_skill_activated(ev: &events::SkillDispatched) -> Option<ExternalRecor
     )
 }
 
-/// `PluginInstalled` maps to `grok_code.plugin_loaded`.
+/// `PluginInstalled` maps to `ezer.plugin_loaded`.
 pub fn map_plugin_installed(ev: &events::PluginInstalled) -> Option<ExternalRecord> {
     Some(
         ExternalRecord::event(ExternalEventName::PluginLoaded)
@@ -977,7 +977,7 @@ pub fn map_plugin_installed(ev: &events::PluginInstalled) -> Option<ExternalReco
     )
 }
 
-/// `PluginUsed` maps to `grok_code.plugin_loaded` (plugin name details-gated).
+/// `PluginUsed` maps to `ezer.plugin_loaded` (plugin name details-gated).
 pub fn map_plugin_used(ev: &events::PluginUsed) -> Option<ExternalRecord> {
     Some(
         ExternalRecord::event(ExternalEventName::PluginLoaded)
@@ -990,7 +990,7 @@ pub fn map_plugin_used(ev: &events::PluginUsed) -> Option<ExternalRecord> {
     )
 }
 
-/// `CompactionCompleted` maps to `grok_code.compaction`.
+/// `CompactionCompleted` maps to `ezer.compaction`.
 pub fn map_compaction(ev: &events::CompactionCompleted) -> Option<ExternalRecord> {
     Some(
         ExternalRecord::event(ExternalEventName::Compaction)
@@ -1001,8 +1001,8 @@ pub fn map_compaction(ev: &events::CompactionCompleted) -> Option<ExternalRecord
     )
 }
 
-/// `CompactionTriggered` is not mapped; the `grok_code.compaction` trigger attrs ride on the completion event instead (one event per compaction).
-/// `SubagentLaunched` maps to `grok_code.subagent` (`phase=launched`).
+/// `CompactionTriggered` is not mapped; the `ezer.compaction` trigger attrs ride on the completion event instead (one event per compaction).
+/// `SubagentLaunched` maps to `ezer.subagent` (`phase=launched`).
 pub fn map_subagent_launched(ev: &events::SubagentLaunched) -> Option<ExternalRecord> {
     Some(
         ExternalRecord::event(ExternalEventName::Subagent)
@@ -1011,7 +1011,7 @@ pub fn map_subagent_launched(ev: &events::SubagentLaunched) -> Option<ExternalRe
     )
 }
 
-/// `SubagentCompleted` maps to `grok_code.subagent` (`phase=completed`).
+/// `SubagentCompleted` maps to `ezer.subagent` (`phase=completed`).
 pub fn map_subagent_completed(ev: &events::SubagentCompleted) -> Option<ExternalRecord> {
     Some(
         ExternalRecord::event(ExternalEventName::Subagent)
@@ -1021,7 +1021,7 @@ pub fn map_subagent_completed(ev: &events::SubagentCompleted) -> Option<External
     )
 }
 
-/// `Login` maps to `grok_code.auth`.
+/// `Login` maps to `ezer.auth`.
 pub fn map_auth(ev: &events::Login) -> Option<ExternalRecord> {
     Some(
         ExternalRecord::event(ExternalEventName::Auth)
@@ -1029,7 +1029,7 @@ pub fn map_auth(ev: &events::Login) -> Option<ExternalRecord> {
     )
 }
 
-/// `InternalError` maps to `grok_code.internal_error`.
+/// `InternalError` maps to `ezer.internal_error`.
 /// Only the error class is exported: no message, no location.
 pub fn map_internal_error(ev: &events::InternalError) -> Option<ExternalRecord> {
     Some(
@@ -1109,7 +1109,7 @@ pub fn map_startup_interactive(ev: &events::StartupInteractive) -> Option<Extern
     )
 }
 
-/// `ModelSwitched` maps to `grok_code.model_switched`.
+/// `ModelSwitched` maps to `ezer.model_switched`.
 pub fn map_model_switched(ev: &events::ModelSwitched) -> Option<ExternalRecord> {
     Some(
         ExternalRecord::event(ExternalEventName::ModelSwitched)

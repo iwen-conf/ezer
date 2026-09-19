@@ -6,7 +6,7 @@
 //! Connections whose per-session runtime died are discarded by hyper's checkout ready-check, with the retry loop covering the rest.
 //!
 //! Wire behavior is pinned by the `shared_http_wire` and `shared_http_kill_switch` binaries.
-//! `GROK_EXTRA_CA_BUNDLE` adds extra CA roots to these clients and the mTLS clients.
+//! `EZER_EXTRA_CA_BUNDLE` adds extra CA roots to these clients and the mTLS clients.
 
 use std::sync::OnceLock;
 use std::time::Duration;
@@ -18,18 +18,18 @@ pub(crate) use mtls::client as mtls_client;
 static SHARED_H2: OnceLock<reqwest::Client> = OnceLock::new();
 static SHARED_HTTP1: OnceLock<reqwest::Client> = OnceLock::new();
 
-/// Kill switch: `GROK_SAMPLER_SHARED_CLIENT=0` (or `false`, any case) builds a fresh `reqwest::Client` per `SamplingClient` instead.
+/// Kill switch: `EZER_SAMPLER_SHARED_CLIENT=0` (or `false`, any case) builds a fresh `reqwest::Client` per `SamplingClient` instead.
 /// Resolved once per process: the environment cannot change externally after spawn.
 /// Latching keeps the rollback consistent with the pool knobs, which are also read only once.
 fn sharing_disabled() -> bool {
     static DISABLED: OnceLock<bool> = OnceLock::new();
     *DISABLED.get_or_init(|| {
-        let disabled = match std::env::var("GROK_SAMPLER_SHARED_CLIENT") {
+        let disabled = match std::env::var("EZER_SAMPLER_SHARED_CLIENT") {
             Ok(v) => v == "0" || v.eq_ignore_ascii_case("false"),
             Err(_) => false,
         };
         if disabled {
-            tracing::info!("sampler HTTP client sharing disabled via GROK_SAMPLER_SHARED_CLIENT");
+            tracing::info!("sampler HTTP client sharing disabled via EZER_SAMPLER_SHARED_CLIENT");
         }
         disabled
     })
@@ -79,7 +79,7 @@ pub(crate) fn pooled_client() -> PooledClient {
 pub(crate) fn pool_idle_timeout() -> Duration {
     static SECS: OnceLock<u64> = OnceLock::new();
     Duration::from_secs(*SECS.get_or_init(|| {
-        std::env::var("GROK_POOL_IDLE_TIMEOUT_SECS")
+        std::env::var("EZER_POOL_IDLE_TIMEOUT_SECS")
             .ok()
             .and_then(|v| v.parse().ok())
             .unwrap_or(90)
@@ -99,11 +99,11 @@ fn build_http_client() -> Result<reqwest::Client, reqwest::Error> {
 }
 
 fn configure_http2(builder: reqwest::ClientBuilder) -> reqwest::ClientBuilder {
-    let pool_max_idle: usize = std::env::var("GROK_POOL_MAX_IDLE")
+    let pool_max_idle: usize = std::env::var("EZER_POOL_MAX_IDLE")
         .ok()
         .and_then(|v| v.parse().ok())
         .unwrap_or(2);
-    let connect_timeout_secs: u64 = std::env::var("GROK_CONNECT_TIMEOUT_SECS")
+    let connect_timeout_secs: u64 = std::env::var("EZER_CONNECT_TIMEOUT_SECS")
         .ok()
         .and_then(|v| v.parse().ok())
         .unwrap_or(10);
@@ -125,7 +125,7 @@ fn build_http_client_http1() -> Result<reqwest::Client, reqwest::Error> {
 }
 
 fn configure_http1(builder: reqwest::ClientBuilder) -> reqwest::ClientBuilder {
-    let connect_timeout_secs: u64 = std::env::var("GROK_CONNECT_TIMEOUT_SECS")
+    let connect_timeout_secs: u64 = std::env::var("EZER_CONNECT_TIMEOUT_SECS")
         .ok()
         .and_then(|v| v.parse().ok())
         .unwrap_or(10);

@@ -12,7 +12,7 @@ pub enum ConfigSource {
     SystemManagedConfig,
     ManagedConfig,
     UserConfig,
-    /// A value injected via the `GROK_CONFIG` / `GROK_CONFIG_PATH` overlay.
+    /// A value injected via the `EZER_CONFIG` / `EZER_CONFIG_PATH` overlay.
     EnvOverlay,
     Config,
     Remote,

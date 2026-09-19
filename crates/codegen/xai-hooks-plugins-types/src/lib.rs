@@ -34,7 +34,7 @@ pub enum PluginScope {
 pub enum PluginOrigin {
     /// CLI `--plugin-dir`.
     CliOverride,
-    /// Project `.grok/plugins/`.
+    /// Project `.ezer/plugins/`.
     ProjectGrok,
     /// Project `.claude/plugins/`.
     ProjectClaude,
@@ -53,7 +53,7 @@ pub enum PluginOrigin {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         marketplace: Option<String>,
     },
-    /// Grok's install registry (marketplace or direct git/local install).
+    /// ezer's install registry (marketplace or direct git/local install).
     MarketplaceInstall {
         /// Marketplace source display name (None for direct installs).
         #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -235,7 +235,7 @@ pub struct HookInfo {
     pub timeout_ms: u64,
     /// Source directory of the hook definition file.
     pub source_dir: String,
-    /// Whether this hook is disabled via ~/.grok/disabled-hooks.
+    /// Whether this hook is disabled via ~/.ezer/disabled-hooks.
     #[serde(default)]
     pub disabled: bool,
     /// Enforced by root-owned managed policy: disable actions are refused

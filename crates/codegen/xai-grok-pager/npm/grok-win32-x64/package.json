@@ -1,7 +1,7 @@
 {
-    "name": "@xai-official/grok-win32-x64",
+    "name": "@ezer/ezer-win32-x64",
     "version": "0.2.0-dev",
-    "description": "win32-x64 binary for @xai-official/grok. Do not install directly; install @xai-official/grok instead.",
+    "description": "win32-x64 binary for @ezer/ezer. Do not install directly; install @ezer/ezer instead.",
     "license": "Apache-2.0",
     "files": [
         "bin/",

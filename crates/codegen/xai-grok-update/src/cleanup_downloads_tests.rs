@@ -27,7 +27,7 @@ fn executable_is_in_use_detects_this_test_process() {
 
 #[test]
 fn executable_is_in_use_is_false_for_missing_binary() {
-    assert!(!executable_is_in_use(Path::new("/no/such/grok-binary")));
+    assert!(!executable_is_in_use(Path::new("/no/such/ezer-binary")));
 }
 
 #[cfg(unix)]
@@ -55,13 +55,13 @@ async fn cleanup_keeps_an_older_binary_marked_in_use() {
     let dir = tempfile::tempdir().unwrap();
     let d = dir.path();
     for v in ["0.1.140", "0.1.141", "0.1.142", "0.1.143", "0.1.144"] {
-        std::fs::write(d.join(format!("grok-{v}-macos-aarch64")), v).unwrap();
+        std::fs::write(d.join(format!("ezer-{v}-macos-aarch64")), v).unwrap();
     }
     std::fs::write(d.join("grok-0.1.145-macos-aarch64"), "current").unwrap();
     make_all_stale(d);
 
     let live = d.join("grok-0.1.140-macos-aarch64");
-    cleanup_old_downloads_with(d, "grok", "0.1.145", |path| path == live).await;
+    cleanup_old_downloads_with(d, "ezer", "0.1.145", |path| path == live).await;
 
     assert!(d.join("grok-0.1.145-macos-aarch64").exists(), "current");
     assert!(d.join("grok-0.1.144-macos-aarch64").exists(), "N-1");

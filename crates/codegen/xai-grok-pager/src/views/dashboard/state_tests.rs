@@ -156,8 +156,8 @@ fn group_priority_ordering() {
 
 #[test]
 fn compact_cwd_strips_home() {
-    let p = Path::new("/Users/alice/projects/grok");
-    assert_eq!(compact_cwd(p, Some("/Users/alice")), "~/projects/grok");
+    let p = Path::new("/Users/alice/projects/ezer");
+    assert_eq!(compact_cwd(p, Some("/Users/alice")), "~/projects/ezer");
 }
 
 #[test]
@@ -5840,12 +5840,12 @@ fn clear_manual_scroll_re_engages_snap_to_selection() {
 
 /// Env var force-disables. A function-local `Mutex` would only serialize against itself; readers in
 /// other tests could still observe the transient `0` value.
-#[serial_test::serial(GROK_AGENT_DASHBOARD)]
+#[serial_test::serial(EZER_AGENT_DASHBOARD)]
 #[test]
 fn env_var_force_disables() {
     // SAFETY: the test temporarily mutates a process-wide env var.
     // `serial_test`'s lock ensures no other test marked with the
-    // same `GROK_AGENT_DASHBOARD` key reads it concurrently.
+    // same `EZER_AGENT_DASHBOARD` key reads it concurrently.
     unsafe { std::env::set_var("GROK_AGENT_DASHBOARD", "0") };
     assert!(!super::super::dashboard_enabled());
     unsafe { std::env::remove_var("GROK_AGENT_DASHBOARD") };

@@ -681,7 +681,7 @@ mod tests {
             Some(2)
         );
 
-        // Clean up the dir written under the real grok home.
+        // Clean up the dir written under the real ezer home.
         let _ = std::fs::remove_dir_all(&child_dir);
     }
 

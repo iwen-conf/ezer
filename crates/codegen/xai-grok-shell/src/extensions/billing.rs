@@ -1,6 +1,6 @@
 //! `x.ai/billing` extension handler.
 //!
-//! Fetches the authenticated user's Grok Build billing configuration (credit limit, usage, on-demand cap, billing period, history) from the backend.
+//! Fetches the authenticated user's ezer billing configuration (credit limit, usage, on-demand cap, billing period, history) from the backend.
 //! The pager and desktop use it to display credits and usage.
 
 use agent_client_protocol as acp;
@@ -52,9 +52,9 @@ pub struct BillingPeriodUsage {
     pub total_used: Option<Cent>,
 }
 
-/// Current billing configuration for Grok Build coding credits. Carries the newer credits-config fields (`credit_usage_percent`, `current_period`).
-/// It also carries the deprecated `GrokBuildBillingConfig` fields (`monthly_limit`, `used`, `billing_period_*`). Consumers should prefer the new fields and fall back to the deprecated ones.
-/// The same struct then works against both the new `GetGrokCreditsConfig` and the legacy `GetGrokBuildBillingConfig` responses.
+/// Current billing configuration for ezer coding credits. Carries the newer credits-config fields (`credit_usage_percent`, `current_period`).
+/// It also carries the deprecated `EzerBillingConfig` fields (`monthly_limit`, `used`, `billing_period_*`). Consumers should prefer the new fields and fall back to the deprecated ones.
+/// The same struct then works against both the new `GetGrokCreditsConfig` and the legacy `GetEzerBillingConfig` responses.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct BillingConfig {
@@ -82,7 +82,7 @@ pub struct BillingConfig {
     pub prepaid_balance: Option<Cent>,
     /// Whether this user is on unified usage billing (a shared weekly/monthly pool).
     /// It comes from `GrokCreditsConfig.is_unified_billing_user`, which billing sets from the remote setting `unified_consumer_billing_enabled`.
-    /// `None` when absent (legacy `GetGrokBuildBillingConfig` shape or older servers).
+    /// `None` when absent (legacy `GetEzerBillingConfig` shape or older servers).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub is_unified_billing_user: Option<bool>,
     /// Deprecated: use `current_period.start`.
@@ -95,7 +95,7 @@ pub struct BillingConfig {
     pub history: Vec<BillingPeriodUsage>,
 }
 
-/// Top-level response (primarily from `GET /rest/grok/credits` and the auto-topup-rule fetch).
+/// Top-level response (primarily from `GET /rest/ezer/credits` and the auto-topup-rule fetch).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BillingConfigResponse {
     pub config: Option<BillingConfig>,
@@ -145,7 +145,7 @@ pub async fn handle(agent: &MvpAgent, args: &acp::ExtRequest) -> ExtResult {
 }
 
 /// Structured context for unified-log entries from a successful billing fetch.
-/// Keeps history to a count + the most recent period so `~/.grok/logs/unified.jsonl` stays useful without dumping unbounded period arrays.
+/// Keeps history to a count + the most recent period so `~/.ezer/logs/unified.jsonl` stays useful without dumping unbounded period arrays.
 fn billing_unified_log_ctx(billing: &BillingConfigResponse) -> serde_json::Value {
     let history_len = billing
         .config
@@ -183,7 +183,7 @@ async fn handle_get_billing(agent: &MvpAgent) -> ExtResult {
     let auth = super::auth_gate::require_xai_auth(
         &agent.auth_manager,
         "Authentication required to fetch billing data",
-        "Billing data requires auth with grok.com. Run `grok login` to authenticate.",
+        "Billing data requires auth with grok.com. Run `ezer login` to authenticate.",
     )?;
 
     let proxy_base = agent.cli_chat_proxy_base_url();
@@ -199,7 +199,7 @@ async fn handle_get_billing(agent: &MvpAgent) -> ExtResult {
             xai_grok_login::GrokComConfig::default().token_header,
         )
         .header("x-userid", &auth.user_id)
-        .header("x-grok-client-version", xai_grok_version::VERSION)
+        .header("x-ezer-client-version", xai_grok_version::VERSION)
         .header(
             crate::http::CLIENT_MODE_HEADER,
             crate::http::process_client_mode(),
@@ -273,7 +273,7 @@ async fn handle_get_auto_topup_rule(agent: &MvpAgent) -> ExtResult {
     let auth = super::auth_gate::require_xai_auth(
         &agent.auth_manager,
         "Authentication required to fetch auto top-up rule",
-        "Auto top-up data requires auth with grok.com. Run `grok login` to authenticate.",
+        "Auto top-up data requires auth with grok.com. Run `ezer login` to authenticate.",
     )?;
 
     let proxy_base = agent.cli_chat_proxy_base_url();
@@ -289,7 +289,7 @@ async fn handle_get_auto_topup_rule(agent: &MvpAgent) -> ExtResult {
             xai_grok_login::GrokComConfig::default().token_header,
         )
         .header("x-userid", &auth.user_id)
-        .header("x-grok-client-version", xai_grok_version::VERSION)
+        .header("x-ezer-client-version", xai_grok_version::VERSION)
         .header(
             crate::http::CLIENT_MODE_HEADER,
             crate::http::process_client_mode(),

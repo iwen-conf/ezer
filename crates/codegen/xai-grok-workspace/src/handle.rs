@@ -11,10 +11,10 @@ use std::sync::Arc;
 use xai_hunk_tracker::{HunkTrackerActor, HunkTrackerHandle, TrackingMode};
 use xai_tool_protocol::turn_hook::TurnHookOutcome;
 use xai_tool_protocol::{SessionId, ToolId, ToolServerStatusPayload};
-/// Default SIGTERM drain budget (ms); override via `GROK_WORKSPACE_TERMINATION_GRACE_MS`.
+/// Default SIGTERM drain budget (ms); override via `EZER_WORKSPACE_TERMINATION_GRACE_MS`.
 /// 45s fits under the K8s grace period.
 const DEFAULT_TERMINATION_GRACE_MS: u64 = 45_000;
-/// preStop-hook drain marker; override via `GROK_WORKSPACE_DRAINING_FILE`.
+/// preStop-hook drain marker; override via `EZER_WORKSPACE_DRAINING_FILE`.
 const DEFAULT_DRAINING_FILE: &str = "/tmp/workspace-server.draining";
 static DRAIN_STARTED_TOTAL: std::sync::LazyLock<IntCounterVec> = std::sync::LazyLock::new(|| {
     register_int_counter_vec!(
@@ -494,7 +494,7 @@ impl WorkspaceHandle {
             crate::upload::environment::WorkspaceIdentity::default(),
         )
     }
-    /// Construct a handle with an explicit `$GROK_WORKSPACE_HOME` and a pre-spawned [`UploadQueue`](xai_file_utils::queue::UploadQueue),
+    /// Construct a handle with an explicit `$EZER_WORKSPACE_HOME` and a pre-spawned [`UploadQueue`](xai_file_utils::queue::UploadQueue),
     /// or none for a host that cannot upload. [`connect_local_workspace`] calls this; [`Self::new`] takes the queue-less path for tests and local mode.
     pub(crate) fn new_with_data_collection(
         config: WorkspaceConfig,
@@ -1394,7 +1394,7 @@ impl WorkspaceHandle {
         handle
     }
     /// Spawn a fire-and-forget per-turn `tool_state.json` snapshot and upload to `{session_id}/turn_{N}/tool_state.json`.
-    /// No-op when `GROK_WORKSPACE_TOOL_STATE_ENABLED` is off, opted out, there is no upload queue (local/test mode), or the session is unknown.
+    /// No-op when `EZER_WORKSPACE_TOOL_STATE_ENABLED` is off, opted out, there is no upload queue (local/test mode), or the session is unknown.
     fn spawn_tool_state_upload(&self, session_id: &str, turn_number: u64) {
         if !crate::session::tool_config::tool_state_enabled() {
             return;
@@ -4111,10 +4111,10 @@ fn classify_drain_outcome(
         DrainOutcome::Full
     }
 }
-/// The SIGTERM drain budget from `GROK_WORKSPACE_TERMINATION_GRACE_MS` (default [`DEFAULT_TERMINATION_GRACE_MS`]).
+/// The SIGTERM drain budget from `EZER_WORKSPACE_TERMINATION_GRACE_MS` (default [`DEFAULT_TERMINATION_GRACE_MS`]).
 /// The hub-evict path uses the hub-provided `grace_period_ms` instead.
 pub fn termination_grace_from_env() -> std::time::Duration {
-    grace_budget_from_raw(std::env::var("GROK_WORKSPACE_TERMINATION_GRACE_MS").ok())
+    grace_budget_from_raw(std::env::var("EZER_WORKSPACE_TERMINATION_GRACE_MS").ok())
 }
 /// Pure parse of the termination-grace env value: a positive integer ms wins, anything else (absent, unparseable, zero) falls back to the default.
 fn grace_budget_from_raw(raw: Option<String>) -> std::time::Duration {
@@ -4124,9 +4124,9 @@ fn grace_budget_from_raw(raw: Option<String>) -> std::time::Duration {
         .unwrap_or(DEFAULT_TERMINATION_GRACE_MS);
     std::time::Duration::from_millis(ms)
 }
-/// Path of the preStop drain marker (`GROK_WORKSPACE_DRAINING_FILE` or [`DEFAULT_DRAINING_FILE`]).
+/// Path of the preStop drain marker (`EZER_WORKSPACE_DRAINING_FILE` or [`DEFAULT_DRAINING_FILE`]).
 fn draining_file_path() -> std::path::PathBuf {
-    std::env::var("GROK_WORKSPACE_DRAINING_FILE")
+    std::env::var("EZER_WORKSPACE_DRAINING_FILE")
         .map(std::path::PathBuf::from)
         .unwrap_or_else(|_| std::path::PathBuf::from(DEFAULT_DRAINING_FILE))
 }
@@ -4280,10 +4280,10 @@ pub(crate) async fn build_local_workspace(
             workspace_home.display()
         ))
     })?;
-    let api_base_url = std::env::var("GROK_CLI_CHAT_PROXY_BASE_URL")
+    let api_base_url = std::env::var("EZER_CLI_CHAT_PROXY_BASE_URL")
         .unwrap_or_else(|_| "https://cli-chat-proxy.grok.com/v1".to_string());
     let data_collection_disabled =
-        std::env::var("GROK_WORKSPACE_DATA_COLLECTION_DISABLED").as_deref() != Ok("false");
+        std::env::var("EZER_WORKSPACE_DATA_COLLECTION_DISABLED").as_deref() != Ok("false");
     let mut factory = host_kind.session_context_factory(auth.clone(), api_base_url.clone());
     if crate::session::tool_config::tool_state_enabled() {
         factory = factory.with_tool_state_home(workspace_home.clone());
@@ -4317,15 +4317,15 @@ pub(crate) async fn build_local_workspace(
     }
     ws_config.tool_approval = crate::permission::approval_gate_for(host_kind);
     ws_config.host_kind = host_kind;
-    if let Ok(dir) = std::env::var("GROK_WORKSPACE_SERVER_SKILLS_DIR")
+    if let Ok(dir) = std::env::var("EZER_WORKSPACE_SERVER_SKILLS_DIR")
         && !dir.is_empty()
     {
         ws_config.skills_config.server_skill_dirs = vec![dir];
     }
-    if let Ok(dir) = std::env::var("GROK_WORKSPACE_BUNDLED_SKILLS_DIR")
+    if let Ok(dir) = std::env::var("EZER_WORKSPACE_BUNDLED_SKILLS_DIR")
         && !dir.is_empty()
     {
-        let allowlist = std::env::var("GROK_WORKSPACE_BUNDLED_SKILLS_ALLOWLIST").ok();
+        let allowlist = std::env::var("EZER_WORKSPACE_BUNDLED_SKILLS_ALLOWLIST").ok();
         ws_config
             .skills_config
             .ignore
@@ -4398,9 +4398,9 @@ pub(crate) async fn build_local_workspace(
     .map_err(|e| WorkspaceError::HubError(format!("failed to create workspace: {e}")))?;
     Ok(ws_handle)
 }
-/// Resolve `$GROK_WORKSPACE_HOME`, the workspace-owned on-disk state root. `<grok_home>/workspace`, where `<grok_home>` honours `$GROK_HOME` and otherwise falls back to `~/.grok` (see [`xai_grok_config::grok_home`]).
+/// Resolve `$EZER_WORKSPACE_HOME`, the workspace-owned on-disk state root. `<grok_home>/workspace`, where `<grok_home>` honours `$GROK_HOME` and otherwise falls back to `~/.ezer` (see [`xai_grok_config::grok_home`]).
 pub fn resolve_workspace_home() -> std::path::PathBuf {
-    if let Ok(p) = std::env::var("GROK_WORKSPACE_HOME")
+    if let Ok(p) = std::env::var("EZER_WORKSPACE_HOME")
         && !p.trim().is_empty()
     {
         return std::path::PathBuf::from(p);
@@ -4444,26 +4444,26 @@ fn bundled_allowlist_ignore_dirs(dir: &str, allowlist: Option<&str>) -> Vec<Stri
     dirs.sort();
     dirs
 }
-/// Whether per-session `events.jsonl` recording is enabled (`GROK_WORKSPACE_EVENTS_ENABLED=true`). Any other value (including unset) keeps the legacy behaviour.
+/// Whether per-session `events.jsonl` recording is enabled (`EZER_WORKSPACE_EVENTS_ENABLED=true`). Any other value (including unset) keeps the legacy behaviour.
 /// [`WorkspaceShared::session_event_writer`] hands back [`EventWriter::noop()`](xai_grok_session_events::EventWriter::noop).
 fn events_enabled() -> bool {
-    std::env::var("GROK_WORKSPACE_EVENTS_ENABLED").as_deref() == Ok("true")
+    std::env::var("EZER_WORKSPACE_EVENTS_ENABLED").as_deref() == Ok("true")
 }
 /// Watchdog for awaiting enqueue outcomes when answering an `After` turn hook.
 /// MUST undercut the requester's 10s hook deadline or the reply (and its ack) arrives after the requester gave up.
-/// Default 8s; override via `GROK_WORKSPACE_AFTER_TURN_WATCHDOG_MS` (malformed values fall back).
+/// Default 8s; override via `EZER_WORKSPACE_AFTER_TURN_WATCHDOG_MS` (malformed values fall back).
 fn after_turn_watchdog() -> std::time::Duration {
     const DEFAULT_MS: u64 = 8_000;
-    let ms = std::env::var("GROK_WORKSPACE_AFTER_TURN_WATCHDOG_MS")
+    let ms = std::env::var("EZER_WORKSPACE_AFTER_TURN_WATCHDOG_MS")
         .ok()
         .and_then(|s| s.parse::<u64>().ok())
         .unwrap_or(DEFAULT_MS);
     std::time::Duration::from_millis(ms)
 }
-/// Whether per-session `workspace_tool_definitions.json` emission is enabled (`GROK_WORKSPACE_TOOL_DEFS_ENABLED=true`).
+/// Whether per-session `workspace_tool_definitions.json` emission is enabled (`EZER_WORKSPACE_TOOL_DEFS_ENABLED=true`).
 /// Any other value keeps legacy behaviour.
 fn tool_defs_enabled() -> bool {
-    std::env::var("GROK_WORKSPACE_TOOL_DEFS_ENABLED").as_deref() == Ok("true")
+    std::env::var("EZER_WORKSPACE_TOOL_DEFS_ENABLED").as_deref() == Ok("true")
 }
 /// Debounce window for `ToolsChanged`-driven re-emission: at most one re-emit per session per window.
 pub(crate) const TOOL_DEFS_DEBOUNCE: std::time::Duration = std::time::Duration::from_secs(5);
@@ -4643,14 +4643,14 @@ fn reduce_enqueue_outcomes(
     }
 }
 /// Per-process ephemeral workspace home for handles constructed without a backing upload queue (tests, local mode).
-/// Never the real grok home: only [`connect_local_workspace`] resolves `$GROK_WORKSPACE_HOME`.
+/// Never the real ezer home: only [`connect_local_workspace`] resolves `$EZER_WORKSPACE_HOME`.
 /// The queue-less default path can therefore never collide with a real workspace's state dir.
 fn ephemeral_workspace_home() -> std::path::PathBuf {
-    std::env::temp_dir().join(format!("grok-workspace-ephemeral-{}", std::process::id()))
+    std::env::temp_dir().join(format!("ezer-workspace-ephemeral-{}", std::process::id()))
 }
-/// Resolve `workspace_rewind_all_outcomes` from `GROK_WORKSPACE_REWIND_ALL_OUTCOMES` (default off).
+/// Resolve `workspace_rewind_all_outcomes` from `EZER_WORKSPACE_REWIND_ALL_OUTCOMES` (default off).
 fn rewind_all_outcomes_from_env() -> bool {
-    xai_grok_config::env_bool("GROK_WORKSPACE_REWIND_ALL_OUTCOMES").unwrap_or(false)
+    xai_grok_config::env_bool("EZER_WORKSPACE_REWIND_ALL_OUTCOMES").unwrap_or(false)
 }
 /// Flush the session toolset's `ResourcesPersistence` to disk (a fresh snapshot, waiting for the atomic-rename write to land).
 /// Then read the bytes back and enqueue them for the given turn.

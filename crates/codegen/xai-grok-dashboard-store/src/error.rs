@@ -6,7 +6,7 @@ pub type Result<T> = std::result::Result<T, StoreError>;
 /// Every typed failure the store API can return.
 #[derive(Debug, thiserror::Error)]
 pub enum StoreError {
-    /// The file was written by a newer grok (`user_version` above what this build supports).
+    /// The file was written by a newer ezer (`user_version` above what this build supports).
     /// The handle stays open read-only; every write returns this.
     #[error("workspace store is schema v{found}; this build supports v{supported} (read-only)")]
     NewerSchema { found: u32, supported: u32 },

@@ -2,7 +2,7 @@ use crate::util::config::RemoteSettings;
 use toml::Value as TomlValue;
 use xai_grok_sampling_types::ReasoningEffort;
 
-pub(crate) const ENV_PROMPT_SUGGESTIONS: &str = "GROK_PROMPT_SUGGESTIONS";
+pub(crate) const ENV_PROMPT_SUGGESTIONS: &str = "EZER_PROMPT_SUGGESTIONS";
 
 const PROMPT_SUGGEST_MAX_OUTPUT_TOKENS_MIN: u32 = 16;
 const PROMPT_SUGGEST_MAX_OUTPUT_TOKENS_DEFAULT: u32 = 64;
@@ -208,7 +208,7 @@ pub(crate) fn prompt_suggest_sampling_defaults(
 }
 
 /// This alias resolves server-side with `alias_default_effort = none`.
-pub(crate) const NON_REASONING_PROMPT_SUGGEST_MODEL: &str = "grok-4-1-fast-non-reasoning";
+pub(crate) const NON_REASONING_PROMPT_SUGGEST_MODEL: &str = "workbuddy";
 
 pub(crate) fn prompt_suggest_reasoning_is_off(configured: Option<ReasoningEffort>) -> bool {
     matches!(configured, None | Some(ReasoningEffort::None))
@@ -348,7 +348,7 @@ mod tests {
         assert!(!prompt_suggest_reasoning_is_off(Some(ReasoningEffort::Low)));
         assert_eq!(
             NON_REASONING_PROMPT_SUGGEST_MODEL,
-            "grok-4-1-fast-non-reasoning"
+            "workbuddy"
         );
     }
 

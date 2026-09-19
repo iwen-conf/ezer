@@ -1,4 +1,4 @@
-//! Merges native `.grok/config.toml`, managed/enterprise settings, and `.claude` settings into the effective `PermissionConfig`.
+//! Merges native `.ezer/config.toml`, managed/enterprise settings, and `.claude` settings into the effective `PermissionConfig`.
 //! Also holds the MCP-server and marketplace allowlists and the always-approve policy pin.
 
 use crate::permission::claude_settings::*;
@@ -68,7 +68,7 @@ fn synthetic_rules_for_default_mode(
     (rules, skipped, bypass_blocked)
 }
 
-/// Parse a defaultMode string; an unknown value fails safe to [`DefaultPermissionMode::Default`] with a warn and a skip record for `grok inspect`.
+/// Parse a defaultMode string; an unknown value fails safe to [`DefaultPermissionMode::Default`] with a warn and a skip record for `ezer inspect`.
 fn parse_default_mode_claiming_scope(
     raw: &str,
     path: &Path,
@@ -187,7 +187,7 @@ fn extract_toml_permissions(
 
 /// Load `[permission]` rules from requirements.toml layers. Trust keys on the
 /// `is_system` flag (set at load, never from `path`): system → `SystemRequirements`,
-/// user `~/.grok` → `Requirements`, so [`is_admin_source`] trusts only the root tier.
+/// user `~/.ezer` → `Requirements`, so [`is_admin_source`] trusts only the root tier.
 fn load_requirements_permissions() -> Vec<Sourced<PermissionRule>> {
     xai_grok_config::requirements_layers()
         .into_iter()
@@ -206,7 +206,7 @@ fn load_requirements_permissions() -> Vec<Sourced<PermissionRule>> {
         .collect()
 }
 
-/// Load `[permission]` rules from `~/.grok/config.toml` (lowest) then each `.grok/config.toml` from repo root to `cwd`.
+/// Load `[permission]` rules from `~/.ezer/config.toml` (lowest) then each `.ezer/config.toml` from repo root to `cwd`.
 /// The walk matches [`crate::project_config::find_project_configs`] so detector and loader agree. Empty if no `[permission]` section.
 fn load_config_toml_permissions(cwd: &Path, project_trusted: bool) -> Vec<Sourced<PermissionRule>> {
     let mut rules = Vec::new();
@@ -263,7 +263,7 @@ fn managed_config_permissions(
 // Fallback Resolver
 // ═════════════════════════════════════════════════════════════════════════════
 
-/// Resolve permission config, merging native Grok and Claude sources. Evaluation is deny > ask > allow; merge order is provenance only.
+/// Resolve permission config, merging native ezer and Claude sources. Evaluation is deny > ask > allow; merge order is provenance only.
 /// Claude `acceptEdits` appends a synthetic `Allow Edit`. `project_trusted` gates project-tier rules; global/user/admin always load. Hub/cloud defaults trusted.
 pub async fn resolve_permission_config_with_fallback(
     cwd: &Path,
@@ -408,7 +408,7 @@ fn is_admin_source(source: &RequirementSource) -> bool {
 }
 
 /// Under the pin, drop untrusted catch-all Allow rules (they substitute for the blocked `--yolo`); keep admin-tier ones.
-/// Records each drop for `grok inspect`.
+/// Records each drop for `ezer inspect`.
 fn drop_untrusted_catchall_allows(
     rules: Vec<Sourced<PermissionRule>>,
     policy_block: Option<&'static str>,
@@ -447,7 +447,7 @@ struct ResolveInputs<'a> {
     managed: &'a ManagedSettings,
     managed_config_rules: Vec<Sourced<PermissionRule>>,
     /// Folder-trust verdict for `cwd`.
-    /// When false, project-tier `.claude/settings.json` / `.grok/config.toml` permission rules are dropped (global/user/admin tiers still load).
+    /// When false, project-tier `.claude/settings.json` / `.ezer/config.toml` permission rules are dropped (global/user/admin tiers still load).
     project_trusted: bool,
 }
 
@@ -835,7 +835,7 @@ fn parse_disable_bypass_permissions(json: &serde_json::Value) -> Option<bool> {
     Some(val.as_str() == Some("disable"))
 }
 
-/// Whether vendor `managed-settings.json` requests Claude's bypass lock. Advisory only: the resolver ignores it so grok does not inherit a host-wide lockdown.
+/// Whether vendor `managed-settings.json` requests Claude's bypass lock. Advisory only: the resolver ignores it so ezer does not inherit a host-wide lockdown.
 /// Render as `claudeBypassLockAdvisory`, never as enforced policy.
 pub fn claude_bypass_lock_request(features: &ManagedSettingsFeatures) -> bool {
     features.source_path.is_some() && features.disable_yolo == Some(true)
@@ -875,7 +875,7 @@ pub struct YoloPolicyLock {
 }
 
 /// Hard-lock predicate. `Some(reason)` iff a requirements layer sets `[ui] disable_bypass_permissions_mode` (or legacy `[ui] yolo = false`).
-/// Vendor `disableBypassPermissionsMode` is not consulted, so grok does not inherit a host-wide lockdown; use root-owned `requirements.toml`. Fails open on user-writable layers.
+/// Vendor `disableBypassPermissionsMode` is not consulted, so ezer does not inherit a host-wide lockdown; use root-owned `requirements.toml`. Fails open on user-writable layers.
 pub fn yolo_disabled_by_policy() -> Option<&'static str> {
     yolo_policy_lock().map(|lock| lock.reason.message())
 }

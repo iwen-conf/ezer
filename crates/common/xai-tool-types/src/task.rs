@@ -386,7 +386,7 @@ pub struct BackgroundNoticeNaming<'a> {
 }
 
 impl BackgroundNoticeNaming<'static> {
-    /// Canonical grok-build names, for hosts without renaming.
+    /// Canonical ezer-build names, for hosts without renaming.
     pub const CANONICAL: Self = Self {
         task_output_tool: "get_task_output",
         task_ids_param: "task_ids",
@@ -585,17 +585,17 @@ pub fn task_output_waits(timeout_ms: Option<u64>) -> bool {
 /// Default ceiling on a single blocking wait (`get_task_output` with a positive
 /// `timeout_ms`, `wait_tasks`). One hour: above the p99 of timeouts the model
 /// actually requests, so the harness rarely hands back "still running" first.
-/// Hosts with a shorter transport deadline set `GROK_MAX_WAIT_BLOCK_MS`.
+/// Hosts with a shorter transport deadline set `EZER_MAX_WAIT_BLOCK_MS`.
 pub const MAX_WAIT_BLOCK_MS_DEFAULT: u64 = 3_600_000;
 
-/// The blocking-wait ceiling in effect, honoring `GROK_MAX_WAIT_BLOCK_MS`.
+/// The blocking-wait ceiling in effect, honoring `EZER_MAX_WAIT_BLOCK_MS`.
 ///
 /// A host whose transport deadline is shorter than the default sets the env var
 /// so the server enforces — and the tool descriptions advertise — the same
 /// number the caller will actually wait for. Without that, a model believing the
 /// default asks for a wait its own client will abandon first.
 pub fn max_wait_block_ms() -> u64 {
-    std::env::var("GROK_MAX_WAIT_BLOCK_MS")
+    std::env::var("EZER_MAX_WAIT_BLOCK_MS")
         .ok()
         .and_then(|raw| raw.parse::<u64>().ok())
         .unwrap_or(MAX_WAIT_BLOCK_MS_DEFAULT)
@@ -1765,8 +1765,8 @@ mod tests {
     // ── Lifecycle tool descriptions ──────────────────────────────────────
     //
     // These lock the exact model-facing text. The "cli_default" cases must
-    // match what the grok-shell MiniJinja templates render for the default
-    // grok-build toolset (monitor + task + bash + read present, POSIX). The
+    // match what the ezer-shell MiniJinja templates render for the default
+    // ezer-build toolset (monitor + task + bash + read present, POSIX). The
     // "toolbox" cases lock the subagent-only rendering used by the backend toolbox.
 
     #[test]

@@ -683,7 +683,7 @@ async fn upload_harness_trace_turns_build_per_turn_manifest() {
 /// With no overrides and model_agent_type = None, the default agent is used.
 #[test]
 #[serial_test::serial]
-fn resolve_agent_definition_defaults_to_grok_build() {
+fn resolve_agent_definition_defaults_to_ezer_build() {
     let prev = std::env::var("GROK_AGENT").ok();
     unsafe {
         std::env::remove_var("GROK_AGENT");
@@ -701,7 +701,7 @@ fn resolve_agent_definition_defaults_to_grok_build() {
         unsafe { std::env::set_var("GROK_AGENT", v) }
     }
 }
-/// When model_agent_type = Some("codex"), the codex agent is selected even though the default chain would return grok-build.
+/// When model_agent_type = Some("codex"), the codex agent is selected even though the default chain would return ezer-build.
 #[test]
 #[serial_test::serial]
 fn resolve_agent_definition_model_agent_type_overrides_default() {
@@ -774,12 +774,12 @@ fn resolve_agent_definition_acp_profile_wins_when_model_agent_type_is_default() 
         unsafe { std::env::set_var("GROK_AGENT", v) }
     }
 }
-/// Regression: `DEFAULT_AGENT_TYPE` flipped to `grok-build-plan`.
-/// Models in the catalog that still declare `agent_type = "grok-build"` explicitly must NOT preempt an ACP profile.
-/// Any value in the `grok-build*` family is the stock harness with no strict requirement.
+/// Regression: `DEFAULT_AGENT_TYPE` flipped to `ezer-build-plan`.
+/// Models in the catalog that still declare `agent_type = "ezer-build"` explicitly must NOT preempt an ACP profile.
+/// Any value in the `ezer-build*` family is the stock harness with no strict requirement.
 #[test]
 #[serial_test::serial]
-fn resolve_agent_definition_acp_profile_wins_for_explicit_grok_build_family() {
+fn resolve_agent_definition_acp_profile_wins_for_explicit_ezer_build_family() {
     let prev = std::env::var("GROK_AGENT").ok();
     unsafe {
         std::env::remove_var("GROK_AGENT");
@@ -1043,7 +1043,7 @@ fn enqueue_replace_system_prompt_override_noop_when_absent_or_empty() {
     );
 }
 /// Regression for the web-client flow where `_meta.agentProfile` drives `set_session_model`.
-/// A zero-turn switch from `grok-build` (a client profile name) to `grok-build-plan` (the default model agent_type) must be treated as compatible.
+/// A zero-turn switch from `ezer-build` (a client profile name) to `ezer-build-plan` (the default model agent_type) must be treated as compatible.
 /// Compatible means the harness rebuild is skipped and the custom prompt body preserved.
 #[test]
 fn harnesses_are_compatible_for_stock_family_pairs() {
@@ -1072,14 +1072,14 @@ fn explicit_agent_type_wins_over_session_default() {
     );
 }
 #[test]
-fn null_agent_type_falls_back_to_session_default_grok_build_plan() {
+fn null_agent_type_falls_back_to_session_default_ezer_build_plan() {
     assert_eq!(
         resolve_required_agent_type(None, "grok-build-plan"),
         "grok-build-plan"
     );
 }
 #[test]
-fn null_agent_type_falls_back_to_session_default_grok_build() {
+fn null_agent_type_falls_back_to_session_default_ezer_build() {
     assert_eq!(
         resolve_required_agent_type(None, "grok-build"),
         "grok-build"
@@ -2944,11 +2944,11 @@ async fn ensure_plugin_registry_lazily_populates_snapshot() {
 }
 /// Regression: the shared snapshot was built from the boot-time in-memory `[plugins]` config, which
 /// `config.toml` edits never refresh. A plugin toggled after the agent started (marketplace install,
-/// `grok plugin enable|disable`, a client editing the file) kept its boot-time `enabled` for
+/// `ezer plugin enable|disable`, a client editing the file) kept its boot-time `enabled` for
 /// session-less `x.ai/plugins/list` / `x.ai/skills/list` callers until restart, while per-session
 /// registries, which read disk, were right. The shared rebuild must read disk too.
 ///
-/// Exercised through a project `.grok/config.toml` (merged by `resolve_effective_plugins_config` for
+/// Exercised through a project `.ezer/config.toml` (merged by `resolve_effective_plugins_config` for
 /// the given cwd): `grok_home()` is a process-wide `OnceLock`, so the user layer cannot be isolated
 /// per test.
 #[tokio::test]
@@ -2998,7 +2998,7 @@ async fn shared_plugin_registry_snapshot_reads_plugins_config_from_disk() {
     );
 }
 /// Scaffolding for the session-less `x.ai/plugins/reload` regressions: a hermetic GROK_HOME, the
-/// folder-trust feature in its release-build default (`GROK_FOLDER_TRUST` unset), and an agent whose
+/// folder-trust feature in its release-build default (`EZER_FOLDER_TRUST` unset), and an agent whose
 /// launch dir is `repo` (captured from the process cwd at construction, so callers hold `serial`).
 struct ReloadHarness {
     _env: Vec<xai_grok_test_support::EnvGuard>,
@@ -3014,7 +3014,7 @@ impl ReloadHarness {
         let home = tempfile::tempdir().unwrap();
         let env = vec![
             EnvGuard::set("GROK_HOME", home.path()),
-            EnvGuard::unset("GROK_FOLDER_TRUST"),
+            EnvGuard::unset("EZER_FOLDER_TRUST"),
             EnvGuard::set(xai_grok_version::TEST_VERSION_ENV, "0.0.0-sim"),
         ];
         let previous_cwd = std::env::current_dir().unwrap();
@@ -3069,9 +3069,9 @@ async fn plugins_reload_resolves_real_remote_trust_before_reading_disk_config() 
     git2::Repository::init(repo.path()).unwrap();
     let proj_plugin = repo.path().join("proj-plugin");
     write_plugin_manifest(&proj_plugin, "regr-killswitch-proj");
-    std::fs::create_dir_all(repo.path().join(".grok")).unwrap();
+    std::fs::create_dir_all(repo.path().join(".ezer")).unwrap();
     std::fs::write(
-        repo.path().join(".grok").join("config.toml"),
+        repo.path().join(".ezer").join("config.toml"),
         format!("[plugins]\npaths = ['{}']\n", proj_plugin.display()),
     )
     .unwrap();
@@ -3116,7 +3116,7 @@ async fn plugins_reload_rechecks_launch_dir_trust() {
     write_plugin_manifest(
         &repo
             .path()
-            .join(".grok")
+            .join(".ezer")
             .join("plugins")
             .join("regr-late-proj"),
         "regr-late-proj",
@@ -3171,7 +3171,7 @@ async fn lazy_registry_build_resolves_real_remote_trust_before_reading_disk_conf
     write_plugin_manifest(
         &repo
             .path()
-            .join(".grok")
+            .join(".ezer")
             .join("plugins")
             .join("regr-lazy-killswitch"),
         "regr-lazy-killswitch",
@@ -3430,7 +3430,7 @@ fn check_nav_eligibility_from_sessions(
 #[tokio::test]
 async fn test_web_session_with_capability_is_eligible() {
     let sid = acp::SessionId::new("sess-web");
-    let mut handle = make_test_handle("model", false, Some("grok-web"));
+    let mut handle = make_test_handle("model", false, Some("ezer-web"));
     handle.code_nav_enabled = true;
     let sessions = [(sid.clone(), handle)].into();
     assert!(
@@ -3442,7 +3442,7 @@ async fn test_web_session_with_capability_is_eligible() {
 #[tokio::test]
 async fn test_tui_session_is_rejected() {
     let sid = acp::SessionId::new("sess-tui");
-    let mut handle = make_test_handle("model", false, Some("grok-tui"));
+    let mut handle = make_test_handle("model", false, Some("ezer-tui"));
     handle.code_nav_enabled = true;
     let sessions = [(sid.clone(), handle)].into();
     assert_eq!(
@@ -3455,7 +3455,7 @@ async fn test_tui_session_is_rejected() {
 #[tokio::test]
 async fn test_web_session_without_capability_is_rejected() {
     let sid = acp::SessionId::new("sess-web-no-cap");
-    let mut handle = make_test_handle("model", false, Some("grok-web"));
+    let mut handle = make_test_handle("model", false, Some("ezer-web"));
     handle.code_nav_enabled = false;
     let sessions = [(sid.clone(), handle)].into();
     assert_eq!(
@@ -3469,9 +3469,9 @@ async fn test_web_session_without_capability_is_rejected() {
 async fn test_leader_mode_two_sessions_stay_isolated() {
     let web_sid = acp::SessionId::new("web");
     let tui_sid = acp::SessionId::new("tui");
-    let mut web_handle = make_test_handle("model", false, Some("grok-web"));
+    let mut web_handle = make_test_handle("model", false, Some("ezer-web"));
     web_handle.code_nav_enabled = true;
-    let mut tui_handle = make_test_handle("model", false, Some("grok-tui"));
+    let mut tui_handle = make_test_handle("model", false, Some("ezer-tui"));
     tui_handle.code_nav_enabled = false;
     let sessions = [(web_sid.clone(), web_handle), (tui_sid.clone(), tui_handle)].into();
     assert!(
@@ -3489,7 +3489,7 @@ async fn test_leader_mode_two_sessions_stay_isolated() {
 #[tokio::test]
 async fn test_unknown_session_id_returns_session_required() {
     let known_sid = acp::SessionId::new("known");
-    let mut known_handle = make_test_handle("model", false, Some("grok-web"));
+    let mut known_handle = make_test_handle("model", false, Some("ezer-web"));
     known_handle.code_nav_enabled = true;
     let sessions = [(known_sid.clone(), known_handle)].into();
     let stale_sid = acp::SessionId::new("stale-or-evicted");
@@ -3719,7 +3719,7 @@ fn on_demand_enabled_from_remote_settings() {
 async fn auth_type_session_based_no_current_returns_session_token() {
     for method_id in [
         crate::agent::auth_method::CACHED_TOKEN_AUTH_METHOD_ID,
-        crate::agent::auth_method::GROK_COM_METHOD_ID,
+        crate::agent::auth_method::EZER_COM_METHOD_ID,
         crate::agent::auth_method::OIDC_METHOD_ID,
     ] {
         let agent = build_minimal_agent_for_tests();
@@ -3827,7 +3827,7 @@ async fn cached_token_fallthrough_prefers_api_key_for_deployment_key() {
 #[tokio::test(flavor = "current_thread")]
 #[serial_test::serial]
 async fn cached_token_fallthrough_respects_kill_switch() {
-    use crate::agent::auth_method::{GROK_COM_METHOD_ID, XAI_API_KEY_ENV_VAR};
+    use crate::agent::auth_method::{EZER_COM_METHOD_ID, XAI_API_KEY_ENV_VAR};
     use xai_grok_test_support::EnvGuard;
     let _lockdown = EnvGuard::unset("GROK_DISABLE_API_KEY_AUTH");
     let _key = EnvGuard::set(XAI_API_KEY_ENV_VAR, "test-deployment-key");
@@ -3837,7 +3837,7 @@ async fn cached_token_fallthrough_respects_kill_switch() {
             .cached_token_fallthrough_method_id()
             .as_ref()
             .map(|id| id.0.as_ref()),
-        Some(GROK_COM_METHOD_ID),
+        Some(EZER_COM_METHOD_ID),
         "disable_api_key_auth must keep the cached_token fallthrough on \
          interactive grok.com so XAI_API_KEY can't bypass forced IdP login",
     );
@@ -3848,7 +3848,7 @@ async fn cached_token_fallthrough_respects_kill_switch() {
 #[serial_test::serial]
 async fn cached_token_fallthrough_falls_to_grok_com_without_credentials() {
     use crate::agent::auth_method::{
-        GROK_COM_METHOD_ID, LEGACY_XAI_API_KEY_ENV_VAR, XAI_API_KEY_ENV_VAR,
+        EZER_COM_METHOD_ID, LEGACY_XAI_API_KEY_ENV_VAR, XAI_API_KEY_ENV_VAR,
     };
     use xai_grok_test_support::EnvGuard;
     let _lockdown = EnvGuard::unset("GROK_DISABLE_API_KEY_AUTH");
@@ -3860,7 +3860,7 @@ async fn cached_token_fallthrough_falls_to_grok_com_without_credentials() {
             .cached_token_fallthrough_method_id()
             .as_ref()
             .map(|id| id.0.as_ref()),
-        Some(GROK_COM_METHOD_ID),
+        Some(EZER_COM_METHOD_ID),
         "no API-key creds and no kill switch -> interactive grok.com login",
     );
 }
@@ -3957,7 +3957,7 @@ async fn prepare_image_gen_config_fails_open_without_auth() {
     );
 }
 /// The imagine tools bypass cli-chat-proxy (direct API calls).
-/// The server can only scope the coding data-retention opt-out (`/privacy opt-out`) to Build traffic via the `x-grok-client-identifier` header.
+/// The server can only scope the coding data-retention opt-out (`/privacy opt-out`) to Build traffic via the `x-ezer-client-identifier` header.
 /// If this header is dropped, opted-out users' imagine prompts are logged/retained server-side.
 #[tokio::test(flavor = "current_thread")]
 async fn prepare_image_gen_config_sends_client_identifier_header() {
@@ -4237,7 +4237,7 @@ async fn diagnostic_upload_skipped_after_mid_session_trace_upload_kill_switch() 
     );
 }
 use crate::session::storage::search::IndexDecision;
-/// A grok home of its own, with the switch left at its registered default.
+/// A ezer home of its own, with the switch left at its registered default.
 /// `decide_search_index` stops short of a session store, but do not reach `bootstrap_once`.
 /// `bootstrap_once` takes the process-cached `grok_home()`, which these guards cannot redirect, so it could index the developer's own store.
 fn search_index_env() -> (tempfile::TempDir, [xai_grok_test_support::EnvGuard; 2]) {
@@ -5844,7 +5844,7 @@ async fn remove_session_releases_workspace_binding_and_side_maps() {
 #[test]
 fn ext_method_rewind_uses_local_dispatch_without_bridge() {
     use acp::Agent as _;
-    let _env = crate::env::EnvVarGuard::remove(crate::env::GROK_DISABLE_CUSTOM_BRIDGE_ENV);
+    let _env = crate::env::EnvVarGuard::remove(crate::env::EZER_DISABLE_CUSTOM_BRIDGE_ENV);
     run_local_for_bridge_test(|| async {
         let agent = build_minimal_agent_for_tests();
         let params = serde_json::json!({ "sessionId": "sess-local" });
@@ -5884,7 +5884,7 @@ fn cancel_does_not_forward_to_bridge_in_local_mode() {
     });
 }
 /// Regression (post-cancel slot hang, first bad release 0.2.101; see `dispatch_lock`).
-/// SDK e2e shape: `test_cancel_ends_in_flight_turn_and_frees_slot` (grok-agent-sdk).
+/// SDK e2e shape: `test_cancel_ends_in_flight_turn_and_frees_slot` (ezer-agent-sdk).
 #[test]
 fn cancel_never_overtakes_in_flight_prompt_intake() {
     use crate::session::SessionCommand;
@@ -6035,7 +6035,7 @@ fn make_live_session_handle(
     tokio::sync::mpsc::UnboundedReceiver<TestSessionCommand>,
 ) {
     let (cmd_tx, cmd_rx) = tokio::sync::mpsc::unbounded_channel();
-    let mut handle = make_test_handle("test-model", false, Some("grok-tui"));
+    let mut handle = make_test_handle("test-model", false, Some("ezer-tui"));
     handle.cmd_tx = cmd_tx.clone();
     handle.info = crate::session::info::Info {
         id: sid.clone(),
@@ -6135,7 +6135,7 @@ async fn ext_notification_forwards_each_queue_method_to_session_actor() {
                 "sessionId": session_id,
                 "id": "p-remove",
                 "expectedVersion": 3,
-                "owner": "grok-tui",
+                "owner": "ezer-tui",
             }),
         ),
         (
@@ -6149,7 +6149,7 @@ async fn ext_notification_forwards_each_queue_method_to_session_actor() {
             "x.ai/queue/clear",
             serde_json::json!({
                 "sessionId": session_id,
-                "clientIdentifier": "grok-desktop",
+                "clientIdentifier": "ezer-desktop",
             }),
         ),
         (
@@ -6158,7 +6158,7 @@ async fn ext_notification_forwards_each_queue_method_to_session_actor() {
                 "sessionId": session_id,
                 "id": "p-edit",
                 "newText": "rewritten",
-                "owner": "grok-vscode",
+                "owner": "ezer-vscode",
             }),
         ),
         (
@@ -6167,7 +6167,7 @@ async fn ext_notification_forwards_each_queue_method_to_session_actor() {
                 "sessionId": session_id,
                 "id": "p-interject",
                 "expectedVersion": 2,
-                "owner": "grok-tui",
+                "owner": "ezer-tui",
                 "newText": "now",
             }),
         ),
@@ -6206,13 +6206,13 @@ async fn ext_notification_forwards_each_queue_method_to_session_actor() {
             ) => {
                 assert_eq!(id, "p-remove");
                 assert_eq!(expected_version, 3);
-                assert_eq!(owner.as_deref(), Some("grok-tui"));
+                assert_eq!(owner.as_deref(), Some("ezer-tui"));
             }
             ("x.ai/queue/reorder", SessionCommand::ReorderQueue { ordered_ids }) => {
                 assert_eq!(ordered_ids, vec!["a", "b"]);
             }
             ("x.ai/queue/clear", SessionCommand::ClearQueue { owner }) => {
-                assert_eq!(owner.as_deref(), Some("grok-desktop"));
+                assert_eq!(owner.as_deref(), Some("ezer-desktop"));
             }
             (
                 "x.ai/queue/edit",
@@ -6224,7 +6224,7 @@ async fn ext_notification_forwards_each_queue_method_to_session_actor() {
             ) => {
                 assert_eq!(id, "p-edit");
                 assert_eq!(new_text, "rewritten");
-                assert_eq!(editor.as_deref(), Some("grok-vscode"));
+                assert_eq!(editor.as_deref(), Some("ezer-vscode"));
             }
             (
                 "x.ai/queue/interject",
@@ -6237,7 +6237,7 @@ async fn ext_notification_forwards_each_queue_method_to_session_actor() {
             ) => {
                 assert_eq!(id, "p-interject");
                 assert_eq!(expected_version, 2);
-                assert_eq!(owner.as_deref(), Some("grok-tui"));
+                assert_eq!(owner.as_deref(), Some("ezer-tui"));
                 assert_eq!(new_text.as_deref(), Some("now"));
             }
             ("x.ai/queue/hold_edit", SessionCommand::HoldEdit { id }) => {
@@ -6868,7 +6868,7 @@ fn supervisor_reaps_panicked_resident_actor() {
 #[tokio::test]
 #[serial_test::serial]
 async fn storage_mode_self_corrects_to_writeback_when_settings_arrive() {
-    let _env = crate::env::EnvVarGuard::remove("GROK_STORAGE_MODE");
+    let _env = crate::env::EnvVarGuard::remove("EZER_STORAGE_MODE");
     let auth = xai_grok_login::GrokAuth {
         auth_mode: xai_grok_login::AuthMode::Oidc,
         oidc_issuer: Some("https://auth.x.ai".to_string()),
@@ -7224,7 +7224,7 @@ async fn post_auth_settings_xai_upgrades_writeback_emits_and_opens_gate() {
     use crate::agent::config::AgentMode;
     use xai_grok_login::{GrokAuth, XAI_OAUTH2_ISSUER};
     let _restore = RestoreOtelGate;
-    let _storage_env = crate::env::EnvVarGuard::remove("GROK_STORAGE_MODE");
+    let _storage_env = crate::env::EnvVarGuard::remove("EZER_STORAGE_MODE");
     let server = xai_grok_test_support::MockInferenceServer::start()
         .await
         .unwrap();
@@ -7364,7 +7364,7 @@ async fn settings_self_heal_refetches_after_token_rotation() {
     use xai_grok_login::{GrokAuth, XAI_OAUTH2_ISSUER};
     let _restore = RestoreOtelGate;
     let server = xai_grok_test_support::MockInferenceServer::start_with_required_auth(
-        vec![xai_grok_test_support::MockModelEntry::new("grok-build")],
+        vec![xai_grok_test_support::MockModelEntry::new("ezer-build")],
         "rotated-key",
     )
     .await
@@ -7585,7 +7585,7 @@ fn subagent_spawn_context_reloads_project_definitions_after_trust_changes() {
         assert!(!revoked.subagent_personas.contains_key("probe"));
     });
 }
-/// End-to-end gate wiring: project `.grok/roles` / `personas` alone must drive the real `resolve_and_record` untrusted.
+/// End-to-end gate wiring: project `.ezer/roles` / `personas` alone must drive the real `resolve_and_record` untrusted.
 /// No forced `record_for_test` verdict.
 /// Project defs stay out of Task spawn context, then are re-admitted after grant.
 #[test]
@@ -7595,7 +7595,7 @@ fn project_roles_personas_gated_via_resolve_and_record_chain() {
     let home = tempfile::tempdir().unwrap();
     let _env = EnvGuard::set("GROK_HOME", home.path());
     let _sim = EnvGuard::set(xai_grok_version::TEST_VERSION_ENV, "0.0-sim");
-    let _flag = EnvGuard::unset("GROK_FOLDER_TRUST");
+    let _flag = EnvGuard::unset("EZER_FOLDER_TRUST");
     let repo = tempfile::tempdir().unwrap();
     git2::Repository::init(repo.path()).unwrap();
     write_project_subagent_definitions(repo.path());
@@ -7677,7 +7677,7 @@ fn interactive_trust_prompt_grant_reloads_project_mcp() {
     let home = tempfile::tempdir().unwrap();
     let _env = EnvGuard::set("GROK_HOME", home.path());
     let _sim = EnvGuard::set(xai_grok_version::TEST_VERSION_ENV, "0.0-sim");
-    let _flag = EnvGuard::unset("GROK_FOLDER_TRUST");
+    let _flag = EnvGuard::unset("EZER_FOLDER_TRUST");
     let repo = repo_with_project_mcp_server();
     let repo_path = repo.path().to_path_buf();
     let remote = folder_trust_on();
@@ -7758,7 +7758,7 @@ fn interactive_trust_prompt_reject_keeps_gated() {
     let home = tempfile::tempdir().unwrap();
     let _env = EnvGuard::set("GROK_HOME", home.path());
     let _sim = EnvGuard::set(xai_grok_version::TEST_VERSION_ENV, "0.0-sim");
-    let _flag = EnvGuard::unset("GROK_FOLDER_TRUST");
+    let _flag = EnvGuard::unset("EZER_FOLDER_TRUST");
     let repo = repo_with_project_mcp_server();
     let repo_path = repo.path().to_path_buf();
     let remote = folder_trust_on();
@@ -7795,7 +7795,7 @@ fn interactive_trust_prompt_dormant_when_feature_off() {
     let home = tempfile::tempdir().unwrap();
     let _env = EnvGuard::set("GROK_HOME", home.path());
     let _sim = EnvGuard::set(xai_grok_version::TEST_VERSION_ENV, "0.0-sim");
-    let _flag = EnvGuard::unset("GROK_FOLDER_TRUST");
+    let _flag = EnvGuard::unset("EZER_FOLDER_TRUST");
     let repo = repo_with_project_mcp_server();
     let repo_path = repo.path().to_path_buf();
     let remote = crate::util::config::RemoteSettings {
@@ -7825,7 +7825,7 @@ fn interactive_trust_prompt_no_request_without_capability() {
     let home = tempfile::tempdir().unwrap();
     let _env = EnvGuard::set("GROK_HOME", home.path());
     let _sim = EnvGuard::set(xai_grok_version::TEST_VERSION_ENV, "0.0-sim");
-    let _flag = EnvGuard::unset("GROK_FOLDER_TRUST");
+    let _flag = EnvGuard::unset("EZER_FOLDER_TRUST");
     let repo = repo_with_project_mcp_server();
     let repo_path = repo.path().to_path_buf();
     let remote = folder_trust_on();
@@ -7853,7 +7853,7 @@ fn interactive_trust_prompt_client_error_fails_closed() {
     let home = tempfile::tempdir().unwrap();
     let _env = EnvGuard::set("GROK_HOME", home.path());
     let _sim = EnvGuard::set(xai_grok_version::TEST_VERSION_ENV, "0.0-sim");
-    let _flag = EnvGuard::unset("GROK_FOLDER_TRUST");
+    let _flag = EnvGuard::unset("EZER_FOLDER_TRUST");
     let repo = repo_with_project_mcp_server();
     let repo_path = repo.path().to_path_buf();
     let remote = folder_trust_on();
@@ -7894,7 +7894,7 @@ fn interactive_trust_prompt_dedups_same_workspace() {
     let home = tempfile::tempdir().unwrap();
     let _env = EnvGuard::set("GROK_HOME", home.path());
     let _sim = EnvGuard::set(xai_grok_version::TEST_VERSION_ENV, "0.0-sim");
-    let _flag = EnvGuard::unset("GROK_FOLDER_TRUST");
+    let _flag = EnvGuard::unset("EZER_FOLDER_TRUST");
     let repo = repo_with_project_mcp_server();
     let repo_path = repo.path().to_path_buf();
     let remote = folder_trust_on();
@@ -7968,7 +7968,7 @@ fn interactive_trust_prompt_reloads_all_same_workspace_sessions() {
     let home = tempfile::tempdir().unwrap();
     let _env = EnvGuard::set("GROK_HOME", home.path());
     let _sim = EnvGuard::set(xai_grok_version::TEST_VERSION_ENV, "0.0-sim");
-    let _flag = EnvGuard::unset("GROK_FOLDER_TRUST");
+    let _flag = EnvGuard::unset("EZER_FOLDER_TRUST");
     let repo = repo_with_project_mcp_server();
     let root = repo.path().to_path_buf();
     let subdir = root.join("sub");
@@ -8030,7 +8030,7 @@ fn interactive_trust_prompt_reprompts_after_untrust() {
     let home = tempfile::tempdir().unwrap();
     let _env = EnvGuard::set("GROK_HOME", home.path());
     let _sim = EnvGuard::set(xai_grok_version::TEST_VERSION_ENV, "0.0-sim");
-    let _flag = EnvGuard::unset("GROK_FOLDER_TRUST");
+    let _flag = EnvGuard::unset("EZER_FOLDER_TRUST");
     let repo = repo_with_project_mcp_server();
     let repo_path = repo.path().to_path_buf();
     let remote = folder_trust_on();
@@ -8313,7 +8313,7 @@ async fn polled_settings_apply_touches_announcements_only() {
 async fn polled_settings_apply_refreshes_accept_request_encodings() {
     use xai_grok_config_types::RemoteRequestEncoding;
     use xai_grok_sampler::RequestCompression;
-    let _env = crate::env::EnvVarGuard::remove("GROK_REQUEST_COMPRESSION");
+    let _env = crate::env::EnvVarGuard::remove("EZER_REQUEST_COMPRESSION");
     let agent = build_minimal_agent_for_tests();
     let proxy = agent.cfg.borrow().endpoints.proxy_url();
     let mut stored = settings_with(Some(vec![ann("old")]));
@@ -8355,7 +8355,7 @@ async fn polled_settings_apply_refreshes_accept_request_encodings() {
 async fn settings_apply_keys_the_advertisement_under_the_configured_proxy() {
     use xai_grok_config_types::RemoteRequestEncoding;
     use xai_grok_sampler::RequestCompression;
-    let _env = crate::env::EnvVarGuard::remove("GROK_REQUEST_COMPRESSION");
+    let _env = crate::env::EnvVarGuard::remove("EZER_REQUEST_COMPRESSION");
     let agent = build_minimal_agent_for_tests();
     let flag_proxy = "http://localhost:20016/v1";
     {
@@ -8388,7 +8388,7 @@ async fn settings_apply_keys_the_advertisement_under_the_configured_proxy() {
 async fn polled_settings_apply_skips_when_the_advertisement_changed_mid_fetch() {
     use xai_grok_config_types::RemoteRequestEncoding;
     use xai_grok_sampler::RequestCompression;
-    let _env = crate::env::EnvVarGuard::remove("GROK_REQUEST_COMPRESSION");
+    let _env = crate::env::EnvVarGuard::remove("EZER_REQUEST_COMPRESSION");
     let agent = build_minimal_agent_for_tests();
     let proxy = agent.cfg.borrow().endpoints.proxy_url();
     let mut advertised = settings_with(Some(vec![ann("old")]));

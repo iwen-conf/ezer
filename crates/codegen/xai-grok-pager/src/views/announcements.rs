@@ -1412,7 +1412,7 @@ mod tests {
         let mut ann = promo(
             "p",
             "New promo",
-            Some(("Get SuperGrok", "https://x.ai/grok")),
+            Some(("Get SuperGrok", "https://x.ai/ezer")),
         );
         ann.cta.as_mut().unwrap().caption = Some("or use Ctrl+O".into());
         let anns = [ann];

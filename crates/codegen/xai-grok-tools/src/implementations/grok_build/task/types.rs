@@ -218,7 +218,7 @@ pub struct SubagentRuntimeOverrides {
     /// Isolation mode for child execution environment.
     /// `None` means "use role/persona default" (which itself defaults to `None`/shared workspace).
     pub isolation: Option<SubagentIsolationMode>,
-    /// `/goal`-only harness override: the `agent_type` (e.g. `"cursor"`, `"grok-build-plan"`) whose `AgentDefinition` decides the child's harness
+    /// `/goal`-only harness override: the `agent_type` (e.g. `"cursor"`, `"ezer-build-plan"`) whose `AgentDefinition` decides the child's harness
     /// flavor — system prompt + toolset — applied REGARDLESS of the parent agent (so a session can pin a compat-harness verifier and vice versa).
     /// Orthogonal to `subagent_type`, which still selects the toolset-role (implementer vs explorer).
     pub harness_agent_type: Option<String>,
@@ -986,7 +986,7 @@ impl From<mpsc::UnboundedSender<SubagentEvent>> for SubagentEventSender {
     }
 }
 
-register_resource!("grok_build", "SubagentEventSender", SubagentEventSender);
+register_resource!("ezer_build", "SubagentEventSender", SubagentEventSender);
 
 // Active subagent listing (compaction)
 
@@ -1019,13 +1019,13 @@ pub struct SubagentListActiveRequest {
 #[derive(Debug, Clone)]
 pub struct SubagentDepthCounter(pub u32);
 
-register_resource!("grok_build", "SubagentDepthCounter", SubagentDepthCounter);
+register_resource!("ezer_build", "SubagentDepthCounter", SubagentDepthCounter);
 
 /// Host-injected max nesting depth; absent → [`super::MAX_SUBAGENT_DEPTH`].
 #[derive(Debug, Clone, Copy)]
 pub struct MaxSubagentDepth(pub u32);
 
-register_resource!("grok_build", "MaxSubagentDepth", MaxSubagentDepth);
+register_resource!("ezer_build", "MaxSubagentDepth", MaxSubagentDepth);
 
 /// Session-scoped validator for model-facing `Task.model` arguments. Returns an error message for
 /// an invalid slug and `None` for a valid slug. The closure reads the live model catalog so
@@ -1051,14 +1051,14 @@ impl std::fmt::Debug for TaskModelValidator {
     }
 }
 
-register_resource!("grok_build", "TaskModelValidator", TaskModelValidator);
+register_resource!("ezer_build", "TaskModelValidator", TaskModelValidator);
 
 /// Carries the current session ID so TaskTool can set `parent_session_id`
 /// on the `SubagentRequest`.
 #[derive(Debug, Clone)]
 pub struct SessionIdResource(pub String);
 
-register_resource!("grok_build", "SessionIdResource", SessionIdResource);
+register_resource!("ezer_build", "SessionIdResource", SessionIdResource);
 
 /// Host-owned RAII token for an interruptible foreground wait.
 pub trait ForegroundWaitGuard: Send {}
@@ -1088,7 +1088,7 @@ impl std::fmt::Debug for SubagentForegroundWait {
 }
 
 register_resource!(
-    "grok_build",
+    "ezer_build",
     "SubagentForegroundWait",
     SubagentForegroundWait
 );
@@ -1100,7 +1100,7 @@ register_resource!(
 pub struct CurrentPromptIdResource(pub String);
 
 register_resource!(
-    "grok_build",
+    "ezer_build",
     "CurrentPromptIdResource",
     CurrentPromptIdResource
 );
@@ -1111,7 +1111,7 @@ register_resource!(
 #[derive(Debug, Clone, Copy, Default)]
 pub struct GoalLoopActive(pub bool);
 
-register_resource!("grok_build", "GoalLoopActive", GoalLoopActive);
+register_resource!("ezer_build", "GoalLoopActive", GoalLoopActive);
 
 /// Thread-local tracing capture for behavioral log-emission tests.
 #[cfg(test)]

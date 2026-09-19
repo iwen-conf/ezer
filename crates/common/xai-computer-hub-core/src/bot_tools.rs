@@ -1,4 +1,4 @@
-//! Wire names of the hub-synthesized Grok Bot harness tools.
+//! Wire names of the hub-synthesized ezer Bot harness tools.
 //!
 //! Single source of truth shared by the hub that registers the tools and
 //! by the clients that gate the tools per agent config.
@@ -19,7 +19,7 @@ pub const GROK_BOT_TOOL_IDS: &[&str] = &[
     "bot_search_agents",
 ];
 
-/// Whether `name` is a hub-synthesized Grok Bot harness tool.
+/// Whether `name` is a hub-synthesized ezer Bot harness tool.
 pub fn is_grok_bot_tool(name: &str) -> bool {
     GROK_BOT_TOOL_IDS.contains(&name)
 }
@@ -45,26 +45,26 @@ pub fn is_grok_bot_default_tool(name: &str) -> bool {
     GROK_BOT_DEFAULT_TOOL_IDS.contains(&name)
 }
 
-/// Model-facing descriptions, one per [`GROK_BOT_TOOL_IDS`] entry (same
+/// Model-facing descriptions, one per [`EZER_BOT_TOOL_IDS`] entry (same
 /// order). The hub registers its tools with these strings, and clients
 /// use them to advertise opted-in bot tools before the hub connection is
 /// live, so both surfaces render the same text.
 pub const GROK_BOT_TOOL_DESCRIPTIONS: &[(&str, &str)] = &[
     (
         "bot_create_agent",
-        "Create a Grok Bot agent. It greets the user itself; send no first \
+        "Create a ezer Bot agent. It greets the user itself; send no first \
          prompt, never quote its id. Cannot be deleted; check bot_list_agents \
          first. Only when the user asks for a new agent; to reach an existing \
          one use bot_list_agents then bot_send_prompt. One agent per call.",
     ),
     (
         "bot_list_agents",
-        "List all Grok Bot agents on the user's box with id, name, description, \
+        "List all ezer Bot agents on the user's box with id, name, description, \
          and status. Wakes the box. Its ids are the only valid agent_id values.",
     ),
     (
         "bot_send_prompt",
-        "Send a prompt to a Grok Bot agent. Returns once accepted unless mode \
+        "Send a prompt to a ezer Bot agent. Returns once accepted unless mode \
          waits for the reply. on_busy is supersede (default), reject, or queue. \
          After a timeout or a missing notification, resume with bot_await_turn \
          and the returned handle; never re-send. Empty reply with \
@@ -104,13 +104,13 @@ pub const GROK_BOT_TOOL_DESCRIPTIONS: &[(&str, &str)] = &[
     ),
     (
         "bot_search_agents",
-        "Find Grok Bot agents by name or description when you know what you \
+        "Find ezer Bot agents by name or description when you know what you \
          want. Returns the best matches only; bot_list_agents shows every bot. \
          Wakes the box.",
     ),
 ];
 
-/// The model-facing description for a Grok Bot tool id, if known.
+/// The model-facing description for a ezer Bot tool id, if known.
 pub fn grok_bot_tool_description(name: &str) -> Option<&'static str> {
     GROK_BOT_TOOL_DESCRIPTIONS
         .iter()
@@ -125,7 +125,7 @@ const SEND_AGENT_ID_DESCRIPTION: &str = "Opaque id copied exactly from \
      bot_list_agents or bot_search_agents; never a name, never typed from \
      memory or shortened.";
 
-/// Flattened JSON Schema for a Grok Bot tool's arguments.
+/// Flattened JSON Schema for a ezer Bot tool's arguments.
 ///
 /// Same shape the hub advertises via `schema_for_kind`. Pre-bind synthesis
 /// uses this so constrained decoding can emit required fields (`agent_id`,
@@ -381,7 +381,7 @@ mod tests {
     #[test]
     fn default_tool_ids_are_a_prefix_of_shared_ids() {
         for id in GROK_BOT_DEFAULT_TOOL_IDS {
-            assert!(is_grok_bot_tool(id), "{id} is not in GROK_BOT_TOOL_IDS");
+            assert!(is_grok_bot_tool(id), "{id} is not in EZER_BOT_TOOL_IDS");
         }
         assert_eq!(
             GROK_BOT_DEFAULT_TOOL_IDS.len(),

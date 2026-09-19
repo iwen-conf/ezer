@@ -4,7 +4,7 @@ use xai_grok_tools::implementations::grok_build::ask_user_question;
 
 /// Resolve whether the bash-harness shadows that swap `find` for `bfs` and `grep` for `ugrep` are enabled.
 /// Precedence (highest first): `requirements.toml` (org policy, wins outright) > a truthy `DISABLE_EMBEDDED_SEARCH_TOOLS` master (forces off) > env > `config.toml` `[toolset.bash]` > `managed_config.toml` > default-on.
-/// Pass the **merged** requirements ([`crate::config::load_merged_requirements`]) so an org policy in any requirements layer — not only `~/.grok/requirements.toml` — is honored. Returns `(find_bfs, grep_ugrep)`, which the caller bakes into a [`xai_grok_tools::computer::local::SearchShadowConfig`] on the local terminal backend.
+/// Pass the **merged** requirements ([`crate::config::load_merged_requirements`]) so an org policy in any requirements layer — not only `~/.ezer/requirements.toml` — is honored. Returns `(find_bfs, grep_ugrep)`, which the caller bakes into a [`xai_grok_tools::computer::local::SearchShadowConfig`] on the local terminal backend.
 pub(crate) fn resolve_search_tools_enabled(
     requirements: Option<&TomlValue>,
     user: Option<&TomlValue>,
@@ -25,8 +25,8 @@ pub(crate) fn resolve_search_tools_enabled(
         )
     };
     (
-        resolve("GROK_TOOLS_FIND_BFS", "GROK_FIND_BFS", "find_bfs"),
-        resolve("GROK_TOOLS_GREP_UGREP", "GROK_GREP_UGREP", "grep_ugrep"),
+        resolve("EZER_TOOLS_FIND_BFS", "EZER_FIND_BFS", "find_bfs"),
+        resolve("EZER_TOOLS_GREP_UGREP", "EZER_GREP_UGREP", "grep_ugrep"),
     )
 }
 
@@ -67,7 +67,7 @@ fn resolve_search_tool_enabled(
     env.or(config).or(managed).unwrap_or(true)
 }
 
-const ENV_LOGIN_SHELL_CAPTURE: &str = "GROK_LOGIN_ENV";
+const ENV_LOGIN_SHELL_CAPTURE: &str = "EZER_LOGIN_ENV";
 
 fn login_shell_capture_from_toml(v: Option<&TomlValue>) -> Option<bool> {
     v?.get("toolset")?
@@ -116,9 +116,9 @@ struct LoginShellCaptureTiers<'a> {
     remote: Option<bool>,
 }
 
-/// Precedence (highest first): requirements/MDM (clamp, via [`crate::config::load_merged_requirements`]) > `GROK_LOGIN_ENV` env > `GROK_CONFIG` overlay > user `config.toml` > managed layers > remote > default `true`.
+/// Precedence (highest first): requirements/MDM (clamp, via [`crate::config::load_merged_requirements`]) > `EZER_LOGIN_ENV` env > `EZER_CONFIG` overlay > user `config.toml` > managed layers > remote > default `true`.
 /// `login_shell_capture` is a soft key, so the overlay is merged just above user config, mirroring its place in the disk merge.
-/// That lets a `GROK_CONFIG` toggle reach it while requirements/MDM still clamp the value.
+/// That lets a `EZER_CONFIG` toggle reach it while requirements/MDM still clamp the value.
 fn resolve_login_shell_capture_tiers(tiers: LoginShellCaptureTiers<'_>) -> bool {
     let LoginShellCaptureTiers {
         requirements,
@@ -290,7 +290,7 @@ mod login_shell_capture_tests {
 
 /// Env override for `[toolset.ask_user_question] timeout_enabled`. The secs env
 /// var lives in the tools crate (`RESPONSE_TIMEOUT_ENV`), parsed once there.
-const ENV_ASK_USER_QUESTION_TIMEOUT_ENABLED: &str = "GROK_ASK_USER_QUESTION_TIMEOUT_ENABLED";
+const ENV_ASK_USER_QUESTION_TIMEOUT_ENABLED: &str = "EZER_ASK_USER_QUESTION_TIMEOUT_ENABLED";
 
 fn ask_user_question_timeout_enabled_from_toml(v: Option<&TomlValue>) -> Option<bool> {
     v?.get("toolset")?
@@ -316,7 +316,7 @@ fn ask_user_question_timeout_secs_from_toml(v: Option<&TomlValue>) -> Option<u64
     valid
 }
 
-/// Precedence: requirements > env (`GROK_ASK_USER_QUESTION_TIMEOUT_ENABLED`) > user `config.toml` > managed (user-level `managed_config.toml`
+/// Precedence: requirements > env (`EZER_ASK_USER_QUESTION_TIMEOUT_ENABLED`) > user `config.toml` > managed (user-level `managed_config.toml`
 /// over the system-managed layer, matching `effective_config()`'s merge order) > remote settings > default `true`.
 fn resolve_ask_user_question_timeout_enabled(
     requirements: Option<&TomlValue>,
@@ -357,7 +357,7 @@ fn resolve_ask_user_question_timeout_secs_from_tiers(
         )
 }
 
-/// Precedence: requirements > env (`GROK_ASK_USER_QUESTION_TIMEOUT_SECS`, parsed by the tools crate's canonical parser) > user `config.toml`
+/// Precedence: requirements > env (`EZER_ASK_USER_QUESTION_TIMEOUT_SECS`, parsed by the tools crate's canonical parser) > user `config.toml`
 /// > managed (user-level over system-managed, matching `effective_config()`) > remote settings > default 1800 (30 minutes).
 fn resolve_ask_user_question_timeout_secs(
     requirements: Option<&TomlValue>,

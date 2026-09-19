@@ -12,7 +12,7 @@ use super::verdict::user_facing_policy_source;
 pub struct MarketplaceAllowlist {
     pub allowed_urls: Vec<String>,
     pub source_path: Option<std::path::PathBuf>,
-    /// Whether this source's restrictions bind grok-native marketplaces.
+    /// Whether this source's restrictions bind ezer-native marketplaces.
     pub authority: PolicySourceAuthority,
 }
 
@@ -75,7 +75,7 @@ impl MarketplacePolicy {
     }
 
     /// Restriction active for a subject of `origin` (advisory strict lists
-    /// don't bind grok-native marketplaces).
+    /// don't bind ezer-native marketplaces).
     pub fn is_restricted_for(&self, origin: PolicySubjectOrigin) -> bool {
         self.sources.iter().any(|s| s.binds(origin))
     }
@@ -109,7 +109,7 @@ impl MarketplacePolicy {
     }
 
     /// Fail-closed add/install gate: `Some(reason)` when restricted and `identity` isn't allowed (local paths never match).
-    /// An add/install is not yet grok-native, so every policy source binds, including advisory ones; the carve-out never covers acquiring new sources.
+    /// An add/install is not yet ezer-native, so every policy source binds, including advisory ones; the carve-out never covers acquiring new sources.
     /// The refusal names the blocking policy file only (logs use [`Self::block_reason`]).
     pub fn add_block_reason(&self, identity: &str) -> Option<String> {
         let origin = PolicySubjectOrigin::Foreign;

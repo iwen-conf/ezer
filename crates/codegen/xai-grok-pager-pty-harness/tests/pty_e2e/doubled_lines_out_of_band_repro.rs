@@ -1,20 +1,20 @@
 //! Doubled-lines regression guard via a simulated out-of-band screen reflow.
 //!
-//! The stack is `tmux -> nvim :terminal -> grok`: nvim/tmux repaint grok's pane out-of-band (no grok PTY resize).
-//! Grok's diff renderer only re-clears on a real size change, so the rows it doesn't own survive.
+//! The stack is `tmux -> nvim :terminal -> ezer`: nvim/tmux repaint ezer's pane out-of-band (no ezer PTY resize).
+//! ezer's diff renderer only re-clears on a real size change, so the rows it doesn't own survive.
 //! You get doubled lines at the top/bottom until restart.
 //!
 //! The harness is a single faithful emulator and can't nest a real tmux/nvim.
-//! We SIMULATE the out-of-band reflow with `feed_screen`, which writes straight into the virtual terminal, bypassing grok.
-//! Then we check whether grok heals it.
-//! `NVIM` is set in grok's env so it sees the embedded-editor context the fix keys off (mirroring a real nvim `:terminal`).
+//! We SIMULATE the out-of-band reflow with `feed_screen`, which writes straight into the virtual terminal, bypassing ezer.
+//! Then we check whether ezer heals it.
+//! `NVIM` is set in ezer's env so it sees the embedded-editor context the fix keys off (mirroring a real nvim `:terminal`).
 //!
-//! The fix: grok forces a full clear and repaint on `FocusGained` in editor/multiplexer contexts, so the injected row is gone after refocus.
+//! The fix: ezer forces a full clear and repaint on `FocusGained` in editor/multiplexer contexts, so the injected row is gone after refocus.
 //! The final assertion guards that heal.
 
 use super::common::*;
 
-/// Unique sentinel that grok would never render on its own.
+/// Unique sentinel that ezer would never render on its own.
 const STALE_MARKER: &str = "STALE_OUT_OF_BAND_ROW_ZZZ";
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
@@ -26,7 +26,7 @@ async fn out_of_band_stale_row_heals_on_focus_gained() {
 
     // Mock-auth env, and pretend we're inside a neovim `:terminal` (sets the embedded-editor context the doubled-line fix gates on)
     let overrides: Vec<(String, String)> =
-        vec![("NVIM".into(), "/tmp/grok-pty-harness-fake-nvim.sock".into())];
+        vec![("NVIM".into(), "/tmp/ezer-pty-harness-fake-nvim.sock".into())];
     let env_refs: Vec<(&str, &str)> = overrides
         .iter()
         .map(|(key, value)| (key.as_str(), value.as_str()))
@@ -66,7 +66,7 @@ async fn out_of_band_stale_row_heals_on_focus_gained() {
     h.update(Duration::from_millis(300));
     assert!(
         h.contains_text(STALE_MARKER),
-        "stale row should survive a normal redraw (grok's diff renderer doesn't own it)\nscreen:\n{}",
+        "stale row should survive a normal redraw (ezer's diff renderer doesn't own it)\nscreen:\n{}",
         h.screen_contents()
     );
 

@@ -171,14 +171,14 @@ mod tests {
         }
     }
 
-    /// Git repo with project `.grok/config.toml` so discovery is bounded to cwd.
+    /// Git repo with project `.ezer/config.toml` so discovery is bounded to cwd.
     fn project_repo(toml: &str) -> tempfile::TempDir {
         let tmp = tempfile::tempdir().unwrap();
         git2::Repository::init(tmp.path()).unwrap();
         // Pin trust so ambient GROK_CLI_VERSION cannot drop project MCP names.
         crate::agent::folder_trust::record_for_test(tmp.path(), true);
-        std::fs::create_dir_all(tmp.path().join(".grok")).unwrap();
-        std::fs::write(tmp.path().join(".grok").join("config.toml"), toml).unwrap();
+        std::fs::create_dir_all(tmp.path().join(".ezer")).unwrap();
+        std::fs::write(tmp.path().join(".ezer").join("config.toml"), toml).unwrap();
         tmp
     }
 
@@ -189,7 +189,7 @@ mod tests {
         xai_grok_test_support::EnvGuard,
     ) {
         let home = tempfile::tempdir().unwrap();
-        let grok_home = home.path().join(".grok");
+        let grok_home = home.path().join(".ezer");
         std::fs::create_dir_all(&grok_home).unwrap();
         std::fs::write(grok_home.join("config.toml"), "").unwrap();
         let home_guard = xai_grok_test_support::EnvGuard::set("HOME", home.path());

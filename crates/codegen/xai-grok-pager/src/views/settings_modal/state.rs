@@ -1102,7 +1102,7 @@ pub(super) fn validate_string(
 }
 
 /// Soft product cap on static Enum choices (settings unit tests enforce it). This limit exists so
-/// catalogs stay intentionally curated rather than unbounded. Sized to fit the full Grok STT
+/// catalogs stay intentionally curated rather than unbounded. Sized to fit the full ezer STT
 /// language list (25 codes + client-only `auto` = 26) with headroom.
 pub(crate) const MAX_PICKER_CHOICES: usize = 32;
 

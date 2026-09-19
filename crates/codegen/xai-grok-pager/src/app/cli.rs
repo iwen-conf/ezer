@@ -20,12 +20,12 @@ pub enum Command {
     Leader(LeaderMgmtArgs),
     /// Sign out and clear cached credentials
     Logout,
-    /// Sign in (optional xAI / grok.com; not required for BYOK)
+    /// Sign in (optional xAI; not required for BYOK)
     Login {
         /// Ignored (kept for backwards compatibility). OAuth2 is now the only auth method.
         #[arg(long, hide = true)]
         legacy: bool,
-        /// Use Grok OAuth via auth.x.ai.
+        /// Use optional xAI OAuth via auth.x.ai.
         #[arg(long = "oauth", alias = "oidc", conflicts_with_all = ["device_auth"])]
         oauth: bool,
         /// Use device-code authentication for headless/remote environments.
@@ -109,7 +109,7 @@ See ~/.ezer/ for config and sessions.
         /// Switch to the enterprise release channel.
         #[arg(long, conflicts_with_all = ["alpha", "stable"], hide = true)]
         enterprise: bool,
-        /// Internal: what spawned this `grok update` (`user_command`, `auto_background`, `leader_converge`). Hidden.
+        /// Internal: what spawned this `ezer update` (`user_command`, `auto_background`, `leader_converge`). Hidden.
         #[arg(long, hide = true)]
         trigger: Option<String>,
         /// Internal compat alias for `--trigger=auto_background` (older parents still spawn children with it).
@@ -136,12 +136,12 @@ See ~/.ezer/ for config and sessions.
     DiskUsage(crate::disk_usage_cmd::DiskUsageArgs),
     /// Expose this workspace to the Computer Hub (via the leader).
     ///
-    /// Disabled by default and enabled server-side per account; set `GROK_WORKSPACE_COMMAND=1` to enable it locally for testing.
+    /// Disabled by default and enabled server-side per account; set `EZER_WORKSPACE_COMMAND=1` to enable it locally for testing.
     #[command(hide = true)]
     Workspace(WorkspaceMgmtArgs),
     /// Open the Agent Dashboard view at startup.
     /// The dashboard shows every session, top-level and subagents.
-    /// Disabled when `[dashboard].enabled = false` in `~/.ezer/config.toml` or when the `GROK_AGENT_DASHBOARD=0` env var is set.
+    /// Disabled when `[dashboard].enabled = false` in `~/.ezer/config.toml` or when the `EZER_AGENT_DASHBOARD=0` env var is set.
     Dashboard,
 }
 /// Arguments for the `wrap` subcommand: the command to run, then its args.
@@ -157,10 +157,10 @@ pub struct WrapArgs {
     )]
     pub command: Vec<String>,
 }
-/// Targets a running leader process by PID (used by `grok leader` / `grok workspace`).
+/// Targets a running leader process by PID (used by `ezer leader` / `ezer workspace`).
 #[derive(Debug, clap::Args, Clone, Default)]
 pub struct LeaderTargetArgs {
-    /// Leader process ID from `grok leader list`.
+    /// Leader process ID from `ezer leader list`.
     #[arg(long)]
     pub pid: Option<u32>,
 }
@@ -313,13 +313,13 @@ impl AgentArgs {
                 Ok(canonical) if canonical.is_dir() => Some(canonical),
                 Ok(_) => {
                     eprintln!(
-                        "grok: --plugin-dir {}: not a directory; skipping",
+                        "ezer: --plugin-dir {}: not a directory; skipping",
                         p.display()
                     );
                     None
                 }
                 Err(e) => {
-                    eprintln!("grok: --plugin-dir {}: {e}; skipping", p.display());
+                    eprintln!("ezer: --plugin-dir {}: {e}; skipping", p.display());
                     None
                 }
             })
@@ -331,7 +331,7 @@ impl AgentArgs {
 pub enum AgentCmd {
     /// Run the agent over stdio
     Stdio,
-    /// Run the agent headlessly over the Grok WebSocket relay
+    /// Run the agent headlessly over the ezer WebSocket relay
     Headless(HeadlessArgs),
     /// Run the agent as a WebSocket server
     Serve(ServeArgs),
@@ -341,9 +341,9 @@ pub enum AgentCmd {
 /// WebSocket URL override arguments, used by headless / leader / serve modes.
 #[derive(Debug, clap::Args, Clone, Default)]
 pub struct HeadlessArgs {
-    #[arg(long = "grok-ws-origin")]
+    #[arg(long = "relay-ws-origin")]
     pub grok_ws_origin: Option<String>,
-    #[arg(long = "grok-ws-url")]
+    #[arg(long = "relay-ws-url")]
     pub grok_ws_url: Option<String>,
 }
 /// Arguments for the `agent serve` subcommand.
@@ -353,7 +353,7 @@ pub struct ServeArgs {
     #[arg(long, default_value = "127.0.0.1:2419")]
     pub bind: SocketAddr,
     /// Secret token for client authentication (auto-generated if not provided)
-    #[arg(long, env = "GROK_AGENT_SECRET")]
+    #[arg(long, env = "EZER_AGENT_SECRET")]
     pub secret: Option<String>,
     /// Remote agent URL for proxy mode
     #[arg(long)]
@@ -381,7 +381,7 @@ pub struct LeaderArgs {
     /// Keep the leader running after the last client disconnects.
     #[arg(long)]
     pub no_exit_on_disconnect: bool,
-    /// Defer the grok.com relay WebSocket until the first headless IPC client registers.
+    /// Defer the optional xAI relay WebSocket until the first headless IPC client registers.
     /// Without this flag the leader connects the relay eagerly at startup.
     /// Passed by leaders auto-spawned from interactive clients (TUI/IDE), which only need the relay if a headless client appears.
     #[arg(long)]
@@ -526,11 +526,11 @@ pub struct PagerArgs {
     pub rules: Option<String>,
     /// Compaction mode [summary|transcript|segments].
     /// `summary` adds no pointer; `transcript` points at the raw transcript; `segments` (default) persists per-segment markdown to grep.
-    /// Sets `GROK_COMPACTION_MODE`.
+    /// Sets `EZER_COMPACTION_MODE`.
     #[clap(long = "compaction-mode", value_name = "MODE", hide = true)]
     pub compaction_mode: Option<String>,
     /// Segments verbatim detail [none|minimal|balanced|verbose] (default `verbose`).
-    /// Only affects `--compaction-mode segments`. Sets `GROK_COMPACTION_DETAIL`.
+    /// Only affects `--compaction-mode segments`. Sets `EZER_COMPACTION_DETAIL`.
     #[clap(long = "compaction-detail", value_name = "DETAIL", hide = true)]
     pub compaction_detail: Option<String>,
     /// Override the agent's system prompt (compat alias: --system-prompt).
@@ -699,7 +699,7 @@ pub struct PagerArgs {
     )]
     pub background_wait_timeout_secs: u64,
     /// Sandbox profile for filesystem and network access.
-    #[arg(long, env = "GROK_SANDBOX", value_name = "PROFILE")]
+    #[arg(long, env = "EZER_SANDBOX", value_name = "PROFILE")]
     pub sandbox: Option<String>,
     /// Session storage mode: local or writeback.
     #[arg(long = "storage-mode", value_name = "MODE", hide = true)]
@@ -743,8 +743,8 @@ pub struct PagerArgs {
     /// Fullscreen-vs-inline still follows the alt-screen policy (--no-alt-screen, [terminal] alt_screen, terminal auto-detection).
     #[arg(long = "fullscreen", conflicts_with = "minimal")]
     pub fullscreen: bool,
-    /// Write sampling events to ~/.grok/logs/sampling.jsonl.
-    #[arg(long = "log-sampling", env = "GROK_LOG_SAMPLING", hide = true)]
+    /// Write sampling events to ~/.ezer/logs/sampling.jsonl.
+    #[arg(long = "log-sampling", env = "EZER_LOG_SAMPLING", hide = true)]
     pub log_sampling: bool,
     /// Show the login screen even when credentials are already available.
     #[arg(long = "force-login", hide = true)]
@@ -831,7 +831,7 @@ impl PagerArgs {
             .map(std::path::Path::new)
             .and_then(|p| p.file_name())
             .and_then(|n| n.to_str())
-            .filter(|n| *n == "ezer" || *n == "grok" || *n == "agent" || *n == "xai-grok-pager")
+            .filter(|n| *n == "ezer" || *n == "agent")
             .unwrap_or("ezer")
             .to_owned();
         Self::parse_from(std::iter::once(bin_name).chain(std::env::args().skip(1)))
@@ -929,7 +929,7 @@ impl PagerArgs {
     }
     /// Resolve the sandbox profile to apply at startup, accounting for the profile the resumed session was created with.
     /// `saved` is the resumed session's persisted profile (read once via [`Self::saved_resume_profile`]).
-    /// An explicit `--sandbox`/`GROK_SANDBOX` that differs from the saved profile is refused: changing a session's sandbox on resume would be unsafe.
+    /// An explicit `--sandbox`/`EZER_SANDBOX` that differs from the saved profile is refused: changing a session's sandbox on resume would be unsafe.
     pub fn startup_sandbox_profile(&self, saved: Option<&str>) -> SandboxStartup {
         let explicit = self.sandbox.as_deref().filter(|s| !s.is_empty());
         Self::resolve_startup_sandbox(explicit, saved.map(String::from))
@@ -1037,21 +1037,21 @@ mod tests {
     #[test]
     fn version_flags_parse_as_early_intent_without_exiting() {
         for flag in ["--version", "-v", "-V"] {
-            let args = PagerArgs::try_parse_from(["grok", flag]).expect("version flag parses");
+            let args = PagerArgs::try_parse_from(["ezer", flag]).expect("version flag parses");
             assert!(args.version, "{flag} must set the early version intent");
             assert!(args.command.is_none());
         }
     }
     #[test]
     fn ordinary_and_doctor_parsing_do_not_set_version_intent() {
-        assert!(!PagerArgs::try_parse_from(["grok"]).unwrap().version);
+        assert!(!PagerArgs::try_parse_from(["ezer"]).unwrap().version);
         assert!(
-            !PagerArgs::try_parse_from(["grok", "doctor"])
+            !PagerArgs::try_parse_from(["ezer", "doctor"])
                 .unwrap()
                 .version
         );
         assert!(matches!(
-            PagerArgs::try_parse_from(["grok", "version"])
+            PagerArgs::try_parse_from(["ezer", "version"])
                 .unwrap()
                 .command,
             Some(Command::Version { json: false })
@@ -1059,7 +1059,7 @@ mod tests {
     }
     #[test]
     fn doctor_accepts_report_and_explicit_fix_forms() {
-        let bare = PagerArgs::try_parse_from(["grok", "doctor"]).expect("bare doctor parses");
+        let bare = PagerArgs::try_parse_from(["ezer", "doctor"]).expect("bare doctor parses");
         assert!(matches!(
             bare.command,
             Some(Command::Doctor(crate::doctor_cmd::DoctorArgs {
@@ -1068,7 +1068,7 @@ mod tests {
             }))
         ));
         let json =
-            PagerArgs::try_parse_from(["grok", "doctor", "--json"]).expect("doctor --json parses");
+            PagerArgs::try_parse_from(["ezer", "doctor", "--json"]).expect("doctor --json parses");
         assert!(matches!(
             json.command,
             Some(Command::Doctor(crate::doctor_cmd::DoctorArgs {
@@ -1082,7 +1082,7 @@ mod tests {
             "terminal.dcs-passthrough",
             "tmux-extended-keys",
         ] {
-            let fix = PagerArgs::try_parse_from(["grok", "doctor", "fix", id, "--yes"])
+            let fix = PagerArgs::try_parse_from(["ezer", "doctor", "fix", id, "--yes"])
                 .expect("doctor fix parses");
             assert!(matches!(
                 fix.command,
@@ -1094,7 +1094,7 @@ mod tests {
                 })) if parsed == id
             ));
         }
-        let list = PagerArgs::try_parse_from(["grok", "doctor", "fix"])
+        let list = PagerArgs::try_parse_from(["ezer", "doctor", "fix"])
             .expect("doctor fix without an ID lists applicable fixes");
         assert!(matches!(
             list.command,
@@ -1109,10 +1109,10 @@ mod tests {
             }))
         ));
         for unsupported in [
-            vec!["grok", "doctor", "all"],
-            vec!["grok", "doctor", "fix", "ssh-wrap", "extra"],
-            vec!["grok", "doctor", "fix", "--yes"],
-            vec!["grok", "doctor", "--json", "fix", "terminal.ssh-wrap"],
+            vec!["ezer", "doctor", "all"],
+            vec!["ezer", "doctor", "fix", "ssh-wrap", "extra"],
+            vec!["ezer", "doctor", "fix", "--yes"],
+            vec!["ezer", "doctor", "--json", "fix", "terminal.ssh-wrap"],
         ] {
             let error = PagerArgs::try_parse_from(unsupported)
                 .expect_err("unsupported doctor form must fail");
@@ -1122,35 +1122,35 @@ mod tests {
     #[test]
     fn resume_target_classifies_flags() {
         assert_eq!(
-            PagerArgs::try_parse_from(["grok"]).unwrap().resume_target(),
+            PagerArgs::try_parse_from(["ezer"]).unwrap().resume_target(),
             ResumeTarget::None
         );
         assert_eq!(
-            PagerArgs::try_parse_from(["grok", "-c"])
+            PagerArgs::try_parse_from(["ezer", "-c"])
                 .unwrap()
                 .resume_target(),
             ResumeTarget::MostRecentForCwd
         );
         assert_eq!(
-            PagerArgs::try_parse_from(["grok", "--resume"])
+            PagerArgs::try_parse_from(["ezer", "--resume"])
                 .unwrap()
                 .resume_target(),
             ResumeTarget::MostRecentForCwd
         );
         assert_eq!(
-            PagerArgs::try_parse_from(["grok", "--resume", "sess-1"])
+            PagerArgs::try_parse_from(["ezer", "--resume", "sess-1"])
                 .unwrap()
                 .resume_target(),
             ResumeTarget::SessionId("sess-1".to_string())
         );
         assert_eq!(
-            PagerArgs::try_parse_from(["grok", "-s", "sess-2"])
+            PagerArgs::try_parse_from(["ezer", "-s", "sess-2"])
                 .unwrap()
                 .resume_target(),
             ResumeTarget::None
         );
         assert_eq!(
-            PagerArgs::try_parse_from(["grok", "-r", "old", "--fork-session"])
+            PagerArgs::try_parse_from(["ezer", "-r", "old", "--fork-session"])
                 .unwrap()
                 .resume_target(),
             ResumeTarget::SessionId("old".to_string())
@@ -1160,11 +1160,11 @@ mod tests {
     /// The pair exists so one can override the other's sticky config value; accepting both in one invocation would be ambiguous.
     #[test]
     fn minimal_and_fullscreen_flags_conflict() {
-        let args = PagerArgs::try_parse_from(["grok", "--minimal"]).unwrap();
+        let args = PagerArgs::try_parse_from(["ezer", "--minimal"]).unwrap();
         assert!(args.minimal && !args.fullscreen);
-        let args = PagerArgs::try_parse_from(["grok", "--fullscreen"]).unwrap();
+        let args = PagerArgs::try_parse_from(["ezer", "--fullscreen"]).unwrap();
         assert!(args.fullscreen && !args.minimal);
-        let err = PagerArgs::try_parse_from(["grok", "--minimal", "--fullscreen"]).unwrap_err();
+        let err = PagerArgs::try_parse_from(["ezer", "--minimal", "--fullscreen"]).unwrap_err();
         assert_eq!(err.kind(), clap::error::ErrorKind::ArgumentConflict);
     }
     #[test]
@@ -1176,7 +1176,7 @@ mod tests {
         std::fs::write(&file, "x").unwrap();
         let missing = tmp.path().join("missing");
         let args = PagerArgs::try_parse_from([
-            "grok".as_ref(),
+            "ezer".as_ref(),
             "agent".as_ref(),
             "--no-leader".as_ref(),
             "--plugin-dir".as_ref(),
@@ -1234,19 +1234,19 @@ mod tests {
     #[test]
     fn startup_sandbox_profile_no_resume() {
         assert_eq!(
-            PagerArgs::try_parse_from(["grok", "--sandbox", "strict"])
+            PagerArgs::try_parse_from(["ezer", "--sandbox", "strict"])
                 .unwrap()
                 .startup_sandbox_profile(None),
             SandboxStartup::Apply(Some("strict".to_string()))
         );
         assert_eq!(
-            PagerArgs::try_parse_from(["grok", "--sandbox", ""])
+            PagerArgs::try_parse_from(["ezer", "--sandbox", ""])
                 .unwrap()
                 .startup_sandbox_profile(None),
             SandboxStartup::Apply(None)
         );
         assert_eq!(
-            PagerArgs::try_parse_from(["grok"])
+            PagerArgs::try_parse_from(["ezer"])
                 .unwrap()
                 .startup_sandbox_profile(None),
             SandboxStartup::Apply(None)
@@ -1255,7 +1255,7 @@ mod tests {
     #[test]
     fn launch_directory_anchoring_precedes_cwd_change() {
         let args = PagerArgs::try_parse_from([
-            "grok",
+            "ezer",
             "--leader-socket",
             "relative.sock",
             "--debug-file",
@@ -1289,7 +1289,7 @@ mod tests {
     }
     #[test]
     fn leader_socket_flag_parses_at_root() {
-        let args = PagerArgs::try_parse_from(["grok", "--leader-socket", "/tmp/leader-x.sock"])
+        let args = PagerArgs::try_parse_from(["ezer", "--leader-socket", "/tmp/leader-x.sock"])
             .expect("--leader-socket parses at the root");
         assert_eq!(
             args.leader_socket.as_deref(),
@@ -1299,7 +1299,7 @@ mod tests {
     #[test]
     fn leader_socket_flag_is_global_for_subcommands() {
         let args = PagerArgs::try_parse_from([
-            "grok",
+            "ezer",
             "agent",
             "leader",
             "--leader-socket",
@@ -1313,21 +1313,21 @@ mod tests {
     }
     #[test]
     fn leader_socket_flag_defaults_to_none() {
-        let args = PagerArgs::try_parse_from(["grok"]).expect("bare grok parses");
+        let args = PagerArgs::try_parse_from(["ezer"]).expect("bare ezer parses");
         assert!(args.leader_socket.is_none());
     }
     #[test]
     fn leader_mgmt_list_info_kill_parse() {
-        let list = PagerArgs::try_parse_from(["grok", "leader", "list", "--json"])
-            .expect("grok leader list --json");
+        let list = PagerArgs::try_parse_from(["ezer", "leader", "list", "--json"])
+            .expect("ezer leader list --json");
         assert!(matches!(
             list.command,
             Some(Command::Leader(LeaderMgmtArgs {
                 command: LeaderMgmtCommand::List { json: true },
             }))
         ));
-        let info = PagerArgs::try_parse_from(["grok", "leader", "info", "--pid", "42"])
-            .expect("grok leader info --pid");
+        let info = PagerArgs::try_parse_from(["ezer", "leader", "info", "--pid", "42"])
+            .expect("ezer leader info --pid");
         assert!(matches!(
             info.command,
             Some(Command::Leader(LeaderMgmtArgs {
@@ -1337,25 +1337,25 @@ mod tests {
                 },
             }))
         ));
-        let kill = PagerArgs::try_parse_from(["grok", "leader", "kill"]).expect("grok leader kill");
+        let kill = PagerArgs::try_parse_from(["ezer", "leader", "kill"]).expect("ezer leader kill");
         assert!(matches!(
             kill.command,
             Some(Command::Leader(LeaderMgmtArgs {
                 command: LeaderMgmtCommand::Kill,
             }))
         ));
-        assert!(PagerArgs::try_parse_from(["grok", "leader", "profile"]).is_err());
+        assert!(PagerArgs::try_parse_from(["ezer", "leader", "profile"]).is_err());
     }
     #[test]
     fn debug_file_flag_parses_and_is_global() {
-        let root = PagerArgs::try_parse_from(["grok", "--debug-file", "/tmp/fire.txt"])
+        let root = PagerArgs::try_parse_from(["ezer", "--debug-file", "/tmp/fire.txt"])
             .expect("--debug-file parses at the root");
         assert_eq!(
             root.debug_file.as_deref(),
             Some(std::path::Path::new("/tmp/fire.txt"))
         );
         let sub =
-            PagerArgs::try_parse_from(["grok", "agent", "stdio", "--debug-file", "/tmp/f.txt"])
+            PagerArgs::try_parse_from(["ezer", "agent", "stdio", "--debug-file", "/tmp/f.txt"])
                 .expect("--debug-file parses after a subcommand (global)");
         assert_eq!(
             sub.debug_file.as_deref(),
@@ -1364,39 +1364,39 @@ mod tests {
     }
     #[test]
     fn debug_file_flag_defaults_to_none() {
-        let args = PagerArgs::try_parse_from(["grok"]).expect("bare grok parses");
+        let args = PagerArgs::try_parse_from(["ezer"]).expect("bare ezer parses");
         assert!(args.debug_file.is_none());
     }
     #[test]
     fn positional_prompt_seeds_interactive_session() {
         let args =
-            PagerArgs::try_parse_from(["grok", "fix the bug"]).expect("positional prompt parses");
+            PagerArgs::try_parse_from(["ezer", "fix the bug"]).expect("positional prompt parses");
         assert_eq!(args.initial_prompt(), Some("fix the bug"));
         assert!(args.command.is_none());
         assert!(args.single.is_none());
     }
     #[test]
     fn bare_grok_has_no_initial_prompt() {
-        let args = PagerArgs::try_parse_from(["grok"]).expect("bare grok parses");
+        let args = PagerArgs::try_parse_from(["ezer"]).expect("bare ezer parses");
         assert_eq!(args.initial_prompt(), None);
     }
     #[test]
     fn initial_prompt_trims_and_ignores_whitespace_only() {
-        let args = PagerArgs::try_parse_from(["grok", "  spaced  "]).expect("padded prompt parses");
+        let args = PagerArgs::try_parse_from(["ezer", "  spaced  "]).expect("padded prompt parses");
         assert_eq!(args.initial_prompt(), Some("spaced"));
-        let blank = PagerArgs::try_parse_from(["grok", "   "]).expect("blank prompt parses");
+        let blank = PagerArgs::try_parse_from(["ezer", "   "]).expect("blank prompt parses");
         assert_eq!(blank.initial_prompt(), None);
     }
     #[test]
     fn subcommand_takes_precedence_over_positional_prompt() {
-        let args = PagerArgs::try_parse_from(["grok", "logout"]).expect("subcommand parses");
+        let args = PagerArgs::try_parse_from(["ezer", "logout"]).expect("subcommand parses");
         assert!(matches!(args.command, Some(Command::Logout)));
         assert!(args.prompt.is_none());
     }
     #[test]
     fn usage_command_parses_session_and_optional_turn() {
-        let session_only = PagerArgs::try_parse_from(["grok", "usage", "sess-1"])
-            .expect("grok usage <session-id>");
+        let session_only = PagerArgs::try_parse_from(["ezer", "usage", "sess-1"])
+            .expect("ezer usage <session-id>");
         assert!(matches!(
             session_only.command,
             Some(Command::Usage(crate::usage_cmd::UsageArgs {
@@ -1404,8 +1404,8 @@ mod tests {
                 turn: None,
             })) if session_id == "sess-1"
         ));
-        let with_turn = PagerArgs::try_parse_from(["grok", "usage", "sess-1", "3"])
-            .expect("grok usage <session-id> <turn>");
+        let with_turn = PagerArgs::try_parse_from(["ezer", "usage", "sess-1", "3"])
+            .expect("ezer usage <session-id> <turn>");
         assert!(matches!(
             with_turn.command,
             Some(Command::Usage(crate::usage_cmd::UsageArgs {
@@ -1416,65 +1416,65 @@ mod tests {
     }
     #[test]
     fn positional_prompt_conflicts_with_headless_single() {
-        let err = PagerArgs::try_parse_from(["grok", "-p", "headless", "interactive"])
+        let err = PagerArgs::try_parse_from(["ezer", "-p", "headless", "interactive"])
             .expect_err("positional prompt + --single must conflict");
         assert_eq!(err.kind(), clap::error::ErrorKind::ArgumentConflict);
     }
     #[test]
     fn worktree_flag_and_initial_prompt_combine() {
-        let a = PagerArgs::try_parse_from(["grok", "do the thing", "-w"])
+        let a = PagerArgs::try_parse_from(["ezer", "do the thing", "-w"])
             .expect("prompt then bare -w parses");
         assert_eq!(a.initial_prompt(), Some("do the thing"));
         assert_eq!(a.worktree.as_deref(), Some(""));
-        let b = PagerArgs::try_parse_from(["grok", "--worktree=feat", "do the thing"])
+        let b = PagerArgs::try_parse_from(["ezer", "--worktree=feat", "do the thing"])
             .expect("--worktree=name + positional parses");
         assert_eq!(b.initial_prompt(), Some("do the thing"));
         assert_eq!(b.worktree.as_deref(), Some("feat"));
-        let c = PagerArgs::try_parse_from(["grok", "-w", "x"]).expect("-w x parses");
+        let c = PagerArgs::try_parse_from(["ezer", "-w", "x"]).expect("-w x parses");
         assert_eq!(c.worktree.as_deref(), Some("x"));
         assert_eq!(c.initial_prompt(), None);
     }
     #[test]
     fn trust_flag_parses_on_pager_and_alias() {
-        let bare = PagerArgs::try_parse_from(["grok"]).expect("bare grok parses");
+        let bare = PagerArgs::try_parse_from(["ezer"]).expect("bare ezer parses");
         assert!(!bare.trust);
-        let long = PagerArgs::try_parse_from(["grok", "--trust"]).expect("--trust parses");
+        let long = PagerArgs::try_parse_from(["ezer", "--trust"]).expect("--trust parses");
         assert!(long.trust);
         let alias =
-            PagerArgs::try_parse_from(["grok", "--trust-folder"]).expect("--trust-folder parses");
+            PagerArgs::try_parse_from(["ezer", "--trust-folder"]).expect("--trust-folder parses");
         assert!(alias.trust);
     }
     #[test]
     fn reasoning_effort_and_effort_alias_parse_same_field() {
-        let long = PagerArgs::try_parse_from(["grok", "--reasoning-effort", "high"])
+        let long = PagerArgs::try_parse_from(["ezer", "--reasoning-effort", "high"])
             .expect("--reasoning-effort parses");
         assert_eq!(long.reasoning_effort.as_deref(), Some("high"));
         let alias =
-            PagerArgs::try_parse_from(["grok", "--effort", "high"]).expect("--effort alias parses");
+            PagerArgs::try_parse_from(["ezer", "--effort", "high"]).expect("--effort alias parses");
         assert_eq!(alias.reasoning_effort.as_deref(), Some("high"));
     }
     #[test]
     fn reasoning_effort_accepts_max_and_remapped_ids() {
-        let max = PagerArgs::try_parse_from(["grok", "--effort", "max"]).expect("max parses");
+        let max = PagerArgs::try_parse_from(["ezer", "--effort", "max"]).expect("max parses");
         assert_eq!(max.reasoning_effort.as_deref(), Some("max"));
         let deep =
-            PagerArgs::try_parse_from(["grok", "--reasoning-effort", "deep"]).expect("deep parses");
+            PagerArgs::try_parse_from(["ezer", "--reasoning-effort", "deep"]).expect("deep parses");
         assert_eq!(deep.reasoning_effort.as_deref(), Some("deep"));
     }
     #[test]
     fn reasoning_effort_last_flag_wins_when_both_names_set() {
         let args =
-            PagerArgs::try_parse_from(["grok", "--reasoning-effort", "low", "--effort", "high"])
+            PagerArgs::try_parse_from(["ezer", "--reasoning-effort", "low", "--effort", "high"])
                 .expect("both effort flag names parse");
         assert_eq!(args.reasoning_effort.as_deref(), Some("high"));
         let reverse =
-            PagerArgs::try_parse_from(["grok", "--effort", "high", "--reasoning-effort", "low"])
+            PagerArgs::try_parse_from(["ezer", "--effort", "high", "--reasoning-effort", "low"])
                 .expect("both effort flag names parse (reverse order)");
         assert_eq!(reverse.reasoning_effort.as_deref(), Some("low"));
     }
     #[test]
     fn agent_args_effort_alias_parses() {
-        let args = PagerArgs::try_parse_from(["grok", "agent", "--effort", "max", "stdio"])
+        let args = PagerArgs::try_parse_from(["ezer", "agent", "--effort", "max", "stdio"])
             .expect("agent --effort parses");
         let Command::Agent(agent) = args.command.expect("agent subcommand") else {
             panic!("expected agent subcommand");

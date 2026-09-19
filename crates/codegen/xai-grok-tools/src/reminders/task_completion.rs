@@ -81,7 +81,7 @@ impl TaskCompletionReservations {
     }
 }
 crate::register_resource!(
-    "grok_build",
+    "ezer_build",
     "TaskCompletionReservations",
     TaskCompletionReservations
 );
@@ -96,7 +96,7 @@ impl TaskWakeSuppressed {
         self.0.load(std::sync::atomic::Ordering::Acquire)
     }
 }
-crate::register_resource!("grok_build", "TaskWakeSuppressed", TaskWakeSuppressed);
+crate::register_resource!("ezer_build", "TaskWakeSuppressed", TaskWakeSuppressed);
 /// Set of task IDs whose completion has already been surfaced as a
 /// `<system-reminder>`.  Persisted via `State<T>` so it survives across
 /// tool calls within a session.
@@ -117,7 +117,7 @@ impl ReportedTaskCompletions {
     }
 }
 crate::register_resource!(
-    "grok_build",
+    "ezer_build",
     "ReportedTaskCompletions",
     ReportedTaskCompletions
 );
@@ -331,7 +331,7 @@ pub fn format_monitor_events(
     }
 }
 /// Whether a background task should be surfaced to the session whose owner id is `my_owner`. A task is in scope only
-/// when it has no recorded owner (legacy / non-grok-build backends) or its owner matches the current session;
+/// when it has no recorded owner (legacy / non-ezer-build backends) or its owner matches the current session;
 /// cross-session tasks are filtered out so their completions surface in the owning session, not here.
 pub(crate) fn task_owned_by_session(task: &TaskSnapshot, my_owner: Option<&str>) -> bool {
     match (my_owner, task.owner_session_id.as_deref()) {

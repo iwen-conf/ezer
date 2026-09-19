@@ -403,7 +403,7 @@ mod tests {
 
     #[test]
     fn successful_payloads_are_not_mistaken_for_errors() {
-        let chunk = r#"{"id":"abc","object":"chat.completion.chunk","created":0,"model":"grok","choices":[]}"#;
+        let chunk = r#"{"id":"abc","object":"chat.completion.chunk","created":0,"model":"ezer","choices":[]}"#;
         assert!(parse_provider_error(chunk.as_bytes()).is_none());
     }
 

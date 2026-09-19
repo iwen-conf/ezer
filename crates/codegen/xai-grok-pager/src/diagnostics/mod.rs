@@ -44,7 +44,7 @@ pub use model::{
 };
 pub use view::{DiagnosticSnapshot, view};
 
-/// Passive input-device probe for `grok doctor` / `/doctor`. The TUI passes true only while voice mode is enabled.
+/// Passive input-device probe for `ezer doctor` / `/doctor`. The TUI passes true only while voice mode is enabled.
 pub fn apply_voice_probe(report: &mut DiagnosticReport, emit_missing_issue: bool) {
     if !xai_grok_voice::AUDIO_SUPPORTED {
         return;
@@ -80,7 +80,7 @@ fn voice_missing_finding(error: String) -> DiagnosticFinding {
         automatic_remediation: None,
         note: Some(
             "Connect or select a microphone in your system sound settings. On Linux, install a \
-             supported audio recorder if none was found on PATH. Then run `/doctor` or `grok \
+             supported audio recorder if none was found on PATH. Then run `/doctor` or `ezer \
              doctor` again. Doctor can't detect denied macOS microphone access when the system \
              returns silence; follow the message shown when dictation fails."
                 .to_owned(),
@@ -120,7 +120,7 @@ pub enum WarningCategory {
     /// tmux is attached to a client it believes cannot render 24-bit color, so it rewrites every truecolor cell to the client terminfo's palette.
     TmuxColorReduced,
     SandboxProfileConflict,
-    /// The session runs over SSH without `grok wrap` on the local end.
+    /// The session runs over SSH without `ezer wrap` on the local end.
     /// Clipboard forwarding and terminal-mode restore on dropped connections are then not guaranteed.
     /// An informational recommendation, not a breakage.
     SshWithoutWrap,
@@ -229,8 +229,8 @@ pub(crate) fn collect_startup_warnings_from(
             None,
         );
         warning.note = Some(
-            "Grok also saves each copy to the backup file shown in the copy message. To copy \
-             directly, run `grok wrap ssh <host>` on your local computer or use a terminal that \
+            "ezer also saves each copy to the backup file shown in the copy message. To copy \
+             directly, run `ezer wrap ssh <host>` on your local computer or use a terminal that \
              supports OSC 52. You can also use `/copy <file>` or `/minimal`."
                 .to_owned(),
         );
@@ -260,7 +260,7 @@ pub(crate) fn collect_startup_warnings_from(
     {
         let message = match fullscreen_active {
             Some(true) => "Fullscreen may be unreliable in tmux control mode",
-            Some(false) => "Grok is using inline mode because tmux control mode limits fullscreen",
+            Some(false) => "ezer is using inline mode because tmux control mode limits fullscreen",
             None => "Display may be limited in tmux control mode",
         };
         let mut warning = TerminalWarning::new(WarningCategory::ControlMode, message, None, None);
@@ -354,7 +354,7 @@ pub(crate) fn wezterm_kitty_keyboard_warning_from(
             None,
         );
         warning.note = Some(
-            "For this session, type `\\` and then press Enter. Grok can't negotiate the Kitty \
+            "For this session, type `\\` and then press Enter. ezer can't negotiate the Kitty \
              keyboard protocol over SSH yet. `enable_kitty_keyboard = true` applies only to \
              local WezTerm sessions."
                 .to_string(),
@@ -396,7 +396,7 @@ fn sandbox_profile_conflict_warning_from(conflicts: Vec<String>) -> Option<Termi
         fix: None,
         config_path: None,
         note: Some(format!(
-            "Grok is using the user profile. Compare `.grok/sandbox.toml` with {}, then rename \
+            "ezer is using the user profile. Compare `.ezer/sandbox.toml` with {}, then rename \
              or remove the conflicting project profile. Project settings can add profile names \
              but can't redefine a user profile.",
             crate::util::display_user_grok_path(xai_grok_config::SANDBOX_CONFIG_FILENAME)
@@ -404,7 +404,7 @@ fn sandbox_profile_conflict_warning_from(conflicts: Vec<String>) -> Option<Termi
     })
 }
 
-/// Pure SSH `grok wrap` recommendation: suggests launching the session through `grok wrap ssh <host>` on the user's
+/// Pure SSH `ezer wrap` recommendation: suggests launching the session through `ezer wrap ssh <host>` on the user's
 /// local machine. Gates (all must hold). This detector only describes the environment. All inputs are injected so
 /// tests never touch ambient env (pattern: [`diagnose_wayland_data_control`]).
 pub fn ssh_wrap_hint(
@@ -418,7 +418,7 @@ pub fn ssh_wrap_hint(
     let mut warning = TerminalWarning::new(
         WarningCategory::SshWithoutWrap,
         "Use local SSH wrapping for more reliable clipboard copy and terminal recovery",
-        Some("grok wrap ssh <host>"),
+        Some("ezer wrap ssh <host>"),
         None,
     );
     warning.note = Some(
@@ -526,7 +526,7 @@ pub(crate) fn collect_notification_warnings_with_method(
     {
         let mut warning = TerminalWarning::new(
             WarningCategory::NotificationProtocolFallback,
-            "Grok is using the terminal bell because the terminal was not recognized",
+            "ezer is using the terminal bell because the terminal was not recognized",
             None,
             None,
         );
@@ -865,13 +865,13 @@ pub fn color_support_warning(
             None,
             None,
         );
-        warning.note = Some("Unset `NO_COLOR`, then restart Grok.".to_string());
+        warning.note = Some("Unset `NO_COLOR`, then restart ezer.".to_string());
         return Some(warning);
     }
 
-    // Checked before the detected level is consulted at all: the level says what Grok emits, which is a different question from what survives tmux
+    // Checked before the detected level is consulted at all: the level says what ezer emits, which is a different question from what survives tmux
     // A truecolor detection is not evidence that truecolor reaches the terminal
-    // A session with no color evidence (piped `grok doctor`) still has a clamping client worth reporting
+    // A session with no color evidence (piped `ezer doctor`) still has a clamping client worth reporting
     if color_passthrough == TmuxColorPassthrough::Reduced {
         let mut warning = TerminalWarning::new(
             WarningCategory::TmuxColorReduced,
@@ -882,7 +882,7 @@ pub fn color_support_warning(
         warning.note = Some(format!(
             "Run `tmux source-file {tmux_config_path}`, then detach and reattach: the server \
              reads the option only on reload, and a client fixes its color depth only at attach. \
-             If Grok still reports less than truecolor afterwards, also add `set -g \
+             If ezer still reports less than truecolor afterwards, also add `set -g \
              default-terminal \"tmux-256color\"` and `export COLORTERM=truecolor` to your shell \
              startup file."
         ));
@@ -921,7 +921,7 @@ pub fn color_support_warning(
         warning.note = Some(format!(
             "In the same tmux config, also add `set -g default-terminal \"tmux-256color\"`. Add \
              `export COLORTERM=truecolor` to your shell startup file. Then reload tmux with \
-             `tmux source-file {tmux_config_path}`, then detach and reattach, and restart Grok."
+             `tmux source-file {tmux_config_path}`, then detach and reattach, and restart ezer."
         ));
         return Some(warning);
     }
@@ -934,7 +934,7 @@ pub fn color_support_warning(
     );
     warning.note = Some(
         "Add this export to your shell startup file, such as `~/.zshrc` or `~/.bashrc`, then \
-         restart Grok."
+         restart ezer."
             .to_string(),
     );
     Some(warning)
@@ -1966,7 +1966,7 @@ mod tests {
         assert!(w.config_path.is_none());
         assert!(w.note.as_deref().is_some_and(|note| {
             note.contains("rename or remove")
-                && note.contains(".grok/sandbox.toml")
+                && note.contains(".ezer/sandbox.toml")
                 && note.contains(&crate::util::display_user_grok_path(
                     xai_grok_config::SANDBOX_CONFIG_FILENAME,
                 ))
@@ -2061,7 +2061,7 @@ mod tests {
         // is_ssh, no sink, not VS Code remote: recommend wrap
         let w = ssh_wrap_hint(true, false, false).expect("hint must fire");
         assert_eq!(w.category, WarningCategory::SshWithoutWrap);
-        assert_eq!(w.fix.as_deref(), Some("grok wrap ssh <host>"));
+        assert_eq!(w.fix.as_deref(), Some("ezer wrap ssh <host>"));
         assert!(
             w.config_path.is_none(),
             "fix is a command, not a config line"
@@ -2082,7 +2082,7 @@ mod tests {
 
     #[test]
     fn ssh_wrap_hint_suppressed_when_sink_active() {
-        // An active OSC 52 sink means the session already runs under `grok wrap`; adoption silences the hint by itself
+        // An active OSC 52 sink means the session already runs under `ezer wrap`; adoption silences the hint by itself
         assert!(ssh_wrap_hint(true, true, false).is_none());
     }
 
@@ -2431,7 +2431,7 @@ mod tests {
         assert!(finding.automatic_remediation.is_none());
         assert!(finding.note.as_deref().is_some_and(|note| {
             note.contains("install a supported audio recorder")
-                && note.contains("grok doctor")
+                && note.contains("ezer doctor")
                 && note.contains("can't detect denied macOS microphone access")
         }));
     }
@@ -2886,7 +2886,7 @@ mod tests {
         assert!(w.config_path.is_none());
     }
 
-    /// Regression: a tmux client that reduces color used to be invisible to Doctor whenever Grok's own detection reported truecolor.
+    /// Regression: a tmux client that reduces color used to be invisible to Doctor whenever ezer's own detection reported truecolor.
     /// A session with washed-out themes was then reported completely healthy.
     #[test]
     fn color_support_warning_reports_tmux_clamp_at_truecolor() {
@@ -2911,7 +2911,7 @@ mod tests {
         );
     }
 
-    /// Piped `grok doctor` has no color evidence, but the tmux client is still measurable, and `doctor fix` needs the finding to plan against.
+    /// Piped `ezer doctor` has no color evidence, but the tmux client is still measurable, and `doctor fix` needs the finding to plan against.
     #[test]
     fn color_support_warning_reports_tmux_clamp_without_color_evidence() {
         let w = color_support_warning(

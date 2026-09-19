@@ -22,7 +22,7 @@ mod tests {
             entries: vec![QueueEntryWire {
                 id: "p1".to_string(),
                 version: 0,
-                owner: Some("grok-tui".to_string()),
+                owner: Some("ezer-tui".to_string()),
                 last_editor: None,
                 kind: "prompt".to_string(),
                 text: "hello".to_string(),
@@ -82,8 +82,8 @@ mod tests {
         let entry = QueueEntryWire {
             id: "p1".to_string(),
             version: 3,
-            owner: Some("grok-tui".to_string()),
-            last_editor: Some("grok-vscode".to_string()),
+            owner: Some("ezer-tui".to_string()),
+            last_editor: Some("ezer-vscode".to_string()),
             kind: "prompt".to_string(),
             text: "hello".to_string(),
             position: 0,
@@ -92,7 +92,7 @@ mod tests {
         let json = serde_json::to_value(&entry).unwrap();
         assert_eq!(
             json.get("lastEditor").and_then(|v| v.as_str()),
-            Some("grok-vscode")
+            Some("ezer-vscode")
         );
         let round: QueueEntryWire = serde_json::from_value(json).unwrap();
         assert_eq!(round, entry);

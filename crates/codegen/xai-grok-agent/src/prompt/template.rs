@@ -29,7 +29,7 @@ pub(crate) fn base_template() -> Zeroizing<String> {
     decrypt(BASE_PROMPT_ENC, PROMPT_SEEDS[0])
 }
 
-/// The base prompt template source, exposed for `grok prompt --section template`.
+/// The base prompt template source, exposed for `ezer prompt --section template`.
 pub fn base_template_source() -> Zeroizing<String> {
     base_template()
 }
@@ -38,7 +38,7 @@ pub(crate) fn apply_patch_template() -> Zeroizing<String> {
     decrypt(CODEX_PROMPT_ENC, PROMPT_SEEDS[1])
 }
 
-/// Apply-patch prompt template source, exposed for `grok prompt --section apply-patch-template`.
+/// Apply-patch prompt template source, exposed for `ezer prompt --section apply-patch-template`.
 pub fn apply_patch_template_source() -> Zeroizing<String> {
     apply_patch_template()
 }
@@ -113,7 +113,7 @@ mod tests {
         }
     }
 
-    /// Build a TemplateRenderer with the standard grok-build tool kinds.
+    /// Build a TemplateRenderer with the standard ezer-build tool kinds.
     fn default_renderer() -> TemplateRenderer {
         let tools: HashMap<ToolKind, String> = [
             (ToolKind::Read, "read_file"),
@@ -407,18 +407,18 @@ mod tests {
         jset(
             &mut placeholders,
             "memory_global_path",
-            serde_json::json!("/home/test/.grok/memory-v2/global"),
+            serde_json::json!("/home/test/.ezer/memory-v2/global"),
         );
         jset(
             &mut placeholders,
             "memory_workspace_path",
-            serde_json::json!("/home/test/.grok/memory-v2/workspaces/project"),
+            serde_json::json!("/home/test/.ezer/memory-v2/workspaces/project"),
         );
 
         let prompt = render_base(&default_renderer(), &placeholders);
         assert!(prompt.contains("<memory>"));
-        assert!(prompt.contains("/home/test/.grok/memory-v2/global"));
-        assert!(prompt.contains("/home/test/.grok/memory-v2/workspaces/project"));
+        assert!(prompt.contains("/home/test/.ezer/memory-v2/global"));
+        assert!(prompt.contains("/home/test/.ezer/memory-v2/workspaces/project"));
         assert!(prompt.contains("topics/"));
         assert!(prompt.contains("observations/_inbox/"));
         assert!(prompt.contains("NEVER edit it directly"));

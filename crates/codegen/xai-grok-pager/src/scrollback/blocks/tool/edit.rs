@@ -2096,8 +2096,8 @@ mod tests {
     /// Wrapped diff rows must keep the precomputed syntect / FileScoped styles instead of flattening to a solid foreground on banded themes.
     #[test]
     fn test_diff_reflow_preserves_banded_syntect_styles_across_wrap() {
-        let _guard = pin_groknight_syntect();
-        let theme = Theme::groknight();
+        let _guard = pin_ezernight_syntect();
+        let theme = Theme::ezernight();
         let config = DiffRenderConfig::default();
         let path = Path::new("probe.rs");
         let source = "let naïve = compute(input); // café comment stretching over wraps";
@@ -2236,8 +2236,8 @@ mod tests {
     /// A token wider than the content width still wraps into a single row and must keep its styles rather than flatten to `text_primary`.
     #[test]
     fn test_diff_reflow_keeps_overlong_token_styles() {
-        let _guard = pin_groknight_syntect();
-        let theme = Theme::groknight();
+        let _guard = pin_ezernight_syntect();
+        let theme = Theme::ezernight();
         let config = DiffRenderConfig::default();
         let path = Path::new("probe.rs");
         let source = format!("//{}", "x".repeat(40));
@@ -2806,7 +2806,7 @@ mod tests {
     }
 
     /// Hunk-only: fresh highlighter, only the given lines in order (prod path).
-    /// Caller pins the theme via `pin_groknight_syntect` (lock is not reentrant).
+    /// Caller pins the theme via `pin_ezernight_syntect` (lock is not reentrant).
     fn hunk_only_raw_styles(path: &Path, lines: &[&str]) -> Vec<SyntectSpans> {
         let syntect = get_syntect();
         let mut hl = syntect
@@ -2819,7 +2819,7 @@ mod tests {
     }
 
     /// Full-file then slice: silent HL from line 1, return styles for all lines.
-    /// Caller pins the theme via `pin_groknight_syntect` (lock is not reentrant).
+    /// Caller pins the theme via `pin_ezernight_syntect` (lock is not reentrant).
     fn full_file_raw_styles(path: &Path, file_text: &str) -> Vec<SyntectSpans> {
         let syntect = get_syntect();
         let mut hl = syntect
@@ -2882,10 +2882,10 @@ class ProcessQueueItem(BaseModel):
     /// The two diff sides are highlighted independently.
     #[test]
     fn delete_side_multiline_string_does_not_leak_into_insert() {
-        let _guard = pin_groknight_syntect();
+        let _guard = pin_ezernight_syntect();
         let path = Path::new("probe.py");
         let config = DiffRenderConfig::default();
-        let theme = Theme::groknight();
+        let theme = Theme::ezernight();
 
         // Content spans of the added `def` line, given the removed line above it.
         let added_def = |removed: &str| -> Vec<(ratatui::style::Color, String)> {
@@ -3150,7 +3150,7 @@ class ProcessQueueItem(BaseModel):
     /// Runnable pin: cold hunk-only and full-file disagree on the field line after a mid-file closing `"""`.
     #[test]
     fn triple_quote_hunk_only_differs_from_full_file_today() {
-        let _guard = pin_groknight_syntect();
+        let _guard = pin_ezernight_syntect();
         let path = Path::new("queue_item.py");
         let (file, hunk, field_ln) = fixture_python_close_hunk();
         let close_ln = nth(&hunk, 0).ln;

@@ -14,7 +14,7 @@
 //! **On-disk layout** (under the session `cwd`):
 //!
 //! ```text
-//! <cwd>/.grok/rewind-checkpoints/
+//! <cwd>/.ezer/rewind-checkpoints/
 //!   .gitignore                          # "*" — blobs are never committed
 //!   <session_id>/
 //!     checkpoint-<prompt_index>.json    # one RewindCheckpoint per prompt
@@ -28,7 +28,7 @@ use tokio::sync::Mutex;
 
 use crate::session::checkpoint::RewindCheckpoint;
 
-/// Directory (under `<cwd>/.grok`) holding every session's checkpoint store.
+/// Directory (under `<cwd>/.ezer`) holding every session's checkpoint store.
 const STORE_SUBDIR: &str = "rewind-checkpoints";
 
 /// Default cap on retained checkpoints per session.
@@ -42,7 +42,7 @@ static TMP_WRITE_SEQ: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU6
 ///
 /// See the [module docs](self) for the on-disk layout and durability rationale.
 pub(crate) struct CheckpointStore {
-    /// Per-session store directory: `<cwd>/.grok/rewind-checkpoints/<session_id>`.
+    /// Per-session store directory: `<cwd>/.ezer/rewind-checkpoints/<session_id>`.
     dir: PathBuf,
     /// Rewritten store dir after a virtualization remount.
     /// The first bind may construct the store under `/workspace`; a rebind with `session_root` must persist under the real session tree.
@@ -70,7 +70,7 @@ impl CheckpointStore {
         // `session_id` is RPC-controlled: never join it verbatim (a `../../etc` would escape the store root)
         // Map it to a safe, collision-free name first
         let dir = cwd
-            .join(".grok")
+            .join(".ezer")
             .join(STORE_SUBDIR)
             .join(session_store_dir_name(session_id));
         let cap = cap.max(1);
@@ -97,7 +97,7 @@ impl CheckpointStore {
     /// Blocking `std::fs` runs in `spawn_blocking`; a failed copy leaves `remounted_dir` unset so persist keeps writing the source tree.
     pub(crate) async fn remount(&self, cwd: &Path, session_id: &str) -> bool {
         let dest = cwd
-            .join(".grok")
+            .join(".ezer")
             .join(STORE_SUBDIR)
             .join(session_store_dir_name(session_id));
         let _io = self.io_lock.lock().await;
@@ -528,7 +528,7 @@ mod tests {
         // ...and a `.gitignore` ignores the whole store so blobs are never committed.
         let gitignore = tmp
             .path()
-            .join(".grok")
+            .join(".ezer")
             .join(STORE_SUBDIR)
             .join(".gitignore");
         let body = std::fs::read_to_string(&gitignore).expect("gitignore written");

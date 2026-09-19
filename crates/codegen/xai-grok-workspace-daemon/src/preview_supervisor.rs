@@ -220,7 +220,7 @@ fn write_oom_score_adj_raw(value: &'static [u8]) -> io::Result<()> {
 }
 
 /// Build the unspawned proxy command.
-/// Secrets (`GROK_SERVER_KEY` / `GROK_SESSION_ID`) reach the proxy by env inheritance, never argv.
+/// Secrets (`EZER_SERVER_KEY` / `EZER_SESSION_ID`) reach the proxy by env inheritance, never argv.
 fn build_preview_command(cfg: &PreviewArgs) -> io::Result<tokio::process::Command> {
     use std::process::Stdio;
 

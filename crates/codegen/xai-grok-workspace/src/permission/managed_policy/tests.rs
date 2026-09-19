@@ -14,11 +14,11 @@ use crate::permission::types::RuleAction;
 const FOREIGN: PolicySubjectOrigin = PolicySubjectOrigin::Foreign;
 const NATIVE: PolicySubjectOrigin = PolicySubjectOrigin::GrokNative;
 const CLAUDE_PATH: &str = "/test/managed-settings.json";
-const SYS_REQ: &str = "/etc/grok/requirements.toml";
-const USER_REQ: &str = "/home/u/.grok/requirements.toml";
-const SYS_MANAGED: &str = "/etc/grok/managed_config.toml";
-const USER_MANAGED: &str = "/home/u/.grok/managed_config.toml";
-const MDM_REQ: &str = "ai.x.grok:requirements_toml_base64";
+const SYS_REQ: &str = "/etc/ezer/requirements.toml";
+const USER_REQ: &str = "/home/u/.ezer/requirements.toml";
+const SYS_MANAGED: &str = "/etc/ezer/managed_config.toml";
+const USER_MANAGED: &str = "/home/u/.ezer/managed_config.toml";
+const MDM_REQ: &str = "ai.x.ezer:requirements_toml_base64";
 /// Every admin-owned TOML tier with its path label.
 const ADMIN_TIERS: [(PolicyLayerTier, &str); 3] = [
     (PolicyLayerTier::Mdm, MDM_REQ),
@@ -72,7 +72,7 @@ fn allowlist_from(json: serde_json::Value) -> McpServerPolicy {
     parse_managed_settings_json(&json, std::path::Path::new(CLAUDE_PATH)).mcp_allowlist
 }
 
-/// Some source of `policy` is a full lockdown (what `grok inspect` lists).
+/// Some source of `policy` is a full lockdown (what `ezer inspect` lists).
 fn has_lockdown_source(policy: &McpServerPolicy) -> bool {
     policy.sources.iter().any(McpServerAllowlist::is_lockdown)
 }
@@ -1134,31 +1134,31 @@ fn mcp_verdict_matrix() {
 /// doctor details, enable errors) — pin them and `source()` directly.
 #[test]
 fn mcp_block_reason_display_and_source_are_pinned() {
-    let src = PathBuf::from("/etc/grok/requirements.toml");
+    let src = PathBuf::from("/etc/ezer/requirements.toml");
     let cases = [
         (
             McpBlockReason::Deny {
                 source: src.clone(),
             },
-            "matches deniedMcpServers (/etc/grok/requirements.toml)",
+            "matches deniedMcpServers (/etc/ezer/requirements.toml)",
         ),
         (
             McpBlockReason::NotGranted {
                 source: src.clone(),
             },
-            "not in allowedMcpServers (/etc/grok/requirements.toml)",
+            "not in allowedMcpServers (/etc/ezer/requirements.toml)",
         ),
         (
             McpBlockReason::Lockdown {
                 source: src.clone(),
             },
-            "locked down by policy (/etc/grok/requirements.toml)",
+            "locked down by policy (/etc/ezer/requirements.toml)",
         ),
         (
             McpBlockReason::ProjectPin {
                 source: src.clone(),
             },
-            "project MCP disabled by enableAllProjectMcpServers = false (/etc/grok/requirements.toml)",
+            "project MCP disabled by enableAllProjectMcpServers = false (/etc/ezer/requirements.toml)",
         ),
     ];
     for (reason, want) in cases {
@@ -1591,7 +1591,7 @@ fn assert_expects(label: &str, ms: &ManagedSettings, expects: Vec<Expect>) {
 }
 
 /// Pins strictest-wins layer resolution: any deny wins, restricted sources intersect, pins only tighten.
-/// Grok TOML binds native subjects; vendor Claude is advisory. Malformed values degrade per-key and never drop healthy pins.
+/// ezer TOML binds native subjects; vendor Claude is advisory. Malformed values degrade per-key and never drop healthy pins.
 #[test]
 fn layer_resolution_semantics() {
     assert_expects(
@@ -1717,7 +1717,7 @@ source = { source = "git", url = "https://github.com/corp/approved.git", ref = "
     );
 
     // The vendor file applies last, yet its admin-owned pin re-attributes a
-    // pin a user layer set first (grok inspect / doctor show the vendor path).
+    // pin a user layer set first (ezer inspect / doctor show the vendor path).
     assert_expects(
         "an admin-owned vendor pin upgrades a user-owned auto-update pin",
         &layered(
@@ -1860,13 +1860,13 @@ server_url = inf
                 FOREIGN,
                 false,
             ),
-            // grok-native subjects (user/system config.toml, plugins):
+            // ezer-native subjects (user/system config.toml, plugins):
             // advisory — the same servers still run.
             Expect::Allowed("denied", "https://denied.example.com/mcp", NATIVE, true),
             Expect::Allowed("unlisted", "https://unlisted.example.com/mcp", NATIVE, true),
             Expect::MarketUrl("https://github.com/other/repo.git", FOREIGN, false),
             Expect::MarketUrl("https://github.com/other/repo.git", NATIVE, true),
-            // The add/install gate acquires NEW sources — not grok-native
+            // The add/install gate acquires NEW sources — not ezer-native
             // yet, so even an advisory strict list fail-closes it.
             Expect::MarketAddBlocked("https://github.com/other/repo.git", true),
         ],
@@ -2624,7 +2624,7 @@ fn present_empty_allowlist_is_lockdown() {
     assert!(has_lockdown_source(&empty));
     assert!(!empty.is_server_allowed(&any(), FOREIGN));
     assert!(!empty.is_server_allowed(&ss("any", "npx"), FOREIGN));
-    // The vendor file is advisory: its lockdown must not bind grok-native subjects.
+    // The vendor file is advisory: its lockdown must not bind ezer-native subjects.
     assert!(empty.is_server_allowed(&hs("native", "https://any.example.com/mcp"), NATIVE));
 
     // Every entry unsupported = zero parsed entries = the same lockdown.
@@ -2671,7 +2671,7 @@ fn strict_marketplaces_present_empty_is_lockdown() {
         parse_managed_settings_json(&serde_json::json!({ "strictKnownMarketplaces": [] }), path);
     assert!(ms.marketplace_allowlist.is_restricted());
     assert!(!ms.marketplace_allowlist.is_url_allowed(repo, FOREIGN));
-    // The vendor file is advisory: its lockdown must not bind grok-native marketplaces.
+    // The vendor file is advisory: its lockdown must not bind ezer-native marketplaces.
     assert!(ms.marketplace_allowlist.is_url_allowed(repo, NATIVE));
 
     let ms = parse_managed_settings_json(

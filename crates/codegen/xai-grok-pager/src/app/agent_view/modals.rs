@@ -3414,9 +3414,9 @@ mod extensions_action_target_tests {
     #[test]
     fn remove_refuses_policy_source_without_confirm() {
         let mut agent = super::test_fixtures::make_agent();
-        let mut pinned = hook_info("policy/hook-a", "/etc/grok", false);
+        let mut pinned = hook_info("policy/hook-a", "/etc/ezer", false);
         pinned.pinned = true;
-        let sibling = hook_info("policy/hook-b", "/etc/grok", false);
+        let sibling = hook_info("policy/hook-b", "/etc/ezer", false);
         let mut modal = hooks_modal(vec![pinned, sibling]);
         // The unpinned sibling is selected; removal targets the source.
         modal.entry_data_indices = vec![Some(0), Some(1)];
@@ -3462,12 +3462,12 @@ mod extensions_action_target_tests {
         }
 
         let mut agent = super::test_fixtures::make_agent();
-        let mut pinned = hook_info("policy/hook-a", "/etc/grok", false);
+        let mut pinned = hook_info("policy/hook-a", "/etc/ezer", false);
         pinned.pinned = true;
         pinned.removable = true;
         let mut modal = hooks_modal(vec![pinned]);
         modal.entry_data_indices = vec![None, Some(0)];
-        modal.entry_group_keys = vec![Some("/etc/grok".to_string()), None];
+        modal.entry_group_keys = vec![Some("/etc/ezer".to_string()), None];
         modal.picker_state.selected = 0;
         agent.extensions_modal = Some(modal);
 

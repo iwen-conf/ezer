@@ -17,7 +17,7 @@ use crate::otel_event::{
     OtelNumber, OtelSignal, OtelTemporality,
 };
 
-/// OTLP/HTTP allows protobuf or JSON; both grok exporters post protobuf, so only it is decoded.
+/// OTLP/HTTP allows protobuf or JSON; both ezer exporters post protobuf, so only it is decoded.
 const PROTOBUF_MEDIA_TYPES: [&str; 2] = ["application/x-protobuf", "application/protobuf"];
 
 pub(crate) fn decode_post(

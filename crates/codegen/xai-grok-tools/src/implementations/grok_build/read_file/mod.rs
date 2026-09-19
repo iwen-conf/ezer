@@ -37,7 +37,7 @@ pub struct ReadFileParams {
     #[serde(default)]
     pub max_output_bytes: Option<usize>,
 }
-crate::register_resource!("grok_build", "ReadFile", ReadFileParams);
+crate::register_resource!("ezer_build", "ReadFile", ReadFileParams);
 /// Internal version discriminant for read_file. `read_file` has cross-cutting version divergence:
 /// gitignore enforcement and error mapping. If extracting into version modules, this tool is the
 /// highest-risk candidate.
@@ -214,7 +214,7 @@ fn apply_byte_budget(
 }
 /// Harness-compatible negative offset resolution (1-indexed start line). Negatives use the reference `split('\n')` field count plus a phantom
 /// field when the file is non-empty and has no trailing `\n`. Extraction still uses `split_inclusive`, so a start that lands on the
-/// phantom-only field yields an empty window (harness-aligned; not a Grok-line clamp).
+/// phantom-only field yields an empty window (harness-aligned; not a ezer-line clamp).
 fn resolve_read_start_line(file_content: &str, offset: Option<i64>) -> usize {
     let offset_raw = offset.unwrap_or(1);
     if offset_raw == 0 {
@@ -1104,7 +1104,7 @@ mod tests {
     #[tokio::test]
     async fn missing_skill_read_suggests_registered_path() {
         let tmp = TempDir::new().unwrap();
-        let skill_dir = tmp.path().join(".grok/skills/code-review");
+        let skill_dir = tmp.path().join(".ezer/skills/code-review");
         std::fs::create_dir_all(&skill_dir).unwrap();
         let skill_path = skill_dir.join("SKILL.md");
         std::fs::write(&skill_path, "# Code review\n").unwrap();
@@ -1129,7 +1129,7 @@ mod tests {
     #[tokio::test]
     async fn missing_skill_read_uses_display_path() {
         let tmp = TempDir::new().unwrap();
-        let skill_dir = tmp.path().join(".grok/skills/review");
+        let skill_dir = tmp.path().join(".ezer/skills/review");
         std::fs::create_dir_all(&skill_dir).unwrap();
         let skill_path = skill_dir.join("SKILL.md");
         std::fs::write(&skill_path, "# Review\n").unwrap();
@@ -1154,7 +1154,7 @@ mod tests {
             msg,
             "Error: /wrong/root/review/SKILL.md does not exist.\n\
              The skill you are looking for is registered at:\n\
-             /display/project/.grok/skills/review/SKILL.md"
+             /display/project/.ezer/skills/review/SKILL.md"
         );
     }
     #[tokio::test]
@@ -1193,7 +1193,7 @@ mod tests {
     #[tokio::test]
     async fn missing_skill_read_omits_stale_registered_path() {
         let tmp = TempDir::new().unwrap();
-        let stale_path = tmp.path().join(".grok/skills/review/SKILL.md");
+        let stale_path = tmp.path().join(".ezer/skills/review/SKILL.md");
         let mut resources = test_resources(tmp.path());
         resources.insert(PathNotFoundHints(true));
         resources.insert(seeded_manager(vec![SkillInfo {
@@ -2198,7 +2198,7 @@ pub fn verify(req: &HttpRequest) -> Result<Claims, Error> {
     #[tokio::test]
     async fn skill_file_ignores_offset_and_limit() {
         let tmp = TempDir::new().unwrap();
-        let skill_dir = tmp.path().join(".grok/skills/commit");
+        let skill_dir = tmp.path().join(".ezer/skills/commit");
         std::fs::create_dir_all(&skill_dir).unwrap();
         std::fs::write(
             skill_dir.join("SKILL.md"),
@@ -2208,7 +2208,7 @@ pub fn verify(req: &HttpRequest) -> Result<Claims, Error> {
         let tool = ReadFileTool;
         let resources = test_resources(tmp.path());
         let input = ReadFileInput {
-            path: ".grok/skills/commit/SKILL.md".to_string(),
+            path: ".ezer/skills/commit/SKILL.md".to_string(),
             offset: Some(3),
             limit: Some(1),
             pages: None,
@@ -2298,7 +2298,7 @@ pub fn verify(req: &HttpRequest) -> Result<Claims, Error> {
     #[tokio::test]
     async fn md_in_skills_dir_ignores_model_offset_and_limit() {
         let tmp = TempDir::new().unwrap();
-        let skill_dir = tmp.path().join(".grok/skills/my-skill");
+        let skill_dir = tmp.path().join(".ezer/skills/my-skill");
         std::fs::create_dir_all(&skill_dir).unwrap();
         let content = (1..=1200)
             .map(|n| format!("line{n}"))
@@ -2308,7 +2308,7 @@ pub fn verify(req: &HttpRequest) -> Result<Claims, Error> {
         let tool = ReadFileTool;
         let resources = test_resources(tmp.path());
         let input = ReadFileInput {
-            path: ".grok/skills/my-skill/reference.md".to_string(),
+            path: ".ezer/skills/my-skill/reference.md".to_string(),
             offset: Some(3),
             limit: Some(1),
             pages: None,
@@ -2945,7 +2945,7 @@ pub fn verify(req: &HttpRequest) -> Result<Claims, Error> {
         assert_eq!(extracted.content_concise, "2→");
     }
     /// Harness parity: offset=-1 on a file with no trailing `\n` resolves to the
-    /// phantom field only (start past any `split_inclusive` line), so Grok
+    /// phantom field only (start past any `split_inclusive` line), so ezer
     /// returns empty content/raw — same as the reference phantom-only window.
     #[test]
     fn extract_file_content_lines_negative_one_no_trailing_newline_stable() {

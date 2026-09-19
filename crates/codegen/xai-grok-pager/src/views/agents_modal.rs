@@ -125,7 +125,7 @@ pub enum AgentsModalOutcome {
         tab: AgentsTab,
     },
 }
-/// User-level vs project-level config files (`~/.grok` vs `{cwd}/.grok`).
+/// User-level vs project-level config files (`~/.ezer` vs `{cwd}/.ezer`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum ConfigFileScope {
     #[default]
@@ -251,7 +251,7 @@ pub struct AgentsModalState {
     pub cwd: PathBuf,
     /// Snapshot of bundle catalog used to merge persona lists.
     bundle: BundleState,
-    /// Resolved startup agent name (same chain as the shell: `[agent]`, `GROK_AGENT`, model `agentType`, then `grok-build`).
+    /// Resolved startup agent name (same chain as the shell: `[agent]`, `EZER_AGENT`, model `agentType`, then `ezer-build`).
     pub default_agent: String,
     /// Agent running in the current session (`session/info` `agentName`).
     pub active_agent: Option<String>,
@@ -267,7 +267,7 @@ pub struct AgentsModalState {
 }
 /// Built-in agent names that should be shown to the user.
 /// Skips the internal variants:
-/// GrokBuildConcise, GrokBuildPlan, GrokBuildPlanNoSubagents, GrokBuildAskUser, Codex, Opencode, CursorExtended, GrokBuildOrchestrator.
+/// EzerConcise, EzerPlan, EzerPlanNoSubagents, EzerAskUser, Codex, Opencode, CursorExtended, EzerOrchestrator.
 fn user_visible_builtins() -> &'static [BuiltinAgentName] {
     &[
         BuiltinAgentName::GrokBuild,
@@ -491,7 +491,7 @@ fn personas_from_bundle(bundle: &BundleState) -> Vec<PersonaDetail> {
             .collect()
     }
 }
-/// Union bundled personas with local `~/.grok/personas` and `{cwd}/.grok/personas`.
+/// Union bundled personas with local `~/.ezer/personas` and `{cwd}/.ezer/personas`.
 ///
 /// Bundled names take precedence; local-only names are appended with scope tags.
 pub fn merge_persona_lists(bundle: &BundleState, cwd: &Path) -> Vec<PersonaDetail> {
@@ -512,7 +512,7 @@ pub fn merge_persona_lists(bundle: &BundleState, cwd: &Path) -> Vec<PersonaDetai
         }
     }
     let dirs = [
-        (ConfigFileScope::Project, cwd.join(".grok").join("personas")),
+        (ConfigFileScope::Project, cwd.join(".ezer").join("personas")),
         (ConfigFileScope::User, grok_home.join("personas")),
     ];
     for (scope, dir) in dirs {
@@ -626,7 +626,7 @@ pub fn sanitize_config_name(name: &str) -> Result<String, String> {
 fn personas_dir_for_scope(scope: ConfigFileScope, cwd: &Path) -> PathBuf {
     match scope {
         ConfigFileScope::User => xai_grok_config::grok_home().join("personas"),
-        ConfigFileScope::Project => cwd.join(".grok").join("personas"),
+        ConfigFileScope::Project => cwd.join(".ezer").join("personas"),
     }
 }
 #[derive(serde::Serialize)]
@@ -664,11 +664,11 @@ pub fn create_persona_template(
     std::fs::write(&path, content).map_err(|e| format!("Failed to write persona file: {e}"))?;
     Ok(path)
 }
-/// True when `path` is a deletable local persona file (user or project `.grok/personas`).
+/// True when `path` is a deletable local persona file (user or project `.ezer/personas`).
 pub fn persona_path_is_deletable(path: &Path) -> bool {
     config_path_is_user_or_project(path, "personas")
 }
-/// Shared guard: canonical path under `~/.grok/{subdir}` or `{cwd}/.grok/{subdir}`, not bundled.
+/// Shared guard: canonical path under `~/.ezer/{subdir}` or `{cwd}/.ezer/{subdir}`, not bundled.
 fn config_path_is_user_or_project(path: &Path, subdir: &str) -> bool {
     let Ok(canonical) = dunce::canonicalize(path) else {
         return false;
@@ -683,7 +683,7 @@ fn config_path_is_user_or_project(path: &Path, subdir: &str) -> bool {
     let in_user = dunce::canonicalize(grok_home.join(subdir))
         .ok()
         .is_some_and(|d| canonical.starts_with(&d));
-    let project_suffix = std::path::Path::new(".grok").join(subdir);
+    let project_suffix = std::path::Path::new(".ezer").join(subdir);
     let in_project = canonical
         .ancestors()
         .any(|a| a.ends_with(project_suffix.as_path()));
@@ -2703,7 +2703,7 @@ mod tests {
     #[test]
     fn merge_persona_lists_appends_local_only() {
         let dir = tempfile::tempdir().expect("tempdir");
-        let personas_dir = dir.path().join(".grok").join("personas");
+        let personas_dir = dir.path().join(".ezer").join("personas");
         std::fs::create_dir_all(&personas_dir).expect("mkdir");
         std::fs::write(
             personas_dir.join("local-only.toml"),
@@ -2770,7 +2770,7 @@ mod tests {
     #[test]
     fn persona_is_deletable_local_vs_bundled() {
         let dir = tempfile::tempdir().expect("tempdir");
-        let local = dir.path().join(".grok").join("personas").join("p.toml");
+        let local = dir.path().join(".ezer").join("personas").join("p.toml");
         std::fs::create_dir_all(local.parent().unwrap()).unwrap();
         std::fs::write(&local, "instructions = \"x\"\n").unwrap();
         let local_detail = PersonaDetail {
@@ -2787,7 +2787,7 @@ mod tests {
             description: None,
             has_inputs: false,
             has_outputs: false,
-            source_path: Some("/home/user/.grok/bundled/personas/b.toml".into()),
+            source_path: Some("/home/user/.ezer/bundled/personas/b.toml".into()),
             scope_label: None,
         };
         assert!(!persona_is_deletable(&bundled_detail));
@@ -2802,7 +2802,7 @@ mod tests {
     #[test]
     fn delete_persona_file_allows_project_persona() {
         let dir = tempfile::tempdir().expect("tempdir");
-        let path = dir.path().join(".grok").join("personas").join("gone.toml");
+        let path = dir.path().join(".ezer").join("personas").join("gone.toml");
         std::fs::create_dir_all(path.parent().unwrap()).unwrap();
         std::fs::write(&path, "instructions = \"bye\"\n").unwrap();
         delete_persona_file(&path).expect("delete");
@@ -3312,7 +3312,7 @@ mod tests {
         );
         let path = directory
             .path()
-            .join(".grok")
+            .join(".ezer")
             .join("personas")
             .join("my-persona.toml");
         let content = std::fs::read_to_string(&path).unwrap();

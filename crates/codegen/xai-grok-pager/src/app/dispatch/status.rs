@@ -229,7 +229,7 @@ fn log_coding_data_consent_selected(
 }
 
 /// Set coding-data-sharing preference.
-/// The shell owns this setting and stores it in auth metadata (persists via ACP ext-request, NOT `~/.grok/config.toml`).
+/// The shell owns this setting and stores it in auth metadata (persists via ACP ext-request, NOT `~/.ezer/config.toml`).
 pub(super) fn set_coding_data_sharing(
     app: &mut AppView,
     opted_in: bool,
@@ -522,7 +522,7 @@ pub(super) fn notify_session_ready(
 ) {
     notification_service.notify(NotificationEvent {
         kind: NotificationEventKind::SessionReady,
-        title: "Grok".into(),
+        title: "ezer".into(),
         body: NotificationEventKind::SessionReady.as_ref().into(),
         session_id: agent.session.session_id.as_ref().map(|s| s.0.to_string()),
     });

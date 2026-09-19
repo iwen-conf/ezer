@@ -307,11 +307,11 @@ pub enum Action {
     /// Disabling it lets the terminal handle native click-drag text selection and copy-paste; re-enabling restores in-app mouse handling.
     /// Bound to Ctrl+R while the scrollback pane is focused.
     ToggleMouseCapture,
-    /// Toggle the scroll-diagnostics HUD (hidden `/scroll-debug` command, also `/debug scroll`; `GROK_SCROLL_DEBUG=1` enables it from startup).
+    /// Toggle the scroll-diagnostics HUD (hidden `/scroll-debug` command, also `/debug scroll`; `EZER_SCROLL_DEBUG=1` enables it from startup).
     ToggleScrollDebugHud,
     /// Toggle the release-safe FPS HUD (`/debug fps`).
     ToggleFpsHud,
-    /// Toggle the scroll flight recorder at runtime (`/debug log`; `GROK_SCROLL_LOG=1` enables it from startup).
+    /// Toggle the scroll flight recorder at runtime (`/debug log`; `EZER_SCROLL_LOG=1` enables it from startup).
     ToggleScrollLog,
     /// Print the `/debug` toggles and their on/off state to the transcript.
     ShowDebugStatus,
@@ -333,7 +333,7 @@ pub enum Action {
     /// The inline TUI is suspended for the duration.
     /// The dispatch handler renders and writes the file and arms `AppView::pending_pager_path`; the event loop does the suspend/restore.
     OpenTranscriptPager,
-    /// Minimal mode (`grok --minimal`): re-print the last committed folded block, fully expanded, into native scrollback below the conversation.
+    /// Minimal mode (`ezer --minimal`): re-print the last committed folded block, fully expanded, into native scrollback below the conversation.
     /// Folded means collapsed reasoning or truncated tool output.
     /// Bound to `Ctrl+E` and the `/expand` command. No-op outside minimal mode or when nothing folded remains to expand.
     MinimalExpandLast,
@@ -532,7 +532,7 @@ pub enum Action {
     SetContextualHintWordSelect(bool),
     SetContextualHintExportCopy(bool),
     SetContextualHintSshWrap(bool),
-    /// Commit the active theme (canonical name, e.g. `"groknight"`, `"auto"`).
+    /// Commit the active theme (canonical name, e.g. `"ezernight"`, `"auto"`).
     SetTheme(String),
     /// Commit the theme used when the OS is in dark mode.
     /// Only updates the live display when `theme = "auto"` AND system is in dark mode.
@@ -780,7 +780,7 @@ pub enum Action {
         path: String,
         expected_content_hash: String,
     },
-    /// Open the Agent Dashboard view (`/dashboard`, `Ctrl+\`, `grok dashboard`).
+    /// Open the Agent Dashboard view (`/dashboard`, `Ctrl+\`, `ezer dashboard`).
     OpenDashboard,
     /// Close the dashboard, returning to the previous `ActiveView`.
     ExitDashboard,
@@ -954,7 +954,7 @@ pub struct SharedQueueTarget {
     pub expected_version: u64,
 }
 /// Persist-and-notify behavior for [`Effect::PersistPermissionMode`].
-/// Both variants write to `~/.grok/config.toml` and route ACP
+/// Both variants write to `~/.ezer/config.toml` and route ACP
 /// `x.ai/yolo_mode_changed` notifications.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PermissionModePersist {
@@ -1636,7 +1636,7 @@ pub enum Effect {
     RecordConsentUpstream { notice_id: String, version: i32 },
     /// Persist memory modal fullscreen preference to `[hints]` in config.toml.
     PersistMemoryFullscreen { fullscreen: bool },
-    /// Persist the dashboard's `[dashboard]` configuration to `~/.grok/config.toml`.
+    /// Persist the dashboard's `[dashboard]` configuration to `~/.ezer/config.toml`.
     /// Multi-pager safe via `config_toml_edit::read_config_document_for_edit`, which loads, modifies, then writes the whole document.
     /// Concurrent pagers may produce last-writer-wins behaviour but never corrupt the file.
     PersistDashboard(crate::views::dashboard::PersistedDashboard),
@@ -1659,7 +1659,7 @@ pub enum Effect {
         session_id: Option<acp::SessionId>,
         persist: PermissionModePersist,
     },
-    /// Persist a typed setting to `~/.grok/config.toml`. On failure,
+    /// Persist a typed setting to `~/.ezer/config.toml`. On failure,
     /// rolls the in-memory cache back to `rollback_value`.
     PersistSetting {
         key: crate::settings::SettingKey,
@@ -2074,7 +2074,7 @@ pub enum Effect {
     /// Clear the auth copy feedback after a delay if its generation is still current.
     ScheduleClearAuthCopyFeedback { generation: u64 },
     /// Register the current session in the active-sessions crash-recovery
-    /// registry (`~/.grok/active_sessions.json`).
+    /// registry (`~/.ezer/active_sessions.json`).
     RegisterActiveSession {
         session_id: acp::SessionId,
         cwd: String,
@@ -2412,7 +2412,7 @@ pub enum TaskResult {
     WorktreeSessionFailed {
         agent_id: AgentId,
         error: String,
-        /// The orphaned worktree still on disk, so the handler can re-append the `grok worktree rm` hint; `None` if none was created.
+        /// The orphaned worktree still on disk, so the handler can re-append the `ezer worktree rm` hint; `None` if none was created.
         orphaned_worktree_root: Option<std::path::PathBuf>,
         /// The create RPC hit its bounded timeout, rather than failing early for another reason.
         timed_out: bool,

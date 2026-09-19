@@ -198,7 +198,7 @@ pub(crate) fn apply_write_deny_paths_to_capability_set(
         let _ = caps.remove_exact_file_caps_for_paths(&rule_paths);
         tracing::info!(
             count = entries.len(),
-            "Applied Seatbelt write-deny for Grok-owned direct hook sources"
+            "Applied Seatbelt write-deny for ezer-owned direct hook sources"
         );
     }
     #[cfg(target_os = "linux")]
@@ -321,14 +321,14 @@ mod tests {
     #[cfg(all(feature = "enforce", target_os = "macos"))]
     fn ancestors_pin_under_writable_root_not_home() {
         let tmp = std::env::temp_dir().join(format!(
-            "grok-anc-policy-{}-{}",
+            "ezer-anc-policy-{}-{}",
             std::process::id(),
             std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
                 .unwrap()
                 .as_nanos()
         ));
-        let grok = tmp.join("grok");
+        let grok = tmp.join("ezer");
         let sessions = grok.join("sessions");
         let leaf = sessions.join("extra-hooks");
         std::fs::create_dir_all(&leaf).unwrap();

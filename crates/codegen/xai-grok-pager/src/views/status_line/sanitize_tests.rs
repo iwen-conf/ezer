@@ -35,8 +35,8 @@ fn scanner_strips_escapes_and_records_link_columns() {
     let cases: &[ScanCase] = &[
         (
             "a bel-terminated link after plain text",
-            "[Grok] \x1b]8;;https://example.com/repo\x07repo\x1b]8;;\x07",
-            "[Grok] repo",
+            "[ezer] \x1b]8;;https://example.com/repo\x07repo\x1b]8;;\x07",
+            "[ezer] repo",
             &[(7, 11, "https://example.com/repo")],
         ),
         (

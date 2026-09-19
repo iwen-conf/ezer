@@ -74,7 +74,7 @@ struct GitSnapshot {
 pub struct CwdGitInfo {
     /// Branch shorthand. `Some("")` for detached HEAD.
     pub branch: Option<String>,
-    /// Whether `cwd` is a worktree rather than the primary checkout (linked `git worktree`, grok standalone clone, or worktree DB hit).
+    /// Whether `cwd` is a worktree rather than the primary checkout (linked `git worktree`, ezer standalone clone, or worktree DB hit).
     pub is_worktree: bool,
     /// Tilde-shortened path to the main repo when in a worktree.
     pub main_repo: Option<String>,
@@ -207,7 +207,7 @@ fn compute_snapshot(cwd: &Path) -> GitSnapshot {
     let mut marker_main_repo = None;
     for ancestor in cwd.ancestors() {
         let git = ancestor.join(".git");
-        if let Ok(contents) = std::fs::read_to_string(git.join("grok-worktree-source"))
+        if let Ok(contents) = std::fs::read_to_string(git.join("ezer-worktree-source"))
             && let trimmed = contents.trim()
             && !trimmed.is_empty()
         {
@@ -308,7 +308,7 @@ pub(crate) fn branch_icon() -> &'static str {
     static ICON: OnceLock<&str> = OnceLock::new();
     ICON.get_or_init(|| {
         decide_branch_icon(
-            std::env::var("GROK_NERD_FONTS").ok().as_deref(),
+            std::env::var("EZER_NERD_FONTS").ok().as_deref(),
             HostOs::current(),
             terminal_context().brand,
         )
@@ -332,7 +332,7 @@ fn decide_branch_icon(nerd_fonts: Option<&str>, host: HostOs, brand: TerminalNam
     }
 }
 
-/// Whether a Nerd Font (Private Use Area glyphs) is plausible for this host/terminal. An explicit `GROK_NERD_FONTS`
+/// Whether a Nerd Font (Private Use Area glyphs) is plausible for this host/terminal. An explicit `EZER_NERD_FONTS`
 /// override always wins: `0`/`false` means off, anything else means on. Otherwise PUA glyphs are assumed everywhere
 /// except Windows consoles and the macOS terminals that ship stock fonts (Apple Terminal, iTerm2).
 fn decide_nerd_fonts(nerd_fonts: Option<&str>, host: HostOs, brand: TerminalName) -> bool {
@@ -550,7 +550,7 @@ mod tests {
             clone
                 .path
                 .join(".git")
-                .join("grok-worktree-source")
+                .join("ezer-worktree-source")
                 .is_file(),
             "standalone clone carries the source marker"
         );

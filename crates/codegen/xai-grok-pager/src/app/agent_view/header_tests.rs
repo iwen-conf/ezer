@@ -9,8 +9,8 @@ use crate::scrollback::render::ScratchBuffer;
 use crossterm::event::{Event, KeyModifiers, MouseButton, MouseEvent, MouseEventKind};
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
-const PATH: &str = "/grok-header-marker";
-/// `/dashboard` is pinned visible so the plain-session `[Dashboard]` gate does not read `GROK_AGENT_DASHBOARD` or the
+const PATH: &str = "/ezer-header-marker";
+/// `/dashboard` is pinned visible so the plain-session `[Dashboard]` gate does not read `EZER_AGENT_DASHBOARD` or the
 /// developer's config. `draw` re-measures the terminal from its area, so the width lives only in `last_terminal_size`.
 fn agent_at(width: u16) -> AgentView {
     let mut agent = test_fixtures::make_agent();
@@ -274,7 +274,7 @@ fn narrow_overlay_header_caps_title_and_keeps_location_and_buttons() {
         "the title is cut, row = {row:?}"
     );
     assert!(
-        row.contains("/grok-header") && !row.contains(PATH),
+        row.contains("/ezer-header") && !row.contains(PATH),
         "the location is cut from the right but outlives the title, row = {row:?}"
     );
     assert!(
@@ -302,11 +302,11 @@ fn long_title_and_long_branch_leave_the_path_visible() {
         "the title is cut, row = {row:?}"
     );
     assert!(
-        row.contains("feature/very-long-branch-name worktree /grok-h"),
+        row.contains("feature/very-long-branch-name worktree /ezer-h"),
         "branch, badge, and the start of the path survive the title, row = {row:?}"
     );
     let cwd = agent.hit_cwd.rect.expect("the path keeps its click target");
-    let path_byte = row.find("/grok-h").expect("path on the row");
+    let path_byte = row.find("/ezer-h").expect("path on the row");
     let path_col = row.get(..path_byte).map_or(0, |s| s.chars().count()) as u16;
     assert_eq!(
         cwd.x, path_col,

@@ -1,4 +1,4 @@
-//! Headless single-turn mode (`grok -p "prompt"`).
+//! Headless single-turn mode (`ezer -p "prompt"`).
 //!
 //! Runs the agent in-process via `spawn_grok_shell` and drives the ACP lifecycle (init, auth, session, prompt).
 //! Streams to stdout and exits via `CancellationToken`.
@@ -1139,7 +1139,7 @@ pub async fn run_single_turn(
         "headless: open_session complete"
     );
 
-    let track_active = std::env::var("GROK_TRACK_HEADLESS").is_ok();
+    let track_active = std::env::var("EZER_TRACK_HEADLESS").is_ok();
     if track_active {
         let _ = xai_grok_active_sessions::register(xai_grok_active_sessions::ActiveSession {
             session_id: session_id.clone(),

@@ -356,14 +356,14 @@ async fn build_session_routed_handlers_preserves_renamed_active_message_kind() {
 #[tokio::test]
 async fn build_session_routed_handlers_skips_invalid_client_name_without_panic() {
     let handle = make_handle();
-    let mut renamed = tc("GrokBuild:read_file", Some(ToolKind::Read));
+    let mut renamed = tc("Ezer:read_file", Some(ToolKind::Read));
     renamed.name_override = Some("bad name!".to_owned());
     let session = handle
         .create_session_with_config(
             "sess-invalid-name",
             None,
             Some(ToolServerConfig {
-                tools: vec![renamed, tc("GrokBuild:grep", Some(ToolKind::Read))],
+                tools: vec![renamed, tc("Ezer:grep", Some(ToolKind::Read))],
                 behavior_preset: None,
             }),
             CapabilityMode::All,
@@ -386,7 +386,7 @@ async fn build_session_routed_handlers_skips_invalid_client_name_without_panic()
     );
 }
 /// Regression for the deleted catalog intersection. Reproduces the `session.bind` resolver tail: `build_session_routed_handlers` for the session toolset, plus the one RPC handler from the catalog.
-/// It proves a session tool whose client name is ABSENT from that (grok-build) catalog is still advertised.
+/// It proves a session tool whose client name is ABSENT from that (ezer-build) catalog is still advertised.
 #[tokio::test]
 async fn resolver_advertises_tool_absent_from_connect_catalog() {
     let handle = make_handle();
@@ -403,7 +403,7 @@ async fn resolver_advertises_tool_absent_from_connect_catalog() {
         .iter()
         .map(|h| h.tool_id().as_str().to_owned())
         .collect();
-    let mut renamed = tc("GrokBuild:read_file", Some(ToolKind::Read));
+    let mut renamed = tc("Ezer:read_file", Some(ToolKind::Read));
     renamed.name_override = Some("non_catalog_tool".to_owned());
     let session = handle
         .create_session_with_config(
@@ -478,7 +478,7 @@ async fn rebind_with_changed_explicit_toolset_reresolves_and_swaps() {
             .all(|n| n != "renamed_read"),
         "precondition: the default toolset must not carry the override name"
     );
-    let mut renamed = tc("GrokBuild:read_file", Some(ToolKind::Read));
+    let mut renamed = tc("Ezer:read_file", Some(ToolKind::Read));
     renamed.name_override = Some("renamed_read".to_owned());
     let cfg = ToolServerConfig {
         tools: vec![renamed],
@@ -506,7 +506,7 @@ async fn rebind_with_changed_explicit_toolset_reresolves_and_swaps() {
 #[tokio::test]
 async fn rebind_without_explicit_toolset_reuses_existing() {
     let handle = make_handle();
-    let mut renamed = tc("GrokBuild:read_file", Some(ToolKind::Read));
+    let mut renamed = tc("Ezer:read_file", Some(ToolKind::Read));
     renamed.name_override = Some("renamed_read".to_owned());
     let cfg = ToolServerConfig {
         tools: vec![renamed],
@@ -542,7 +542,7 @@ async fn create_fingerprint_write_does_not_clobber_concurrent_rebind() {
     let session = handle
         .create_session_with_config("racy", None, None, CapabilityMode::All, None, false)
         .expect("create session");
-    let mut renamed = tc("GrokBuild:read_file", Some(ToolKind::Read));
+    let mut renamed = tc("Ezer:read_file", Some(ToolKind::Read));
     renamed.name_override = Some("renamed_read".to_owned());
     let cfg_b = ToolServerConfig {
         tools: vec![renamed],
@@ -555,7 +555,7 @@ async fn create_fingerprint_write_does_not_clobber_concurrent_rebind() {
         .expect("session exists");
     assert_eq!(outcome, RebindOutcome::Reresolved);
     let fp_a = serde_json::to_value(&ToolServerConfig {
-        tools: vec![tc("GrokBuild:list_dir", Some(ToolKind::ListDir))],
+        tools: vec![tc("Ezer:list_dir", Some(ToolKind::ListDir))],
         behavior_preset: None,
     })
     .ok();
@@ -917,7 +917,7 @@ fn orphaned_swap_count() -> u64 {
         .get()
 }
 fn explicit_cfg(name_override: &str) -> ToolServerConfig {
-    let mut renamed = tc("GrokBuild:read_file", Some(ToolKind::Read));
+    let mut renamed = tc("Ezer:read_file", Some(ToolKind::Read));
     renamed.name_override = Some(name_override.to_owned());
     ToolServerConfig {
         tools: vec![renamed],
@@ -928,13 +928,13 @@ fn explicit_cfg(name_override: &str) -> ToolServerConfig {
 pub(crate) fn background_capable_cfg() -> ToolServerConfig {
     ToolServerConfig {
         tools: vec![
-            tc("GrokBuild:read_file", Some(ToolKind::Read)),
-            tc("GrokBuild:run_terminal_cmd", Some(ToolKind::Execute)),
+            tc("Ezer:read_file", Some(ToolKind::Read)),
+            tc("Ezer:run_terminal_cmd", Some(ToolKind::Execute)),
             tc(
-                "GrokBuild:get_task_output",
+                "Ezer:get_task_output",
                 Some(ToolKind::BackgroundTaskAction),
             ),
-            tc("GrokBuild:kill_task", Some(ToolKind::KillTaskAction)),
+            tc("Ezer:kill_task", Some(ToolKind::KillTaskAction)),
         ],
         behavior_preset: None,
     }
@@ -1034,7 +1034,7 @@ async fn re_resolve_all_sessions_preserves_session_terminal_backend() {
     let out_dir = tempfile::tempdir().expect("temp dir");
     let bg = start_background_sleep(&session, out_dir.path(), "snapshot-bg").await;
     handle.shared.mcp_tools_snapshot.store(Arc::new(vec![tc(
-        "GrokBuild:read_file",
+        "Ezer:read_file",
         Some(ToolKind::Read),
     )]));
     let rebuilt = handle
@@ -1101,7 +1101,7 @@ async fn local_bound_session_skips_snapshot_rebuild() {
         "precondition: the installed toolset's Terminal must be external"
     );
     handle.shared.mcp_tools_snapshot.store(Arc::new(vec![tc(
-        "GrokBuild:read_file",
+        "Ezer:read_file",
         Some(ToolKind::Read),
     )]));
     handle
@@ -2262,7 +2262,7 @@ fn spawn_test_queue(home: &std::path::Path) -> Arc<xai_file_utils::queue::Upload
     ))
 }
 /// `WorkspaceHandle::new` (the test/default path, not `connect_local_workspace`) must use an ephemeral temp `workspace_home`.
-/// It must never use the real `$GROK_WORKSPACE_HOME` and must NOT configure an upload queue. This pins the flag-off defaults so uploads never start implicitly and `new` stays runtime-light (no queue worker spawned).
+/// It must never use the real `$EZER_WORKSPACE_HOME` and must NOT configure an upload queue. This pins the flag-off defaults so uploads never start implicitly and `new` stays runtime-light (no queue worker spawned).
 #[tokio::test]
 async fn new_defaults_to_ephemeral_home_and_inert_legacy_upload() {
     let handle = make_handle();
@@ -2276,7 +2276,7 @@ async fn new_defaults_to_ephemeral_home_and_inert_legacy_upload() {
     assert_ne!(
         home,
         resolve_workspace_home(),
-        "default construction must NOT use the real $GROK_WORKSPACE_HOME"
+        "default construction must NOT use the real $EZER_WORKSPACE_HOME"
     );
     assert!(
         shared.upload_queue().is_none(),
@@ -2313,7 +2313,7 @@ async fn tool_state_upload_is_noop_when_flag_off() {
     let _env = crate::session::tool_config::TOOL_STATE_ENV_LOCK
         .lock()
         .unwrap_or_else(|e| e.into_inner());
-    unsafe { std::env::remove_var("GROK_WORKSPACE_TOOL_STATE_ENABLED") };
+    unsafe { std::env::remove_var("EZER_WORKSPACE_TOOL_STATE_ENABLED") };
     let factory = Arc::new(TestSessionContextFactory::new());
     let cwd = factory.temp.path().to_path_buf();
     let queue_home = tempfile::TempDir::new().unwrap();
@@ -2351,7 +2351,7 @@ async fn tool_state_upload_is_noop_when_data_collection_disabled() {
     let _env = crate::session::tool_config::TOOL_STATE_ENV_LOCK
         .lock()
         .unwrap_or_else(|e| e.into_inner());
-    unsafe { std::env::set_var("GROK_WORKSPACE_TOOL_STATE_ENABLED", "true") };
+    unsafe { std::env::set_var("EZER_WORKSPACE_TOOL_STATE_ENABLED", "true") };
     let factory = Arc::new(TestSessionContextFactory::new());
     let cwd = factory.temp.path().to_path_buf();
     let queue_home = tempfile::TempDir::new().unwrap();
@@ -2371,7 +2371,7 @@ async fn tool_state_upload_is_noop_when_data_collection_disabled() {
         .enqueued
         .load(std::sync::atomic::Ordering::Relaxed);
     handle.spawn_tool_state_upload("main", 1);
-    unsafe { std::env::remove_var("GROK_WORKSPACE_TOOL_STATE_ENABLED") };
+    unsafe { std::env::remove_var("EZER_WORKSPACE_TOOL_STATE_ENABLED") };
     drop(_env);
     tokio::task::yield_now().await;
     assert_eq!(
@@ -2579,7 +2579,7 @@ async fn fork_session_inherits_parent_tool_config_when_none() {
     let child_ids: Vec<String> = child_baseline.tools.iter().map(|t| t.id.clone()).collect();
     assert_eq!(child_ids, parent_ids);
     let new_parent_baseline = ToolServerConfig {
-        tools: vec![tc("GrokBuild:read_file", Some(ToolKind::Read))],
+        tools: vec![tc("Ezer:read_file", Some(ToolKind::Read))],
         behavior_preset: None,
     };
     let factory = handle.shared.session_factory.clone();
@@ -2617,8 +2617,8 @@ async fn fork_session_uses_explicit_tool_config_when_provided() {
     let handle = make_handle();
     let custom = ToolServerConfig {
         tools: vec![
-            tc("GrokBuild:read_file", Some(ToolKind::Read)),
-            tc("GrokBuild:list_dir", Some(ToolKind::ListDir)),
+            tc("Ezer:read_file", Some(ToolKind::Read)),
+            tc("Ezer:list_dir", Some(ToolKind::ListDir)),
         ],
         behavior_preset: None,
     };
@@ -2644,7 +2644,7 @@ async fn fork_session_uses_explicit_tool_config_when_provided() {
 async fn fork_session_uses_main_session_when_parent_session_id_is_none() {
     let handle = make_handle();
     let marker_config = ToolServerConfig {
-        tools: vec![tc("GrokBuild:read_file", Some(ToolKind::Read))],
+        tools: vec![tc("Ezer:read_file", Some(ToolKind::Read))],
         behavior_preset: None,
     };
     let main = handle.session("main").expect("main present");
@@ -2682,19 +2682,19 @@ async fn fork_session_uses_main_session_when_parent_session_id_is_none() {
         .iter()
         .map(|t| t.id.clone())
         .collect();
-    assert_eq!(baseline_ids, vec!["GrokBuild:read_file".to_string()]);
+    assert_eq!(baseline_ids, vec!["Ezer:read_file".to_string()]);
 }
 #[tokio::test]
 async fn fork_session_all_child_drops_root_only_tools() {
     let handle = make_handle();
-    let mut custom = tc("GrokBuild:grep", None);
+    let mut custom = tc("Ezer:grep", None);
     custom.name_override = Some("custom_kindless".to_owned());
     let config = ToolServerConfig {
         tools: vec![
-            tc("GrokBuild:read_file", Some(ToolKind::Read)),
+            tc("Ezer:read_file", Some(ToolKind::Read)),
             custom,
-            tc("GrokBuild:list_dir", Some(ToolKind::ActiveAgentMessage)),
-            tc("GrokBuild:send_subagent_message", None),
+            tc("Ezer:list_dir", Some(ToolKind::ActiveAgentMessage)),
+            tc("Ezer:send_subagent_message", None),
         ],
         behavior_preset: None,
     };
@@ -2713,7 +2713,7 @@ async fn fork_session_all_child_drops_root_only_tools() {
         .iter()
         .map(|tool| tool.id.as_str())
         .collect();
-    assert_eq!(ids, ["GrokBuild:read_file", "GrokBuild:grep"]);
+    assert_eq!(ids, ["Ezer:read_file", "Ezer:grep"]);
     let Some(tool1) = effective_config.tools.get(1) else {
         panic!("expected second tool: {:?}", effective_config.tools);
     };
@@ -2726,7 +2726,7 @@ async fn fork_session_all_child_drops_root_only_tools() {
 async fn fork_session_uses_named_parent_when_parent_session_id_is_set() {
     let handle = make_handle();
     let custom = ToolServerConfig {
-        tools: vec![tc("GrokBuild:read_file", Some(ToolKind::Read))],
+        tools: vec![tc("Ezer:read_file", Some(ToolKind::Read))],
         behavior_preset: None,
     };
     handle
@@ -3044,7 +3044,7 @@ async fn on_mcp_snapshot_changed_emits_per_session_events_and_rebuilds() {
         .await
         .expect("subB ok");
     let mut rx = handle.shared.events.subscribe();
-    let mcp_tool = tc("GrokBuild:read_file", Some(ToolKind::Read));
+    let mcp_tool = tc("Ezer:read_file", Some(ToolKind::Read));
     let rebuilt = handle.on_mcp_snapshot_changed(vec![mcp_tool]);
     assert_eq!(rebuilt, 3, "main + 2 subagents");
     let mut got: std::collections::BTreeSet<String> = std::collections::BTreeSet::new();
@@ -4082,7 +4082,7 @@ async fn bind_mcp_post(
     axum::Json(request): axum::Json<serde_json::Value>,
 ) -> axum::response::Response {
     if let Some(session_id) = headers
-        .get(xai_grok_mcp::servers::GROK_AGENT_ID_HEADER)
+        .get(xai_grok_mcp::servers::EZER_AGENT_ID_HEADER)
         .and_then(|value| value.to_str().ok())
     {
         state.session_ids.lock().push(session_id.to_owned());
@@ -6210,7 +6210,7 @@ async fn the_configure_path_caps_advertised_tools() {
     );
     server_task.abort();
 }
-/// The legacy client-driven path (`workspace.configure_mcp`, used when `bind_mcp` is None: sandbox, standalone, Grok Build) across the full lifecycle: configure → hub unbind teardown → REBIND (which must re-open the `Closed` binding even without a machine-owned config) → configure again succeeds.
+/// The legacy client-driven path (`workspace.configure_mcp`, used when `bind_mcp` is None: sandbox, standalone, ezer) across the full lifecycle: configure → hub unbind teardown → REBIND (which must re-open the `Closed` binding even without a machine-owned config) → configure again succeeds.
 /// Without the re-open, the drive fails closed on `Closed` forever and the session can never attach servers again.
 #[tokio::test]
 async fn a_rebind_reopens_for_the_client_driven_configure_path() {
@@ -7683,7 +7683,7 @@ fn bundled_allowlist_unreadable_dir_fails_closed() {
     let got = bundled_allowlist_ignore_dirs("/nonexistent/bundled-skills", Some("pdf"));
     assert_eq!(got, vec!["/nonexistent/bundled-skills".to_string()]);
 }
-/// Unique skill names: discovery also reads the dev machine's `~/.grok`.
+/// Unique skill names: discovery also reads the dev machine's `~/.ezer`.
 #[tokio::test]
 async fn bundled_allowlist_filters_discovery() {
     let tmp = tempfile::tempdir().expect("tempdir");

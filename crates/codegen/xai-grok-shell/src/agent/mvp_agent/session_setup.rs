@@ -1389,7 +1389,7 @@ impl MvpAgent {
         );
         Ok(response)
     }
-    /// Refuses a cwd that is neither a grok worktree nor the session's own, so it cannot detach a real checkout.
+    /// Refuses a cwd that is neither a ezer worktree nor the session's own, so it cannot detach a real checkout.
     async fn restore_session_code(
         &self,
         session_id: &acp::SessionId,
@@ -1416,7 +1416,7 @@ impl MvpAgent {
                 supplied_cwd = %cwd.as_str(),
                 persisted_cwd = %summary.info.cwd,
                 target_sha = %target_sha,
-                "restore_code: skipping session HEAD checkout — supplied cwd is neither a grok worktree nor the session's persisted cwd (refusing to detach the source repo)"
+                "restore_code: skipping session HEAD checkout — supplied cwd is neither a ezer worktree nor the session's persisted cwd (refusing to detach the source repo)"
             );
             xai_grok_telemetry::unified_log::warn(
                 "restore_code: skipped session HEAD checkout (unsafe cwd)",
@@ -1665,16 +1665,16 @@ impl MvpAgent {
             available_keys = ?available.keys().take(10).collect::<Vec<_>>(),
             "load_session: restoring persisted model (debug)"
         );
-        let is_grok_build = persisted_model.0.starts_with("grok-build");
+        let is_grok_build = persisted_model.0.starts_with("ezer-build");
         let same_family_fallback = if is_grok_build {
             available
                 .keys()
-                .find(|id| id.0.starts_with("grok-build"))
+                .find(|id| id.0.starts_with("ezer-build"))
                 .cloned()
         } else {
             available
                 .keys()
-                .find(|id| !id.0.starts_with("grok-build"))
+                .find(|id| !id.0.starts_with("ezer-build"))
                 .cloned()
         };
         let selectable_catalog_key =

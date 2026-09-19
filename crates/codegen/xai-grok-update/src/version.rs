@@ -10,30 +10,30 @@ use xai_grok_shell::env::GrokBuildEnvironment;
 use xai_grok_shell::util::grok_home::grok_home;
 
 const TTL_SECONDS_BEFORE_AUTO_UPDATE: Duration = Duration::from_secs(60 * 30);
-const NPM_PACKAGE: &str = "@xai-official/grok";
-pub const GH_RELEASE_REPO: &str = "xai-org-shared/grok-build";
+const NPM_PACKAGE: &str = "@ezer/ezer";
+pub const GH_RELEASE_REPO: &str = "xai-org-shared/ezer-build";
 
 /// Primary CLI base URL: Cloudflare-fronted x.ai endpoint with edge caching for binaries and origin-respecting no-cache for channel pointers.
 pub(crate) const CLI_BASE_URL_PRIMARY: &str = "https://x.ai/cli";
 
 /// Fallback CLI base URL: direct GCS, used when the primary is unreachable (Cloudflare outage, regional CF egress issue, DNS hijack, etc.).
 pub(crate) const CLI_BASE_URL_FALLBACK: &str =
-    "https://storage.googleapis.com/grok-build-public-artifacts/cli";
+    "https://storage.googleapis.com/ezer-build-public-artifacts/cli";
 
 /// CLI base URLs in preference order.
 /// Callers (channel-pointer fetch, binary download, in-app updater) try each in turn and stop at the first success.
 pub(crate) const CLI_BASE_URLS: &[&str] = &[CLI_BASE_URL_PRIMARY, CLI_BASE_URL_FALLBACK];
 
-/// [`CLI_BASE_URLS`], unless tests set `GROK_CLI_BASE_URL` to point fetches and downloads at one base (as they set `GROK_INSTALLER`).
+/// [`CLI_BASE_URLS`], unless tests set `EZER_CLI_BASE_URL` to point fetches and downloads at one base (as they set `EZER_INSTALLER`).
 /// Loopback-only: downloads are verified by a smoke test, not a checksum, so redirecting to an arbitrary base could serve a hijacked install.
 pub(crate) fn cli_base_urls() -> Vec<String> {
-    if let Ok(base) = std::env::var("GROK_CLI_BASE_URL") {
+    if let Ok(base) = std::env::var("EZER_CLI_BASE_URL") {
         let base = base.trim();
         if is_loopback_base(base) {
             return vec![base.to_owned()];
         }
         if !base.is_empty() {
-            tracing::warn!("GROK_CLI_BASE_URL ignored: only loopback bases are honored");
+            tracing::warn!("EZER_CLI_BASE_URL ignored: only loopback bases are honored");
         }
     }
     CLI_BASE_URLS.iter().map(|s| (*s).to_owned()).collect()
@@ -66,9 +66,9 @@ fn is_loopback_base(base: &str) -> bool {
 pub struct UpdateConfig {
     /// Chat API proxy base URL (versioned `https://cli-chat-proxy.grok.com/v1` endpoint).
     pub proxy_base_url: String,
-    /// Auth scope key for `~/.grok/auth.json`.
+    /// Auth scope key for `~/.ezer/auth.json`.
     pub auth_scope: String,
-    /// Enterprise deployment key (GROK_DEPLOYMENT_KEY).
+    /// Enterprise deployment key (EZER_DEPLOYMENT_KEY).
     pub deployment_key: Option<String>,
     /// Optional extra auth material forwarded with requests when present.
     pub alpha_test_key: Option<String>,
@@ -425,7 +425,7 @@ pub async fn is_version_cache_fresh() -> bool {
 pub use xai_grok_version::installed as get_installed_grok_version;
 
 /// Returns `None` when there is no parseable managed symlink (Windows copy-based installs, dev builds) or when the
-/// symlink is DANGLING — a link whose target binary was deleted (e.g. manual `~/.grok/downloads` cleanup) must not report
+/// symlink is DANGLING — a link whose target binary was deleted (e.g. manual `~/.ezer/downloads` cleanup) must not report
 /// an installed version, or every updater would claim "already up to date" forever while no runnable binary exists.
 pub fn installed_on_disk_version() -> Option<String> {
     #[cfg(unix)]
@@ -434,7 +434,7 @@ pub fn installed_on_disk_version() -> Option<String> {
         let target = std::fs::read_link(&app).ok()?;
         // metadata() follows the symlink: Err means the target is gone (dangling link) and the version it names is not actually on disk
         std::fs::metadata(&app).ok()?;
-        version_from_versioned_binary_name(target.file_name()?.to_str()?, "grok")
+        version_from_versioned_binary_name(target.file_name()?.to_str()?, "ezer")
     }
     #[cfg(not(unix))]
     {
@@ -444,7 +444,7 @@ pub fn installed_on_disk_version() -> Option<String> {
 
 /// Handles the internal layout (`grok-0.1.150-macos-aarch64`) and the npm layout without a platform suffix
 /// (`grok-0.1.150`). Pre-releases parse whole: `grok-0.1.150-alpha.1-linux-x86_64` gives `0.1.150-alpha.1`. Unknown
-/// layouts (`grok-latest`, `grok-pager-*` when `bin_prefix` is `grok`) return `None` instead of garbage.
+/// layouts (`ezer-latest`, `ezer-*` when `bin_prefix` is `ezer`) return `None` instead of garbage.
 pub(crate) fn version_from_versioned_binary_name(name: &str, bin_prefix: &str) -> Option<String> {
     const PLATFORM_OS: &[&str] = &["macos", "linux", "darwin", "windows"];
     let suffix = name.strip_prefix(bin_prefix)?.strip_prefix('-')?;
@@ -474,7 +474,7 @@ pub(crate) async fn try_fetch_stable_pointer() -> Option<String> {
     .unwrap_or(None)
 }
 
-/// Read the cached stable version from `~/.grok/version.json` (sync, for display).
+/// Read the cached stable version from `~/.ezer/version.json` (sync, for display).
 ///
 /// Returns `None` if the file doesn't exist, can't be parsed, or has no `stable_version` field (e.g. written by an older binary).
 pub fn cached_stable_version() -> Option<String> {
@@ -507,7 +507,7 @@ pub fn channel_name() -> Option<&'static str> {
     })
 }
 
-/// Compares the compiled-in `VERSION` against the stable pointer stored in `~/.grok/version.json` (written by the
+/// Compares the compiled-in `VERSION` against the stable pointer stored in `~/.ezer/version.json` (written by the
 /// auto-updater): `" [alpha]"` when the current version is ahead of stable,; `" [stable]"` when at or behind stable,;
 /// `""` when no cached pointer is available (first launch, old cache format).
 pub fn channel_label() -> &'static str {
@@ -559,36 +559,36 @@ mod tests {
         );
     }
 
-    /// Disk-version probe: parsing the version out of the managed install's symlink-target file name (`grok-<version>-<platform>`).
+    /// Disk-version probe: parsing the version out of the managed install's symlink-target file name (`ezer-<version>-<platform>`).
     #[test]
     fn test_version_from_versioned_binary_name() {
         let cases: &[(&str, Option<&str>)] = &[
-            ("grok-0.2.46-darwin-arm64", Some("0.2.46")),
-            ("grok-0.1.220-linux-x86_64", Some("0.1.220")),
-            ("grok-0.2.5-windows-x86_64.exe", Some("0.2.5")),
+            ("ezer-0.2.46-darwin-arm64", Some("0.2.46")),
+            ("ezer-0.1.220-linux-x86_64", Some("0.1.220")),
+            ("ezer-0.2.5-windows-x86_64.exe", Some("0.2.5")),
             // Pre-releases must round-trip whole
             // Truncating to "0.1.220" would make an alpha install masquerade as the release and mask updates from alpha to stable
-            ("grok-0.1.220-alpha.4-linux-x86_64", Some("0.1.220-alpha.4")),
-            ("grok-0.1.220-alpha.4", Some("0.1.220-alpha.4")), // npm layout
-            ("grok-pager-0.1.5-darwin-arm64", None),           // "pager" is not a version
-            ("grok-garbage-darwin-arm64", None),               // unparseable version
-            ("grok-0.2.46", Some("0.2.46")),                   // no platform suffix
-            ("other-0.2.46-darwin-arm64", None),               // wrong prefix
-            ("grok-latest", None),                             // symlink alias, not a version
-            ("grok", None),                                    // bare name
+            ("ezer-0.1.220-alpha.4-linux-x86_64", Some("0.1.220-alpha.4")),
+            ("ezer-0.1.220-alpha.4", Some("0.1.220-alpha.4")), // npm layout
+            ("ezer-0.1.5-darwin-arm64", Some("0.1.5")),
+            ("ezer-garbage-darwin-arm64", None), // unparseable version
+            ("ezer-0.2.46", Some("0.2.46")),     // no platform suffix
+            ("other-0.2.46-darwin-arm64", None), // wrong prefix
+            ("ezer-latest", None),               // symlink alias, not a version
+            ("ezer", None),                      // bare name
             ("", None),
         ];
         for (name, expected) in cases {
             assert_eq!(
-                version_from_versioned_binary_name(name, "grok").as_deref(),
+                version_from_versioned_binary_name(name, "ezer").as_deref(),
                 *expected,
                 "version_from_versioned_binary_name({name:?})"
             );
         }
 
-        // bin_prefix discrimination: the pager binary parses under its own prefix but not under "grok"
+        // bin_prefix discrimination: the pager binary parses under its own prefix but not under "ezer"
         assert_eq!(
-            version_from_versioned_binary_name("grok-pager-0.1.5-darwin-arm64", "grok-pager")
+            version_from_versioned_binary_name("ezer-0.1.5-darwin-arm64", "ezer")
                 .as_deref(),
             Some("0.1.5")
         );

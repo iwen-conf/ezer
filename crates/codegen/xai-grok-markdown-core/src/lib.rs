@@ -1,10 +1,10 @@
-//! Headless markdown analysis sharing Grok Build's exact `pulldown-cmark` config.
+//! Headless markdown analysis sharing ezer's exact `pulldown-cmark` config.
 //!
 //! This crate depends only on `pulldown-cmark`, so it can be used without pulling in the terminal-rendering stack (syntect, ratatui, two-face).
 //! [`parser_options`] is the single source of truth for the parser feature set.
-//! `xai-grok-markdown` uses the same options, so analysis matches what Grok Build renders.
+//! `xai-grok-markdown` uses the same options, so analysis matches what ezer renders.
 //!
-//! After parsing, Grok applies [`offset_events`]: only `~~…~~` counts as strikethrough.
+//! After parsing, ezer applies [`offset_events`]: only `~~…~~` counts as strikethrough.
 //! Single-tilde pairs (`~text~`), which pulldown treats as strike, are demoted to literal `~` text so LLM output like `~**10%**` is not struck.
 
 #![deny(clippy::indexing_slicing)]
@@ -12,7 +12,7 @@
 use pulldown_cmark::{CodeBlockKind, Event, HeadingLevel, Options, Parser, Tag, TagEnd};
 use std::ops::Range;
 
-/// The exact `pulldown-cmark` option set Grok Build uses to render markdown.
+/// The exact `pulldown-cmark` option set ezer uses to render markdown.
 /// With `ENABLE_STRIKETHROUGH`, pulldown treats both `~~…~~` and single-`~` pairs as strike.
 /// Callers must consume events via [`offset_events`] so only double-tilde strikethrough is retained.
 pub fn parser_options() -> Options {
@@ -23,7 +23,7 @@ pub fn parser_options() -> Options {
         | Options::ENABLE_TABLES
 }
 
-/// Returns Grok's parser events with source byte ranges, single-tilde strikethrough already demoted.
+/// Returns ezer's parser events with source byte ranges, single-tilde strikethrough already demoted.
 ///
 /// Prefer this over `Parser::new_ext(...).into_offset_iter()` so analysis and rendering agree on what counts as strikethrough.
 pub fn offset_events(text: &str) -> impl Iterator<Item = (Event<'_>, Range<usize>)> + '_ {
@@ -269,7 +269,7 @@ fn detect_malformed_tables(
     }
 }
 
-/// Parse `text` with Grok Build's options; count elements and flag structural issues.
+/// Parse `text` with ezer's options; count elements and flag structural issues.
 pub fn analyze(text: &str) -> MarkdownAnalysis {
     let mut stats = MarkdownStats::default();
     let mut issues = Vec::new();

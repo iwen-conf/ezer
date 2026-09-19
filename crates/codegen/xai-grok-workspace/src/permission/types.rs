@@ -55,40 +55,40 @@ pub struct PermissionResolution {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, serde::Serialize, serde::Deserialize)]
 pub enum ClientType {
     #[default]
-    #[serde(rename = "generic", alias = "grok-shell", alias = "grok_shell")]
+    #[serde(rename = "generic", alias = "ezer-shell")]
     Generic,
-    #[serde(rename = "grok-tui", alias = "grok_tui")]
+    #[serde(rename = "ezer-tui")]
     GrokTUI,
-    #[serde(rename = "grok_web")]
+    #[serde(rename = "ezer-web")]
     GrokWeb,
     #[serde(rename = "nebula")]
     Nebula,
     #[serde(rename = "extension")]
     Extension,
-    #[serde(rename = "grok-pager", alias = "grok_pager")]
+    #[serde(rename = "ezer")]
     GrokPager,
-    #[serde(rename = "grok_desktop")]
+    #[serde(rename = "ezer-desktop")]
     Desktop,
 }
 impl ClientType {
     pub fn user_agent_label(&self) -> &'static str {
         match self {
-            Self::Generic => "grok-shell",
-            Self::GrokTUI => "grok-tui",
-            Self::GrokWeb => "grok-web",
+            Self::Generic => "ezer-shell",
+            Self::GrokTUI => "ezer-tui",
+            Self::GrokWeb => "ezer-web",
             Self::Nebula => "nebula",
-            Self::Extension => "grok-code-extension",
-            Self::GrokPager => "grok-pager",
-            Self::Desktop => "grok-desktop",
+            Self::Extension => "ezer-code-extension",
+            Self::GrokPager => "ezer",
+            Self::Desktop => "ezer-desktop",
         }
     }
     pub fn from_client_identifier(id: Option<&str>) -> Self {
         match id {
-            Some("grok-web") => Self::GrokWeb,
+            Some("ezer-web") => Self::GrokWeb,
             Some("nebula") => Self::Nebula,
-            Some("grok-code-extension") => Self::Extension,
-            Some("grok-desktop") => Self::Desktop,
-            Some("grok-pager") => Self::GrokPager,
+            Some("ezer-code-extension") => Self::Extension,
+            Some("ezer-desktop") => Self::Desktop,
+            Some("ezer") => Self::GrokPager,
             _ => Self::Generic,
         }
     }
@@ -833,7 +833,7 @@ mod tests {
         use xai_grok_tools::implementations::codex::apply_patch::ApplyPatchInput;
         use xai_grok_tools::types::ToolInput;
         let input = ToolInput::ApplyPatch(ApplyPatchInput {
-            patch: "*** Begin Patch\n*** Update File: /home/user/.grok/mcp.json\n*** End Patch"
+            patch: "*** Begin Patch\n*** Update File: /home/user/.ezer/mcp.json\n*** End Patch"
                 .to_owned(),
         });
         assert!(matches!(
@@ -913,7 +913,7 @@ mod tests {
     #[test]
     fn client_type_deserializes_grok_shell_as_generic() {
         assert_eq!(
-            serde_json::from_value::<ClientType>("grok-shell".into()).unwrap(),
+            serde_json::from_value::<ClientType>("ezer-shell".into()).unwrap(),
             ClientType::Generic,
         );
         assert_eq!(

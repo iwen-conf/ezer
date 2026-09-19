@@ -1,6 +1,6 @@
 //! Which host runs a workspace server, and what its credential lets the server do.
 //!
-//! A sandbox's credential reaches the Grok API; every other host's only serves the hub. The
+//! A sandbox's credential reaches the ezer API; every other host's only serves the hub. The
 //! catalog table is shared with the sandbox, so the tools that would call the API with the
 //! server's own credential are cut per host here and nowhere else.
 
@@ -10,12 +10,12 @@ use xai_grok_tools::registry::types::ToolServerConfig;
 use crate::session::tool_config::WorkspaceSessionContextFactory;
 
 /// The host running a workspace server. The sandbox binary announces [`Self::as_wire_str`] as the
-/// registration's `host_kind`; `grok-workspaced` announces its own kind and takes the default here.
+/// registration's `host_kind`; `ezer-workspaced` announces its own kind and takes the default here.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum WorkspaceHostKind {
     /// A hosted sandbox.
     Sandbox,
-    /// A daemon on a user's or remote machine, whoever started it (Grok Desktop, the `grok` CLI,
+    /// A daemon on a user's or remote machine, whoever started it (ezer Desktop, the `ezer` CLI,
     /// or by hand). The fail-closed default for a caller that names no host.
     #[default]
     Daemon,

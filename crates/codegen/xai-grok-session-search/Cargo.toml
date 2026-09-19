@@ -3,7 +3,7 @@ license = "Apache-2.0"
 name = "xai-grok-session-search"
 version = "0.1.0"
 edition.workspace = true
-description = "SQLite FTS5 index over local grok sessions: lease-guarded bootstrap, debounced incremental upserts, and BM25 ranked query"
+description = "SQLite FTS5 index over local ezer sessions: lease-guarded bootstrap, debounced incremental upserts, and BM25 ranked query"
 
 [dependencies]
 async-trait = { workspace = true }

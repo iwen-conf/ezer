@@ -99,7 +99,7 @@ impl MenuKey {
 /// A single row in the slash suggestion dropdown.
 #[derive(Debug, Clone)]
 pub struct SuggestionRow {
-    /// Display text (e.g., "/model" or "Grok 4 Fast").
+    /// Display text (e.g., "/model" or "ezer 4 Fast").
     pub display: String,
     /// Description text (e.g., "Switch the active model").
     pub description: String,
@@ -1630,9 +1630,9 @@ mod tests {
 
     #[test]
     fn parses_invocation_with_args() {
-        let inv = parse_invocation("/model grok-code-fast-1").expect("parsed");
+        let inv = parse_invocation("/model ezer-code-fast-1").expect("parsed");
         assert_eq!(inv.token, "model");
-        assert_eq!(inv.args, "grok-code-fast-1");
+        assert_eq!(inv.args, "ezer-code-fast-1");
     }
 
     #[test]
@@ -3021,7 +3021,7 @@ mod tests {
         // A skill arrives as an ACP command carrying skill meta (scope and path)
         let skill_meta = serde_json::json!({
             "scope": "local",
-            "path": "/home/user/.grok/skills/skill-cmd/SKILL.md",
+            "path": "/home/user/.ezer/skills/skill-cmd/SKILL.md",
         })
         .as_object()
         .cloned()

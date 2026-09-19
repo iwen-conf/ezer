@@ -43,7 +43,7 @@
 - In minimal mode, confirming /delete or /exit now immediately opens a new empty session instead of appearing stuck.
 - In minimal mode, resuming a session after /new now correctly reloads its history instead of showing the wrong session.
 - MCP tools that take no arguments no longer show a stray "{}" line in the permission sheet.
-- **`grok clone` on Windows** no longer fails when the repository's git config contains backslashes or quotes.
+- **`ezer clone` on Windows** no longer fails when the repository's git config contains backslashes or quotes.
 
 
 # 1.0.32 — 2026-09-14
@@ -91,7 +91,7 @@
 
 - **Tab navigation** in the pager now cycles cleanly among prompt, scrollback, and the entire dock instead of stopping at every dock section.
 - **Ctrl+G** now hides or shows the dock in the pager; focus returns to scrollback when hiding.
-- **Multiple concurrent `grok agent stdio`** processes against the same GROK_HOME no longer crash at startup.
+- **Multiple concurrent `ezer agent stdio`** processes against the same GROK_HOME no longer crash at startup.
 - **MCP server connections** no longer fail against modern 2026-07-28 servers.
 - **Fixed startup crash** on Windows when the Client-ProjFS optional feature is disabled.
 
@@ -109,7 +109,7 @@
 
 ## Bug Fixes
 
-- **Auto-update** no longer removes a grok binary that is still in use by another process.
+- **Auto-update** no longer removes a ezer binary that is still in use by another process.
 - **Prompt editor** no longer gets the cursor stuck or skips a row when pressing Up/Down across soft-wrapped lines.
 
 
@@ -160,7 +160,7 @@
 - **Headless prompts** now time out cleanly instead of hanging forever when the agent does not respond.
 - **Scheduled tasks** now guide the agent to check results and clean up or update recurring schedules.
 - **Fixed duplicate user prompt rendering** in some ACP clients by making live echo opt-in.
-- **Fixed grok -c attaching the wrong empty session** after starting without --continue then resuming.
+- **Fixed ezer -c attaching the wrong empty session** after starting without --continue then resuming.
 - **Dock and queue hover colors** now match the rest of the terminal instead of using the stronger dropdown highlight.
 - **Fixed image upload errors** when reading Adobe SVGs that contain a PNG thumbnail prefix.
 - **Dock subagent rows** now show the same [stop] label as other killable rows.
@@ -199,7 +199,7 @@
 - **Sending a message to a finished subagent** now continues that same subagent instead of failing.
 - **Background subagent completion messages** now show the actual output instead of just a pointer to run the tool.
 - **Dashboard** now shows a unified header with location picker and an actions row for creating agents or resuming previous sessions.
-- **New `grok-workspaced daemon`** mode lets a long-lived process expose folders to the Computer Hub (separate from the Desktop-supervised sidecar).
+- **New `ezer-workspaced daemon`** mode lets a long-lived process expose folders to the Computer Hub (separate from the Desktop-supervised sidecar).
 
 ## Bug Fixes
 
@@ -254,7 +254,7 @@
 - **MCP servers blocked by organization policy** now show clear messages and are refused before any config change.
 - **Session resume now tells the model** what loops, subagents, and workflows were still running.
 - **Dashboard** now shows newly dispatched sessions immediately instead of waiting for the store.
-- **Headless sessions** (`grok -p`) now support the `--worktree` flag to run in a separate git worktree.
+- **Headless sessions** (`ezer -p`) now support the `--worktree` flag to run in a separate git worktree.
 - **Dashboard** now says 'Open session' instead of 'Add session' for the session picker button.
 - **Multi-line bash commands** now render with proper wrapping and highlighting when opening the block viewer.
 - **/usage** now works from the dashboard and shows account allowance when no session is active.
@@ -262,11 +262,11 @@
 ## Bug Fixes
 
 - **Fixed mid-turn UI freezes** when the terminal stops reading output.
-- **Fixed crashes** that occurred when the terminal pane was closed while grok was exiting.
+- **Fixed crashes** that occurred when the terminal pane was closed while ezer was exiting.
 - **MCP server list** in minimal mode now correctly shows policy-blocked servers.
 - URLs that wrap across multiple lines inside quotes or lists are now fully clickable.
 - **The welcome screen** composer now grows taller when you paste multi-line text.
-- **Enterprise policy files** are no longer deleted on startup when your team login is stored at a custom `GROK_AUTH_PATH`.
+- **Enterprise policy files** are no longer deleted on startup when your team login is stored at a custom `EZER_AUTH_PATH`.
 - **/feedback** now drops unsupported images with a notice (matching the modal) and never loses your report text on save errors.
 - **Feedback drafts** keep their paragraph breaks when updated, and the modal no longer switches tabs unexpectedly.
 - **Turn summary lines** no longer lose their spacing after background tasks finish.
@@ -288,7 +288,7 @@
 - **Feedback submissions** now include structured type, task, and failure information.
 - **Feedback modal** now has a Drafts tab to manage and send saved drafts.
 - **Models** can now render interactive charts using Chart.js.
-- **grok inspect** and **grok mcp doctor** now show managed policy details.
+- **ezer inspect** and **ezer mcp doctor** now show managed policy details.
 - **Image generation** now supports richer parameters via composer state.
 - **Retry behavior** for rate-limited requests is now configurable per model.
 - Models can now be configured with per-model mTLS client certificates for secure upstream connections.
@@ -376,7 +376,7 @@
 - **OIDC token refresh** is now proactive by default for better reliability.
 - **PostToolUse hooks** can now provide feedback and context to the model after tool execution.
 - **SDK-registered PostToolUse hooks** now provide model-facing feedback.
-- **grok usage <session-id>** now shows persisted per-turn token and cost data.
+- **ezer usage <session-id>** now shows persisted per-turn token and cost data.
 - **Retry status** in composer and title now shows a short reason for the retry.
 - **Models can now declare** a different identifier for each reasoning-effort level instead of always sending the same id.
 - **Prompt suggestions** now respect remote configuration and default to the current session model.
@@ -384,11 +384,11 @@
 
 ## Bug Fixes
 
-- **grok inspect** now correctly shows Claude bypass locks as advisory rather than enforced.
+- **ezer inspect** now correctly shows Claude bypass locks as advisory rather than enforced.
 - **Subagent sessions** no longer leak threads or file descriptors when the parent is busy.
 - **Cold startup** no longer performs duplicate remote settings fetches.
 - **Compaction failures** due to context size now degrade input instead of retrying identically.
-- **--sandbox strict** now restricts writes to ~/.grok/sessions only.
+- **--sandbox strict** now restricts writes to ~/.ezer/sessions only.
 - **Subagent spawning** now waits longer on a busy coordinator and shows clearer retry guidance instead of "unreachable".
 - **Failed task and todo tool calls** now appear in the transcript instead of disappearing without a trace.
 - **Composer status row** no longer collapses or flashes when using double-Enter to send now.
@@ -421,7 +421,7 @@
 ## Bug Fixes
 
 - **Transient inference failures** (stalls, drops, 5xx) now retry automatically instead of ending the turn.
-- **Windows users** can now correctly open ~/.grok and worktree sessions.
+- **Windows users** can now correctly open ~/.ezer and worktree sessions.
 - **Session data** is now more reliably saved after prompts and on power loss.
 - **Compaction failures** now show the actual error instead of a generic message.
 - **Truncation error messages** now show the right guidance instead of suggesting an unhelpful retry.
@@ -496,7 +496,7 @@
 
 ## Performance
 
-- **grok clone** now reuses matching local checkouts as linked worktrees for faster session creation.
+- **ezer clone** now reuses matching local checkouts as linked worktrees for faster session creation.
 
 
 # 1.0.9 — 2026-08-24
@@ -508,7 +508,7 @@
 - **The / slash menu** is now ordered by recency and groups skills below commands for easier navigation.
 - **/workflow** now accepts --agent-budget N or an agent_budget JSON field to set child-agent limits.
 - **/workflow** now accepts --effort LEVEL or an effort JSON field to set child reasoning effort.
-- **MCP servers** now receive a grok-cli User-Agent header so providers can attribute traffic.
+- **MCP servers** now receive a ezer-cli User-Agent header so providers can attribute traffic.
 - **Dashboard** now lets you start new agents in Auto mode via Shift+Tab.
 - **Workflows** now appear alongside skills in the model prompt so the agent can launch them by name.
 - **`/edit-prompt`** now opens an external editor from the full TUI, not only minimal mode.
@@ -517,8 +517,8 @@
 - **Plugin-provided agents** now appear in the **/agents** modal and can be toggled.
 - **/minimal** and **/fullscreen** now switch instantly inside the running session without restarting or losing the current turn.
 - The configurable status line row now appears at the bottom of minimal mode as well as fullscreen.
-- **grok clone** now fetches only the selected branch tip by default, with --full-history for legacy full clones.
-- **grok clone** can now reuse a matching local checkout as a linked worktree instead of always fetching from the network.
+- **ezer clone** now fetches only the selected branch tip by default, with --full-history for legacy full clones.
+- **ezer clone** can now reuse a matching local checkout as a linked worktree instead of always fetching from the network.
 
 ## Bug Fixes
 
@@ -533,12 +533,12 @@
 - **Pressing Esc** while peeking at a conversation from the dashboard now closes open modals instead of leaving the view.
 - **`/copy`** now preserves markdown formatting such as headings and code fences.
 - **Sending a new message** while a shell command is running now moves the command to the background instead of cancelling it.
-- **grok mcp add** now correctly treats bare http(s):// URLs as HTTP servers instead of stdio commands.
+- **ezer mcp add** now correctly treats bare http(s):// URLs as HTTP servers instead of stdio commands.
 - Plan mode no longer incorrectly blocks subagent spawns as file edits outside plan.md.
 - MCP servers that share a URL but have different names are now kept as separate entries instead of being collapsed.
 - Subagents and workflow-spawned agents no longer receive the workflow tool that only top-level sessions can use.
 - Memory results are now presented as historical context that should be verified against live sources before use.
-- **Interactive grok sessions** now start in ask mode by default again instead of auto.
+- **Interactive ezer sessions** now start in ask mode by default again instead of auto.
 - **Minimal mode** no longer truncates subagent wake-turn replies after the first token.
 
 ## Performance
@@ -574,7 +574,7 @@
 
 ## Features
 
-- Users hitting startup timeouts can now raise the connect budget with the `GROK_CONNECT_UI_TIMEOUT_SECS` environment variable.
+- Users hitting startup timeouts can now raise the connect budget with the `EZER_CONNECT_UI_TIMEOUT_SECS` environment variable.
 - Permission prompts now show "Always allow" and "Never allow" options by default.
 - Users can now delete scheduled background loops directly from the tray.
 - **Status line command** scripts can now run on a timer via refresh_interval in config.toml.
@@ -603,7 +603,7 @@
 
 - **Shift+arrow keys** now extend text selections in the prompt like a standard text field.
 - **Optional status line** can now display live session info or script output at the bottom of the pager.
-- **grok clone** can now fetch a repo into a content store and mount a projected working tree.
+- **ezer clone** can now fetch a repo into a content store and mount a projected working tree.
 
 ## Bug Fixes
 
@@ -621,14 +621,14 @@
 
 ## Features
 
-- **GROK_CONFIG** and **GROK_CONFIG_PATH** environment variables now let launchers override selected config settings without editing config.toml.
-- **Worktrees** under ~/.grok/worktrees are now automatically reclaimed when safe, with strong safeguards that never delete a user's last copy.
+- **EZER_CONFIG** and **EZER_CONFIG_PATH** environment variables now let launchers override selected config settings without editing config.toml.
+- **Worktrees** under ~/.ezer/worktrees are now automatically reclaimed when safe, with strong safeguards that never delete a user's last copy.
 - **Hook policy blocks** now correctly report "Turn blocked by a hook" instead of "Turn cancelled by user."
 - **Image and video generation** now limits how many calls the model can request in one step to avoid overload.
 - **Arabic and Persian text** can now be reordered correctly in the terminal UI. Turn on in /settings.
 - **Reasoning effort** can now be supplied when an ACP client opens or resumes a session.
 - **Session titles** now refresh early in the conversation and stay stable; /resume shows a recap and last-turn summary when available.
-- **GROK_FORCE_LOGIN_TEAM_ID** environment variable now lets launchers restrict interactive login to one or more teams.
+- **EZER_FORCE_LOGIN_TEAM_ID** environment variable now lets launchers restrict interactive login to one or more teams.
 - **Preparing spinner** now shows readable labels such as "Writing file…" and "Writing edit…" for common tools.
 
 ## Bug Fixes
@@ -636,7 +636,7 @@
 - **Tool calls** (shell, grep, list_dir) no longer fail for the rest of a session if /dev/null is removed.
 - **Agent skill discovery** now resolves the user's home directory correctly on Windows.
 - **MCP tool calls** now show clearer spinner text instead of the raw wire name while arguments are still arriving.
-- **grok inspect** no longer crashes when its output is piped into a command that closes the pipe early.
+- **ezer inspect** no longer crashes when its output is piped into a command that closes the pipe early.
 - **Minimal mode** no longer truncates a still-streaming assistant reply when thinking blocks are interleaved.
 
 
@@ -647,11 +647,11 @@
 - **New StopCancelled hook event** now reports when a turn ends without completing (interrupt, permission reject, max turns, etc.).
 - **Recurring /loop tasks** now show a one-line expiry notice in the transcript when they auto-expire after 7 days.
 - **Web search** can now be restricted to allowed or excluded domains via [toolset.web_search] in config.toml.
-- **Session search index** can now be disabled via GROK_SESSION_SEARCH or [features] session_search for hosts sharing $GROK_HOME.
+- **Session search index** can now be disabled via EZER_SESSION_SEARCH or [features] session_search for hosts sharing $GROK_HOME.
 - **Drag to select and copy** values on the /session-info tab; c and y shortcuts also work.
 - **Double-click now selects a word** by default and triple-click selects the whole paragraph.
 - **New follow-up behavior setting** lets queued messages send immediately as interjections instead of waiting for the turn to finish.
-- Tool commands and MCP servers now receive a GROK_SESSION_ID environment variable matching the current session.
+- Tool commands and MCP servers now receive a EZER_SESSION_ID environment variable matching the current session.
 - Relative markdown links can now open existing files in your current working directory when no matching generated media is found.
 - PreToolUse hooks can now rewrite a tool's input before it runs instead of only allowing or denying the call.
 
@@ -661,7 +661,7 @@
 - **Sessions poisoned by rejected images** are now healed permanently so future turns succeed without retrying the bad image.
 - **Auto permission mode** now correctly honors your explicit "always allow" grants and narrow allow rules from settings.
 - **Subagent lifecycle events** are now preserved even when delivered out of order, ensuring all subagents appear correctly in the UI.
-- **Keystrokes typed while Grok is starting** are now preserved in the composer instead of being lost.
+- **Keystrokes typed while ezer is starting** are now preserved in the composer instead of being lost.
 - **Background tasks killed from the UI** now correctly wake the model when needed instead of staying parked after a single-task stop.
 - **[stop]** / Ctrl+C inside a fullscreen subagent overlay now cancels the visible child session.
 - **Hook failures** now show the first line of stderr output instead of only the exit code.
@@ -671,7 +671,7 @@
 - Pasting image-only screenshots from tools like Flameshot now works on Linux without a clipboard error.
 - Editing a queued prompt to a slash command like /btw now runs the command instead of sending the text to the model.
 - Text typed while a plan is being generated is now preserved when the approval screen appears.
-- **`grok du`** and worktree commands now work on Windows when only USERPROFILE is set.
+- **`ezer du`** and worktree commands now work on Windows when only USERPROFILE is set.
 - Permission-mode changes made on the welcome screen now correctly apply to the newly created session.
 
 ## Performance
@@ -687,7 +687,7 @@
 
 ## Performance
 
-- **Subagent spawning** is dramatically faster when you have many sessions in ~/.grok.
+- **Subagent spawning** is dramatically faster when you have many sessions in ~/.ezer.
 - **TUI rendering** now automatically matches high-refresh displays (120 Hz+) for smoother scrolling and painting.
 
 
@@ -719,12 +719,12 @@
 ## Features
 
 - **Subagent spawning** is now bounded; wide fan-outs queue instead of exhausting file descriptors.
-- New `grok du` command shows disk usage of ~/.grok including worktrees and sessions.
+- New `ezer du` command shows disk usage of ~/.ezer including worktrees and sessions.
 - **Tools** now report whether they only read data, enabling safer restricted agents and subagents.
 - **Sandbox workspace** sessions can now limit which bundled skills are advertised via caller config.
 - **Renaming a session** from the dashboard now starts with the current title prefilled for easy editing.
 - **/usage**, **/session-info**, and **/context** now open in a tabbed modal instead of adding text to the conversation.
-- **grok trace** exports now bundle memory trace files for easier debugging.
+- **ezer trace** exports now bundle memory trace files for easier debugging.
 - Session rename now enforces a 100-character limit, ghost-prefills the current title, and preserves manual titles across machines.
 - New `/rename --auto` command unpins a manual session title so automatic titling resumes.
 - Video generation from references now supports preset voices, single-image input, 1–15 s durations, and 4:3 / 3:4 aspect ratios.
@@ -732,8 +732,8 @@
 ## Bug Fixes
 
 - **Sandbox config** entries ending in /** now correctly grant the parent directory instead of creating a literal ** subdirectory.
-- **Failed alpha/enterprise updates** now suggest the matching GROK_CHANNEL reinstall command.
-- **On Apple Silicon**, grok now installs the native arm64 build even from a Rosetta shell or x86_64 updater.
+- **Failed alpha/enterprise updates** now suggest the matching EZER_CHANNEL reinstall command.
+- **On Apple Silicon**, ezer now installs the native arm64 build even from a Rosetta shell or x86_64 updater.
 - **Skills** that share names with built-in commands now appear alongside them in the slash menu with qualified names.
 - **Notebook** permission rules imported from Claude configs are now ignored with a warning instead of applying broadly.
 - **Goal evaluation** at round end no longer fails due to timeouts.
@@ -746,7 +746,7 @@
 - **Plugin suggestions** no longer flash incorrectly while typing.
 - **Send Now** now works during active goals without cancelling the goal.
 - **Headless sessions** now correctly wait for MCP servers when using delivery tools.
-- **Non-interactive sessions** (`grok -p`) no longer fail when the agent asks for user input or plan approval.
+- **Non-interactive sessions** (`ezer -p`) no longer fail when the agent asks for user input or plan approval.
 - **read_file errors** for missing skills now suggest the correct registered path instead of a generic hint.
 - **Session load and creation** can no longer freeze forever when `.envrc` evaluation blocks.
 - **Upgraded installs** no longer silently run outdated platform skill instructions.
@@ -771,7 +771,7 @@
 
 - Dashboard rows show a short summary of what the agent did in the previous turn
 - Extensions modal groups items alphabetically with collapsible Skills sections
-- Grok skips the project-directory prompt when launched from home or other non-project directories
+- ezer skips the project-directory prompt when launched from home or other non-project directories
 - `/feedback` opens a dedicated report box instead of prompt mode
 - Auto theme detection works over SSH and inside tmux
 - Markdown tables reflow inside cells on narrow panes instead of clipping
@@ -780,7 +780,7 @@
 ## Bug Fixes
 
 - MCP tools that return images no longer drop or corrupt large screenshots
-- Sandboxed Grok starts on large directories with many deny-glob matches
+- Sandboxed ezer starts on large directories with many deny-glob matches
 - Rapid send-now presses no longer lose earlier queued messages
 - Esc and stop prevent background tasks from restarting the model after cancel
 - Login no longer skips when an invalid API key is in the environment
@@ -795,7 +795,7 @@
 - Mode indicator (plan/agent/ask) stays in sync after resume and mode changes
 - `/delete` returns to the dashboard when you delete a session opened from it
 - Enter in the slash command menu runs the highlighted command
-- Grok retries more server errors during outages
+- ezer retries more server errors during outages
 - Session-only slash commands show a message when used from the dashboard
 - Queued prompts stay visible while waiting on subagents, and slash/image rows can be reordered
 - Auto recaps no longer appear mid-turn or while busy
@@ -847,7 +847,7 @@
 
 - **Sessions** can now be permanently deleted from the dashboard by pressing Ctrl+X twice on an idle row, or from the welcome list with d then y.
 - **Keyboard shortcuts help** (Ctrl+.) now shows how to browse prompt history and search the conversation.
-- **grok doctor** now warns when tmux is reducing colors and can fix the config.
+- **ezer doctor** now warns when tmux is reducing colors and can fix the config.
 
 ## Bug Fixes
 
@@ -866,7 +866,7 @@
 
 ## Features
 
-- **GROK_EXTRA_CA_BUNDLE** env var allows adding custom TLS root certificates.
+- **EZER_EXTRA_CA_BUNDLE** env var allows adding custom TLS root certificates.
 
 ## Bug Fixes
 
@@ -924,14 +924,14 @@
 
 ## Bug Fixes
 
-- **Grok** no longer crashes on startup when the host machine has no free threads.
+- **ezer** no longer crashes on startup when the host machine has no free threads.
 
 
 # 0.2.113 — 2026-07-28
 
 ## Features
 
-- **MCP servers** can now be enabled or disabled directly from the CLI with `grok mcp enable <name>` and `grok mcp disable <name>`.
+- **MCP servers** can now be enabled or disabled directly from the CLI with `ezer mcp enable <name>` and `ezer mcp disable <name>`.
 - **Full plan markdown** can now be copied to the clipboard with `y` during plan approval or preview.
 - **Added support for the new SuperGrok Plus subscription tier** in authentication and feature gating.
 - **Enabled automatic recovery** from repetitive loops in model output by default.
@@ -939,7 +939,7 @@
 ## Bug Fixes
 
 - **Terminal command output** is no longer lost or duplicated when the gateway is unreachable.
-- **Invalid MCP server entries** in config.toml no longer prevent Grok from starting; problems are shown in `grok inspect`.
+- **Invalid MCP server entries** in config.toml no longer prevent ezer from starting; problems are shown in `ezer inspect`.
 - **SessionEnd hooks** now run on exit in non-leader TUI and headless sessions.
 - **Paste chips** now display with the correct background in inline prompts and question inputs.
 - **Pasted content chips** now behave consistently when editing answers in the question view.
@@ -951,7 +951,7 @@
 - **Fixed stuck background-task tray rows** after long foreground shell commands complete.
 - **Agent subprocesses and idle inhibitors** are now cleaned up when the parent CLI process dies unexpectedly.
 - **Fixed truncated plans** in minimal mode and improved visual separation between reasoning and output (including NO_COLOR).
-- **Fixed credential loss** across multiple grok processes sharing the same auth file.
+- **Fixed credential loss** across multiple ezer processes sharing the same auth file.
 - **Fixed doubled Enter** and other keys on older Alacritty terminals.
 - **Fixed false paywall** messages for free-tier and unmatched users.
 
@@ -970,7 +970,7 @@
 
 ## Features
 
-- **New /tutorial slash command** opens an opt-in nine-topic onboarding tour of Grok.
+- **New /tutorial slash command** opens an opt-in nine-topic onboarding tour of ezer.
 - **New tool_overrides option** lets you set date cutoffs and domain allowlists for the agent's built-in search tools.
 - **New toolOverrides option** lets you set date cutoffs and domain allowlists for the agent's built-in search tools.
 - **New config options** let you add query parameters or environment-backed headers to custom model providers and control which variables reach shell tools.
@@ -980,10 +980,10 @@
 - **Queued prompts** now offer an [edit] mouse button alongside Send now and cancel.
 - **Voice shortcut** toggle in settings can disable the Ctrl+Space/F8 keybind without disabling voice entirely.
 - **Image edit** can now use a remotely configured model slug instead of the hardcoded default.
-- **`grok doctor fix`** can now repair common tmux clipboard and passthrough problems.
+- **`ezer doctor fix`** can now repair common tmux clipboard and passthrough problems.
 - **Per-provider auth helpers** now work on Windows and can run from a configurable working directory.
-- **/resume** now shows only native Grok sessions by default and shows a hint when external sessions are hidden.
-- **`grok --resume`** can now resume a session by its title as well as by ID.
+- **/resume** now shows only native ezer sessions by default and shows a hint when external sessions are hidden.
+- **`ezer --resume`** can now resume a session by its title as well as by ID.
 - **Workflows overlay** now shows live per-agent progress and automatically follows the active phase.
 - **Workflow runs** that failed can now be resumed; scratch file limits were also increased.
 - **Hooks** can now be defined in config.toml in addition to JSON files.
@@ -1018,7 +1018,7 @@
 
 - Users can now disable image generation and video generation tools (and their slash commands) via config.toml or environment variables.
 - `/session-info` now displays whether the session uses OAuth or an API key and where to manage the account.
-- You can now run `grok doctor fix` commands directly from inside the TUI instead of only from the CLI.
+- You can now run `ezer doctor fix` commands directly from inside the TUI instead of only from the CLI.
 
 ## Bug Fixes
 
@@ -1032,10 +1032,10 @@
 - Forking a session that used compaction no longer causes later rewinds to fail with missing checkpoint errors.
 - When a permission prompt appears while viewing scrollback, focus now correctly moves to the prompt so you can answer.
 - Pressing Esc once now cancels the current agent turn (except in fullscreen vim scrollback mode).
-- Grok now automatically stops a turn that keeps repeating the exact same tool call many times in a row.
+- ezer now automatically stops a turn that keeps repeating the exact same tool call many times in a row.
 - Configs using either spelling of the workspace teleport disable flag now load and save correctly.
 - Background subagent completion messages no longer leak into unrelated sessions when multiple sessions are active.
-- When the auto-permission classifier times out or fails, Grok now shows a normal permission prompt instead of silently denying.
+- When the auto-permission classifier times out or fails, ezer now shows a normal permission prompt instead of silently denying.
 - **Managed MCP tools** no longer time out prematurely on slow operations like Notion updates.
 
 ## Performance
@@ -1060,7 +1060,7 @@
 ## Features
 
 - **/usage** now shows token counts and cost for the current session.
-- **grok doctor fix ssh-wrap** can set up `grok wrap ssh` automatically for Bash, zsh, and fish.
+- **ezer doctor fix ssh-wrap** can set up `ezer wrap ssh` automatically for Bash, zsh, and fish.
 - **[model_providers.<id>]** lets operators share gateway settings across custom models.
 - **Reasoning effort** now accepts `max` as its own tier (above `xhigh`) when the model advertises it.
 - **Queued follow-ups** can now be batched into a single model turn with the new combine_queued_prompts setting.
@@ -1081,11 +1081,11 @@
 
 - **Sessions** can now be resumed after moving the working directory or switching machines.
 - **Ctrl+G** in minimal mode opens the current prompt draft in an external editor without sending it; fullscreen keeps the tasks pane.
-- **grok doctor** checks terminal, tmux, clipboard, and keyboard setup without opening the TUI.
+- **ezer doctor** checks terminal, tmux, clipboard, and keyboard setup without opening the TUI.
 
 ## Bug Fixes
 
-- **Image paste** over grok wrap now works on headless remotes.
+- **Image paste** over ezer wrap now works on headless remotes.
 
 # 0.2.107 — 2026-07-20
 
@@ -1117,7 +1117,7 @@
 
 ## Features
 
-- **Added GROK_CLIPBOARD_NO_OSC52** env var to stop clipboard sequences from appearing as garbage in unsupported terminals.
+- **Added EZER_CLIPBOARD_NO_OSC52** env var to stop clipboard sequences from appearing as garbage in unsupported terminals.
 - **Scheduled tasks** can now be updated in place; one-time tasks are retired in favor of background commands.
 
 ## Bug Fixes
@@ -1130,16 +1130,16 @@
 
 ## Features
 
-- **/btw** now works inside `grok --minimal`, showing answers in the live area and committing them to scrollback on Esc.
+- **/btw** now works inside `ezer --minimal`, showing answers in the live area and committing them to scrollback on Esc.
 - **New Appearance setting** "Snap prompt to top on send" lets you keep the viewport where it is instead of jumping to the new prompt.
-- **Default model** is now Grok 4.5 with high/medium/low reasoning effort and improved compaction settings.
+- **Default model** is now ezer 4.5 with high/medium/low reasoning effort and improved compaction settings.
 - **New `/summarize` slash command** is now available as an alias for `/recap` to request an on-demand session summary.
 
 ## Bug Fixes
 
 - **Local shell tools** now see the same environment variables, aliases, and functions as your login shell.
 - **Syntax highlighting** in diffs and the file viewer no longer miscolors strings or comments that span multiple lines.
-- **Global rules** from ~/.grok/rules and compatible vendor homes are now discovered correctly.
+- **Global rules** from ~/.ezer/rules and compatible vendor homes are now discovered correctly.
 - **Background tasks** that finish after you press Ctrl+C no longer automatically resume the model.
 - **Ctrl+\** out of the dashboard now returns you to the agent you came from.
 - **MCP OAuth logins** now succeed against servers that require the RFC 9207 issuer parameter in the callback.
@@ -1173,16 +1173,16 @@
 - **Local sessions now inherit full rc environment, cwd, and exports** across tool calls (configurable).
 - **MCP servers** from plugins can now require setup choices such as a regional site before connecting.
 - Quitting a fullscreen session now shows the session title and last exchange above the resume command.
-- **SSH sessions** now show a one-time tip recommending `grok wrap ssh <host>` for clipboard and terminal restore.
+- **SSH sessions** now show a one-time tip recommending `ezer wrap ssh <host>` for clipboard and terminal restore.
 
 ## Bug Fixes
 
 - **Fixed GitHub PR status detection** when the gh CLI inherits forcing color environment variables.
 - **Fixed a race** where an early cancel could permanently wedge a session's turn slot.
-- **grok** and the agent binary now stay in sync even when no update is installed.
+- **ezer** and the agent binary now stay in sync even when no update is installed.
 - **Copying** a multiline queued prompt now copies the complete text instead of a collapsed summary.
-- **grok wrap** now restores the terminal after SSH disconnects or other abrupt child exits.
-- **Voice speech-to-text** now works with per-model API keys in config.toml without requiring `grok login`.
+- **ezer wrap** now restores the terminal after SSH disconnects or other abrupt child exits.
+- **Voice speech-to-text** now works with per-model API keys in config.toml without requiring `ezer login`.
 - **Copy over SSH** or in containers now shows clearer feedback when delivery cannot be confirmed.
 - **Local Bash sessions** no longer keep a persistent shell across calls, avoiding failures after directory deletion.
 
@@ -1197,13 +1197,13 @@
 
 - **New /jump slash command** lets you quickly jump to any previous turn in the conversation.
 - **New /timeline sidebar** shows a clickable tick rail for fast navigation between conversation turns.
-- **grok login** now requests Grok Projects scopes so workspace listing works after consent.
+- **ezer login** now requests ezer Projects scopes so workspace listing works after consent.
 - **Permission mode** can now be set fleet-wide via remote config when no local setting exists.
 - **Edit tool output** has a setting to show a compact one-line summary instead of always-expanded diffs.
 - **Tab completion** in !bash mode now works like a normal terminal (prefix fill, dropdown, directory drill-down).
 - **Enterprise deployments** can now disable voice dictation via `requirements.toml` so `/voice` and Ctrl+Space are hidden for everyone.
 - **User prompts** now appear bold only in `--minimal` mode; fullscreen keeps normal weight.
-- **`grok plugin install`** now accepts a marketplace's registered name as a qualifier.
+- **`ezer plugin install`** now accepts a marketplace's registered name as a qualifier.
 - Consecutive edits to the same file now collapse into a single scrollback row when collapsed edit blocks are enabled.
 - Local sessions now inherit your shell environment variables and keep the current directory across commands.
 
@@ -1230,7 +1230,7 @@
 - **File links** in official VS Code Remote-SSH terminals now use VS Code's native path handling.
 - **Minimal mode** now shows the folder-trust prompt after sign-in when required.
 - **Skills** whose names collide with built-in slash commands are now reachable via qualified names.
-- **Fixed background task tracking** when using grok -p --no-wait-for-background so tasks are properly reaped on exit.
+- **Fixed background task tracking** when using ezer -p --no-wait-for-background so tasks are properly reaped on exit.
 - **Rate limit errors (429)** now show specific server messages (capacity, team limits, free-usage) instead of generic upgrade prompts, with correct copy based on auth type.
 - **`/copy` slash command** is now available in minimal mode.
 
@@ -1242,7 +1242,7 @@
 
 ## Features
 
-- **grok inspect** now shows effective compatibility settings for Cursor, Claude, and Codex sessions.
+- **ezer inspect** now shows effective compatibility settings for Cursor, Claude, and Codex sessions.
 - **New setting** "Match display refresh rate" lets high-refresh displays run the TUI at native cadence.
 
 ## Bug Fixes
@@ -1250,7 +1250,7 @@
 - **Parked subagent status** no longer duplicates or interleaves incorrectly in scrollback.
 - **Status line** during waits now shows elapsed time before the queued-message hint.
 - **Queued messages sent with Enter** now appear immediately instead of vanishing briefly.
-- **Resume hint** after quitting minimal mode now prints the correct grok --minimal --resume command.
+- **Resume hint** after quitting minimal mode now prints the correct ezer --minimal --resume command.
 - **Rate-limit messages** now correctly direct API-key users to team plans instead of personal upgrades.
 
 
@@ -1267,7 +1267,7 @@
 - **Multiline mode** now correctly sends the top queued message on empty Enter when a turn is running.
 - **Queued commands** no longer disappear or delay when pressing Enter twice quickly during a running turn.
 - **Minimal mode** text is now readable on dark terminals with proper contrast and highlighted user prompts.
-- **Grok no longer crashes** when printing resume hints after the terminal pane has closed.
+- **ezer no longer crashes** when printing resume hints after the terminal pane has closed.
 - **Long-running turns** with multiple waits now show updated status markers in the transcript instead of appearing stuck.
 - **Claude and Cursor hooks** are now correctly disabled at session start when disabled in config.
 
@@ -1293,9 +1293,9 @@
 - **`env_key`** in config now accepts an array of environment variable names.
 - Linux middle-click paste from the primary selection now works; clipboard errors are handled more reliably.
 - **/terminal-setup** now shows your terminal's color support level and which themes are available.
-- **grok setup --json** prints your team's managed configuration without installing it.
+- **ezer setup --json** prints your team's managed configuration without installing it.
 - Messages you type while the model waits on tasks now stay queued; pressing Enter twice sends them immediately by cancelling the current turn.
-- **How-to Guides** modal now shows a tip linking to Ask Grok above the footer shortcuts.
+- **How-to Guides** modal now shows a tip linking to Ask ezer above the footer shortcuts.
 - **Subagent** `task` and `spawn_subagent` tools now accept an optional `model` parameter in the CLI.
 - **Keyboard Shortcuts** modal now lists the paste key binding for images under the Input section.
 
@@ -1355,8 +1355,8 @@
 - **Subagent rows** now fold into verb-group headers and the tasks pane shows live activity labels.
 - **Dashboard shortcuts** now advertise ? instead of Ctrl+. on terminals that cannot deliver the latter.
 - **Double-clicking** scrollback while Text selection is fold/nav now shows a tip offering Ctrl+Y to enable Word select.
-- **`grok worktree ls`** now works as a short alias for `grok worktree list`.
-- **MCP tool output truncation** can now be set per-repo in `.grok/config.toml`.
+- **`ezer worktree ls`** now works as a short alias for `ezer worktree list`.
+- **MCP tool output truncation** can now be set per-repo in `.ezer/config.toml`.
 - **Auto-send of queued follow-ups** during task waits can now be enabled fleet-wide via remote settings.
 - **Welcome screen** now offers one-click resume of a recent Claude Code session via ctrl+u.
 
@@ -1397,7 +1397,7 @@
 - **IME text input in Otty** no longer attaches unrelated clipboard images on every character.
 - **Rewind** now fully removes the selected turn from both scrollback and the model's conversation history.
 - **Queued prompts** now abort long blocking waits instead of waiting for the full timeout.
-- **File links and media** now work for worktree sessions under ~/.grok/worktrees/.
+- **File links and media** now work for worktree sessions under ~/.ezer/worktrees/.
 - **Collapsed Read/Edit tool rows** now show only the filename instead of long absolute paths.
 - **Clipboard copies on Wayland** now succeed even when the terminal loses focus mid-copy.
 - **User messages queued** behind an auto-wake turn are no longer lost when the user presses Ctrl+C.
@@ -1419,17 +1419,17 @@
 
 - **/sessions** now opens the Agent Dashboard instead of a separate picker.
 - **New /goal <objective>** slash command** is now available when the workspace supports it.
-- **grok inspect** now lists skills from [skills].paths and correctly labels bundled vs user skills.
-- **--minimal** and **--fullscreen** choices are now remembered for future plain grok launches.
+- **ezer inspect** now lists skills from [skills].paths and correctly labels bundled vs user skills.
+- **--minimal** and **--fullscreen** choices are now remembered for future plain ezer launches.
 
 ## Bug Fixes
 
 - **Queued bash commands** promoted at turn end now render their output instead of disappearing.
-- **Xcode / Foundation ACP clients** can now drive grok agent stdio without silent parse drops on session/* calls.
+- **Xcode / Foundation ACP clients** can now drive ezer agent stdio without silent parse drops on session/* calls.
 - **read_file** now returns full single-line content (minified JSON, large dumps) instead of silently clipping at 2000 characters.
 - **Background task** command preambles with newlines now render on separate lines instead of collapsing.
 - **Text selections** now highlight uniformly even over inline code, links, and syntax-colored spans.
-- **grok --minimal** now supports native drag-select on classic Windows conhost terminals.
+- **ezer --minimal** now supports native drag-select on classic Windows conhost terminals.
 - Skill tokens such as /pr-workflow are now highlighted teal when used mid-sentence.
 - Fixed a crash when a filtered list shrinks while the filter is active.
 - Scroll lines and scroll speed settings now support fine unit-step adjustments.
@@ -1452,7 +1452,7 @@
 
 ## Bug Fixes
 
-- **grok --minimal** now aligns the prompt, status bar, and messages flush-left with the welcome card.
+- **ezer --minimal** now aligns the prompt, status bar, and messages flush-left with the welcome card.
 - **/plugins** no longer lists never-installed Claude marketplace entries and now groups plugins by their real source.
 - Successful image compression no longer leaves a permanent line in the transcript.
 - **--no-ask-user** now also disables ask_user_question for subagents.
@@ -1474,7 +1474,7 @@
 - **Always allow** grants for MCP, web_fetch and bash now take effect immediately in auto mode without re-prompting.
 - **Cmd/Ctrl+click** on bare http(s) links now opens only once on Warp terminals.
 - **Cmd/Ctrl+click** now works on imagine media paths and URLs that wrap across multiple terminal rows.
-- **grok update** on Windows no longer fails when a previous .old executable is still running.
+- **ezer update** on Windows no longer fails when a previous .old executable is still running.
 
 ## Performance
 
@@ -1494,10 +1494,10 @@
 
 - **New /minimal and /fullscreen slash commands** let you switch the current session between minimal and fullscreen modes without quitting.
 - **Session titles** from /rename now appear on the prompt box border after resume.
-- **grok models** banner now correctly reports per-model API keys and deployment keys.
+- **ezer models** banner now correctly reports per-model API keys and deployment keys.
 - MCP tool output size limit is now configurable via environment variable, config.toml, or remote settings (default unchanged).
 - Chat conversations listed in the unified sidebar can now be renamed or deleted from the desktop app.
-- You can now add a local directory as a plugin marketplace source with `grok plugin marketplace add`.
+- You can now add a local directory as a plugin marketplace source with `ezer plugin marketplace add`.
 - **Auto permission mode** now prompts far less often on routine development commands.
 - Short media paths the model prints (images/1.jpg) are now clickable and open the file.
 - **Preview** now prefers common dev ports like 8080 when multiple HTTP servers are detected.
@@ -1535,7 +1535,7 @@
 - **Try Again** on the free-usage paywall now correctly resubmits after rate-limit retries.
 - **Cursor** now respects your terminal's default blink style instead of always blinking.
 - **Skill commands** in scrollback now highlight only the command name, not the arguments.
-- **Plan files** now default to .grok/plan.md to match Grok conventions.
+- **Plan files** now default to .ezer/plan.md to match ezer conventions.
 - **LaTeX math** renders correctly for display equations and complex subscripts.
 - **Queue hint** in the terminal no longer shows incorrect bold text on part of the message.
 
@@ -1592,7 +1592,7 @@
 
 ## Bug Fixes
 
-- **--minimal** flag now shows in `grok --help`.
+- **--minimal** flag now shows in `ezer --help`.
 - **Session resume notifications** no longer appear when a workspace boots for the first time.
 - **Claude-style Bash(cmd:*)** permission rules are now correctly translated to prefix matches.
 
@@ -1638,8 +1638,8 @@
 - **Queue panel** now shows action buttons on hover and the status bar displays a compact done/total task count.
 - **Hook matchers** now correctly see the real MCP tool name instead of the internal dispatcher name.
 - **Copy** now succeeds when running inside containers even when the terminal brand cannot be detected.
-- **Tool result previews** no longer paint opaque panels in `grok --minimal`.
-- **grok wrap** now correctly handles quoted strings and shell aliases.
+- **Tool result previews** no longer paint opaque panels in `ezer --minimal`.
+- **ezer wrap** now correctly handles quoted strings and shell aliases.
 - **Text selection** settings now correctly honor explicit keep_text_selection values even when legacy keys remain.
 - **Fixed a freeze** that could occur when editing and sending the last message in the queue.
 - **Fixed a startup crash** on minimal Linux systems lacking system CA certificates.
@@ -1755,14 +1755,14 @@
 
 ## Performance
 
-- **`grok update`** downloads have a longer timeout.
+- **`ezer update`** downloads have a longer timeout.
 
 
 # 0.2.77 — 2026-06-30
 
 ## Features
 
-- **Pasting images** from the local clipboard now works when running commands through `grok wrap`.
+- **Pasting images** from the local clipboard now works when running commands through `ezer wrap`.
 - **Turn status spinner** now shows what the agent is waiting on (response, subagent, task output, etc.).
 - **Double-click word selection** is now a discoverable option in the Text selection setting and stays in sync with highlight behavior.
 
@@ -1776,7 +1776,7 @@
 ## Features
 
 - **Auto permission mode** is now added to the top of Shift+Tab cycles and enabled by default in settings.
-- **grok agent stdio** now checks for updates in the background like other modes.
+- **ezer agent stdio** now checks for updates in the background like other modes.
 
 ## Performance
 
@@ -1794,7 +1794,7 @@
 ## Features
 
 - **Esc now cancels a running turn immediately**; double-Esc clears prompt or opens rewind when idle.
-- **grok wrap** now shows copy success over SSH and suggests native drag-select when paste fails.
+- **ezer wrap** now shows copy success over SSH and suggests native drag-select when paste fails.
 
 ## Bug Fixes
 
@@ -1824,14 +1824,14 @@
 
 ## Bug Fixes
 
-- **Fixed `grok agent stdio` hangs** on Windows when used with persistent clients such as VS Code.
+- **Fixed `ezer agent stdio` hangs** on Windows when used with persistent clients such as VS Code.
 
 
 # 0.2.70 — 2026-06-27
 
 ## Breaking Changes
 
-- **Added `grok wrap`** to run any command with local clipboard support.
+- **Added `ezer wrap`** to run any command with local clipboard support.
 
 ## Features
 
@@ -1841,7 +1841,7 @@
 
 - **Session recaps** (/recap and return-from-away) now show the full summary instead of being cut off mid-sentence.
 - **Vim mode** now focuses the prompt when you press / on a brand-new empty session.
-- **Fixed `grok agent stdio` startup hangs** on Windows when used with persistent clients such as VS Code or grok-desktop.
+- **Fixed `ezer agent stdio` startup hangs** on Windows when used with persistent clients such as VS Code or ezer-desktop.
 - **`/mcps` list** no longer shows stale disabled entries when managed gateway tools are enabled.
 - **Mermaid diagrams opened via [Open Image]** now render at higher resolution instead of terminal size.
 - **Pressing `r` in scrollback** no longer accidentally rewinds the session.
@@ -1857,7 +1857,7 @@
 - The agent dashboard now shows each agent's model and mode in the peek panel, lets you cycle modes with Shift+Tab, collapses the Inactive section by default, and hides older idle agents behind a "N more" row.
 - Tool usage cards for search, directory listing, file deletion and glob now render as distinct typed cards instead of generic MCP entries.
 - The keyboard shortcuts help now shows richer descriptions and correctly scrolls wrapped text in the detail view.
-- You can now pass --json-schema to grok -p and receive a validated JSON object instead of free text.
+- You can now pass --json-schema to ezer -p and receive a validated JSON object instead of free text.
 - **Ctrl+L** now interjects mid-turn in VS Code, Cursor, Windsurf, and Zed terminals.
 
 ## Bug Fixes
@@ -1873,7 +1873,7 @@
 ## Features
 
 - **MCP servers** from host integrations can now be added, replaced, or removed without restarting the session.
-- **Agent-run terminal commands** now set `GROK_AGENT=1` so host tools can tell them apart from interactive shells.
+- **Agent-run terminal commands** now set `EZER_AGENT=1` so host tools can tell them apart from interactive shells.
 
 ## Bug Fixes
 
@@ -1929,7 +1929,7 @@
 
 ## Features
 
-- **grok -w --ref <branch>** now creates worktrees based on the specified ref instead of HEAD.
+- **ezer -w --ref <branch>** now creates worktrees based on the specified ref instead of HEAD.
 
 ## Bug Fixes
 
@@ -2001,7 +2001,7 @@
 ## Bug Fixes
 
 - **Focus reports** no longer leak as literal text when split across reads over SSH.
-- **--disable-web-search** now honored in grok -p and grok agent; auxiliary model routing respects catalog overrides.
+- **--disable-web-search** now honored in ezer -p and ezer agent; auxiliary model routing respects catalog overrides.
 - **Focus events** now fire correctly for SSH-split focus reports.
 - **Boolean tool flags** now accept "true"/"false"/"yes"/"no"/1/0 strings and numbers in addition to native booleans.
 - **Session last-active timestamps** and message counts no longer regress under concurrent writers.
@@ -2052,8 +2052,8 @@
 
 - Terminal command output files are now capped at 5 GB during execution and truncated to 64 MB after the process exits.
 - Interjection messages now display the actual user text instead of a generic header.
-- The legacy `agent` command is now kept in sync with `grok` after running `grok update`.
-- Headless (`grok -p`) runs now wait for background tasks and subagents to finish before exiting.
+- The legacy `agent` command is now kept in sync with `ezer` after running `ezer update`.
+- Headless (`ezer -p`) runs now wait for background tasks and subagents to finish before exiting.
 
 
 # 0.2.57
@@ -2061,7 +2061,7 @@
 ## Features
 
 - Improved resilience to network blips during long responses by resuming instead of failing the turn.
-- **`grok plugin install <name>`** now resolves plugins from registered marketplaces instead of only local paths.
+- **`ezer plugin install <name>`** now resolves plugins from registered marketplaces instead of only local paths.
 
 ## Bug Fixes
 
@@ -2077,7 +2077,7 @@
 ## Features
 
 - **resume_from** now continues a finished sub-agent in place instead of forking a new conversation.
-- **grok sessions delete <id>** command now lets you permanently remove a session from the CLI.
+- **ezer sessions delete <id>** command now lets you permanently remove a session from the CLI.
 
 ## Bug Fixes
 
@@ -2086,14 +2086,14 @@
 - **Sandbox profile** is now preserved when resuming sessions so commands continue to work as before.
 - **list_dir** now shows more relevant files when a large directory appears early in alphabetical order.
 - **Cancel button** in turn status always shows [stop]; queue pane highlight now follows theme changes.
-- **grok quit** no longer hangs when background git or network tasks are slow.
+- **ezer quit** no longer hangs when background git or network tasks are slow.
 - The token count shown after auto-compaction now matches the context bar exactly.
 - The git branch icon now renders correctly in iTerm2 without a Nerd Font.
 - **list_dir** now gives clearer guidance when a directory is too large, using the actual tool names available in your session.
 - **Ctrl+Enter** now sends the prompt when the agent is idle (same behavior as Enter).
 - **resume_from** now correctly continues a sub-agent in the same working directory it was using before.
 - Files with non-ASCII names (e.g. Chinese) no longer crash the session when plan mode checks for markdown.
-- Session lists (welcome screen, /resume, grok sessions list) are now sorted by the same activity time shown in the UI.
+- Session lists (welcome screen, /resume, ezer sessions list) are now sorted by the same activity time shown in the UI.
 - **Fixed bash tool failures** when models send numeric arguments such as timeout as JSON strings instead of numbers.
 - **Prevented crashes** during bash command output streaming when building progress frames.
 - **Disabled inline image rendering** on iTerm2 terminals where scrollback overlays cannot be supported.
@@ -2108,7 +2108,7 @@
 
 ## Features
 
-- **Added option** to fully disable the hunk tracker via --hunk-tracker-mode, GROK_HUNK_TRACKER, or config.
+- **Added option** to fully disable the hunk tracker via --hunk-tracker-mode, EZER_HUNK_TRACKER, or config.
 
 ## Bug Fixes
 
@@ -2153,7 +2153,7 @@
 - **ER diagrams** now render as entity boxes with attributes and relationships in the TUI.
 - New "Respect manual folds" setting keeps hand-expanded blocks stable while content streams in.
 - **Ctrl+X** now stops running turns or closes sessions from inside the agent detail view.
-- **Grok** can now export usage metrics and events to your own OpenTelemetry collector when enabled.
+- **ezer** can now export usage metrics and events to your own OpenTelemetry collector when enabled.
 - **WezTerm users** now receive guidance when Shift+Enter fails because kitty keyboard protocol is disabled.
 - **Long-running sessions** now tell the model when the local calendar date changes past midnight.
 - **Agent Dashboard** now works without leader mode and shows local idle sessions from disk.
@@ -2174,7 +2174,7 @@
 - **ptyctl resize** now correctly notifies the child process.
 - **Concurrent updates** to the same version no longer fail with permission or EEXIST errors.
 - **Mermaid diagrams** containing CJK or other non-Latin text now render correctly instead of tofu boxes.
-- **`grok dashboard`** now reliably opens the dashboard instead of silently falling through to a normal session.
+- **`ezer dashboard`** now reliably opens the dashboard instead of silently falling through to a normal session.
 - **Sessions** no longer remain blocked forever after a transient model catalog outage during reconnect.
 - **Cancel** no longer leaves the interface stuck on "Cancelling…" after lost responses during reconnects.
 - **Forked sessions** now retain the parent's full pre-compaction transcripts instead of only the compacted summary.
@@ -2191,7 +2191,7 @@
 
 ## Breaking Changes
 
-- **`grok mcp add`** now accepts positional arguments (e.g. `grok mcp add filesystem -- npx ...`), supports --scope project, and adds -e/-H flags for env/headers.
+- **`ezer mcp add`** now accepts positional arguments (e.g. `ezer mcp add filesystem -- npx ...`), supports --scope project, and adds -e/-H flags for env/headers.
 
 ## Features
 
@@ -2204,13 +2204,13 @@
 
 - **Plan mode exit reminders** no longer appear after the model has already started implementing the plan.
 - **Expanded thinking blocks** in scrollback now remain expanded when the agent finishes them.
-- **`grok update`** no longer downloads the same binary twice when multiple updaters or leader checks run concurrently.
+- **`ezer update`** no longer downloads the same binary twice when multiple updaters or leader checks run concurrently.
 - **Background task IDs** after /compact are now shown verbatim so the model can reference them correctly in later tool calls.
 - **Typing /** while scrollback is focused now focuses the prompt and opens the slash-command dropdown.
 - **Dashboard empty state** is now a single hint line; dispatch and peek placeholders appear only when unfocused.
 - **Fixed memory leaks** that could cause the CLI to use tens of gigabytes during long sessions with many tool calls.
 - **Login on SSH or headless machines** now tells you when the browser cannot be opened automatically and shows the URL to visit manually.
-- **Fixed git clone failures** on Windows when the CLI tries to clone marketplace plugins into ~/.grok.
+- **Fixed git clone failures** on Windows when the CLI tries to clone marketplace plugins into ~/.ezer.
 
 ## Performance
 
@@ -2226,7 +2226,7 @@
 ## Bug Fixes
 
 - **Sequence diagrams** with activate, autonumber, par, and more now render instead of showing parse errors.
-- **MCP servers menu** and slash commands now work when starting grok outside a project directory.
+- **MCP servers menu** and slash commands now work when starting ezer outside a project directory.
 - **Ctrl+W** in the prompt now deletes whole words like bash instead of stopping at punctuation.
 - **Login** no longer quits when an authentication code contains the letter q.
 
@@ -2242,7 +2242,7 @@
 ## Bug Fixes
 
 - **Skill reloads** no longer corrupt active tool calls or produce duplicate results in the conversation.
-- **grok --resume** now correctly finds the real session instead of failing on empty image-only folders.
+- **ezer --resume** now correctly finds the real session instead of failing on empty image-only folders.
 - Pasted images and relative paths now use the correct directory when resuming a session created elsewhere.
 - **Mermaid flowcharts** now correctly render node groups, arrow endings, self-loops and line styles.
 - **Fixed** "unknown session id" errors that occurred after the leader process crashed or was killed.
@@ -2270,7 +2270,7 @@
 
 ## Bug Fixes
 
-- **Fixed `grok --resume`** failing on empty image-only session folders left by cross-directory pastes.
+- **Fixed `ezer --resume`** failing on empty image-only session folders left by cross-directory pastes.
 - **Fixed pasted images** and relative paths using the wrong directory after cross-cwd resume.
 - **Fixed Mermaid flowcharts** that silently rendered wrong diagrams for & groups, circle/cross endings and self-loops.
 - **Fixed zsh tab-completion** for subcommands after the optional prompt argument was added.
@@ -2291,7 +2291,7 @@
 ## Bug Fixes
 
 - **Fixed** rare conversation corruption when skills changed while a tool call was still running.
-- **Fixed** `grok --resume` failing on empty image-only session folders left by cross-directory pastes.
+- **Fixed** `ezer --resume` failing on empty image-only session folders left by cross-directory pastes.
 - **Fixed** pasted images and relative paths using the wrong directory after resuming a session from another folder.
 - **Welcome screen logo** no longer renders as invalid characters on legacy Windows command prompts and PowerShell.
 - **Fixed** "unknown session id" errors that occurred after the leader process crashed or was killed.
@@ -2322,7 +2322,7 @@
 
 - **ask_user_question** tool can now be enabled in allowlists without requiring plan-mode tools.
 - **Shift+Tab** mode cycling (Normal → Plan → Auto-Approve) works again in the agent view.
-- **Ctrl+C** now cancels a blocking `grok update` cleanly instead of leaving an orphaned download repainting the terminal.
+- **Ctrl+C** now cancels a blocking `ezer update` cleanly instead of leaving an orphaned download repainting the terminal.
 
 
 # 0.2.42
@@ -2353,7 +2353,7 @@
 
 ## Features
 
-- **`grok --debug`** now produces per-session log files under ~/.grok/debug/ even with a leader process.
+- **`ezer --debug`** now produces per-session log files under ~/.ezer/debug/ even with a leader process.
 
 ## Bug Fixes
 
@@ -2394,7 +2394,7 @@
 ## Features
 
 - **MCP tool result queries** now list only command-line tools actually present on your system.
-- **`grok update`** now restarts any older running leader so all clients get the new binary.
+- **`ezer update`** now restarts any older running leader so all clients get the new binary.
 - **Long-running bash commands** that hit the timeout are now moved to the background by default instead of killed.
 
 ## Bug Fixes
@@ -2421,7 +2421,7 @@
 
 ## Features
 
-- **`grok login`** now defaults to device code flow, which works reliably in SSH, WSL, VPN, and browser-restricted environments.
+- **`ezer login`** now defaults to device code flow, which works reliably in SSH, WSL, VPN, and browser-restricted environments.
 
 ## Bug Fixes
 
@@ -2510,7 +2510,7 @@
 ## Bug Fixes
 
 - **Large pasted content** no longer triggers context-window errors or breaks compaction and memory flush.
-- **API-key users** can now run `grok agent --leader` without forced interactive login or timeouts.
+- **API-key users** can now run `ezer agent --leader` without forced interactive login or timeouts.
 - **Compaction** no longer retries endlessly on credit, size, or auth failures; shows a clear message instead.
 - **Windows PowerShell and cmd.exe** no longer falsely reject commands containing `&`.
 - **web_fetch** no longer crashes the CLI on pages whose root element matches a cleaning selector.
@@ -2591,7 +2591,7 @@
 
 - **Image and video generation** tools now emit structured paths so the pager renders media without regex scraping.
 - **Compaction summaries** now use a more detailed structure that improves recovery after context reset.
-- **image_gen** can now be enabled via the harness model using [features] in config.toml or the GROK_IMAGE_GEN_HARNESS env var.
+- **image_gen** can now be enabled via the harness model using [features] in config.toml or the EZER_IMAGE_GEN_HARNESS env var.
 - **Improved config refresh** on new sessions from the shell.
 
 ## Bug Fixes
@@ -2605,8 +2605,8 @@
 
 - **New segments compaction mode** writes per-segment markdown files that the model can read to recover pre-compaction detail.
 - **Claude and Cursor compatibility scanning** (skills, rules, AGENTS.md) can now be toggled individually via env vars or config.toml.
-- **grok inspect** now shows the resolved on/off state and source for every Claude/Cursor compatibility toggle.
-- **Cursor MCP servers and hooks** are now discovered and can be disabled independently via GROK_CURSOR_MCPS_ENABLED / GROK_CURSOR_HOOKS_ENABLED.
+- **ezer inspect** now shows the resolved on/off state and source for every Claude/Cursor compatibility toggle.
+- **Cursor MCP servers and hooks** are now discovered and can be disabled independently via EZER_CURSOR_MCPS_ENABLED / EZER_CURSOR_HOOKS_ENABLED.
 
 ## Bug Fixes
 
@@ -2698,7 +2698,7 @@
 
 - **New /login** slash command lets you re-authenticate from within a session without quitting.
 - **Compaction summaries** now include the full transcript path so the model can reference prior details.
-- **Cursor skills and rules** are now discovered alongside Grok and Claude directories.
+- **Cursor skills and rules** are now discovered alongside ezer and Claude directories.
 
 ## Bug Fixes
 
@@ -2722,7 +2722,7 @@
 ## Bug Fixes
 
 - **Background tasks** started inside subagents now continue running after the subagent session ends.
-- **Image description** now reliably uses the grok-build model instead of falling back to the active session model.
+- **Image description** now reliably uses the ezer-build model instead of falling back to the active session model.
 
 
 # 0.2.5
@@ -2736,7 +2736,7 @@
 
 ## Features
 
-- **image_gen** now uses the higher-quality grok-imagine-image-quality model.
+- **image_gen** now uses the higher-quality ezer-imagine-image-quality model.
 
 ## Bug Fixes
 

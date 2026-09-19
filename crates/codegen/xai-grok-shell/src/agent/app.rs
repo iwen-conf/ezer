@@ -230,9 +230,9 @@ pub async fn run_stdio_agent(
         &grok_home::grok_home(),
         xai_file_utils::queue::DEFAULT_MAX_AGE,
     );
-    if let Ok(version) = std::env::var("GROK_CLIENT_VERSION") {
+    if let Ok(version) = std::env::var("EZER_CLIENT_VERSION") {
         crate::unified_log::info(
-            "GROK_CLIENT_VERSION",
+            "EZER_CLIENT_VERSION",
             None,
             Some(serde_json::json!({ "version": version })),
         );
@@ -313,7 +313,7 @@ pub async fn run_headless(
     use crate::agent::relay::spawn_relay_connection_with_callback;
     use tokio_util::sync::CancellationToken;
     const HEADLESS_NO_SESSION: &str = "Headless mode requires a grok.com session. \
-        Run `grok login` to sign in, or use `grok agent stdio` for API-key access.";
+        Run `ezer login` to sign in, or use `ezer agent stdio` for API-key access.";
     xai_file_utils::queue::cleanup_orphaned_uploads(
         &grok_home::grok_home(),
         xai_file_utils::queue::DEFAULT_MAX_AGE,
@@ -400,7 +400,7 @@ pub async fn run_headless(
         if !did_browser_flow {
             eprintln!();
             eprintln!(
-                "Open Grok Build: {} (press Enter to open in browser)",
+                "Open ezer: {} (press Enter to open in browser)",
                 grok_code_url
             );
             eprintln!();
@@ -654,7 +654,7 @@ pub fn apply_otel_config(auth_manager: &AuthManager, grok_com_config: &GrokComCo
         crate::agent::otel_gate::open_at_startup();
     }
 }
-/// Boot-time switches of [`run_leader`], set by `grok agent leader` flags.
+/// Boot-time switches of [`run_leader`], set by `ezer agent leader` flags.
 pub struct LeaderRunOptions {
     /// Keep serving after the last IPC client disconnects (devbox / systemd leaders).
     pub no_exit_on_disconnect: bool,
@@ -1468,7 +1468,7 @@ mod tests {
                 mark_external_otel_settings_resolved();
             }
         }
-        const PROXY_ENV_VAR: &str = "GROK_CLI_CHAT_PROXY_BASE_URL";
+        const PROXY_ENV_VAR: &str = "EZER_CLI_CHAT_PROXY_BASE_URL";
         let _restore = Restore {
             key: std::env::var_os(XAI_API_KEY_ENV_VAR),
             legacy: std::env::var_os(LEGACY_XAI_API_KEY_ENV_VAR),
@@ -1510,7 +1510,7 @@ mod tests {
             tokio::time::sleep(Duration::from_millis(25)).await;
         }
     }
-    /// Regression test for the bare-leader relay gating bug. A bare `grok agent leader` (devbox/systemd: no local IPC clients, `relay_on_demand == false`) must connect the grok.com relay eagerly.
+    /// Regression test for the bare-leader relay gating bug. A bare `ezer agent leader` (devbox/systemd: no local IPC clients, `relay_on_demand == false`) must connect the grok.com relay eagerly.
     /// Remote prompts arrive *through* the relay, so on such a leader no headless-registration demand signal can ever fire.
     /// Gating the relay on it means the agent never registers with the backend ("No online agents") even though the box is healthy.
     #[tokio::test]

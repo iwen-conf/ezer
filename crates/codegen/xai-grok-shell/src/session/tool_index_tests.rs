@@ -962,7 +962,7 @@ fn split_numbers_in_identifiers() {
 fn split_mixed_formats() {
     assert_eq!(
         split_identifier("grok_com_slack__slack_send_message"),
-        vec!["grok", "com", "slack", "slack", "send", "message"]
+        vec!["ezer", "com", "slack", "slack", "send", "message"]
     );
 }
 
@@ -1297,7 +1297,7 @@ fn fmt_case_insensitive_qualified_kebab_pascal() {
 #[test]
 fn fmt_case_insensitive_qualified_snake_snake() {
     let index = Bm25ToolSearchIndex::new(make_snapshot(mcp_format_tools()));
-    let snap = index.search_snapshot("GROK_COM_SLACK__SLACK_SEND_MESSAGE", 5);
+    let snap = index.search_snapshot("EZER_COM_SLACK__SLACK_SEND_MESSAGE", 5);
     assert_eq!(snap.results.len(), 1);
     assert_eq!(
         snap.results.first().map(|r| r.tool_name.as_str()),

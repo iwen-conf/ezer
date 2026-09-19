@@ -734,7 +734,7 @@ It has multiple lines."#;
             short_description: None,
             author: None,
             argument_hint: None,
-            path: "/home/user/.grok/skills/commit/SKILL.md".to_string(),
+            path: "/home/user/.ezer/skills/commit/SKILL.md".to_string(),
             scope: SkillScope::User,
             config_source: None,
             plugin_name: None,
@@ -762,7 +762,7 @@ It has multiple lines."#;
         // Assert the exact output so this breaks if any field or structural
         // detail changes (attribute order, newlines, tags).
         let expected = "\
-<skill name=\"commit\" description=\"Create a git commit\" path=\"/home/user/.grok/skills/commit/SKILL.md\">
+<skill name=\"commit\" description=\"Create a git commit\" path=\"/home/user/.ezer/skills/commit/SKILL.md\">
 # Git Commit Skill
 
 You are helping the user create a commit.
@@ -815,7 +815,7 @@ Deploy instructions.
         let skill = SkillInfo {
             name: "review".to_string(),
             description: "Review code".to_string(),
-            path: "/repo/.grok/skills/review/SKILL.md".to_string(),
+            path: "/repo/.ezer/skills/review/SKILL.md".to_string(),
             ..SkillInfo::default()
         };
 
@@ -823,7 +823,7 @@ Deploy instructions.
         let message = build_skill_message(&skill, content);
 
         let expected = "\
-<skill name=\"review\" description=\"Review code\" path=\"/repo/.grok/skills/review/SKILL.md\">
+<skill name=\"review\" description=\"Review code\" path=\"/repo/.ezer/skills/review/SKILL.md\">
 # Code Review
 
 Step 1: Read the diff.
@@ -878,13 +878,13 @@ Step 2: Check for bugs.
             &mut content,
             None,
             &SubstitutionContext {
-                skill_dir: Some("/home/user/.grok/skills/deploy"),
+                skill_dir: Some("/home/user/.ezer/skills/deploy"),
                 ..Default::default()
             },
         );
         assert_eq!(
             content,
-            "Config at /home/user/.grok/skills/deploy/config.json"
+            "Config at /home/user/.ezer/skills/deploy/config.json"
         );
     }
 
@@ -990,7 +990,7 @@ Step 2: Check for bugs.
 
     #[test]
     fn test_grok_plugin_aliases_substitution() {
-        let mut content = "Root ${GROK_PLUGIN_ROOT}, data ${GROK_PLUGIN_DATA}".to_string();
+        let mut content = "Root ${EZER_PLUGIN_ROOT}, data ${EZER_PLUGIN_DATA}".to_string();
         apply_substitutions(
             &mut content,
             None,
@@ -1268,7 +1268,7 @@ Review code.
         let blocks = vec![build_skill_block("commit", "fix typo", "Body here.")];
         let refs = vec![SkillRef {
             name: "commit",
-            path: "/home/user/.grok/skills/commit/SKILL.md",
+            path: "/home/user/.ezer/skills/commit/SKILL.md",
         }];
         let result = build_skill_information(&blocks, &refs);
         assert!(result.starts_with("<skill_information>\n"));
@@ -1276,7 +1276,7 @@ Review code.
         assert!(result.contains("<skills_referenced>\n"));
         assert!(
             result.contains(
-                "<skill name=\"commit\" path=\"/home/user/.grok/skills/commit/SKILL.md\"/>"
+                "<skill name=\"commit\" path=\"/home/user/.ezer/skills/commit/SKILL.md\"/>"
             )
         );
         assert!(result.contains("<skill name=\"commit\" args=\"fix typo\">"));
@@ -1291,11 +1291,11 @@ Review code.
         let refs = vec![
             SkillRef {
                 name: "review",
-                path: "/project/.grok/skills/review/SKILL.md",
+                path: "/project/.ezer/skills/review/SKILL.md",
             },
             SkillRef {
                 name: "lint",
-                path: "/project/.grok/skills/lint/SKILL.md",
+                path: "/project/.ezer/skills/lint/SKILL.md",
             },
         ];
         let result = build_skill_information(&blocks, &refs);

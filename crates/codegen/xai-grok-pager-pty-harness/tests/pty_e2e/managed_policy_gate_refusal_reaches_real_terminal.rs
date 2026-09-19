@@ -47,7 +47,7 @@ async fn managed_policy_gate_refusal_reaches_real_terminal() {
         &sandbox,
         // GROK_MANAGED_CONFIG=0 disables the background refetch so the gate decision is deterministic and offline.
         &[
-            EnvOp::set("GROK_MANAGED_CONFIG", "0"),
+            EnvOp::set("EZER_MANAGED_CONFIG", "0"),
             EnvOp::set("NO_COLOR", "1"),
         ],
         None,

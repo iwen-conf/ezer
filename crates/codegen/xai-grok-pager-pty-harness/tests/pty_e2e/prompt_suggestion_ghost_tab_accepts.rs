@@ -23,7 +23,7 @@ async fn prompt_suggestion_ghost_tab_accepts() {
     content.set_response(SUGGESTION);
 
     // The sandbox baseline disables the feature for the suite; re-enable it here.
-    let overrides = [("GROK_PROMPT_SUGGESTIONS".to_owned(), "true".to_owned())];
+    let overrides = [("EZER_PROMPT_SUGGESTIONS".to_owned(), "true".to_owned())];
     let env_refs: Vec<(&str, &str)> = overrides
         .iter()
         .map(|(key, value)| (key.as_str(), value.as_str()))

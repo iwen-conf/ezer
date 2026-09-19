@@ -95,10 +95,10 @@ pub fn worktree_type() -> WorktreeType {
 
 /// Env override for grove vs copy (`grove` | `grove-fuse` | `grove-nfs` | `grove-projfs` | `nfs` | `copy`).
 /// Distinct from [`WorktreeType`] (`linked` | `standalone` | `git`).
-pub const ENV_WORKTREE_TYPE: &str = "GROK_WORKTREE_TYPE";
+pub const ENV_WORKTREE_TYPE: &str = "EZER_WORKTREE_TYPE";
 
-/// Convenience that enables both `grok clone` and session / `-w` Grove when specific knobs are unset.
-pub const ENV_GROVE: &str = "GROK_GROVE";
+/// Convenience that enables both `ezer clone` and session / `-w` Grove when specific knobs are unset.
+pub const ENV_GROVE: &str = "EZER_GROVE";
 
 fn grove_from_str(s: &str) -> Option<bool> {
     match s.trim().to_ascii_lowercase().as_str() {
@@ -172,7 +172,7 @@ pub fn grove_enable_all_env() -> Option<bool> {
         .and_then(|s| grove_enable_all_from_str(&s))
 }
 
-/// Env `GROK_GROVE` first; a set false skips `[cli] grove` rather than forcing both surfaces off.
+/// Env `EZER_GROVE` first; a set false skips `[cli] grove` rather than forcing both surfaces off.
 pub fn grove_enable_all_asked(env: Option<bool>, raw_config: &TomlValue) -> bool {
     env.unwrap_or_else(|| grove_enable_all_from_toml(raw_config).unwrap_or(false))
 }
@@ -334,7 +334,7 @@ auto_update = true
     fn test_worktree_type_no_cli_section() {
         let toml_str = r#"
 [models]
-default = "grok-code-fast-1"
+default = "ezer-code-fast-1"
 "#;
         let root: TomlValue = toml::from_str(toml_str).unwrap();
         assert_eq!(worktree_type_from_toml(&root), WorktreeType::Linked);
@@ -385,7 +385,7 @@ worktree_type = "invalid"
 
     #[test]
     fn test_worktree_type_from_toml_opt_no_cli_section() {
-        let root: TomlValue = toml::from_str("[models]\ndefault = \"grok\"").unwrap();
+        let root: TomlValue = toml::from_str("[models]\ndefault = \"ezer\"").unwrap();
         assert_eq!(worktree_type_from_toml_opt(&root), None);
     }
 
@@ -642,7 +642,7 @@ worktree_type = "invalid"
         assert_eq!(
             gate_grove_worktree_layers(None, Some(false), Some(true), &empty, Some(&remote_unset)),
             (false, "env"),
-            "GROK_WORKTREE_TYPE=copy must beat enable-all"
+            "EZER_WORKTREE_TYPE=copy must beat enable-all"
         );
         assert_eq!(
             gate_grove_worktree_layers(None, None, None, &specific_off, Some(&remote_unset)),
@@ -663,7 +663,7 @@ worktree_type = "invalid"
                 Some(&remote_unset)
             ),
             (false, "default"),
-            "GROK_GROVE=off must skip [cli] grove and fall through"
+            "EZER_GROVE=off must skip [cli] grove and fall through"
         );
         assert_eq!(
             gate_grove_worktree_layers(None, None, Some(false), &empty, Some(&remote_true)),
@@ -780,7 +780,7 @@ worktree_type = "invalid"
 
     #[test]
     fn test_restore_code_from_toml_no_cli_section() {
-        let root: TomlValue = toml::from_str("[models]\ndefault = \"grok\"").unwrap();
+        let root: TomlValue = toml::from_str("[models]\ndefault = \"ezer\"").unwrap();
         assert_eq!(restore_code_from_toml(&root), None);
     }
 

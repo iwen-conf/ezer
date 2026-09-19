@@ -1,12 +1,12 @@
-//! Config file loading for Grok.
+//! Config file loading for ezer.
 //!
 //! Merge order (lowest to highest priority):
-//! 1. `/etc/grok/managed_config.toml`
+//! 1. `/etc/ezer/managed_config.toml`
 //! 2. `$GROK_HOME/managed_config.toml`
 //! 3. `$GROK_HOME/config.toml`
 //! 4. `$GROK_HOME/requirements.toml` (cloud cache; Ed25519-signed at rest once a key is embedded, see [`signed_policy`])
-//! 5. `/etc/grok/requirements.toml`
-//! 6. macOS MDM managed preferences (`ai.x.grok`, admin-forced), macOS only
+//! 5. `/etc/ezer/requirements.toml`
+//! 6. macOS MDM managed preferences (`ai.x.ezer`, admin-forced), macOS only
 //!
 //! Each layer applies its own [`[[version_overrides]]`](version_overrides) before merge.
 //! Requirements layers (#4 through #6) may opt into fail-closed startup; see [`validate_requirements`].
@@ -51,7 +51,7 @@ pub use config_layers::{
 };
 pub use display_refresh::DisplayRefreshSettings;
 pub use env_overlay::{
-    GROK_CONFIG_ENV, GROK_CONFIG_PATH_ENV, OverlaySource, ResolvedOverlay, resolved_env_overlay,
+    EZER_CONFIG_ENV, EZER_CONFIG_PATH_ENV, OverlaySource, ResolvedOverlay, resolved_env_overlay,
 };
 pub use first_run::{
     DEFAULT_GATEWAY_API_KEY, DEFAULT_GATEWAY_BASE_URL, DEFAULT_GATEWAY_MODEL_ID,

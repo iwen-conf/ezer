@@ -407,7 +407,7 @@ mod tests {
         let empty_peer = empty_seed_peer(&result);
         let prompt = ToolOutput::EnterPlanMode(result).to_prompt_format();
         assert!(
-            prompt.contains(".grok/plan.md"),
+            prompt.contains(".ezer/plan.md"),
             "expected plan path: {prompt}"
         );
         assert!(prompt.contains("exit_plan_mode"), "{prompt}");
@@ -447,7 +447,7 @@ mod tests {
             *plan_file_seed,
             PlanFileSeedStatus::Missing(PlanFileSeedFailure::Unavailable)
         );
-        assert_eq!(plan_file_path, ".grok/plan.md");
+        assert_eq!(plan_file_path, ".ezer/plan.md");
         assert_eq!(fs.reads.load(Ordering::SeqCst), 0, "must not probe");
         assert_eq!(fs.writes.load(Ordering::SeqCst), 0, "must not write");
     }
@@ -596,7 +596,7 @@ mod tests {
     #[tokio::test]
     async fn uses_plan_file_path_resource_when_set() {
         let mut resources = Resources::new();
-        let session_plan = PathBuf::from("/home/user/.grok/sessions/abc123/plan.md");
+        let session_plan = PathBuf::from("/home/user/.ezer/sessions/abc123/plan.md");
         resources.insert(PlanFilePath(session_plan.clone()));
         let shared = resources.into_shared();
 
@@ -612,7 +612,7 @@ mod tests {
             ref plan_file_path, ..
         } = result;
         assert_eq!(plan_file_path, &session_plan.display().to_string());
-        assert!(!plan_file_path.contains(".grok/plan.md"));
+        assert!(!plan_file_path.contains(".ezer/plan.md"));
     }
 
     #[tokio::test]
@@ -632,7 +632,7 @@ mod tests {
         let EnterPlanModeOutput::Entered {
             ref plan_file_path, ..
         } = result;
-        assert_eq!(plan_file_path, "/workspace/my-project/.grok/plan.md");
+        assert_eq!(plan_file_path, "/workspace/my-project/.ezer/plan.md");
     }
 
     #[tokio::test]
@@ -690,7 +690,7 @@ mod tests {
         let mut resources = Resources::new();
         resources.insert(Cwd(PathBuf::from("/workspace/my-project")));
         resources.insert(PlanFilePath(PathBuf::from(
-            "/home/user/.grok/sessions/xyz/plan.md",
+            "/home/user/.ezer/sessions/xyz/plan.md",
         )));
         let shared = resources.into_shared();
 
@@ -705,7 +705,7 @@ mod tests {
         let EnterPlanModeOutput::Entered {
             ref plan_file_path, ..
         } = result;
-        assert_eq!(plan_file_path, "/home/user/.grok/sessions/xyz/plan.md");
-        assert!(!plan_file_path.contains(".grok/plan.md"));
+        assert_eq!(plan_file_path, "/home/user/.ezer/sessions/xyz/plan.md");
+        assert!(!plan_file_path.contains(".ezer/plan.md"));
     }
 }

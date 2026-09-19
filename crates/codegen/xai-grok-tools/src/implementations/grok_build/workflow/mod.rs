@@ -5,7 +5,7 @@ use super::task::types::SubagentDepthCounter;
 
 pub use xai_grok_tools_api::slash_commands::WORKFLOW_TOOL_NAME;
 
-/// Short name of a tool id (`GrokBuild:workflow` → `workflow`).
+/// Short name of a tool id (`Ezer:workflow` → `workflow`).
 pub fn workflow_tool_short_name(id: &str) -> &str {
     id.rsplit(':').next().unwrap_or(id)
 }
@@ -26,7 +26,7 @@ pub fn is_workflow_tool(kind: Option<ToolKind>, id: &str) -> bool {
 pub enum WorkflowSource {
     Name {
         #[schemars(
-            description = "Name of a registered workflow (built-in, or discovered from the project `.grok/workflows/` or user `~/.grok/workflows/`)."
+            description = "Name of a registered workflow (built-in, or discovered from the project `.ezer/workflows/` or user `~/.ezer/workflows/`)."
         )]
         name: String,
     },
@@ -327,7 +327,7 @@ impl crate::types::tool_metadata::ToolMetadata for WorkflowTool {
 
 Prefer a registered workflow when one fits; author a script for bounded fan-out over a known work list, staged research and verification, or several independent perspectives. Before writing or editing a script, read the `create-workflow` skill's SKILL.md. `validate_only: true` runs a path-specific smoke check (metadata, compile, one canned-host path) — not proof that every branch or live tool works.
 
-A started run gets a session-unique display name (e.g. `review-changes`, `review-changes-2`) — the handle to show the user, who manages runs with `/workflow pause|resume|stop <name>`; keep run IDs internal. To stop or pause a run yourself, call this tool with `source: { type: "stop", run_id }` or `{ type: "pause", run_id }` (run id or display name); both cancel the run's child agents and keep its journal, so either can be continued later with `resume`. Pause only applies to an active run; stop applies to any run that has not finished or hit its agent budget (a budget-limited run is already stopped and needs `resume` with a higher `agent_budget`). Each launch persists an editable `script_path`; edit it and launch as a new run to iterate. Use the `resume` source only for a same-process paused run (process restarts are terminal); it reuses the run's original immutable source and args, and a budget-limited run resumes only with a higher `agent_budget`. Save reusable scripts to `.grok/workflows/<name>.rhai`."##
+A started run gets a session-unique display name (e.g. `review-changes`, `review-changes-2`) — the handle to show the user, who manages runs with `/workflow pause|resume|stop <name>`; keep run IDs internal. To stop or pause a run yourself, call this tool with `source: { type: "stop", run_id }` or `{ type: "pause", run_id }` (run id or display name); both cancel the run's child agents and keep its journal, so either can be continued later with `resume`. Pause only applies to an active run; stop applies to any run that has not finished or hit its agent budget (a budget-limited run is already stopped and needs `resume` with a higher `agent_budget`). Each launch persists an editable `script_path`; edit it and launch as a new run to iterate. Use the `resume` source only for a same-process paused run (process restarts are terminal); it reuses the run's original immutable source and args, and a budget-limited run resumes only with a higher `agent_budget`. Save reusable scripts to `.ezer/workflows/<name>.rhai`."##
     }
 
     fn requires_expr(&self) -> Expr<ToolRequirement> {
@@ -745,10 +745,10 @@ mod tests {
     #[test]
     fn workflow_id_matches_kind_or_short_name() {
         assert!(is_workflow_tool_id("workflow"));
-        assert!(is_workflow_tool_id("GrokBuild:workflow"));
+        assert!(is_workflow_tool_id("Ezer:workflow"));
         assert!(!is_workflow_tool_id("web_search"));
         assert!(is_workflow_tool(Some(ToolKind::Workflow), "anything"));
-        assert!(is_workflow_tool(None, "GrokBuild:workflow"));
+        assert!(is_workflow_tool(None, "Ezer:workflow"));
         assert!(!is_workflow_tool(Some(ToolKind::Read), "read_file"));
     }
 }

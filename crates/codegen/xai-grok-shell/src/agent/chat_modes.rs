@@ -9,14 +9,14 @@ use parking_lot::RwLock;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use xai_grok_login::AuthManager;
-/// ~54 min, matching grok-web's refetch cadence.
+/// ~54 min, matching ezer-web's refetch cadence.
 const CACHE_TTL: Duration = Duration::from_secs(54 * 60);
 /// Cold-miss budget on the `session/load` critical path (warm/stale served instantly).
 const COLD_FETCH_TIMEOUT: Duration = Duration::from_secs(2);
 const DEFAULT_LOCALE: &str = "en";
 /// Process-wide flag set by the pager when started with `--chat`.
 /// Initialize and early UI then seed the chat `/rest/modes` catalog instead of build models.
-pub const GROK_CHAT_MODE_ENV: &str = "GROK_CHAT_MODE";
+pub const EZER_CHAT_MODE_ENV: &str = "EZER_CHAT_MODE";
 /// True when the process is a gateway light-frontend (`--chat`) agent.
 /// Hard-off in release builds so it can't be enabled via env.
 pub fn process_chat_mode_enabled() -> bool {

@@ -1,9 +1,9 @@
 //! Interactive-pager external login that runs on the real TTY before raw mode.
 //!
-//! `auth_provider_command` already works via `grok login` because stderr is inherited.
+//! `auth_provider_command` already works via `ezer login` because stderr is inherited.
 //! The TUI path instead pipes that stderr into the welcome copy-link overlay.
 //! That overlay is unusable in Docker (no host browser, mouse capture, wrapped URLs).
-//! This module is the first-launch equivalent of `grok login`.
+//! This module is the first-launch equivalent of `ezer login`.
 //! It prints the provider URL on the real terminal, persists the token, then lets the pager start already authenticated.
 //!
 //! Deliberately does **not** call [`super::flow::run_auth_flow`]: on provider failure that falls through to browser OIDC.
@@ -63,7 +63,7 @@ pub async fn maybe_run_pre_tui_external_login(
 }
 
 /// Runs the provider and persists the result.
-/// The `AuthManager` is injected so tests can use a temp grok-home instead of the process-cached [`grok_home::grok_home`].
+/// The `AuthManager` is injected so tests can use a temp ezer-home instead of the process-cached [`grok_home::grok_home`].
 pub async fn run_pre_tui_external_login_with(
     auth_manager: &Arc<AuthManager>,
     command: &str,

@@ -12,7 +12,7 @@ struct WorktreesFixture {
 
 fn locked_worktrees_fixture(temp: &tempfile::TempDir) -> WorktreesFixture {
     let root = dunce::canonicalize(temp.path()).unwrap();
-    let home = root.join("grok-home");
+    let home = root.join("ezer-home");
     let worktrees = home.join("worktrees");
     std::fs::create_dir_all(&worktrees).unwrap();
     let env = LockedTestEnv::lock().set("GROK_HOME", &home);
@@ -71,20 +71,20 @@ fn nested_subdir_cwd_derives_label_from_second_component_after_prefix() {
 
 #[test]
 fn cwd_at_slug_level_or_at_worktrees_dir_itself_has_no_identity() {
-    let worktrees = Path::new("/home/user/.grok/worktrees");
+    let worktrees = Path::new("/home/user/.ezer/worktrees");
     assert_eq!(
-        worktree_identity_in(worktrees, "/home/user/.grok/worktrees"),
+        worktree_identity_in(worktrees, "/home/user/.ezer/worktrees"),
         None
     );
     assert_eq!(
-        worktree_identity_in(worktrees, "/home/user/.grok/worktrees/xai"),
+        worktree_identity_in(worktrees, "/home/user/.ezer/worktrees/xai"),
         None
     );
 }
 
 #[test]
 fn cwd_outside_worktrees_dir_has_no_identity() {
-    let worktrees = Path::new("/home/user/.grok/worktrees");
+    let worktrees = Path::new("/home/user/.ezer/worktrees");
     assert_eq!(
         worktree_identity_in(worktrees, "/home/user/projects/xai"),
         None
@@ -232,7 +232,7 @@ fn standalone_clone_with_source_marker_and_no_db_derives_marker_source() {
     std::fs::write(standalone.join("tracked.txt"), "x").unwrap();
     xai_test_utils::git::git_commit_all(&standalone, "initial");
     std::fs::write(
-        standalone.join(".git").join("grok-worktree-source"),
+        standalone.join(".git").join("ezer-worktree-source"),
         "/marker-source\n",
     )
     .unwrap();

@@ -556,7 +556,7 @@ pub const PAGER_COMMAND_KEYS: &[&str] = &[
     "workflows",
     "yolo",
 ];
-/// Unconditional reservations for `grok inspect`.
+/// Unconditional reservations for `ezer inspect`.
 /// Live advertising still includes currently gated-on shell builtins plus [`PAGER_COMMAND_KEYS`].
 static RESERVED_SLASH_NAMES: LazyLock<HashSet<&'static str>> = LazyLock::new(|| {
     let mut taken: HashSet<&'static str> = PAGER_COMMAND_KEYS.iter().copied().collect();
@@ -842,7 +842,7 @@ pub(crate) struct ListCommandsRequest {
     pub session_id: Option<acp::SessionId>,
     #[serde(default)]
     pub cwd: Option<String>,
-    /// Product lane: `"chat"` filters to Grok Chat / Grok Computer first-party skills only.
+    /// Product lane: `"chat"` filters to ezer Chat / ezer Computer first-party skills only.
     /// Omitted or any other value keeps the full Build catalog.
     #[serde(default)]
     pub kind: Option<String>,
@@ -1130,7 +1130,7 @@ pub(crate) fn acu_skill_source(is_chat_kind: bool) -> AcuSkillSource {
     }
 }
 /// `None`: builtins plus global (User-scoped) skills only.
-/// `kind == Some("chat")` (feature `chat` only): product Skills REST catalog (same as grok-web) plus builtins, not Build disk skills.
+/// `kind == Some("chat")` (feature `chat` only): product Skills REST catalog (same as ezer-web) plus builtins, not Build disk skills.
 /// Product REST failure still advertises builtins only (empty product skills).
 pub(crate) async fn list_commands(
     cwd: Option<&str>,
@@ -1336,7 +1336,7 @@ impl BuiltinAction {
         }
     }
 }
-/// `RewriteToRun` (default): replace `/foo args` with `"run /foo args"`, matching today's Grok Build flow that calls our dedicated `skill` tool.
+/// `RewriteToRun` (default): replace `/foo args` with `"run /foo args"`, matching today's ezer flow that calls our dedicated `skill` tool.
 /// `Passthrough`: leave the prompt verbatim.
 /// Some templates use this: the model is trained to spot a leading `/<name>` and look it up in the `<agent_skills>` listing.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]

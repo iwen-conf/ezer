@@ -33,7 +33,7 @@ use crate::types::requirements::{Expr, ToolRequirement};
 use crate::types::resources::SessionFolder;
 use crate::types::tool::{ToolKind, ToolNamespace};
 
-const XAI_VIDEO_MODEL: &str = "grok-imagine-video-1.5";
+const XAI_VIDEO_MODEL: &str = "ezer-imagine-video-1.5";
 const VIDEO_START_TIMEOUT_SECS: u64 = 60;
 const VIDEO_GEN_TIMEOUT_SECS: u64 = 300;
 const VIDEO_POLL_INTERVAL_SECS: u64 = 5;
@@ -43,7 +43,7 @@ const DEFAULT_ZDR_VIDEO_PRESIGN_EXPIRES_SECS: u64 = 900;
 /// Presign at request start; must survive generation poll + local download.
 const MIN_ZDR_VIDEO_PRESIGN_EXPIRES_SECS: u64 =
     VIDEO_GEN_TIMEOUT_SECS + VIDEO_DOWNLOAD_TIMEOUT_SECS + 60;
-const DEFAULT_ZDR_VIDEO_KEY_PREFIX: &str = "grok-videos/";
+const DEFAULT_ZDR_VIDEO_KEY_PREFIX: &str = "ezer-videos/";
 const ZDR_VIDEO_CONTENT_TYPE: &str = "video/mp4";
 const DEFAULT_VIDEO_DIR: &str = "videos";
 const DEFAULT_RESOLUTION: &str = "480p";
@@ -769,7 +769,7 @@ impl VideoGenConfig {
 /// Prose returned to the model (as a normal, successful tool result) when a free / X Basic user
 /// calls a video tool. The model relays it to the user; the deliberate `/imagine-video` slash
 /// command shows the SuperGrok upsell modal instead.
-pub(crate) const TIER_RESTRICTED_UPSELL: &str = "Video generation is a SuperGrok feature and isn't available on the free or X Basic tier. Let the user know they can unlock image and video generation by upgrading to SuperGrok: https://grok.com/supergrok?referrer=grok-build. Do not retry this tool.";
+pub(crate) const TIER_RESTRICTED_UPSELL: &str = "Video generation is a SuperGrok feature and isn't available on the free or X Basic tier. Let the user know they can unlock image and video generation by upgrading to SuperGrok: https://grok.com/supergrok?referrer=ezer-build. Do not retry this tool.";
 
 /// Error for video tool calls in a ZDR session with no output bucket.
 /// A verbatim tool *error* (unlike the [`TIER_RESTRICTED_UPSELL`] prose):

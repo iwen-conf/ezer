@@ -48,7 +48,7 @@ impl TruncationConfig {
 
     /// Replace template placeholders in a tool description with current config values. `{max_lines_read}` — from `max_lines_read` (default 1000)
     /// `{max_chars_per_line}` — fixed display value for opencode-compat descriptions only; the opencode `read` tool clips at its own hardcoded
-    /// `MAX_LINE_LENGTH` (2000), independent of this config. grok_build `read_file` never clips lines.
+    /// `MAX_LINE_LENGTH` (2000), independent of this config. ezer_build `read_file` never clips lines.
     pub fn interpolate_description(
         &self,
         description: &str,

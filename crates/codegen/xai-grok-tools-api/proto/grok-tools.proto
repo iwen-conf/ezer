@@ -1,14 +1,14 @@
 syntax = "proto3";
 
-package xai.grok.tools.v1;
+package xai.ezer.tools.v1;
 
 // ============================================================================
 // MAIN SERVICE
 // ============================================================================
 
-/// GrokToolsService provides a gRPC interface to the Grok tools runtime.
+/// ToolsService provides a gRPC interface to the ezer tools runtime.
 /// It supports tool execution, discovery, configuration, and lifecycle management.
-service GrokToolsService {
+service ToolsService {
   // ========== TOOL EXECUTION ==========
 
   /// Execute a single tool call

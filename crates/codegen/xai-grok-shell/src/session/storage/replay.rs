@@ -37,7 +37,7 @@ pub enum ReplayLookupFallback {
 }
 
 /// Optional location hints so child `updates.jsonl` lookup can skip a full
-/// `~/.grok/sessions` RelocationView scan.
+/// `~/.ezer/sessions` RelocationView scan.
 #[derive(Clone, Copy, Debug, Default)]
 pub struct ReplayPathHint<'a> {
     /// Parent session working directory; tried as `<sessions>/<encoded_cwd>/<child_id>/updates.jsonl`.
@@ -169,7 +169,7 @@ pub fn load_updates_for_replay(
     Ok(Some(collect_replay_updates(&updates_path)?))
 }
 
-/// Like [`load_updates_for_replay`], but resolves the session under a specific grok home.
+/// Like [`load_updates_for_replay`], but resolves the session under a specific ezer home.
 /// Typed, materialize-all replay reader: collects every update into owned `Vec`s.
 /// Only tests call it: the `testkit_synth_roundtrip` and `session_load_perf` parity references and the in-crate relocation tests.
 #[cfg(any(test, feature = "test-support"))]

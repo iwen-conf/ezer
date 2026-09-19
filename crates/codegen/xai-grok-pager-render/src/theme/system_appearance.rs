@@ -2,7 +2,7 @@
 //!
 //! Detection chain (each step only runs when the previous returns nothing):
 //! 1. `dark-light` desktop APIs: macOS `AppleInterfaceStyle`, Linux XDG portal `org.freedesktop.appearance.color-scheme`, Windows registry
-//! 2. Explicit env stamps, `GROK_APPEARANCE` / `LC_GROK_APPEARANCE` (SSH with tmux, wrap, headless).
+//! 2. Explicit env stamps, `EZER_APPEARANCE` / `LC_GROK_APPEARANCE` (SSH with tmux, wrap, headless).
 //!    See [`super::env_appearance`].
 //! 3. OSC 11 terminal background query, **startup-only**; see [`detect_with_osc11_fallback`].
 //!    The result is cached so runtime `detect()` / `resolve_auto` cannot be overwritten by stale `COLORFGBG`.
@@ -78,7 +78,7 @@ fn resolve_appearance_chain(
     desktop.or(explicit).or(osc11).or(colorfgbg)
 }
 
-/// Desktop APIs only. `grok wrap` stamps the local OS theme before SSH; env hints may be a previous hop's snapshot.
+/// Desktop APIs only. `ezer wrap` stamps the local OS theme before SSH; env hints may be a previous hop's snapshot.
 #[must_use]
 pub fn detect_desktop() -> Option<SystemAppearance> {
     match dark_light::detect() {

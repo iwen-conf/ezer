@@ -15,7 +15,7 @@
 //! - **`content`** (L3)   — Mock inference server driving real content into the pager.
 //! - **`scenarios`**      — Named, parameterised workloads returning `BenchResults`.
 //! - **`results`**        — Aggregated statistics, baseline compare.
-//! - **`scroll_matrix`**  — `GROK_SCROLL_LOG` JSONL ingestion for the scroll validation matrix.
+//! - **`scroll_matrix`**  — `EZER_SCROLL_LOG` JSONL ingestion for the scroll validation matrix.
 //! - **`env`**            — Binary resolution and workspace path helpers.
 //! - **`flows`**          — Cross-suite drive/seed helpers shared by the pager's e2e targets.
 
@@ -96,7 +96,7 @@ pub struct PtyHarness {
 }
 
 impl PtyHarness {
-    /// Inherit the parent environment for terminal/shell behavior tests (XTVERSION probes and grok wrap).
+    /// Inherit the parent environment for terminal/shell behavior tests (XTVERSION probes and ezer wrap).
     /// Content-backed launches must use [`Self::new_in_sandbox`].
     pub fn new_inherited_env(
         binary: &Path,
@@ -319,7 +319,7 @@ impl PtyHarness {
         }
     }
 
-    /// Bypass the child to simulate an outer layer repainting a region grok did not write. The harness cannot nest a real tmux/nvim.
+    /// Bypass the child to simulate an outer layer repainting a region ezer did not write. The harness cannot nest a real tmux/nvim.
     pub fn feed_screen(&mut self, bytes: &[u8]) {
         self.screen.feed(bytes);
     }

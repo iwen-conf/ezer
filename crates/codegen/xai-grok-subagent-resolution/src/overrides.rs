@@ -232,14 +232,14 @@ mod tests {
 
     #[test]
     fn explicit_model_overrides_role() {
-        let overrides = make_overrides(Some("grok-light"), None, None, None, None);
+        let overrides = make_overrides(Some("ezer-light"), None, None, None, None);
         let role = SubagentRole {
             model: Some("grok-3".into()),
             ..Default::default()
         };
         let result =
             resolve_effective_overrides(&overrides, Some(&role), &empty_personas(), None, None);
-        assert_eq!(result.model.as_deref(), Some("grok-light"));
+        assert_eq!(result.model.as_deref(), Some("ezer-light"));
     }
 
     #[test]
@@ -627,7 +627,7 @@ mod tests {
         // "not found" is a config-level error: persona_error is set but other fields still resolve from role/overrides
         let overrides = make_overrides(Some("grok-3"), Some("missing"), None, None, None);
         let role = SubagentRole {
-            model: Some("grok-light".into()),
+            model: Some("ezer-light".into()),
             default_isolation: Some("worktree".into()),
             ..Default::default()
         };
@@ -660,7 +660,7 @@ mod tests {
             },
         );
         let role = SubagentRole {
-            model: Some("grok-light".into()),
+            model: Some("ezer-light".into()),
             ..Default::default()
         };
         let result = resolve_effective_overrides(&overrides, Some(&role), &personas, None, None);

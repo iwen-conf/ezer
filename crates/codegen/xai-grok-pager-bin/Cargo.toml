@@ -6,14 +6,9 @@ license = "Apache-2.0"
 authors = ["xAI"]
 default-run = "ezer"
 
-# Composition-root binary. Ships as `ezer`; `xai-grok-pager` is kept as an
-# alias so existing cargo invocations still work.
+# Composition-root binary. Ships as `ezer`.
 [[bin]]
 name = "ezer"
-path = "src/main.rs"
-
-[[bin]]
-name = "xai-grok-pager"
 path = "src/main.rs"
 
 [dependencies]

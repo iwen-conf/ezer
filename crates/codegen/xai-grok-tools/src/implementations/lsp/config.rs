@@ -1,4 +1,4 @@
-//! LSP server configuration from `.grok/lsp.json`.
+//! LSP server configuration from `.ezer/lsp.json`.
 
 use std::collections::{BTreeMap, HashMap};
 use std::path::{Path, PathBuf};
@@ -11,7 +11,7 @@ pub const REQUEST_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(
 
 /// Load LSP servers from user/project config, merge plugin-provided configs, and return the
 /// [`ConfigSource`](crate::types::config_source::ConfigSource) of each. Plugin configs fill gaps (new server names) but never override
-/// user/project config. This is the canonical merge function — both session startup and `grok inspect` call it.
+/// user/project config. This is the canonical merge function — both session startup and `ezer inspect` call it.
 pub fn load_servers_with_plugins_sourced(
     cwd: &Path,
     plugin_lsp_paths: &[PathBuf],
@@ -27,7 +27,7 @@ pub fn load_servers_with_plugins_sourced(
     );
 
     let user_path = crate::util::grok_home::grok_home().join("lsp.json");
-    let project_path = cwd.join(".grok").join("lsp.json");
+    let project_path = cwd.join(".ezer").join("lsp.json");
 
     // User-level servers
     let mut servers: BTreeMap<String, (LspServerConfig, ConfigSource)> = load_file(&user_path)
@@ -124,11 +124,11 @@ pub fn filter_project_lsp_when_untrusted(
         .collect()
 }
 
-/// Load LSP server configs from `~/.grok/lsp.json` and `<cwd>/.grok/lsp.json`.
+/// Load LSP server configs from `~/.ezer/lsp.json` and `<cwd>/.ezer/lsp.json`.
 /// Project config overrides user config for the same server name.
 pub fn load_servers(cwd: &Path) -> BTreeMap<String, LspServerConfig> {
     let user_path = crate::util::grok_home::grok_home().join("lsp.json");
-    let project_path = cwd.join(".grok").join("lsp.json");
+    let project_path = cwd.join(".ezer").join("lsp.json");
 
     let mut merged = load_file(&user_path);
     let project = load_file(&project_path);
@@ -313,7 +313,7 @@ mod tests {
             (
                 LspServerConfig::default(),
                 ConfigSource::Project {
-                    path: PathBuf::from("/repo/.grok/lsp.json"),
+                    path: PathBuf::from("/repo/.ezer/lsp.json"),
                 },
             ),
         );
@@ -322,7 +322,7 @@ mod tests {
             (
                 LspServerConfig::default(),
                 ConfigSource::User {
-                    path: PathBuf::from("/home/.grok/lsp.json"),
+                    path: PathBuf::from("/home/.ezer/lsp.json"),
                 },
             ),
         );

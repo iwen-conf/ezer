@@ -17,7 +17,7 @@ pub(crate) struct RoleToolNames {
     /// `{SEARCH_TOOL}`: `ToolKind::Search` (grep maps here).
     pub search: String,
     /// `{WRITE_TOOL}`: `ToolKind::Write`, falling back to `ToolKind::Edit` when `Write` is absent from the describe summary.
-    /// `ToolKind::Edit` is the default grok-build host's `search_replace` mutator.
+    /// `ToolKind::Edit` is the default ezer-build host's `search_replace` mutator.
     pub write: String,
     /// `{EXECUTE_TOOL}`: `ToolKind::Execute` (terminal/bash maps here).
     pub execute: String,

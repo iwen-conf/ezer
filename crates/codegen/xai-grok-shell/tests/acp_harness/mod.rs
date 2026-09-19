@@ -343,15 +343,15 @@ fn set_test_env(grok_home: &std::path::Path, server_url: &str) {
     // SAFETY: the only live threads are the mock's HTTP workers, which never read env.
     unsafe {
         std::env::set_var("GROK_HOME", grok_home);
-        std::env::set_var("GROK_CLI_CHAT_PROXY_BASE_URL", server_url);
-        std::env::set_var("GROK_XAI_API_BASE_URL", server_url);
+        std::env::set_var("EZER_CLI_CHAT_PROXY_BASE_URL", server_url);
+        std::env::set_var("EZER_XAI_API_BASE_URL", server_url);
         std::env::set_var("XAI_API_KEY", "test-key-for-ci");
-        std::env::set_var("GROK_TELEMETRY_ENABLED", "false");
-        std::env::set_var("GROK_FEEDBACK_ENABLED", "false");
-        std::env::set_var("GROK_TRACE_UPLOAD", "false");
+        std::env::set_var("EZER_TELEMETRY_ENABLED", "false");
+        std::env::set_var("EZER_FEEDBACK_ENABLED", "false");
+        std::env::set_var("EZER_TRACE_UPLOAD", "false");
         // Turn summaries fire one more request to the same mock endpoint after the turn, on a spawned task
         // The race makes request-count assertions flaky
-        std::env::set_var("GROK_TURN_SUMMARY", "false");
+        std::env::set_var("EZER_TURN_SUMMARY", "false");
     }
 }
 
@@ -393,7 +393,7 @@ pub fn run_agent_test_with_models<F, Fut>(
             .block_on(xai_grok_test_support::MockInferenceServer::start_with_models(models))
             .expect("mock server"),
     );
-    let grok_home = tempfile::TempDir::new().expect("grok home");
+    let grok_home = tempfile::TempDir::new().expect("ezer home");
     let workdir = tempfile::TempDir::new().expect("workdir");
     set_test_env(grok_home.path(), &server.url());
     // After GROK_HOME is the temp dir, so teardown cannot OnceLock ~/.grok.

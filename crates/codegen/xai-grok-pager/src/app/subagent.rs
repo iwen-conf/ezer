@@ -353,7 +353,7 @@ struct SubagentMetaSlice {
     worktree_path: Option<String>,
 }
 
-/// Grok home for the replay path (overridable in tests).
+/// ezer home for the replay path (overridable in tests).
 #[cfg(not(test))]
 fn effective_grok_home() -> std::path::PathBuf {
     xai_grok_shell::util::grok_home::grok_home()
@@ -365,7 +365,7 @@ thread_local! {
         const { std::cell::RefCell::new(None) };
 }
 
-/// Override grok home for disk-replay unit tests (thread-local).
+/// Override ezer home for disk-replay unit tests (thread-local).
 #[cfg(test)]
 pub(crate) fn set_replay_grok_home_for_tests(home: Option<std::path::PathBuf>) {
     REPLAY_GROK_HOME.with(|h| *h.borrow_mut() = home);

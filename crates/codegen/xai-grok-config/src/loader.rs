@@ -75,7 +75,7 @@ fn line_col(src: &str, byte: usize) -> (usize, usize) {
 }
 
 /// [`load_toml_file`] plus that layer's `[[version_overrides]]`.
-/// Use for grok config files; use [`load_toml_file`] directly for unrelated TOML.
+/// Use for ezer config files; use [`load_toml_file`] directly for unrelated TOML.
 pub fn load_config_file(path: &Path) -> std::io::Result<toml::Value> {
     let mut v = load_toml_file(path)?;
     apply_version_overrides_with_registered(&mut v)?;
@@ -119,8 +119,8 @@ pub fn load_managed_config() -> std::io::Result<toml::Value> {
 }
 
 /// Load a user-tier config layer from `<home>/<filename>`.
-/// With no resolvable user home, returns an empty table rather than reading a cwd-relative `.grok/<filename>`.
-/// The cwd fallback would silently promote an untrusted project `.grok` to the user tier.
+/// With no resolvable user home, returns an empty table rather than reading a cwd-relative `.ezer/<filename>`.
+/// The cwd fallback would silently promote an untrusted project `.ezer` to the user tier.
 fn load_user_config_layer(home: Option<&Path>, filename: &str) -> std::io::Result<toml::Value> {
     match home {
         Some(g) => load_config_file(&g.join(filename)),
@@ -142,7 +142,7 @@ pub fn load_system_managed_config() -> std::io::Result<toml::Value> {
 pub struct ManagedConfigLayer {
     pub value: toml::Value,
     pub path: std::path::PathBuf,
-    /// `true` for the root-owned system layer (`/etc/grok`), derived from the load directory.
+    /// `true` for the root-owned system layer (`/etc/ezer`), derived from the load directory.
     pub is_system: bool,
 }
 
@@ -197,11 +197,11 @@ pub fn managed_config_layers_at(
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]
 pub enum HookProvenance {
-    /// `/etc/grok/managed_config.toml` (root-owned).
+    /// `/etc/ezer/managed_config.toml` (root-owned).
     SystemManaged,
     /// `$GROK_HOME/managed_config.toml` (server-synced, user-writable).
     Managed,
-    /// System-tier `requirements.toml` (root-owned, e.g. `/etc/grok`).
+    /// System-tier `requirements.toml` (root-owned, e.g. `/etc/ezer`).
     Requirements,
     /// `$GROK_HOME/requirements.toml` (user-writable).
     UserRequirements,
@@ -447,7 +447,7 @@ pub fn hook_config_layers_at(
 }
 
 /// Applies matching `[[version_overrides]]` patches against the running CLI version; strips the section either way.
-/// If the installed version can't be parsed (broken `GROK_TEST_VERSION` in dev), it silently strips without applying, keeping the CLI usable.
+/// If the installed version can't be parsed (broken `EZER_TEST_VERSION` in dev), it silently strips without applying, keeping the CLI usable.
 pub fn apply_version_overrides_with_registered(value: &mut toml::Value) -> std::io::Result<()> {
     match xai_grok_version::installed_semver() {
         Ok(version) => apply_version_overrides(value, &version)
@@ -829,7 +829,7 @@ mod tests {
 
     #[test]
     fn load_user_config_layer_is_empty_without_user_home() {
-        // No resolvable user home: no user layer, and no cwd-relative .grok read
+        // No resolvable user home: no user layer, and no cwd-relative .ezer read
         let v = load_user_config_layer(None, "config.toml").unwrap();
         assert_eq!(v.as_table().map(|t| t.is_empty()), Some(true));
     }
@@ -866,7 +866,7 @@ mod tests {
     /// The returned error keeps the parser's kind and location but never the source snippet, which can carry a secret and would reach clients.
     #[test]
     fn parse_error_keeps_kind_but_not_snippet() {
-        let dir = std::env::temp_dir().join(format!("grok-toml-leak-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("ezer-toml-leak-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         let path = dir.join("bad.toml");
         // Duplicate key: the message names the key; the secret-bearing source line is only in Display.

@@ -82,7 +82,7 @@ impl MockOtelServer {
     /// What `ExternalOtelConfig::resolve_with` needs to aim the external stream at this server.
     pub fn exporter_env(&self) -> HashMap<&'static str, String> {
         HashMap::from([
-            ("GROK_EXTERNAL_OTEL", "1".to_owned()),
+            ("EZER_EXTERNAL_OTEL", "1".to_owned()),
             ("OTEL_LOGS_EXPORTER", "otlp".to_owned()),
             ("OTEL_METRICS_EXPORTER", "otlp".to_owned()),
             ("OTEL_EXPORTER_OTLP_PROTOCOL", "http/protobuf".to_owned()),

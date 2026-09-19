@@ -10,7 +10,7 @@
 //! `grok_home()` is process-cached (OnceLock), so disk assertions always go through [`effective_grok_home`] rather than assuming the temp dir won.
 //!
 //! The scenarios are `#[ignore]`d in the shared lib test binary.
-//! The harness mutates process-global env (proxy URLs, `XAI_API_KEY`, `GROK_LEADER_SOCKET`, `GROK_HOME`) for a real agent's whole lifetime.
+//! The harness mutates process-global env (proxy URLs, `XAI_API_KEY`, `EZER_LEADER_SOCKET`, `GROK_HOME`) for a real agent's whole lifetime.
 //! In a several-thousand-test process that mutation poisons concurrently-running tests; `grok_home()`'s OnceLock is usually already pinned too.
 //! Run on demand:
 //!
@@ -59,7 +59,7 @@ async fn bounded<T>(what: &str, fut: impl std::future::Future<Output = T>) -> T 
         .unwrap_or_else(|_| panic!("leader-cluster bring-up timed out: {what}"))
 }
 
-/// The grok home the agent actually persisted under: `grok_home()` is process-cached, so an earlier test in this binary may have pinned it.
+/// The ezer home the agent actually persisted under: `grok_home()` is process-cached, so an earlier test in this binary may have pinned it.
 fn effective_grok_home() -> PathBuf {
     xai_grok_config::grok_home()
 }
@@ -288,12 +288,12 @@ impl PagerLeaderCluster {
 
         let env = vec![
             crate::test_util::EnvVarGuard::set("GROK_HOME", grok_home.path()),
-            crate::test_util::EnvVarGuard::set("GROK_CLI_CHAT_PROXY_BASE_URL", server.url()),
-            crate::test_util::EnvVarGuard::set("GROK_XAI_API_BASE_URL", server.url()),
+            crate::test_util::EnvVarGuard::set("EZER_CLI_CHAT_PROXY_BASE_URL", server.url()),
+            crate::test_util::EnvVarGuard::set("EZER_XAI_API_BASE_URL", server.url()),
             crate::test_util::EnvVarGuard::set("XAI_API_KEY", "test-key-for-ci"),
-            crate::test_util::EnvVarGuard::set("GROK_TELEMETRY_ENABLED", "false"),
-            crate::test_util::EnvVarGuard::set("GROK_FEEDBACK_ENABLED", "false"),
-            crate::test_util::EnvVarGuard::set("GROK_TRACE_UPLOAD", "false"),
+            crate::test_util::EnvVarGuard::set("EZER_TELEMETRY_ENABLED", "false"),
+            crate::test_util::EnvVarGuard::set("EZER_FEEDBACK_ENABLED", "false"),
+            crate::test_util::EnvVarGuard::set("EZER_TRACE_UPLOAD", "false"),
             // Pin every leader-path derivation (LeaderLock::new / reconnect's connect_or_spawn) to this cluster's socket
             crate::test_util::EnvVarGuard::set(LEADER_SOCKET_ENV, &sock_path),
         ];
@@ -407,7 +407,7 @@ impl PagerLeaderCluster {
 
     /// Connect a pager client.
     /// With `reconnect: true` the bridge gets a real `LeaderReconnector`.
-    /// The socket is pinned via `GROK_LEADER_SOCKET` and the cluster holds the flock, so reconnects always adopt the in-process server.
+    /// The socket is pinned via `EZER_LEADER_SOCKET` and the cluster holds the flock, so reconnects always adopt the in-process server.
     async fn client(&mut self, name: &str, reconnect: bool) -> ClusterClient {
         let conn = bounded(
             "client connect",

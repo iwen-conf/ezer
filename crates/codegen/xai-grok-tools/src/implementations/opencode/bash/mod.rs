@@ -3,7 +3,7 @@
 //! Executes shell commands with optional timeout and working directory
 //! override. Delegates to the shared `TerminalBackend` for process
 //! management, output streaming, and background task support. The
-//! grok-tools-server serves this tool on the stateless local backend
+//! ezer-tools-server serves this tool on the stateless local backend
 //! (fresh shell per command; persistent shell state is only enabled when
 //! `Cursor:Shell` is served), which is what the description documents.
 //!
@@ -1136,7 +1136,7 @@ mod tests {
         );
     }
 
-    // ─── Description template shell-awareness parity tests ─── Same shape as grok_build/bash: the
+    // ─── Description template shell-awareness parity tests ─── Same shape as ezer_build/bash: the
     // opencode tool inherits the same Unix-utility guidance and must branch on PowerShell/cmd.
 
     mod description_shell_branches {

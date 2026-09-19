@@ -2,7 +2,7 @@ use crate::util::config::RemoteSettings;
 use toml::Value as TomlValue;
 
 /// Env override for the full crash-handler install gate.
-pub(crate) const ENV_CRASH_HANDLER: &str = "GROK_CRASH_HANDLER";
+pub(crate) const ENV_CRASH_HANDLER: &str = "EZER_CRASH_HANDLER";
 
 fn crash_handler_from_toml(v: Option<&TomlValue>) -> Option<bool> {
     v?.get("diagnostics")?.get("crash_handler")?.as_bool()
@@ -25,7 +25,7 @@ fn resolve_crash_handler_enabled_layers(
         .resolve()
 }
 
-/// Precedence: requirements > env (`GROK_CRASH_HANDLER`) > user `[diagnostics] crash_handler` > managed > remote settings `crash_handler_enabled`.
+/// Precedence: requirements > env (`EZER_CRASH_HANDLER`) > user `[diagnostics] crash_handler` > managed > remote settings `crash_handler_enabled`.
 /// Defaults to `false`.
 pub fn resolve_crash_handler_enabled(
     requirements: Option<&TomlValue>,
@@ -56,7 +56,7 @@ fn cached_remote_crash_handler_enabled() -> Option<bool> {
     REMOTE_CRASH_HANDLER_ENABLED.read().ok().and_then(|g| *g)
 }
 
-/// Merge system-managed policy (`/etc/grok`) under home `managed_config.toml` so MDM/system layers still reach the managed BoolFlag tier.
+/// Merge system-managed policy (`/etc/ezer`) under home `managed_config.toml` so MDM/system layers still reach the managed BoolFlag tier.
 fn load_managed_toml_layers() -> Option<TomlValue> {
     let system = crate::config::load_system_managed_config().ok();
     let managed = crate::config::load_managed_config().ok();

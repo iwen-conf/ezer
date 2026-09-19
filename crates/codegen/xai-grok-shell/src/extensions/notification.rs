@@ -1179,7 +1179,7 @@ pub enum MemoryDisabledReason {
     SessionToggle,
     /// `[memory] enabled = false` in the effective TOML; `/memory on` enables it for this session only.
     ConfigOptOut,
-    /// `--no-memory` or `GROK_MEMORY=0` turned memory off for the whole process; it cannot be enabled until a new session.
+    /// `--no-memory` or `EZER_MEMORY=0` turned memory off for the whole process; it cannot be enabled until a new session.
     ProcessDisabled,
     /// The session's pinned rollout controls disable memory; it cannot be enabled until a new session.
     RolloutRestricted,
@@ -1282,7 +1282,7 @@ pub enum RetryState {
 }
 
 /// Whether a terminal retry failure is a recoverable authentication error (expired/invalid credentials, 401). The user can fix those by signing in again; this drives the actionable re-auth banner.
-/// `legacy_auth` is excluded: its message carries its own migration guidance (`grok update` / `grok logout` / `grok login`), shown verbatim.
+/// `legacy_auth` is excluded: its message carries its own migration guidance (`ezer update` / `ezer logout` / `ezer login`), shown verbatim.
 /// `auth_transient` is excluded for the opposite reason: it is emitted only when the failure self-heals (`AuthManager::requires_manual_reauth`). Its message already says it recovers on its own, so no `/login` banner is shown.
 pub fn is_reauthable_failure(error_type: Option<&str>, message: &str) -> bool {
     if matches!(error_type, Some("legacy_auth") | Some("auth_transient")) {
@@ -1451,7 +1451,7 @@ pub struct CompactionRequestFile {
     /// What kicked off the compaction: `"manual"` (user ran `/compact`) or `"auto"`.
     pub trigger: String,
     /// Which prompt template was used.
-    /// `"short"` is the concise self-summarization; `"detailed"` is the 10-section structured prompt for grok-build and similar agents.
+    /// `"short"` is the concise self-summarization; `"detailed"` is the 10-section structured prompt for ezer-build and similar agents.
     pub prompt_variant: String,
     /// The model id that ran the summarization.
     pub model: String,
@@ -1568,7 +1568,7 @@ mod tests {
             created_at: "2026-06-15T00:00:00Z".into(),
             trigger: "auto".into(),
             prompt_variant: "detailed".into(),
-            model: "grok".into(),
+            model: "ezer".into(),
             user_context: None,
             chat_history: vec![],
             tools: vec![],
@@ -1616,7 +1616,7 @@ mod tests {
             "created_at": "2026-06-01T00:00:00Z",
             "trigger": "manual",
             "prompt_variant": "detailed",
-            "model": "grok",
+            "model": "ezer",
             "user_context": null,
             "chat_history": [],
             "summary": "ok",

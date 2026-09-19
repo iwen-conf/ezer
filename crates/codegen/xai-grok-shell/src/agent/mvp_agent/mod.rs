@@ -591,10 +591,10 @@ fn announcements_push_payload(
     };
     push.then_some(current)
 }
-/// Override with `GROK_ANNOUNCEMENTS_REFRESH_INTERVAL_SECS`.
+/// Override with `EZER_ANNOUNCEMENTS_REFRESH_INTERVAL_SECS`.
 /// Clamped to at least 1s: `tokio::time::interval` panics on a zero period.
 fn announcements_refresh_interval() -> std::time::Duration {
-    if let Ok(s) = std::env::var("GROK_ANNOUNCEMENTS_REFRESH_INTERVAL_SECS")
+    if let Ok(s) = std::env::var("EZER_ANNOUNCEMENTS_REFRESH_INTERVAL_SECS")
         && let Ok(secs) = s.parse::<u64>()
     {
         return std::time::Duration::from_secs(secs.max(1));
@@ -727,7 +727,7 @@ pub struct MvpAgent {
     memory_config: RefCell<Option<crate::config::MemoryConfig>>,
     /// Optional channel to the leader's `ConfigFileWatcher` for dynamic per-cwd registration as new sessions open.
     /// Each successful session insert in `spawn_and_register_session` sends the session's cwd to the watcher task spawned in `agent/app.rs`.
-    /// That task calls [`crate::config::watcher::ConfigFileWatcher::watch_path`] (a **non-recursive** watch on `<cwd>/` and `<cwd>/.grok/`). `None` outside leader mode and in tests; the registration is a no-op in that case. That is fine: the existing per-extra-path loop already covers the leader's startup cwd. Plain `Option` (not `RefCell`). It is only read thereafter, so no interior mutability is required.
+    /// That task calls [`crate::config::watcher::ConfigFileWatcher::watch_path`] (a **non-recursive** watch on `<cwd>/` and `<cwd>/.ezer/`). `None` outside leader mode and in tests; the registration is a no-op in that case. That is fine: the existing per-extra-path loop already covers the leader's startup cwd. Plain `Option` (not `RefCell`). It is only read thereafter, so no interior mutability is required.
     pub(crate) config_watcher_path_tx: Option<
         tokio::sync::mpsc::UnboundedSender<std::path::PathBuf>,
     >,
@@ -747,7 +747,7 @@ pub struct MvpAgent {
     pub(crate) worktree_type: crate::util::config::WorktreeType,
     /// Restore codebase state on worktree resume (resolved: local config, then remote, then default false).
     pub(crate) restore_code: bool,
-    /// Local session-registry override: `GROK_SESSION_REGISTRY` env, else `[cli] session_registry`.
+    /// Local session-registry override: `EZER_SESSION_REGISTRY` env, else `[cli] session_registry`.
     /// `Some(true)` enables, `Some(false)` disables, `None` defers to remote settings.
     session_registry_local: Option<bool>,
     /// Managed MCP configs and gateway tool catalog; lazily fetched.
@@ -784,7 +784,7 @@ pub struct MvpAgent {
     /// Shared plugin registry handle.
     pub(crate) plugin_registry_handle: xai_grok_agent::plugins::SharedPluginRegistryHandle,
     /// One-shot guard for the lazy launch-dir population of `plugin_registry_handle`. Boot-time plugin discovery is deferred past ACP `initialize`, so the shared snapshot starts empty.
-    /// The walk (cwd to git root, plus user and marketplace dirs) stalled grok-desktop's first `initialize`.
+    /// The walk (cwd to git root, plus user and marketplace dirs) stalled ezer-desktop's first `initialize`.
     /// It is built once on the first session-creating call via [`Self::ensure_plugin_registry`]; this flag keeps that to a single discovery walk.
     plugin_registry_initialized: std::cell::Cell<bool>,
     /// Single-flight guard for the proactive bundle sync background task. `maybe_sync_bundle_in_background` is invoked from each post-auth path (initialize, cached-token reauth, oidc).
@@ -924,7 +924,7 @@ pub(crate) fn agent_name_after_model_switch(
     }
 }
 /// Harness compatibility for zero-turn / mid-turn model switching. Two stock (non-strict) agents are interchangeable: they share the default wire format and toolset.
-/// So switching e.g. `grok-build` to `grok-build-plan` doesn't require rebuilding the harness. A rebuild would destroy a client-supplied `_meta.agentProfile`.
+/// So switching e.g. `ezer-build` to `ezer-build-plan` doesn't require rebuilding the harness. A rebuild would destroy a client-supplied `_meta.agentProfile`.
 /// Strict harnesses (`codex`, …) are only compatible with themselves. Transitions between strict and stock are never compatible.
 pub(crate) fn harnesses_are_compatible(active: &str, required: &str) -> bool {
     use xai_grok_agent::config::is_strict_harness_agent_type;
@@ -1078,7 +1078,7 @@ impl AuthRequestMeta {
     }
 }
 /// Every authenticated request to cli-chat-proxy (web search, image gen, and any future tools that go through the proxy) must carry these headers.
-/// Headers injected: `x-grok-client-version`: required by the proxy's version-gate check. Uses `client_version` when provided, otherwise falls back to cli-chat-proxy compile-time `CARGO_PKG_VERSION`.
+/// Headers injected: `x-ezer-client-version`: required by the proxy's version-gate check. Uses `client_version` when provided, otherwise falls back to cli-chat-proxy compile-time `CARGO_PKG_VERSION`.
 /// `X-XAI-Token-Auth` / `x-authenticateresponse`: required by the cli-chat-proxy auth middleware when the `base_url` is a known proxy URL. Existing entries are never overwritten so callers can pre-set a value.
 fn inject_proxy_headers(
     headers: &mut indexmap::IndexMap<String, String>,
@@ -1087,14 +1087,14 @@ fn inject_proxy_headers(
     base_url: &str,
 ) {
     headers
-        .entry("x-grok-client-version".to_string())
+        .entry("x-ezer-client-version".to_string())
         .or_insert_with(|| {
             client_version
                 .map(String::from)
                 .unwrap_or_else(|| xai_grok_version::VERSION.to_string())
         });
     headers
-        .entry("x-grok-client-identifier".to_string())
+        .entry("x-ezer-client-identifier".to_string())
         .or_insert_with(crate::http::process_client_identifier);
     if crate::util::is_cli_chat_proxy_url(base_url) {
         headers
@@ -1144,7 +1144,7 @@ pub(crate) fn resolve_subagent_rate_limit_max_attempts(
 }
 pub(crate) fn subagent_rate_limit_max_attempts_env() -> Option<u32> {
     parse_subagent_rate_limit_max_attempts(
-        std::env::var("GROK_SUBAGENT_RATE_LIMIT_MAX_ATTEMPTS").ok().as_deref(),
+        std::env::var("EZER_SUBAGENT_RATE_LIMIT_MAX_ATTEMPTS").ok().as_deref(),
     )
 }
 /// Empty is unset; an invalid value (non-numeric, negative, or overflowing `u32`) is ignored with one warning per spawn.
@@ -1159,7 +1159,7 @@ fn parse_subagent_rate_limit_max_attempts(raw: Option<&str>) -> Option<u32> {
         Err(_) => {
             tracing::warn!(
                 value,
-                "ignoring invalid GROK_SUBAGENT_RATE_LIMIT_MAX_ATTEMPTS"
+                "ignoring invalid EZER_SUBAGENT_RATE_LIMIT_MAX_ATTEMPTS"
             );
             None
         }
@@ -1489,7 +1489,7 @@ impl MvpAgent {
         *self.allow_access_resolved_for.borrow_mut() = Some(auth.user_id.clone());
         if !allow {
             tracing::info!(
-                "auth: user blocked by allow_access (remote settings grok_build_access_gate)"
+                "auth: user blocked by allow_access (remote settings ezer_build_access_gate)"
             );
             self.retry_subscription_check().await;
         }
@@ -2003,7 +2003,7 @@ impl MvpAgent {
     }
     /// Spawn a best-effort bundle sync. Re-fires on every call site (init, cached_token, grok.com/oidc); the cheap pre-checks below absorb repeats so reconnects are cheap.
     /// Pre-spawn gating order (cheapest first, all synchronous): Auth gate: avoid spawning a no-op task on every init.
-    /// Single-flight guard: if a previous sync is still in flight (e.g., initialize, cached_token, and oidc fired in quick succession before the first sync's tar extract finished), drop this call to avoid racing concurrent extracts that would interleave per-file writes against `~/.grok/bundled/` and the manifest.
+    /// Single-flight guard: if a previous sync is still in flight (e.g., initialize, cached_token, and oidc fired in quick succession before the first sync's tar extract finished), drop this call to avoid racing concurrent extracts that would interleave per-file writes against `~/.ezer/bundled/` and the manifest.
     pub(crate) fn maybe_sync_bundle_in_background(&self, force: bool) {
         use crate::extensions::bundle::{
             BUNDLE_SYNC_TTL, bundle_cache_is_fresh, has_bundle_credentials,

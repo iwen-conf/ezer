@@ -49,7 +49,7 @@ pub struct McpServerAllowlist {
     /// [`PolicyLayerOwnership`] for the grant rules).
     ownership: PolicyLayerOwnership,
     pub source_path: Option<std::path::PathBuf>,
-    /// Whether this source's restrictions bind grok-native servers.
+    /// Whether this source's restrictions bind ezer-native servers.
     authority: PolicySourceAuthority,
 }
 
@@ -358,7 +358,7 @@ impl McpServerPolicy {
     }
 
     /// Lockdown active for a subject of `origin` (advisory lockdowns don't
-    /// bind grok-native servers).
+    /// bind ezer-native servers).
     pub fn managed_only(&self, origin: PolicySubjectOrigin) -> bool {
         self.binding_sources(origin)
             .any(McpServerAllowlist::managed_only)

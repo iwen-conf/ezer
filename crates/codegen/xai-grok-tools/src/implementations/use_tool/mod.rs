@@ -54,7 +54,7 @@ impl Default for UseToolParams {
     }
 }
 
-crate::register_resource!("grok_build", "UseTool", UseToolParams);
+crate::register_resource!("ezer_build", "UseTool", UseToolParams);
 
 /// Meta tool that dispatches calls to MCP tools discovered via `search_tool`. This bypasses the outer `ToolBridge` mutex and avoids deadlock.
 /// `call_raw()` skips reminders/persistence so post-processing runs exactly once (via the outer `call("use_tool")`). If `InnerDispatch` is

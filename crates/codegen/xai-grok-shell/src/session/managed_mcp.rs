@@ -214,7 +214,7 @@ fn merge_managed_mcp_servers_with_policy_from(
 }
 
 /// Classify what defined a server for policy scoping: config.toml and plugin servers are
-/// grok-native, the rest foreign; `project_names` reclassifies collisions foreign (fail closed).
+/// ezer-native, the rest foreign; `project_names` reclassifies collisions foreign (fail closed).
 pub(crate) fn mcp_subject(
     server: &acp::McpServer,
     source: &xai_grok_tools::types::config_source::ConfigSource,
@@ -830,9 +830,9 @@ mod tests {
     fn toml_claim_survives_when_client_cursor_insert_skipped() {
         let cwd = empty_cwd();
         write_cursor_project_mcp(cwd.path(), "killswitch-cache");
-        std::fs::create_dir_all(cwd.path().join(".grok")).unwrap();
+        std::fs::create_dir_all(cwd.path().join(".ezer")).unwrap();
         std::fs::write(
-            cwd.path().join(".grok").join("config.toml"),
+            cwd.path().join(".ezer").join("config.toml"),
             r#"
 [mcp_servers.killswitch-cache]
 command = "echo"
@@ -1052,8 +1052,8 @@ url = "https://denied.corp.com/mcp"
         let exe = std::env::current_exe().expect("current_exe");
         let mut cmd = std::process::Command::new(exe);
         cmd.env("GROK_HOME", grok_home.path())
-            .env_remove("GROK_CONFIG")
-            .env_remove("GROK_CONFIG_PATH")
+            .env_remove("EZER_CONFIG")
+            .env_remove("EZER_CONFIG_PATH")
             .env(UNTRUSTED_DISCOVERY_CHILD, "1")
             .arg("--ignored")
             .arg("--exact")
@@ -1075,7 +1075,7 @@ url = "https://denied.corp.com/mcp"
         );
     }
 
-    const UNTRUSTED_DISCOVERY_CHILD: &str = "GROK_TEST_UNTRUSTED_DISCOVERY_CHILD";
+    const UNTRUSTED_DISCOVERY_CHILD: &str = "EZER_TEST_UNTRUSTED_DISCOVERY_CHILD";
     const UNTRUSTED_DISCOVERY_PASS_MARK: &str = "untrusted-discovery-child-passed";
     const USER_MCP_URL: &str = "https://user.example.com/mcp";
     const PLUGIN_MCP_URL: &str = "https://plugin.example.com/mcp";
@@ -1097,9 +1097,9 @@ url = "https://denied.corp.com/mcp"
         }
         let cwd = tempfile::tempdir().unwrap();
         git2::Repository::init(cwd.path()).unwrap();
-        std::fs::create_dir_all(cwd.path().join(".grok")).unwrap();
+        std::fs::create_dir_all(cwd.path().join(".ezer")).unwrap();
         std::fs::write(
-            cwd.path().join(".grok").join("config.toml"),
+            cwd.path().join(".ezer").join("config.toml"),
             r#"
 [mcp_servers.projsrv]
 command = "echo"
@@ -1150,7 +1150,7 @@ command = "echo"
     }
 
     /// Pins the pool gate: binding deny drops; advisory binds vendor/
-    /// project-claimed names but not TOML-owned (grok-native) definitions.
+    /// project-claimed names but not TOML-owned (ezer-native) definitions.
     #[test]
     fn agent_pool_filter_drops_policy_blocked_servers() {
         use xai_grok_workspace::permission::resolution::{
@@ -1198,7 +1198,7 @@ command = "echo"
         assert_eq!(names(&out), vec!["ok"]);
 
         // An advisory deny binds only foreign subjects: the TOML-owned
-        // (grok-native) definition survives, the vendor-defined one drops.
+        // (ezer-native) definition survives, the vendor-defined one drops.
         let toml_servers = HashMap::from([("corp".to_string(), corp())]);
         let advisory = deny(PolicySourceAuthority::Advisory);
         let kept =
@@ -1263,9 +1263,9 @@ command = "echo"
     fn toml_loaders_agree_on_env_and_header_bearing_definitions() {
         let tmp = tempfile::tempdir().unwrap();
         git2::Repository::init(tmp.path()).unwrap();
-        std::fs::create_dir_all(tmp.path().join(".grok")).unwrap();
+        std::fs::create_dir_all(tmp.path().join(".ezer")).unwrap();
         std::fs::write(
-            tmp.path().join(".grok").join("config.toml"),
+            tmp.path().join(".ezer").join("config.toml"),
             r#"
 [mcp_servers.parity_stdio]
 command = "echo"
@@ -1401,7 +1401,7 @@ headers = { "X-A" = "1", "X-B" = "2", "X-C" = "3" }
     }
 
     /// Single-plugin registry declaring one inline HTTP MCP server — the simplest injectable
-    /// grok-native definition (a test must not touch the process-global grok home).
+    /// ezer-native definition (a test must not touch the process-global ezer home).
     fn plugin_registry_with_inline_server(
         plugin_root: &std::path::Path,
         server_name: &str,
@@ -1553,7 +1553,7 @@ headers = { "X-A" = "1", "X-B" = "2", "X-C" = "3" }
         );
     }
 
-    /// Origin table: only config.toml and plugin servers are grok-native; a project-scoped name reclassifies foreign.
+    /// Origin table: only config.toml and plugin servers are ezer-native; a project-scoped name reclassifies foreign.
     #[test]
     fn mcp_subject_classifies_sources() {
         use xai_grok_tools::types::config_source::ConfigSource;
@@ -1652,7 +1652,7 @@ headers = { "X-A" = "1", "X-B" = "2", "X-C" = "3" }
         assert_eq!(by_name.get("ungranted"), Some(&false));
 
         // Managed-only lockdown with one grant, tagged through the real
-        // origins-map handoff; the /etc/grok layer makes both Admin-owned.
+        // origins-map handoff; the /etc/ezer layer makes both Admin-owned.
         ms.mcp_allowlist = McpServerPolicy::single(
             McpServerAllowlist::new(
                 vec![AllowedMcpServer::Http {
@@ -1952,7 +1952,7 @@ headers = { "X-A" = "1", "X-B" = "2", "X-C" = "3" }
             ["projsrv".to_string(), "projallowed".to_string()]
                 .into_iter()
                 .collect();
-        // The /etc/grok layer is admin-owned; the pin below carries the same
+        // The /etc/ezer layer is admin-owned; the pin below carries the same
         // ownership, so the exception grant must be admin-owned too.
         let policy = McpServerPolicy::single(
             McpServerAllowlist::new(

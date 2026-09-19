@@ -62,7 +62,7 @@ impl xai_grok_tools::implementations::grok_build::task::coordinator::ChildRunner
                     ..Default::default()
                 },
                 completion_data: ShellCompletionData::default(),
-                snapshot_ref: Some("refs/grok/subagents/prior".to_owned()),
+                snapshot_ref: Some("refs/ezer/subagents/prior".to_owned()),
             }));
         }
         let ctx = self.contexts.lock().pop_front().expect("run context");
@@ -125,7 +125,7 @@ fn prior_wake_meta(id: &str, model_id: &str) -> SubagentMeta {
         resumed_from: None,
         child_cwd: Some("/tmp".to_owned()),
         worktree_path: None,
-        snapshot_ref: Some("refs/grok/subagents/prior".to_owned()),
+        snapshot_ref: Some("refs/ezer/subagents/prior".to_owned()),
         effective_model_id: Some(model_id.to_owned()),
     }
 }
@@ -330,7 +330,7 @@ async fn unpublished_wake_completion_preserves_prior_durable_state_and_worktree(
             let mut prior_meta = prior_wake_meta(&id, "test-model");
             prior_meta.child_cwd = Some(worktree.to_string_lossy().into_owned());
             prior_meta.worktree_path = Some(worktree.to_string_lossy().into_owned());
-            prior_meta.snapshot_ref = Some("refs/grok/subagents/prior".to_owned());
+            prior_meta.snapshot_ref = Some("refs/ezer/subagents/prior".to_owned());
             let prior_head = run_git(&repo, &["rev-parse", "HEAD"]);
             let prior_ref = prior_meta.snapshot_ref.as_deref().expect("snapshot ref");
             run_git(&repo, &["update-ref", prior_ref, &prior_head]);

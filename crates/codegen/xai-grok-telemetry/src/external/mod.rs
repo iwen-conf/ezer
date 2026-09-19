@@ -1,7 +1,7 @@
 //! Opt-in, content-redacted **external OTEL** telemetry stream.
 //!
-//! Enterprise customers point the Grok CLI at *their own* OpenTelemetry collector through the standard `OTEL_*` env vars.
-//! `GROK_EXTERNAL_OTEL` is the master switch.
+//! Enterprise customers point the ezer CLI at *their own* OpenTelemetry collector through the standard `OTEL_*` env vars.
+//! `EZER_EXTERNAL_OTEL` is the master switch.
 //! The stream is independent of ZDR: it ships only to the customer's collector
 //! under an explicit double opt-in. Default content-free (~6 counters and ~17
 //! log-record events); `user.email` is identity, not a content gate.
@@ -13,7 +13,7 @@
 //!   Everything goes through the [`EXTERNAL`] registry handle.
 //! - The exporters carry **only** customer headers/metadata from `OTEL_EXPORTER_OTLP_HEADERS`.
 //!   This module has no dependency on `AuthCredentialProvider` and no code path that can attach internal auth headers.
-//! - Default **off**: with `GROK_EXTERNAL_OTEL` unset (or no exporter selected) nothing is constructed; zero allocation, zero threads, zero sockets.
+//! - Default **off**: with `EZER_EXTERNAL_OTEL` unset (or no exporter selected) nothing is constructed; zero allocation, zero threads, zero sockets.
 //! - Independent of `TelemetryMode`, GCS trace upload, and the user-confirmed data-collection and data-retention opt-outs.
 //!   Those govern xAI-side retention; this stream ships only to the customer's own collector under the customer's own explicit double opt-in.
 //!
@@ -159,7 +159,7 @@ fn build_handle(cfg: ExternalOtelConfig) -> Option<Arc<ExternalTelemetry>> {
         tracing::warn!(
             "external otel: refusing to activate — the internal trace pipeline consumed \
              OTEL_EXPORTER_OTLP_* (deprecated fallback). Migrate internal repointing to \
-             GROK_INTERNAL_OTLP_* to use the external stream."
+             EZER_INTERNAL_OTLP_* to use the external stream."
         );
         return None;
     }

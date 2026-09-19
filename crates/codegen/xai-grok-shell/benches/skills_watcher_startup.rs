@@ -10,7 +10,7 @@
 //! ```text
 //! cargo bench -p xai-grok-shell --bench skills_watcher_startup
 //! # optional scale:
-//! GROK_SKILLS_WATCHER_BENCH_DIRS=12000 cargo bench -p xai-grok-shell --bench skills_watcher_startup
+//! EZER_SKILLS_WATCHER_BENCH_DIRS=12000 cargo bench -p xai-grok-shell --bench skills_watcher_startup
 //! ```
 //!
 //! On macOS, recursive FSEvents is cheap so both arms may be close.
@@ -26,11 +26,11 @@ use notify_debouncer_mini::new_debouncer;
 use tempfile::TempDir;
 use xai_grok_shell::config::watcher::SkillsFileWatcher;
 
-/// Default directory count under `.claude/worktrees/` (override with `GROK_SKILLS_WATCHER_BENCH_DIRS`).
+/// Default directory count under `.claude/worktrees/` (override with `EZER_SKILLS_WATCHER_BENCH_DIRS`).
 const DEFAULT_WORKTREE_DIRS: usize = 6_000;
 
 fn worktree_dir_count() -> usize {
-    std::env::var("GROK_SKILLS_WATCHER_BENCH_DIRS")
+    std::env::var("EZER_SKILLS_WATCHER_BENCH_DIRS")
         .ok()
         .and_then(|v| v.parse().ok())
         .filter(|&n| n > 0)
@@ -64,7 +64,7 @@ fn build_fixture(worktree_dirs: usize) -> Fixture {
     let worktrees = claude.join("worktrees").join("wt1");
     make_nested_dirs(&worktrees, worktree_dirs);
 
-    let grok_home = root.path().join("grok-home");
+    let grok_home = root.path().join("ezer-home");
     fs::create_dir_all(&grok_home).unwrap();
 
     Fixture {

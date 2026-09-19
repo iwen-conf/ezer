@@ -45,38 +45,38 @@ fn registered_settings() {
     assert_eq!(
         rows,
         BTreeMap::from([
-            ("session_search", ("GROK_SESSION_SEARCH", true)),
-            ("lsp_tools", ("GROK_LSP_TOOLS", false)),
-            ("web_fetch", ("GROK_WEB_FETCH", false)),
-            ("session_recap", ("GROK_SESSION_RECAP", true)),
-            ("ask_user_question", ("GROK_ASK_USER_QUESTION", true)),
-            ("voice_mode", ("GROK_VOICE_MODE", true)),
-            ("write_file", ("GROK_WRITE_FILE", true)),
-            ("feedback", ("GROK_FEEDBACK_ENABLED", true)),
-            ("feedback_trace_card", ("GROK_FEEDBACK_TRACE_CARD", false)),
-            ("turn_summary", ("GROK_TURN_SUMMARY", true)),
-            ("cancel_rewind", ("GROK_CANCEL_REWIND", true)),
+            ("session_search", ("EZER_SESSION_SEARCH", true)),
+            ("lsp_tools", ("EZER_LSP_TOOLS", false)),
+            ("web_fetch", ("EZER_WEB_FETCH", false)),
+            ("session_recap", ("EZER_SESSION_RECAP", true)),
+            ("ask_user_question", ("EZER_ASK_USER_QUESTION", true)),
+            ("voice_mode", ("EZER_VOICE_MODE", true)),
+            ("write_file", ("EZER_WRITE_FILE", true)),
+            ("feedback", ("EZER_FEEDBACK_ENABLED", true)),
+            ("feedback_trace_card", ("EZER_FEEDBACK_TRACE_CARD", false)),
+            ("turn_summary", ("EZER_TURN_SUMMARY", true)),
+            ("cancel_rewind", ("EZER_CANCEL_REWIND", true)),
             (
                 "compaction_verbatim_input",
-                ("GROK_COMPACTION_VERBATIM_INPUT", true),
+                ("EZER_COMPACTION_VERBATIM_INPUT", true),
             ),
-            ("two_pass_compaction", ("GROK_TWO_PASS_COMPACTION", true)),
-            ("backend_tools", ("GROK_BACKEND_SEARCH", true)),
-            ("auto_wake", ("GROK_AUTO_WAKE", true)),
+            ("two_pass_compaction", ("EZER_TWO_PASS_COMPACTION", true)),
+            ("backend_tools", ("EZER_BACKEND_SEARCH", true)),
+            ("auto_wake", ("EZER_AUTO_WAKE", true)),
             (
                 "subagent_worktree_snapshot",
-                ("GROK_SUBAGENT_WORKTREE_SNAPSHOT", false),
+                ("EZER_SUBAGENT_WORKTREE_SNAPSHOT", false),
             ),
             (
                 "active_agent_messages",
-                ("GROK_ACTIVE_AGENT_MESSAGES", false),
+                ("EZER_ACTIVE_AGENT_MESSAGES", false),
             ),
             (
                 "repo_status_in_system_prompt",
-                ("GROK_REPO_STATUS_IN_SYSTEM_PROMPT", true),
+                ("EZER_REPO_STATUS_IN_SYSTEM_PROMPT", true),
             ),
-            ("dock", ("GROK_DOCK", false)),
-            ("terminal_theme", ("GROK_TERMINAL_THEME", false)),
+            ("dock", ("EZER_DOCK", false)),
+            ("terminal_theme", ("EZER_TERMINAL_THEME", false)),
         ]),
     );
 }
@@ -197,7 +197,7 @@ fn off_reason_names_the_setting_that_turned_it_off() {
                 env: Some(false),
                 ..Default::default()
             },
-            "the GROK_SESSION_SEARCH environment variable",
+            "the EZER_SESSION_SEARCH environment variable",
         ),
         (
             FeatureSources {

@@ -22,7 +22,7 @@ const SESSION_RPC_FLOOR: std::time::Duration = std::time::Duration::from_secs(18
 /// Headroom over the agent-side `.envrc` budget for the rest of session setup.
 const SESSION_RPC_SLACK: std::time::Duration = std::time::Duration::from_secs(50);
 /// Always covers the agent-side `.envrc` budget so the backstop cannot fire before the agent's own deadline.
-/// Reads `GROK_ENVRC_TIMEOUT_SECS` in this process; the agent inherits the same environment.
+/// Reads `EZER_ENVRC_TIMEOUT_SECS` in this process; the agent inherits the same environment.
 pub(super) fn session_rpc_timeout() -> std::time::Duration {
     SESSION_RPC_FLOOR.max(xai_grok_workspace::envrc::loader_budget() + SESSION_RPC_SLACK)
 }
@@ -498,27 +498,27 @@ pub(crate) struct SessionFlags {
 }
 impl SessionFlags {
     /// Resolve the agent profile name from the flags.
-    /// Returns `None` for the default `grok-build` profile (no `_meta` needed; it already includes TaskTool).
+    /// Returns `None` for the default `ezer-build` profile (no `_meta` needed; it already includes TaskTool).
     /// Chat mode never injects a Build profile (remote owns agent behavior).
     pub(super) fn agent_profile(&self) -> Option<&'static str> {
         if self.chat_mode || self.defer_builtin_agent_profile {
             return None;
         }
         match (self.plan_mode, self.subagents, self.ask_user) {
-            (true, true, _) => Some("grok-build-plan"),
-            (true, false, _) => Some("grok-build-plan-no-subagents"),
-            (false, _, true) => Some("grok-build-ask-user"),
+            (true, true, _) => Some("ezer-build-plan"),
+            (true, false, _) => Some("ezer-build-plan-no-subagents"),
+            (false, _, true) => Some("ezer-build-ask-user"),
             (false, _, false) => None,
         }
     }
     /// In practice always `Some`: the permission seeds (`yoloMode` / `autoMode`) are emitted unconditionally.
     /// An absent key is not the same as off; see the emit-site comment below.
-    /// `--no-ask-user` always forces `askUserQuestion: false` into the meta, even when paired with `GROK_AGENT`.
+    /// `--no-ask-user` always forces `askUserQuestion: false` into the meta, even when paired with `EZER_AGENT`.
     pub(crate) fn to_meta(&self) -> Option<acp::Meta> {
         let mut meta = serde_json::Map::new();
         if self.chat_mode {
             if self.plan_mode || self.agent_override.is_some()
-                || std::env::var("GROK_AGENT").ok().is_some_and(|s| !s.trim().is_empty())
+                || std::env::var("EZER_AGENT").ok().is_some_and(|s| !s.trim().is_empty())
             {
                 tracing::warn!(
                     "chat mode active: omitting Build agentProfile (plan/agent override ignored)"
@@ -526,7 +526,7 @@ impl SessionFlags {
             }
         } else if let Some(ref profile) = self.agent_override {
             meta.insert("agentProfile".into(), profile.clone());
-        } else if std::env::var("GROK_AGENT").ok().is_some_and(|s| !s.trim().is_empty())
+        } else if std::env::var("EZER_AGENT").ok().is_some_and(|s| !s.trim().is_empty())
         {} else if let Some(profile) = self.agent_profile() {
             meta.insert("agentProfile".into(), serde_json::json!(profile));
         }
@@ -681,7 +681,7 @@ pub(crate) fn reject_non_fs_only_advertised_tools(
 ) -> Result<(), String> {
     let Some(ids) = advertised_tool_ids else {
         return Err(
-            "operator attestation GROK_CHAT_LOCAL_WORKSPACE_ADVERTISED_TOOLS is unset \
+            "operator attestation EZER_CHAT_LOCAL_WORKSPACE_ADVERTISED_TOOLS is unset \
              (uncheckable); refuse attach. Live workspace_server was not inspected. Set \
              the env to a comma-separated FS-only catalog."
                 .into(),
@@ -689,7 +689,7 @@ pub(crate) fn reject_non_fs_only_advertised_tools(
     };
     if ids.is_empty() {
         return Err(
-            "operator attestation GROK_CHAT_LOCAL_WORKSPACE_ADVERTISED_TOOLS is empty \
+            "operator attestation EZER_CHAT_LOCAL_WORKSPACE_ADVERTISED_TOOLS is empty \
              (uncheckable); refuse attach. Live workspace_server was not inspected."
                 .into(),
         );
@@ -706,7 +706,7 @@ pub(crate) fn reject_non_fs_only_advertised_tools(
                 format!(
             "operator attestation lists tools outside the FS-only allowlist: {}. \
              Live workspace_server was not inspected. Fix \
-             GROK_CHAT_LOCAL_WORKSPACE_ADVERTISED_TOOLS or restart workspace_server \
+             EZER_CHAT_LOCAL_WORKSPACE_ADVERTISED_TOOLS or restart workspace_server \
              with --require-explicit-toolset and an FS-only catalog.",
             forbidden.join(", ")
         ),
@@ -1629,7 +1629,7 @@ pub(super) fn parse_auto_topup_response(
         Err(_) => AutoTopupFetch::Unchanged,
     }
 }
-/// A blocking flock on the shared, possibly-network `~/.grok` lock must never
+/// A blocking flock on the shared, possibly-network `~/.ezer` lock must never
 /// stall the event-loop thread (and would hang exit on `/quit`); the registry
 /// is best-effort, so skip on contention.
 pub(super) fn unregister_active_session_best_effort(session_id: &acp::SessionId) {

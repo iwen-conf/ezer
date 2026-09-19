@@ -156,7 +156,7 @@ sleep_prevention = true
 progress_bar = true
 # Show an automatic \"where was I\" session recap when you return after being away.
 # Shell session_recap is on by default; disable via [features] session_recap or
-# GROK_SESSION_RECAP=0. Manual /recap uses only the shell flag.
+# EZER_SESSION_RECAP=0. Manual /recap uses only the shell flag.
 session_recap = true
 # Minimum seconds unfocused (\"stepped away\") before requesting a recap; a
 # debounce against quick tab blips. The \"3 min since the last turn\" timing is
@@ -167,11 +167,11 @@ session_recap_threshold_secs = 30
 # Set the terminal/tab title to reflect agent state.
 enabled = true
 # Items shown in the title. Options: action-required, spinner, activity,
-# session-name, cwd, model, turn-timer, grok
-items = [\"action-required\", \"spinner\", \"activity\", \"session-name\", \"grok\"]
+# session-name, cwd, model, turn-timer, ezer
+items = [\"action-required\", \"spinner\", \"activity\", \"session-name\", \"ezer\"]
 
 # [[ui.notifications.hooks]]
-# command = \"terminal-notifier -title 'Grok' -message '$GROK_MESSAGE'\"
+# command = \"terminal-notifier -title 'ezer' -message '$EZER_MESSAGE'\"
 # events = [\"turn_complete\", \"approval_required\"]
 # only_unfocused = true
 # timeout_secs = 10

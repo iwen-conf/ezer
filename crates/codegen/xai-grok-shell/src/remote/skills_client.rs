@@ -1,4 +1,4 @@
-//! grok.com product Skills catalog, served by the same REST sources grok-web uses:
+//! grok.com product Skills catalog, served by the same REST sources ezer-web uses:
 //! - `POST /rest/skills`: first-party bundled skills (docx, pdf, ffmpeg, …)
 //! - `GET  /rest/user-skills`: enabled user-uploaded skills
 //!
@@ -85,7 +85,7 @@ pub struct ListUserSkillsResponse {
     pub skills: Vec<UserSkill>,
 }
 
-/// Combined product catalog matching grok-web's Skills menu composition.
+/// Combined product catalog matching ezer-web's Skills menu composition.
 #[derive(Debug, Clone, Default)]
 pub struct ProductSkillsCatalog {
     pub bundled: Vec<BundledSkill>,
@@ -98,7 +98,7 @@ pub struct ProductSkillsCatalog {
 impl ProductSkillsCatalog {
     /// Map to agent SkillInfo rows for slash advertising.
     ///
-    /// Mirrors grok-web: enabled user skills first (and hide same-named bundled entries they override), then remaining bundled skills.
+    /// Mirrors ezer-web: enabled user skills first (and hide same-named bundled entries they override), then remaining bundled skills.
     pub(crate) fn to_skill_infos(&self) -> Vec<SkillInfo> {
         let enabled_user: Vec<(String, &UserSkill)> = self
             .user
@@ -354,7 +354,7 @@ fn skills_auth_alt_candidates<'a>(
     out
 }
 
-/// Stateless transport for product Skills REST (grok-web `skillsApi`).
+/// Stateless transport for product Skills REST (ezer-web `skillsApi`).
 pub struct SkillsClient {
     http: reqwest::Client,
     base_url: String,
@@ -363,16 +363,16 @@ pub struct SkillsClient {
 
 impl SkillsClient {
     pub fn new(auth: Arc<AuthManager>) -> Self {
-        let base_url = std::env::var("GROK_SKILLS_BASE_URL")
+        let base_url = std::env::var("EZER_SKILLS_BASE_URL")
             .ok()
             .filter(|s| !s.is_empty())
             .or_else(|| {
-                std::env::var("GROK_CONVERSATIONS_BASE_URL")
+                std::env::var("EZER_CONVERSATIONS_BASE_URL")
                     .ok()
                     .filter(|s| !s.is_empty())
             })
             .or_else(|| {
-                std::env::var("GROK_CODE_WEB_URL")
+                std::env::var("EZER_CODE_WEB_URL")
                     .ok()
                     .filter(|s| !s.is_empty())
             })
@@ -398,9 +398,9 @@ impl SkillsClient {
                 self.auth.grok_com_config().token_header.clone(),
             )
             .header("x-userid", user_id)
-            .header("x-grok-client-version", xai_grok_version::VERSION)
+            .header("x-ezer-client-version", xai_grok_version::VERSION)
             .header(
-                "x-grok-client-identifier",
+                "x-ezer-client-identifier",
                 crate::http::process_client_identifier(),
             )
             .header(
@@ -502,7 +502,7 @@ impl SkillsClient {
         Ok(serde_json::from_slice(&bytes)?)
     }
 
-    /// Bundled first-party skills (`POST /rest/skills`), gated by backend feature-flag allow-list (same as grok-web attach menu).
+    /// Bundled first-party skills (`POST /rest/skills`), gated by backend feature-flag allow-list (same as ezer-web attach menu).
     ///
     /// Returns `(response, used_untagged_recovery)`.
     async fn list_bundled(

@@ -116,7 +116,7 @@ pub fn create_snapshot_with_symlink(btrfs_info: &BtrfsInfo, dest: &Path) -> Resu
             })?;
         } else if !is_safe_snapshot_delete_target(&snapshot_path) {
             bail!(
-                "refusing to delete pre-existing snapshot {}: outside grok-managed \
+                "refusing to delete pre-existing snapshot {}: outside ezer-managed \
                  btrfs storage",
                 snapshot_path.display()
             );
@@ -155,14 +155,14 @@ pub fn create_snapshot_with_symlink(btrfs_info: &BtrfsInfo, dest: &Path) -> Resu
 
     // Nested subvolumes are excluded from the snapshot, leaving an empty
     // `.grok-snapshots/` placeholder. Remove it so the worktree stays clean.
-    let stale_snapshots_dir = snapshot_path.join(".grok-snapshots");
+    let stale_snapshots_dir = snapshot_path.join(".ezer-snapshots");
     if stale_snapshots_dir.exists()
         && let Err(e) = std::fs::remove_dir(&stale_snapshots_dir)
     {
         tracing::debug!(
             path = %stale_snapshots_dir.display(),
             error = %e,
-            "failed to remove stale .grok-snapshots placeholder from snapshot"
+            "failed to remove stale .ezer-snapshots placeholder from snapshot"
         );
     }
 
@@ -191,7 +191,7 @@ pub fn create_snapshot_with_symlink(btrfs_info: &BtrfsInfo, dest: &Path) -> Resu
     })
 }
 
-/// On-disk snapshot path. Subvol-is-repo uses `.grok-snapshots/` (hidden from
+/// On-disk snapshot path. Subvol-is-repo uses `.ezer-snapshots/` (hidden from
 /// git); otherwise `worktrees/`. Name is `<basename>-<hash>` so two repos sharing
 /// a label on one mount cannot clobber each other. Shared with the delegate.
 pub fn snapshot_dest_path(btrfs_mount: &Path, subvolume_root: &Path, dest: &Path) -> PathBuf {
@@ -201,7 +201,7 @@ pub fn snapshot_dest_path(btrfs_mount: &Path, subvolume_root: &Path, dest: &Path
         BTRFS_SNAPSHOT_SUBDIRS.first().copied()
     }
     .unwrap_or(if btrfs_mount == subvolume_root {
-        ".grok-snapshots"
+        ".ezer-snapshots"
     } else {
         "worktrees"
     });
@@ -292,7 +292,7 @@ pub fn delete_snapshot(path: &Path) -> Result<()> {
 }
 
 /// Safe privileged-delete target only if: no `..`, not itself a symlink, parent
-/// is `worktrees` or `.grok-snapshots`, and that dir sits directly under a real
+/// is `worktrees` or `.ezer-snapshots`, and that dir sits directly under a real
 /// btrfs mount. Untrusted meta/symlink paths must pass this before delete.
 pub fn is_safe_snapshot_delete_target(snapshot_path: &Path) -> bool {
     is_safe_snapshot_delete_target_in(snapshot_path, &btrfs_mount_points())
@@ -363,8 +363,8 @@ pub struct BtrfsSnapshotMetadata {
 pub const BTRFS_META_SUFFIX: &str = ".btrfs-meta.json";
 
 /// Snapshot storage dirs: `worktrees` when a separate root mount exists;
-/// `.grok-snapshots` when the mount is the repo subvolume (hidden from git).
-pub const BTRFS_SNAPSHOT_SUBDIRS: &[&str] = &["worktrees", ".grok-snapshots"];
+/// `.ezer-snapshots` when the mount is the repo subvolume (hidden from git).
+pub const BTRFS_SNAPSHOT_SUBDIRS: &[&str] = &["worktrees", ".ezer-snapshots"];
 
 /// Compute the sibling metadata file path for a snapshot directory.
 pub fn btrfs_meta_path(snapshot_path: &Path) -> Option<PathBuf> {
@@ -514,7 +514,7 @@ mod tests {
         let meta = BtrfsSnapshotMetadata {
             kind: Cow::Borrowed("btrfs"),
             snapshot_path: PathBuf::from("/mnt/btrfs/worktrees/wt-abc"),
-            mount_target: PathBuf::from("/home/user/.grok/worktrees/repo/session/wt-abc"),
+            mount_target: PathBuf::from("/home/user/.ezer/worktrees/repo/session/wt-abc"),
             created_at: "1740000000s-since-epoch".to_string(),
         };
         let json = serde_json::to_string_pretty(&meta).unwrap();
@@ -531,7 +531,7 @@ mod tests {
         let tmp = tempfile::TempDir::new().unwrap();
         let snapshot_path = tmp.path().join("wt-abc");
         std::fs::create_dir(&snapshot_path).unwrap();
-        let mount_target = Path::new("/home/user/.grok/worktrees/wt-abc");
+        let mount_target = Path::new("/home/user/.ezer/worktrees/wt-abc");
 
         write_btrfs_metadata(&snapshot_path, mount_target).unwrap();
 
@@ -565,7 +565,7 @@ mod tests {
         // btrfs mount differs from subvolume root → snapshots under worktrees/.
         let btrfs_mount = Path::new("/mnt/btrfs");
         let subvolume_root = Path::new("/workspace/repo");
-        let dest = Path::new("/home/user/.grok/worktrees/repo/session/wt-abc");
+        let dest = Path::new("/home/user/.ezer/worktrees/repo/session/wt-abc");
         let got = snapshot_dest_path(btrfs_mount, subvolume_root, dest);
         assert_eq!(got.parent().unwrap(), Path::new("/mnt/btrfs/worktrees"));
         assert_hashed_name(got.file_name().unwrap().to_str().unwrap(), "wt-abc");
@@ -577,11 +577,11 @@ mod tests {
     fn test_snapshot_dest_path_subvol_mount() {
         // btrfs mount IS the subvolume root → snapshots under .grok-snapshots/.
         let mount = Path::new("/workspace/repo");
-        let dest = Path::new("/home/user/.grok/worktrees/repo/session/wt-xyz");
+        let dest = Path::new("/home/user/.ezer/worktrees/repo/session/wt-xyz");
         let got = snapshot_dest_path(mount, mount, dest);
         assert_eq!(
             got.parent().unwrap(),
-            Path::new("/workspace/repo/.grok-snapshots")
+            Path::new("/workspace/repo/.ezer-snapshots")
         );
         assert_hashed_name(got.file_name().unwrap().to_str().unwrap(), "wt-xyz");
     }
@@ -601,8 +601,8 @@ mod tests {
         // same on-disk snapshot (the cross-repo data-loss collision).
         let btrfs_mount = Path::new("/mnt/btrfs");
         let subvolume_root = Path::new("/workspace/repo");
-        let dest_a = Path::new("/home/user/.grok/worktrees/repo-a/session/wt-abc");
-        let dest_b = Path::new("/home/user/.grok/worktrees/repo-b/session/wt-abc");
+        let dest_a = Path::new("/home/user/.ezer/worktrees/repo-a/session/wt-abc");
+        let dest_b = Path::new("/home/user/.ezer/worktrees/repo-b/session/wt-abc");
         let a = snapshot_dest_path(btrfs_mount, subvolume_root, dest_a);
         let b = snapshot_dest_path(btrfs_mount, subvolume_root, dest_b);
         assert_ne!(
@@ -620,7 +620,7 @@ mod tests {
         let tmp = tempfile::TempDir::new().unwrap();
         let snapshot_path = tmp.path().join("worktrees").join("wt-abc-deadbeef");
         std::fs::create_dir_all(&snapshot_path).unwrap();
-        let dest = Path::new("/home/user/.grok/worktrees/repo-a/session/wt-abc");
+        let dest = Path::new("/home/user/.ezer/worktrees/repo-a/session/wt-abc");
 
         // No metadata yet → cannot prove ownership → refuse.
         assert!(!snapshot_meta_targets(&snapshot_path, dest));
@@ -630,7 +630,7 @@ mod tests {
         assert!(snapshot_meta_targets(&snapshot_path, dest));
 
         // Metadata for a DIFFERENT dest → must refuse (would clobber other session).
-        let other = Path::new("/home/user/.grok/worktrees/repo-b/session/wt-abc");
+        let other = Path::new("/home/user/.ezer/worktrees/repo-b/session/wt-abc");
         assert!(!snapshot_meta_targets(&snapshot_path, other));
     }
 
@@ -639,7 +639,7 @@ mod tests {
         let tmp = tempfile::TempDir::new().unwrap();
         let snapshot_path = tmp.path().join("worktrees").join("wt-abc-deadbeef");
         std::fs::create_dir_all(&snapshot_path).unwrap();
-        let dest = Path::new("/home/user/.grok/worktrees/repo-a/session/wt-abc");
+        let dest = Path::new("/home/user/.ezer/worktrees/repo-a/session/wt-abc");
 
         // No sibling meta → crashed-creation orphan → reclaimable.
         assert_eq!(
@@ -655,7 +655,7 @@ mod tests {
         );
 
         // Meta records a different dest → another session → must refuse.
-        let other = Path::new("/home/user/.grok/worktrees/repo-b/session/wt-abc");
+        let other = Path::new("/home/user/.ezer/worktrees/repo-b/session/wt-abc");
         assert_eq!(
             snapshot_meta_state(&snapshot_path, other),
             SnapshotMetaState::Mismatch

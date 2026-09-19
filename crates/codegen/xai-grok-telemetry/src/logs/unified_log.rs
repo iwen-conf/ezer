@@ -49,11 +49,11 @@ pub enum LogSource {
     #[strum(serialize = "shell")]
     #[serde(rename = "shell")]
     Shell,
-    #[strum(serialize = "grok-pager")]
-    #[serde(rename = "grok-pager")]
+    #[strum(serialize = "ezer")]
+    #[serde(rename = "ezer")]
     GrokPager,
-    #[strum(serialize = "grok-desktop")]
-    #[serde(rename = "grok-desktop")]
+    #[strum(serialize = "ezer-desktop")]
+    #[serde(rename = "ezer-desktop")]
     GrokDesktop,
 }
 
@@ -169,7 +169,7 @@ fn test_log_dir() -> &'static PathBuf {
             .map(|d| d.as_nanos())
             .unwrap_or(0);
         let dir = std::env::temp_dir().join(format!(
-            "grok-unified-log-test-{}-{nanos}",
+            "ezer-unified-log-test-{}-{nanos}",
             std::process::id()
         ));
         let mut builder = fs::DirBuilder::new();
@@ -472,7 +472,7 @@ mod tests {
     use super::*;
 
     /// Pre-main, so no test in this binary can race the lazily-opened
-    /// writer onto the developer's real `~/.grok/logs/unified.jsonl`.
+    /// writer onto the developer's real `~/.ezer/logs/unified.jsonl`.
     #[ctor::ctor]
     fn redirect_for_tests() {
         redirect_to_temp_for_tests();

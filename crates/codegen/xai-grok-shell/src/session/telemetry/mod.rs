@@ -213,16 +213,16 @@ mod is_same_skill_file_tests {
     #[test]
     fn matches_identical_paths() {
         assert!(is_same_skill_file(
-            Path::new("/home/u/.grok/skills/review/SKILL.md"),
-            Path::new("/home/u/.grok/skills/review/SKILL.md")
+            Path::new("/home/u/.ezer/skills/review/SKILL.md"),
+            Path::new("/home/u/.ezer/skills/review/SKILL.md")
         ));
     }
 
     #[test]
     fn rejects_a_different_skill() {
         assert!(!is_same_skill_file(
-            Path::new("/home/u/.grok/skills/review/SKILL.md"),
-            Path::new("/home/u/.grok/skills/design/SKILL.md")
+            Path::new("/home/u/.ezer/skills/review/SKILL.md"),
+            Path::new("/home/u/.ezer/skills/design/SKILL.md")
         ));
     }
 

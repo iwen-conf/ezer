@@ -44,7 +44,7 @@ pub struct ListConversationsPage {
     pub next_page_token: Option<String>,
 }
 
-/// Body for `PUT /rest/app-chat/conversations/{id}` (grok-web `chatUpdateConversation`).
+/// Body for `PUT /rest/app-chat/conversations/{id}` (ezer-web `chatUpdateConversation`).
 #[derive(Debug, Clone, Default, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct UpdateConversationBody {
@@ -92,11 +92,11 @@ pub struct ConversationsClient {
 
 impl ConversationsClient {
     pub fn new(auth: Arc<AuthManager>) -> Self {
-        let base_url = std::env::var("GROK_CONVERSATIONS_BASE_URL")
+        let base_url = std::env::var("EZER_CONVERSATIONS_BASE_URL")
             .ok()
             .filter(|s| !s.is_empty())
             .or_else(|| {
-                std::env::var("GROK_CODE_WEB_URL")
+                std::env::var("EZER_CODE_WEB_URL")
                     .ok()
                     .filter(|s| !s.is_empty())
             })
@@ -128,9 +128,9 @@ impl ConversationsClient {
                 self.auth.grok_com_config().token_header.clone(),
             )
             .header("x-userid", &auth.user_id)
-            .header("x-grok-client-version", xai_grok_version::VERSION)
+            .header("x-ezer-client-version", xai_grok_version::VERSION)
             .header(
-                "x-grok-client-identifier",
+                "x-ezer-client-identifier",
                 crate::http::process_client_identifier(),
             )
             .header(

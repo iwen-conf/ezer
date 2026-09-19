@@ -24,8 +24,8 @@ fn session_create_emits_a_timer_for_each_serial_subphase() {
     ));
     // SAFETY: set before any agent code; mode is read once on first use.
     unsafe {
-        std::env::set_var("GROK_INSTRUMENTATION", "log");
-        std::env::set_var("GROK_INSTRUMENTATION_LOG", &log_path);
+        std::env::set_var("EZER_INSTRUMENTATION", "log");
+        std::env::set_var("EZER_INSTRUMENTATION_LOG", &log_path);
     }
     let _ = tracing_subscriber::registry()
         .with(xai_grok_shell::instrumentation::layer::<Registry>())

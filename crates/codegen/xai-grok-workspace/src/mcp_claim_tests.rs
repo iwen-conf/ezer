@@ -42,14 +42,14 @@ fn a_first_party_server_wins_an_id_a_third_party_sibling_also_offers() {
     let plan = plan_claims(
         vec![
             offer("user", McpServerTier::ThirdParty, &["open_tab", "search"]),
-            offer("grok-desktop", McpServerTier::FirstParty, &["open_tab"]),
+            offer("ezer-desktop", McpServerTier::FirstParty, &["open_tab"]),
         ],
         &HashSet::new(),
         NO_CAP,
     );
     assert_eq!(
         claims(&plan),
-        vec![("grok-desktop", vec!["open_tab"]), ("user", vec!["search"])]
+        vec![("ezer-desktop", vec!["open_tab"]), ("user", vec!["search"])]
     );
     assert_eq!((plan.rejected, plan.over_cap), (1, 0));
 }
@@ -94,14 +94,14 @@ fn native_ids_are_never_claimed_even_by_first_party() {
     let native: HashSet<ToolId> = ids(&["read_file"]).into_iter().collect();
     let plan = plan_claims(
         vec![offer(
-            "grok-desktop",
+            "ezer-desktop",
             McpServerTier::FirstParty,
             &["read_file", "open_tab"],
         )],
         &native,
         NO_CAP,
     );
-    assert_eq!(claims(&plan), vec![("grok-desktop", vec!["open_tab"])]);
+    assert_eq!(claims(&plan), vec![("ezer-desktop", vec!["open_tab"])]);
     assert_eq!(plan.rejected, 1);
 }
 
@@ -131,7 +131,7 @@ fn claims_are_ordered_by_tier_then_name() {
         vec![
             offer("linear", McpServerTier::ThirdParty, &["issues"]),
             offer("figma", McpServerTier::ThirdParty, &["frames"]),
-            offer("grok-desktop", McpServerTier::FirstParty, &["open_tab"]),
+            offer("ezer-desktop", McpServerTier::FirstParty, &["open_tab"]),
         ],
         &HashSet::new(),
         NO_CAP,
@@ -139,7 +139,7 @@ fn claims_are_ordered_by_tier_then_name() {
     assert_eq!(
         claims(&plan),
         vec![
-            ("grok-desktop", vec!["open_tab"]),
+            ("ezer-desktop", vec!["open_tab"]),
             ("figma", vec!["frames"]),
             ("linear", vec!["issues"]),
         ]

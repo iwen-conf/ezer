@@ -173,7 +173,7 @@ impl NotificationService {
         if buf.is_empty() { None } else { Some(buf) }
     }
 
-    /// Reset the tab title back to "grok" and clear the progress bar so neither lingers after exit. Enqueued, never
+    /// Reset the tab title back to "ezer" and clear the progress bar so neither lingers after exit. Enqueued, never
     /// inline: `/quit` can land while the writer is parked holding the stderr lock, and the queue orders the reset
     /// after any still-queued busy-title escape.
     pub fn shutdown(&mut self) {
@@ -430,7 +430,7 @@ mod tests {
         svc.escape_writer = EscapeWriter::new(tx, WriterSync::new());
         svc.notify(NotificationEvent {
             kind: NotificationEventKind::TurnComplete,
-            title: "Grok".into(),
+            title: "ezer".into(),
             body: "Turn complete".into(),
             session_id: Some("test-session".into()),
         });
@@ -451,7 +451,7 @@ mod tests {
         svc.escape_writer = EscapeWriter::new(tx, WriterSync::new());
         svc.notify(NotificationEvent {
             kind: NotificationEventKind::SessionReady,
-            title: "Grok".into(),
+            title: "ezer".into(),
             body: "Session ready".into(),
             session_id: None,
         });
@@ -631,7 +631,7 @@ mod tests {
             .try_recv()
             .expect("shutdown escapes must ride the writer queue");
         assert!(
-            String::from_utf8_lossy(payload.data()).contains("grok"),
+            String::from_utf8_lossy(payload.data()).contains("ezer"),
             "expected the title reset in the queued escape"
         );
         assert!(rx.try_recv().is_err(), "one combined payload expected");

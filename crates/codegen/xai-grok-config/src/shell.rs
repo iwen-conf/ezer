@@ -5,7 +5,7 @@
 //! PowerShell is preferred over Git Bash: MSYS2 path translation mangles every flag starting with `/` (e.g. MSBuild `/t:Build`, cl.exe `/nologo`).
 //! This breaks native Windows C++/C#/.NET builds.
 //!
-//! Set `GROK_SHELL` to override auto-detection: `pwsh`, `powershell`, `bash`, or `cmd`.
+//! Set `EZER_SHELL` to override auto-detection: `pwsh`, `powershell`, `bash`, or `cmd`.
 //! The result is cached for the process lifetime.
 
 /// Detected Windows shell and how to invoke it.
@@ -19,7 +19,7 @@ pub enum WindowsShell {
 }
 
 /// Detect the best available shell on Windows.
-/// If `GROK_SHELL` is set, it takes precedence over auto-detection.
+/// If `EZER_SHELL` is set, it takes precedence over auto-detection.
 /// Result is cached for the process lifetime.
 #[cfg(not(unix))]
 pub fn detect_windows_shell() -> &'static WindowsShell {
@@ -28,35 +28,35 @@ pub fn detect_windows_shell() -> &'static WindowsShell {
 
     CACHED.get_or_init(|| {
         // Explicit override via GROK_SHELL.
-        if let Ok(val) = std::env::var("GROK_SHELL") {
+        if let Ok(val) = std::env::var("EZER_SHELL") {
             match val.trim().to_ascii_lowercase().as_str() {
                 "pwsh" => {
-                    tracing::info!("Windows shell (GROK_SHELL override): pwsh");
+                    tracing::info!("Windows shell (EZER_SHELL override): pwsh");
                     return WindowsShell::Pwsh;
                 }
                 "powershell" => {
-                    tracing::info!("Windows shell (GROK_SHELL override): powershell.exe");
+                    tracing::info!("Windows shell (EZER_SHELL override): powershell.exe");
                     return WindowsShell::PowerShell;
                 }
                 "bash" | "gitbash" | "git-bash" => {
                     if let Some(path) = find_git_bash() {
                         tracing::info!(
                             shell = path,
-                            "Windows shell (GROK_SHELL override): Git Bash"
+                            "Windows shell (EZER_SHELL override): Git Bash"
                         );
                         return WindowsShell::GitBash(path);
                     }
                     tracing::warn!(
-                        "GROK_SHELL={val} but Git Bash not found; falling through to auto-detect"
+                        "EZER_SHELL={val} but Git Bash not found; falling through to auto-detect"
                     );
                 }
                 "cmd" | "cmd.exe" => {
-                    tracing::info!("Windows shell (GROK_SHELL override): cmd.exe");
+                    tracing::info!("Windows shell (EZER_SHELL override): cmd.exe");
                     return WindowsShell::Cmd;
                 }
                 other => {
                     tracing::warn!(
-                        "GROK_SHELL={other} is not recognized \
+                        "EZER_SHELL={other} is not recognized \
                          (expected pwsh|powershell|bash|cmd); falling through to auto-detect"
                     );
                 }
@@ -366,7 +366,7 @@ fn resolve_unix_shell_path(kind: UnixShellKind) -> String {
     let matches_kind = |p: &std::path::Path| p.file_name().and_then(|n| n.to_str()) == Some(name);
 
     // 1) Explicit override via $GROK_SHELL.
-    if let Ok(s) = std::env::var("GROK_SHELL") {
+    if let Ok(s) = std::env::var("EZER_SHELL") {
         let p = std::path::PathBuf::from(&s);
         if matches_kind(&p) && is_executable(&p) {
             return s;

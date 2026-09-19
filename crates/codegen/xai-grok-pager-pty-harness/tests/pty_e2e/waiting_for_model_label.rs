@@ -22,7 +22,7 @@ async fn assert_waiting_alignment(rows: u16) {
         DEFAULT_COLS,
         &content,
         &[],
-        &[("GROK_DOCK", "1")],
+        &[("EZER_DOCK", "1")],
     )
     .expect("spawn pager");
 

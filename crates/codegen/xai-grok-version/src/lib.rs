@@ -1,4 +1,4 @@
-//! Installed grok CLI version, kept in sync with the shipping binaries.
+//! Installed ezer CLI version, kept in sync with the shipping binaries.
 
 #![deny(clippy::indexing_slicing)]
 
@@ -6,15 +6,15 @@ use std::sync::OnceLock;
 
 use semver::Version;
 
-pub const TEST_VERSION_ENV: &str = "GROK_TEST_VERSION";
+pub const TEST_VERSION_ENV: &str = "EZER_TEST_VERSION";
 
-pub const VERSION: &str = match option_env!("GROK_VERSION") {
+pub const VERSION: &str = match option_env!("EZER_VERSION") {
     Some(v) => v,
     None => env!("CARGO_PKG_VERSION"),
 };
 
-/// The release pipeline always injects `GROK_VERSION`; without it the build is from source.
-pub const IS_DEV_BUILD: bool = option_env!("GROK_VERSION").is_none();
+/// The release pipeline always injects `EZER_VERSION`; without it the build is from source.
+pub const IS_DEV_BUILD: bool = option_env!("EZER_VERSION").is_none();
 
 /// Runtime-injected `"<version> (<shortcommit>)"` string.
 /// Only the release binary stamps the commit in its own build.rs and injects it here at startup, so the lib crates don't recompile on every commit.

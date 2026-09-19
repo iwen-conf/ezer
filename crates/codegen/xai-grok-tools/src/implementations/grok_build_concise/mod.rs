@@ -1,6 +1,6 @@
-//! `GrokBuildConcise` namespace — concise variants of core GrokBuild tools.
+//! `EzerConcise` namespace — concise variants of core Ezer tools.
 //!
-//! These tools share implementation with `grok_build` via `pub(crate)` helpers
+//! These tools share implementation with `ezer_build` via `pub(crate)` helpers
 //! but produce concise output (compact line numbers, shorter messages,
 //! concise bash formatting).
 

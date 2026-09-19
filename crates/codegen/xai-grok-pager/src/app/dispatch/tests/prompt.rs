@@ -1981,7 +1981,7 @@ fn prompt_response_formatted_402_takes_credit_limit_path() {
     dispatch(
         Action::TaskComplete(TaskResult::PromptResponse {
             agent_id: id,
-            result: Err("Request failed (402): Grok Build usage balance exhausted".to_string()),
+            result: Err("Request failed (402): ezer usage balance exhausted".to_string()),
             http_status: None,
             prompt_id: None,
         }),
@@ -2021,7 +2021,7 @@ fn credit_limit_402_does_not_overwrite_stash_when_in_flight_cleared() {
     dispatch(
         Action::TaskComplete(TaskResult::PromptResponse {
             agent_id: id,
-            result: Err("Request failed (402): Grok Build usage balance exhausted".to_string()),
+            result: Err("Request failed (402): ezer usage balance exhausted".to_string()),
             http_status: Some(402),
             prompt_id: None,
         }),
@@ -5271,7 +5271,7 @@ fn suggestions_landing_after_bash_exit_are_dropped() {
     assert!(agent.prompt.suggestions.dropdown.items.is_empty());
 }
 
-/// The always-on pipeline end to end, with the `GROK_SUGGESTIONS` env flag OFF.
+/// The always-on pipeline end to end, with the `EZER_SUGGESTIONS` env flag OFF.
 /// Tab fires a deterministic fetch, and the response that lands behaves like Tab in a terminal.
 /// A single file candidate splices in place immediately and the drill-down refetch rides out with the dispatch.
 #[test]

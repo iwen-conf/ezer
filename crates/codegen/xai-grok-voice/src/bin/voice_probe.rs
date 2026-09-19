@@ -130,7 +130,7 @@ fn parse_args(argv: Vec<String>) -> Args {
 
 fn load_config(path: Option<&std::path::Path>) -> VoiceConfig {
     // The probe has no shell config stack; env is the resolved fallback (config table still beats it, matching the pager's precedence)
-    let env_base = std::env::var("GROK_XAI_API_BASE_URL").ok();
+    let env_base = std::env::var("EZER_XAI_API_BASE_URL").ok();
     if let Some(path) = path
         && let Ok(raw) = std::fs::read_to_string(path)
         && let Ok(table) = toml::from_str::<toml::Table>(&raw)
@@ -157,7 +157,7 @@ Environment:
   XAI_API_KEY     required
   RUST_LOG        optional (default info,xai_grok_voice=debug)
 
-Reads [voice] from ~/.grok/config.toml unless --config PATH is set.
+Reads [voice] from ~/.ezer/config.toml unless --config PATH is set.
 "#
     );
 }

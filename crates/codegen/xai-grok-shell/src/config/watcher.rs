@@ -64,7 +64,7 @@ fn new_filtered_debouncer<F: notify_debouncer_mini::DebounceEventHandler>(
 pub enum ConfigChangeEvent {
     AuthChanged,
     GlobalConfigChanged,
-    /// `~/.grok/models_cache.json` changed — the on-disk `/v1/models` catalog cache was rewritten, possibly by **another** grok process sharing the same `~/.grok` (the writer may also be this process; the [`ModelsManager`](crate::agent::remote_config::ModelsManager) dedupes by content before applying).
+    /// `~/.ezer/models_cache.json` changed — the on-disk `/v1/models` catalog cache was rewritten, possibly by **another** ezer process sharing the same `~/.ezer` (the writer may also be this process; the [`ModelsManager`](crate::agent::remote_config::ModelsManager) dedupes by content before applying).
     ModelsCacheChanged,
     ProjectConfigChanged {
         path: PathBuf,
@@ -80,7 +80,7 @@ pub enum ConfigChangeEvent {
     HomeClaudeJsonChanged,
 }
 
-/// Watches `~/.grok/` for `auth.json`, `config.toml`, and `models_cache.json` changes, plus any extra paths (project `.grok/config.toml`, `.mcp.json`, etc.) provided at startup.
+/// Watches `~/.ezer/` for `auth.json`, `config.toml`, and `models_cache.json` changes, plus any extra paths (project `.ezer/config.toml`, `.mcp.json`, etc.) provided at startup.
 /// Uses `notify-debouncer-mini` for built-in debounce that coalesces rapid editor writes (including write-then-rename patterns). Self-write suppression is intentionally omitted.
 /// When the agent writes `auth.json` or `config.toml`, the watcher fires and the [`ConfigReloader`](super::reloader::ConfigReloader) re-reads it. The reloader's own content-based deduplication (auth key hash, toml value comparison) skips the update when nothing actually changed.
 pub struct ConfigFileWatcher {
@@ -93,7 +93,7 @@ pub struct ConfigFileWatcher {
 
 impl ConfigFileWatcher {
     /// Start watching. Returns `None` if the OS watcher fails to initialize.
-    /// `cwd`, when `Some`, adds two non-recursive watches: `<cwd>/` and `<cwd>/.grok/`.
+    /// `cwd`, when `Some`, adds two non-recursive watches: `<cwd>/` and `<cwd>/.ezer/`.
     /// Use [`Self::watch_path`] later to register additional project cwds for sessions that open in previously-unwatched directories.
     pub fn start(
         grok_home: &Path,
@@ -153,7 +153,7 @@ impl ConfigFileWatcher {
                 tracing::warn!(
                     path = %grok_home.display(),
                     error = %e,
-                    "failed to watch grok home directory"
+                    "failed to watch ezer home directory"
                 )
             })
             .ok()?;
@@ -197,9 +197,9 @@ impl ConfigFileWatcher {
         ))
     }
 
-    /// Register `<cwd>/` and `<cwd>/.grok/` as **non-recursive** watch targets, in addition to whatever was passed to [`Self::start`].
+    /// Register `<cwd>/` and `<cwd>/.ezer/` as **non-recursive** watch targets, in addition to whatever was passed to [`Self::start`].
     /// Intended for the session-open path, when a session opens in a cwd the leader hasn't seen before.
-    /// It ensures edits to `<cwd>/.mcp.json` and `<cwd>/.grok/config.toml` trigger a [`ConfigChangeEvent`] within the debounce window. Downstream that raises [`ConfigUpdate::ProjectMcpServersChanged`](super::reloader::ConfigUpdate::ProjectMcpServersChanged). If `notify` cannot register the watch (the directory doesn't exist yet, or the OS quota is reached), the error is logged and swallowed.
+    /// It ensures edits to `<cwd>/.mcp.json` and `<cwd>/.ezer/config.toml` trigger a [`ConfigChangeEvent`] within the debounce window. Downstream that raises [`ConfigUpdate::ProjectMcpServersChanged`](super::reloader::ConfigUpdate::ProjectMcpServersChanged). If `notify` cannot register the watch (the directory doesn't exist yet, or the OS quota is reached), the error is logged and swallowed.
     pub fn watch_path(&mut self, cwd: &Path) {
         // Idempotent at our layer: skip the redundant `notify` watch-add when this cwd is already registered
         // Re-opening sessions in the same directory then doesn't churn the OS watcher
@@ -211,7 +211,7 @@ impl ConfigFileWatcher {
         self.watched_cwds.insert(cwd.to_path_buf());
     }
 
-    /// Remove the two non-recursive watches (`<cwd>/` and `<cwd>/.grok/`) previously registered for `cwd` via [`Self::start`] / [`Self::watch_path`].
+    /// Remove the two non-recursive watches (`<cwd>/` and `<cwd>/.ezer/`) previously registered for `cwd` via [`Self::start`] / [`Self::watch_path`].
     /// Best-effort and idempotent: a `cwd` that was never registered (or already unwatched) is a no-op. Intended for the session-teardown path.
     /// A long-lived leader that opens sessions across many directories then doesn't accumulate inotify watches for cwds with no live sessions. **Callers must ref-count**: only unwatch once the *last* session sharing this cwd closes. `ConfigFileWatcher` tracks distinct cwds, not session counts.
     pub fn unwatch_path(&mut self, cwd: &Path) {
@@ -348,19 +348,19 @@ fn parent_is_dir(parent: Option<&Path>, dir: &Path) -> bool {
 
 /// Add the two non-recursive watches for a project root. Both watches are best-effort and log-and-continue on failure (missing directory, quota exhausted, permission denied, etc.).
 /// The caller has no reasonable recovery path beyond the existing user-triggered refresh.
-/// **Known limitation:** if `<cwd>/.grok/` does not yet exist at session-open time, the `.grok/` watch fails ENOENT and is swallowed at `debug!`. A later `mkdir <cwd>/.grok/` followed by a write to `<cwd>/.grok/config.toml` will NOT be observed. The `<cwd>/` watch is non-recursive, so creating a subdirectory doesn't trigger a watch-add.
+/// **Known limitation:** if `<cwd>/.ezer/` does not yet exist at session-open time, the `.ezer/` watch fails ENOENT and is swallowed at `debug!`. A later `mkdir <cwd>/.ezer/` followed by a write to `<cwd>/.ezer/config.toml` will NOT be observed. The `<cwd>/` watch is non-recursive, so creating a subdirectory doesn't trigger a watch-add.
 fn watch_cwd_dirs(debouncer: &mut Debouncer<AccessFilteredWatcher>, cwd: &Path) {
     if let Err(e) = debouncer.watcher().watch(cwd, RecursiveMode::NonRecursive) {
         log_watch_error(&e, "failed to watch project cwd (non-recursive)");
     }
-    let grok_dir = cwd.join(".grok");
+    let grok_dir = cwd.join(".ezer");
     if let Err(e) = debouncer
         .watcher()
         .watch(&grok_dir, RecursiveMode::NonRecursive)
     {
         log_watch_error(
             &e,
-            "failed to watch project .grok directory (non-recursive)",
+            "failed to watch project .ezer directory (non-recursive)",
         );
     }
 }
@@ -371,14 +371,14 @@ fn unwatch_cwd_dirs(debouncer: &mut Debouncer<AccessFilteredWatcher>, cwd: &Path
     if let Err(e) = debouncer.watcher().unwatch(cwd) {
         tracing::debug!(error = %e, "failed to unwatch project cwd");
     }
-    let grok_dir = cwd.join(".grok");
+    let grok_dir = cwd.join(".ezer");
     if let Err(e) = debouncer.watcher().unwatch(&grok_dir) {
-        tracing::debug!(error = %e, "failed to unwatch project .grok directory");
+        tracing::debug!(error = %e, "failed to unwatch project .ezer directory");
     }
 }
 
 /// Log a `notify` watch failure at a level matching its severity.
-/// "Directory doesn't exist yet" is benign and logs at `debug!`; it's expected for a freshly-opened session whose `<cwd>/.grok/` hasn't been created.
+/// "Directory doesn't exist yet" is benign and logs at `debug!`; it's expected for a freshly-opened session whose `<cwd>/.ezer/` hasn't been created.
 /// Actionable failures like `fs.inotify.max_user_watches` exhaustion or permission denied log at `warn!`, since live edits will be silently missed.
 fn log_watch_error(err: &notify::Error, msg: &str) {
     let not_found = matches!(err.kind, notify::ErrorKind::PathNotFound)
@@ -425,9 +425,9 @@ fn discovery_change_for_path(path: &Path) -> Option<DiscoveryChange> {
 }
 
 /// Known vendor config root basenames; kept in sync with `collect_skill_config_dirs`.
-const VENDOR_CONFIG_ROOT_NAMES: &[&str] = &[".grok", ".agents", ".claude", ".cursor"];
+const VENDOR_CONFIG_ROOT_NAMES: &[&str] = &[".ezer", ".agents", ".claude", ".cursor"];
 
-/// `bundled` is the synced bundle root in grok home, so its appearance means skills changed.
+/// `bundled` is the synced bundle root in ezer home, so its appearance means skills changed.
 const SKILL_DISCOVERY_BASENAMES: &[&str] = &["skills", "commands", "SKILL.md", "bundled"];
 
 /// Vendor roots (by name or `grok_home`) must use scoped watches; they can contain large non-skill trees (`worktrees/`, etc.).
@@ -465,7 +465,7 @@ fn vendor_skill_refresh_dirs(config_dir: &Path) -> [(PathBuf, RecursiveMode); 3]
 }
 
 fn project_grok_refresh_dirs(project_root: &Path) -> Vec<(PathBuf, RecursiveMode)> {
-    let project_grok = project_root.join(".grok");
+    let project_grok = project_root.join(".ezer");
     let mut dirs = vec![(project_grok.clone(), RecursiveMode::NonRecursive)];
     dirs.extend(vendor_skill_refresh_dirs(&project_grok));
     dirs
@@ -574,7 +574,7 @@ fn plan_skills_watch_targets(
     }
 }
 
-/// Watches project `.grok` skills/commands/workflows for mid-session discovery.
+/// Watches project `.ezer` skills/commands/workflows for mid-session discovery.
 ///
 /// After a [`DiscoveryChange`], call [`Self::refresh_new_dirs`] so newly created seed dirs get watches attached.
 pub(crate) struct ProjectDiscoveryWatcher {
@@ -589,12 +589,12 @@ impl ProjectDiscoveryWatcher {
         grok_home: &Path,
     ) -> Option<(Self, mpsc::UnboundedReceiver<DiscoveryChange>)> {
         let project_root = crate::session::workflow::registry::project_root(cwd);
-        let project_grok = project_root.join(".grok");
+        let project_grok = project_root.join(".ezer");
         // Grok home's root sees constant unrelated writes from every grok process
         if paths_equal(&project_grok, grok_home) {
             tracing::debug!(
                 project_grok = %project_grok.display(),
-                "project .grok is grok home; skills watcher owns it"
+                "project .ezer is ezer home; skills watcher owns it"
             );
             return None;
         }
@@ -846,14 +846,14 @@ mod tests {
     fn is_vendor_config_root_matches_known_names_at_any_tier() {
         let home = TempDir::new().unwrap();
         let home = home.path();
-        let grok_home = home.join(".grok");
+        let grok_home = home.join(".ezer");
 
         assert!(is_vendor_config_root(&grok_home, &grok_home));
         assert!(is_vendor_config_root(&home.join(".claude"), &grok_home));
         assert!(is_vendor_config_root(&home.join(".cursor"), &grok_home));
         assert!(is_vendor_config_root(&home.join(".agents"), &grok_home));
         assert!(is_vendor_config_root(
-            &home.join("repo").join(".grok"),
+            &home.join("repo").join(".ezer"),
             &grok_home
         ));
         assert!(is_vendor_config_root(
@@ -868,7 +868,7 @@ mod tests {
             &grok_home
         ));
 
-        let custom_home = home.join("custom-grok-home");
+        let custom_home = home.join("custom-ezer-home");
         assert!(is_vendor_config_root(&custom_home, &custom_home));
     }
 
@@ -888,7 +888,7 @@ mod tests {
     #[test]
     fn project_grok_refresh_dirs_matches_vendor_layout() {
         let project = Path::new("/tmp/repo");
-        let grok = project.join(".grok");
+        let grok = project.join(".ezer");
         let dirs = project_grok_refresh_dirs(project);
 
         assert_eq!(dirs.len(), 4);
@@ -1001,7 +1001,7 @@ mod tests {
     fn start_with_dirs_keeps_parent_only_watch() {
         let tmp = TempDir::new().unwrap();
         let project = tmp.path();
-        let grok_home = project.join("home-grok");
+        let grok_home = project.join("home-ezer");
         fs::create_dir_all(&grok_home).unwrap();
 
         let plan = plan_skills_watch_targets(&[], &grok_home, Some(project));
@@ -1025,9 +1025,9 @@ mod tests {
     fn plan_skills_watch_targets_scopes_vendors_and_seeds_refresh() {
         let tmp = TempDir::new().unwrap();
         let project = tmp.path();
-        let grok_home = project.join("home-grok");
+        let grok_home = project.join("home-ezer");
         let project_claude = project.join(".claude");
-        let project_grok = project.join(".grok");
+        let project_grok = project.join(".ezer");
         let custom = project.join("my-skills");
         fs::create_dir_all(&project_claude).unwrap();
         fs::create_dir_all(&project_grok).unwrap();
@@ -1058,7 +1058,7 @@ mod tests {
 
     #[test]
     fn plan_skills_watch_targets_multi_vendor_refresh_fanout() {
-        let grok_home = PathBuf::from("/home/u/.grok");
+        let grok_home = PathBuf::from("/home/u/.ezer");
         let a = PathBuf::from("/repo/.claude");
         let b = PathBuf::from("/repo/.agents");
         let plan = plan_skills_watch_targets(&[a.clone(), b.clone()], &grok_home, None);
@@ -1087,7 +1087,7 @@ mod tests {
     fn plan_skills_watch_targets_seeds_all_missing_project_vendor_roots() {
         let tmp = TempDir::new().unwrap();
         let project = tmp.path();
-        let grok_home = project.join("elsewhere").join(".grok");
+        let grok_home = project.join("elsewhere").join(".ezer");
         let plan = plan_skills_watch_targets(&[], &grok_home, Some(project));
 
         assert_eq!(plan.project_parent_watch.as_deref(), Some(project));
@@ -1117,7 +1117,7 @@ mod tests {
     fn plan_skills_watch_targets_does_not_double_seed_present_vendor_roots() {
         let tmp = TempDir::new().unwrap();
         let project = tmp.path();
-        let grok_home = project.join("home-grok");
+        let grok_home = project.join("home-ezer");
         let present: Vec<PathBuf> = VENDOR_CONFIG_ROOT_NAMES
             .iter()
             .map(|name| project.join(name))
@@ -1158,7 +1158,7 @@ mod tests {
     fn plan_skills_watch_targets_partial_vendors_seed_only_missing() {
         let tmp = TempDir::new().unwrap();
         let project = tmp.path();
-        let grok_home = project.join("home-grok");
+        let grok_home = project.join("home-ezer");
         let project_claude = project.join(".claude");
         fs::create_dir_all(&project_claude).unwrap();
 
@@ -1172,7 +1172,7 @@ mod tests {
         assert_eq!(plan.project_parent_watch.as_deref(), Some(project));
 
         let mut expected = vendor_skill_refresh_dirs(&project_claude).to_vec();
-        for name in [".grok", ".agents", ".cursor"] {
+        for name in [".ezer", ".agents", ".cursor"] {
             let root = project.join(name);
             expected.push((root.clone(), RecursiveMode::NonRecursive));
             expected.extend(vendor_skill_refresh_dirs(&root));
@@ -1189,8 +1189,8 @@ mod tests {
     fn plan_skills_watch_targets_parent_watches_project_when_grok_present_siblings_missing() {
         let tmp = TempDir::new().unwrap();
         let project = tmp.path();
-        let grok_home = project.join("home-grok");
-        let project_grok = project.join(".grok");
+        let grok_home = project.join("home-ezer");
+        let project_grok = project.join(".ezer");
         fs::create_dir_all(&project_grok).unwrap();
 
         let plan = plan_skills_watch_targets(
@@ -1235,7 +1235,7 @@ mod tests {
         let wt_skill = global
             .join("worktrees")
             .join("wt1")
-            .join(".grok")
+            .join(".ezer")
             .join("skills")
             .join("beta");
         fs::create_dir_all(&wt_skill).unwrap();
@@ -1294,7 +1294,7 @@ mod tests {
 
         assert!(is_vendor_config_root(
             &project_claude,
-            &tmp.path().join(".grok")
+            &tmp.path().join(".ezer")
         ));
 
         let (tx, mut rx) = mpsc::unbounded_channel();
@@ -1334,7 +1334,7 @@ mod tests {
 
     #[test]
     fn workflow_change_classifies_missing_directory_creation() {
-        let grok = Path::new("/tmp/project/.grok");
+        let grok = Path::new("/tmp/project/.ezer");
         assert_eq!(
             discovery_change_for_path(grok),
             Some(DiscoveryChange::Skills)
@@ -1378,7 +1378,7 @@ mod tests {
         let tmp = TempDir::new().unwrap();
         let project = tmp.path();
         git2::Repository::init(project).unwrap();
-        let project_grok = project.join(".grok");
+        let project_grok = project.join(".ezer");
         fs::create_dir_all(project_grok.join("workflows")).unwrap();
         // Nested cwd: the guard must compare the discovered git root's .grok, not cwd's
         let cwd = project.join("sub");
@@ -1394,7 +1394,7 @@ mod tests {
         let tmp = TempDir::new().unwrap();
         let project = tmp.path();
         git2::Repository::init(project).unwrap();
-        let project_grok = project.join(".grok");
+        let project_grok = project.join(".ezer");
         fs::create_dir_all(project_grok.join("workflows")).unwrap();
 
         let (_w, mut rx) = ProjectDiscoveryWatcher::start(project, &project.join("other-home"))
@@ -1402,11 +1402,11 @@ mod tests {
 
         // Batch-mode debounce delivers about SKILLS_DEBOUNCE after the first raw event
         let settle = SKILLS_DEBOUNCE + Duration::from_millis(500);
-        fs::write(project_grok.join("grok-leader.log"), "leader").unwrap();
+        fs::write(project_grok.join("ezer-leader.log"), "leader").unwrap();
         std::thread::sleep(settle);
         assert!(
             rx.try_recv().is_err(),
-            "unclassified files under the project .grok must not fire"
+            "unclassified files under the project .ezer must not fire"
         );
 
         fs::write(
@@ -1662,7 +1662,7 @@ mod tests {
     /// An external `config.toml` referent must classify as global, not project.
     #[test]
     fn classify_external_config_toml_referent_as_global() {
-        let grok_home = Path::new("/home/u/.grok");
+        let grok_home = Path::new("/home/u/.ezer");
         let dest = Path::new("/home/u/dotfiles/config.toml");
         assert_eq!(
             classify_watched_path(dest, grok_home, Some(dest), None),

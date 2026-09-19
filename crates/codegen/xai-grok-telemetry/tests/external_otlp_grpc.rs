@@ -19,7 +19,7 @@ fn external_stream_grpc_end_to_end() {
 
     let mut cfg = xai_grok_telemetry::external::ExternalOtelConfig::resolve_with(
         |name| match name {
-            "GROK_EXTERNAL_OTEL" => Some("1".into()),
+            "EZER_EXTERNAL_OTEL" => Some("1".into()),
             "OTEL_LOGS_EXPORTER" | "OTEL_METRICS_EXPORTER" => Some("otlp".into()),
             "OTEL_EXPORTER_OTLP_ENDPOINT" => Some(endpoint.clone()),
             "OTEL_EXPORTER_OTLP_PROTOCOL" => Some("grpc".into()),
@@ -48,9 +48,9 @@ fn external_stream_grpc_end_to_end() {
     });
     xai_grok_telemetry::log_event(xai_grok_telemetry::events::SessionHarness {
         session_id: "sess-grpc-1".into(),
-        client_identifier: Some("grok-pager".into()),
+        client_identifier: Some("ezer".into()),
         model_id: "grok-4".into(),
-        agent_name: "grok-build-plan".into(),
+        agent_name: "ezer-build-plan".into(),
         permission_mode: xai_grok_telemetry::enums::PermissionMode::Ask,
         mcp_server_names: vec![CANARY_MCP.into()],
         plugin_names: vec![],
@@ -93,9 +93,9 @@ fn external_stream_grpc_end_to_end() {
 
     let event_names = recorder.event_names();
     for expected in [
-        "grok_code.session_start",
-        "grok_code.user_prompt",
-        "grok_code.api_request",
+        "ezer.session_start",
+        "ezer.user_prompt",
+        "ezer.api_request",
     ] {
         assert!(
             event_names.iter().any(|n| n == expected),
@@ -105,11 +105,11 @@ fn external_stream_grpc_end_to_end() {
 
     let metrics = recorder.metric_points();
     assert!(
-        metrics.iter().any(|p| p.name == "grok_code.session.count"),
+        metrics.iter().any(|p| p.name == "ezer.session.count"),
         "missing session.count in {metrics:?}"
     );
     assert!(
-        metrics.iter().any(|p| p.name == "grok_code.token.usage"),
+        metrics.iter().any(|p| p.name == "ezer.token.usage"),
         "missing token.usage in {metrics:?}"
     );
     for point in metrics {

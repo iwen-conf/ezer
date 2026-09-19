@@ -1,6 +1,6 @@
 //! The canonical manifest location is `plugin.json` at the plugin root.
 //! Fallback locations (checked in order when the root manifest is absent):
-//! 1. `.grok-plugin/plugin.json`
+//! 1. `.ezer-plugin/plugin.json`
 //! 2. `.claude-plugin/plugin.json`
 //!
 //! If no manifest is found, the plugin can still function via convention-based discovery (skills/, agents/, .mcp.json, hooks/hooks.json).
@@ -260,7 +260,7 @@ fn resolve_dirs(
 /// Manifest search order within a plugin directory.
 const MANIFEST_PATHS: &[&str] = &[
     "plugin.json",
-    ".grok-plugin/plugin.json",
+    ".ezer-plugin/plugin.json",
     ".claude-plugin/plugin.json",
 ];
 
@@ -315,7 +315,7 @@ pub fn name_from_dirname(dir: &Path) -> Option<String> {
     Some(trimmed)
 }
 
-/// Replaces `${GROK_PLUGIN_ROOT}`, `${CLAUDE_PLUGIN_ROOT}`, `${GROK_PLUGIN_DATA}`, and `${CLAUDE_PLUGIN_DATA}` with the provided values.
+/// Replaces `${EZER_PLUGIN_ROOT}`, `${CLAUDE_PLUGIN_ROOT}`, `${EZER_PLUGIN_DATA}`, and `${CLAUDE_PLUGIN_DATA}` with the provided values.
 /// Delegates to [`xai_grok_tools::util::substitute_plugin_tokens`], which plugin skill and command bodies also use.
 pub fn substitute_env_vars(s: &str, plugin_root: &str, plugin_data: &str) -> String {
     xai_grok_tools::util::substitute_plugin_tokens(s, Some(plugin_root), Some(plugin_data))

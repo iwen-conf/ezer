@@ -1,14 +1,14 @@
 pub const FIRST_PARTY_CREDENTIAL_ENV_VARS: &[&str] = &[
-    "GROK_AUTH",
-    "GROK_AUTH_PATH",
+    "EZER_AUTH",
+    "EZER_AUTH_PATH",
     "EZER_API_KEY",
     "XAI_API_KEY",
-    "GROK_DEPLOYMENT_KEY",
-    "GROK_CODE_XAI_API_KEY",
-    "GROK_EXTRA_AUTH_KEY",
-    "GROK_TRACE_UPLOAD_CREDENTIALS_FILE",
+    "EZER_DEPLOYMENT_KEY",
+    "EZER_CODE_XAI_API_KEY",
+    "EZER_EXTRA_AUTH_KEY",
+    "EZER_TRACE_UPLOAD_CREDENTIALS_FILE",
     "OTEL_EXPORTER_OTLP_HEADERS",
-    "GROK_INTERNAL_OTLP_HEADERS",
+    "EZER_INTERNAL_OTLP_HEADERS",
 ];
 
 fn parse_bool(value: &str) -> Option<bool> {
@@ -53,9 +53,9 @@ mod tests {
 
     #[test]
     fn env_string_trims_and_treats_blank_as_unset() {
-        let guard = EnvVarGuard::set("GROK_TEST_ENV_STRING", "  hi  ");
-        assert_eq!(env_string("GROK_TEST_ENV_STRING"), Some("hi".to_string()));
+        let guard = EnvVarGuard::set("EZER_TEST_ENV_STRING", "  hi  ");
+        assert_eq!(env_string("EZER_TEST_ENV_STRING"), Some("hi".to_string()));
         guard.set_value("   ");
-        assert_eq!(env_string("GROK_TEST_ENV_STRING"), None);
+        assert_eq!(env_string("EZER_TEST_ENV_STRING"), None);
     }
 }

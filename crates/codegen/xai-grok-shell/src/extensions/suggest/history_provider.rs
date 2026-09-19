@@ -41,7 +41,7 @@ impl HistoryProvider {
 }
 
 /// Rank history matches from three tiers of history sources.
-/// Priority order: local grok bash history, then shell history, then cross-CWD history.
+/// Priority order: local ezer bash history, then shell history, then cross-CWD history.
 fn rank_history_matches(
     prefix: &str,
     local: &[String],

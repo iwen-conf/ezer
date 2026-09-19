@@ -34,7 +34,7 @@ async fn undo_tip_seen_count_never_persisted() {
 
     // The old code wrote `[hints] undo_tip_shown_count` here; the count now lives only in memory, so nothing is written
     // A missing config.toml (read_to_string returns "") also proves nothing was persisted, since the old code would have created it
-    let config = content.home().join(".grok").join("config.toml");
+    let config = content.home().join(".ezer").join("config.toml");
     let body = std::fs::read_to_string(&config).unwrap_or_default();
     assert!(
         !body.contains("undo_tip_shown_count"),

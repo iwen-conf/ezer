@@ -3,7 +3,7 @@
 //! The comments here record only what that guide cannot.
 //!
 //! Two rules hold it together.
-//! A value Grok cannot source is `None` rather than zero.
+//! A value ezer cannot source is `None` rather than zero.
 //! Fields are snake_case, the one exception to the camelCase rule in `xai-grok-pager/docs/internal/28-extension-methods.md`.
 //! They stay that way because renaming one silently breaks every script that reads it.
 

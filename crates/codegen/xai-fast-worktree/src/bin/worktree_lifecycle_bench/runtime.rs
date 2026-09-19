@@ -48,7 +48,7 @@ impl CgroupV2 {
             if !parent.join("cgroup.controllers").is_file() {
                 return Ok(None);
             }
-            let path = parent.join(format!("grok-lifecycle-{label}"));
+            let path = parent.join(format!("ezer-lifecycle-{label}"));
             match std::fs::create_dir(&path) {
                 Ok(()) => Ok(Some(Arc::new(Self { path }))),
                 Err(error)

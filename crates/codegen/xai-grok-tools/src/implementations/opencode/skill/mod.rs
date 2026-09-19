@@ -36,7 +36,7 @@ ${%- for skill in skills %}
   </skill>
 ${%- endfor %}
 ${%- else %}
-(No skills available. Skills can be added in ~/.grok/skills/ or .grok/skills/)
+(No skills available. Skills can be added in ~/.ezer/skills/ or .ezer/skills/)
 ${%- endif %}
 </available_skills>"#;
 

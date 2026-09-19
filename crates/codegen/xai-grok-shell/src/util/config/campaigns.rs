@@ -118,11 +118,11 @@ fn dismiss_campaign_ids_at(
     })
 }
 
-/// `GROK_CAMPAIGNS_OVERRIDE` JSON array replaces all sources (`[]` means none; it beats the kill switch).
+/// `EZER_CAMPAIGNS_OVERRIDE` JSON array replaces all sources (`[]` means none; it beats the kill switch).
 /// Invalid JSON also resolves to none: the var's intent is "replace campaigns with exactly this".
 /// A typo must not silently fall back to the real sources it was meant to replace.
 pub(crate) fn campaigns_override() -> Option<Vec<CampaignEntry>> {
-    let json = std::env::var("GROK_CAMPAIGNS_OVERRIDE").ok()?;
+    let json = std::env::var("EZER_CAMPAIGNS_OVERRIDE").ok()?;
     match serde_json::from_str::<Vec<CampaignOverride>>(&json) {
         Ok(list) => Some(
             list.into_iter()
@@ -130,7 +130,7 @@ pub(crate) fn campaigns_override() -> Option<Vec<CampaignEntry>> {
                 .collect(),
         ),
         Err(e) => {
-            tracing::warn!(error = %e, "invalid GROK_CAMPAIGNS_OVERRIDE JSON; suppressing all campaigns");
+            tracing::warn!(error = %e, "invalid EZER_CAMPAIGNS_OVERRIDE JSON; suppressing all campaigns");
             Some(Vec::new())
         }
     }
@@ -169,7 +169,7 @@ pub fn remote_campaigns_from_settings(remote: Option<&RemoteSettings>) -> Vec<Ca
         .unwrap_or_default()
 }
 
-/// The single campaign-resolution path: `GROK_CAMPAIGNS_OVERRIDE` first (it replaces all sources and beats the kill switch).
+/// The single campaign-resolution path: `EZER_CAMPAIGNS_OVERRIDE` first (it replaces all sources and beats the kill switch).
 /// After the override come the kill switch, then the layer and remote merge, then the dismiss filter.
 /// `base` is the pre-campaign effective config, used only for the kill-switch check.
 pub(crate) fn resolve_active_campaigns_from_layers(
@@ -216,7 +216,7 @@ pub fn load_effective_config() -> std::io::Result<toml::Value> {
     Ok(effective)
 }
 
-/// Effective config with **disk campaigns only**: no remote cache, no `GROK_CAMPAIGNS_OVERRIDE`.
+/// Effective config with **disk campaigns only**: no remote cache, no `EZER_CAMPAIGNS_OVERRIDE`.
 /// One-shot CLI entrypoints that never fetch remote settings use this.
 /// Calling [`load_effective_config`] there would silently resolve against a never-seeded cache.
 pub fn load_effective_config_disk_only() -> std::io::Result<toml::Value> {
@@ -435,7 +435,7 @@ mod tests {
         t
     }
 
-    /// `GROK_CAMPAIGNS_OVERRIDE` applies despite the kill switch; without it the kill switch (`features.campaigns = false`) wins.
+    /// `EZER_CAMPAIGNS_OVERRIDE` applies despite the kill switch; without it the kill switch (`features.campaigns = false`) wins.
     #[test]
     #[serial]
     fn override_beats_kill_switch() {
@@ -444,7 +444,7 @@ mod tests {
 
         {
             let _env = EnvGuard::set(
-                "GROK_CAMPAIGNS_OVERRIDE",
+                "EZER_CAMPAIGNS_OVERRIDE",
                 r#"[{"id":"c","models":{"default":"m"}}]"#,
             );
             let active = resolve_active_campaigns_from_layers(&layers, &base, &[], &HashSet::new());
@@ -464,7 +464,7 @@ mod tests {
         }
 
         // Same disabled base, override now unset: the kill switch suppresses all
-        let _env = EnvGuard::unset("GROK_CAMPAIGNS_OVERRIDE");
+        let _env = EnvGuard::unset("EZER_CAMPAIGNS_OVERRIDE");
         let active = resolve_active_campaigns_from_layers(&layers, &base, &[], &HashSet::new());
         assert!(
             active.is_empty(),
@@ -472,13 +472,13 @@ mod tests {
         );
     }
 
-    /// Invalid `GROK_CAMPAIGNS_OVERRIDE` JSON fails toward *no campaigns*.
+    /// Invalid `EZER_CAMPAIGNS_OVERRIDE` JSON fails toward *no campaigns*.
     /// The var's intent is "replace campaigns with exactly this".
     /// A typo must not silently re-enable the layer/remote campaigns it was meant to replace.
     #[test]
     #[serial]
     fn invalid_override_json_suppresses_all_campaigns() {
-        let _env = EnvGuard::set("GROK_CAMPAIGNS_OVERRIDE", "{ not json");
+        let _env = EnvGuard::set("EZER_CAMPAIGNS_OVERRIDE", "{ not json");
 
         let mut layers = ConfigLayers::default();
         layers.campaigns.user = vec![CampaignEntry {
@@ -499,13 +499,13 @@ mod tests {
     }
 
     /// Dismiss bookkeeping deliberately ignores the kill switch.
-    /// A model pick made while `GROK_CAMPAIGNS=0` must still record the dismissal.
+    /// A model pick made while `EZER_CAMPAIGNS=0` must still record the dismissal.
     /// Otherwise a later re-enabled campaign would override the user's explicit choice.
     #[test]
     #[serial]
     fn dismiss_resolution_ignores_kill_switch() {
-        let _over = EnvGuard::unset("GROK_CAMPAIGNS_OVERRIDE");
-        let _kill = EnvGuard::set("GROK_CAMPAIGNS", "0");
+        let _over = EnvGuard::unset("EZER_CAMPAIGNS_OVERRIDE");
+        let _kill = EnvGuard::set("EZER_CAMPAIGNS", "0");
 
         let mut patch = serde_json::Map::new();
         patch.insert("models".into(), serde_json::json!({ "default": "m" }));
@@ -534,8 +534,8 @@ mod tests {
     #[test]
     #[serial]
     fn campaign_driven_models_default_tracks_remote_and_dismissals() {
-        let _over = EnvGuard::unset("GROK_CAMPAIGNS_OVERRIDE");
-        let _kill = EnvGuard::unset("GROK_CAMPAIGNS");
+        let _over = EnvGuard::unset("EZER_CAMPAIGNS_OVERRIDE");
+        let _kill = EnvGuard::unset("EZER_CAMPAIGNS");
 
         let layers = ConfigLayers {
             user: toml::from_str("[models]\ndefault = \"config-model\"\n").unwrap(),
@@ -568,11 +568,11 @@ mod tests {
         );
     }
 
-    /// `GROK_CAMPAIGNS_OVERRIDE="[]"` replaces all sources with nothing: even layer and remote campaigns resolve to empty.
+    /// `EZER_CAMPAIGNS_OVERRIDE="[]"` replaces all sources with nothing: even layer and remote campaigns resolve to empty.
     #[test]
     #[serial]
     fn override_empty_means_none() {
-        let _env = EnvGuard::set("GROK_CAMPAIGNS_OVERRIDE", "[]");
+        let _env = EnvGuard::set("EZER_CAMPAIGNS_OVERRIDE", "[]");
 
         let mut layers = ConfigLayers::default();
         layers.campaigns.user = vec![CampaignEntry {
@@ -649,7 +649,7 @@ mod tests {
     #[test]
     #[serial]
     fn seeded_remote_campaign_is_visible_to_dismiss() {
-        let _env = EnvGuard::unset("GROK_CAMPAIGNS_OVERRIDE");
+        let _env = EnvGuard::unset("EZER_CAMPAIGNS_OVERRIDE");
         let mut patch = serde_json::Map::new();
         patch.insert("models".into(), serde_json::json!({ "default": "m" }));
         let rs = RemoteSettings {
@@ -678,7 +678,7 @@ mod tests {
     #[serial]
     fn dismissed_id_is_dropped_from_override() {
         let _env = EnvGuard::set(
-            "GROK_CAMPAIGNS_OVERRIDE",
+            "EZER_CAMPAIGNS_OVERRIDE",
             r#"[{"id":"seen","models":{"default":"m"}}]"#,
         );
         let layers = ConfigLayers::default();

@@ -9,7 +9,7 @@ use crate::register_resource;
 // Safety-boundary constants. Not configurable.
 pub const MAX_URL_LENGTH: usize = 2_000;
 pub const MAX_REDIRECTS: usize = 10;
-pub const USER_AGENT_STRING: &str = "Mozilla/5.0 (compatible; grok-agent/1.0; +https://x.ai)";
+pub const USER_AGENT_STRING: &str = "Mozilla/5.0 (compatible; ezer-agent/1.0; +https://x.ai)";
 
 /// Runtime-configurable parameters for the `web_fetch` tool. Injected via `Params<WebFetchParams>`
 /// in `SharedResources`. All fields are optional — `None` means "use built-in default."
@@ -38,12 +38,12 @@ pub struct WebFetchParams {
     pub proxy_endpoint: Option<String>,
     /// When true, allow fetches to **explicit** loopback hosts only (`localhost`, `127.0.0.0/8`,
     /// `::1`). Private/metadata stay blocked. Default: `false` (fail closed). Set via
-    /// `[toolset.web_fetch] allow_local = true` or `GROK_WEB_FETCH_ALLOW_LOCAL=1`.
+    /// `[toolset.web_fetch] allow_local = true` or `EZER_WEB_FETCH_ALLOW_LOCAL=1`.
     #[serde(default)]
     pub allow_local: Option<bool>,
 }
 
-register_resource!("grok_build", "WebFetch", WebFetchParams);
+register_resource!("ezer_build", "WebFetch", WebFetchParams);
 
 // Keep defaults here so call-sites don't have to manage unwrapping.
 // Vars are still public following other conventions though.

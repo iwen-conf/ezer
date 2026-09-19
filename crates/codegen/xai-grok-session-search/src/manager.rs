@@ -1,7 +1,7 @@
 //! Answers session search queries and keeps the index updated in the background.
 //!
 //! The FTS index is bootstrapped on first search and updated per session via [`SearchIndexManager::enqueue`].
-//! The SQLite DB is shared with other grok processes (older binaries may wipe or downgrade it on open).
+//! The SQLite DB is shared with other ezer processes (older binaries may wipe or downgrade it on open).
 //! So every search re-verifies the on-disk completed-bootstrap marker, and the bootstrap itself is cross-process single-flight.
 
 use std::collections::{HashMap, HashSet};
@@ -112,7 +112,7 @@ impl WorkerContext {
     }
 }
 
-/// Manages background session indexing for every grok home this process touches.
+/// Manages background session indexing for every ezer home this process touches.
 ///
 /// Requires an active tokio runtime on construction (spawns tasks).
 pub struct SearchIndexManager {
@@ -134,7 +134,7 @@ pub struct SearchIndexStatus {
 
 impl SearchIndexManager {
     /// Start the dispatcher.
-    /// `source_factory` opens the session store for a grok home and `extract` pulls searchable text out of one transcript.
+    /// `source_factory` opens the session store for a ezer home and `extract` pulls searchable text out of one transcript.
     pub fn start(source_factory: SessionSourceFactory, extract: ContentExtractor) -> Self {
         let progress = Arc::new(BootstrapProgress::default());
         let (tx, mut rx) = mpsc::unbounded_channel::<SearchManagerCmd>();

@@ -1,7 +1,7 @@
 use crate::util::config::RemoteSettings;
 use toml::Value as TomlValue;
 
-pub const ENV_SHOW_THINKING_BLOCKS: &str = "GROK_SHOW_THINKING_BLOCKS";
+pub const ENV_SHOW_THINKING_BLOCKS: &str = "EZER_SHOW_THINKING_BLOCKS";
 
 #[cfg(test)]
 static SHOW_THINKING_BLOCKS_ENV_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
@@ -45,7 +45,7 @@ pub fn resolve_show_thinking_blocks(
     )
 }
 
-pub const ENV_GROUP_TOOL_VERBS: &str = "GROK_GROUP_TOOL_VERBS";
+pub const ENV_GROUP_TOOL_VERBS: &str = "EZER_GROUP_TOOL_VERBS";
 
 #[cfg(test)]
 static GROUP_TOOL_VERBS_ENV_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
@@ -69,7 +69,7 @@ pub fn resolve_group_tool_verbs(
     )
 }
 
-pub const ENV_COLLAPSED_EDIT_BLOCKS: &str = "GROK_COLLAPSED_EDIT_BLOCKS";
+pub const ENV_COLLAPSED_EDIT_BLOCKS: &str = "EZER_COLLAPSED_EDIT_BLOCKS";
 
 #[cfg(test)]
 static COLLAPSED_EDIT_BLOCKS_ENV_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
@@ -94,7 +94,7 @@ pub fn resolve_collapsed_edit_blocks(
 }
 
 /// When enabled, the pager registers `Ctrl+R` (scrollback-focused only) so the user can flip terminal mouse capture. Turning capture off hands selection back to the terminal for native click-drag copy/paste.
-/// Precedence: `GROK_MOUSE_REPORTING_TOGGLE` env > `[ui] mouse_reporting_toggle` > the parsed [`UiConfig`] field > default (`false`). The [`UiConfig`] fallback defends against a partial deserialize.
+/// Precedence: `EZER_MOUSE_REPORTING_TOGGLE` env > `[ui] mouse_reporting_toggle` > the parsed [`UiConfig`] field > default (`false`). The [`UiConfig`] fallback defends against a partial deserialize.
 /// [`UiConfig`]: crate::agent::config::UiConfig
 pub fn resolve_mouse_reporting_toggle(
     effective_config: Option<&TomlValue>,
@@ -105,7 +105,7 @@ pub fn resolve_mouse_reporting_toggle(
         .and_then(|c| c.get("ui"))
         .and_then(|ui| ui.get("mouse_reporting_toggle"))
         .and_then(|v| v.as_bool());
-    BoolFlag::env("GROK_MOUSE_REPORTING_TOGGLE")
+    BoolFlag::env("EZER_MOUSE_REPORTING_TOGGLE")
         .config(from_effective.or(ui.mouse_reporting_toggle))
         .resolve()
 }

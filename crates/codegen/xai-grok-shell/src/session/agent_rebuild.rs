@@ -288,7 +288,7 @@ impl AgentRebuildSpec {
         }
         let session_env = {
             let mut env = session_env.as_ref().clone();
-            env.insert("GROK_SESSION_ID".to_string(), session_id_str.clone());
+            env.insert("EZER_SESSION_ID".to_string(), session_id_str.clone());
             Arc::new(env)
         };
         let mut builder = AgentBuilder::new(
@@ -546,16 +546,16 @@ mod legacy_tests {
         let toolset = agent.tool_bridge().toolset();
         let task_name = toolset
             .tool_name_for_kind(xai_grok_tools::types::tool::ToolKind::Task)
-            .expect("GrokBuild Task tool should be present");
+            .expect("Ezer Task tool should be present");
         toolset
             .tool_definitions()
             .into_iter()
             .find(|definition| definition.function.name == task_name)
             .and_then(|definition| definition.function.description)
-            .expect("GrokBuild Task description should be present")
+            .expect("Ezer Task description should be present")
     }
     /// The `[toolset.web_search]` policy is authoritative on the backend-hosted path.
-    /// Agent frontmatter is model-writable (`.grok/agents/*.md`), so a configured blocklist must survive a frontmatter allowlist.
+    /// Agent frontmatter is model-writable (`.ezer/agents/*.md`), so a configured blocklist must survive a frontmatter allowlist.
     #[tokio::test(flavor = "current_thread")]
     async fn config_web_search_domains_beat_agent_frontmatter() {
         use xai_grok_sampling_types::{HostedTool, ToolOverrides, WebSearchOptions};

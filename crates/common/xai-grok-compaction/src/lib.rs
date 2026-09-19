@@ -6,8 +6,8 @@
 //! stay in each product host (for example `xai-grok-shell`).
 //!
 //! The crate depends on **neither** a conversation-type crate nor
-//! `xai-grok-sampling-types`. It is decoupled from both Grok chat and
-//! grok-build hosts through a small set of trait seams:
+//! `xai-grok-sampling-types`. It is decoupled from both ezer chat and
+//! ezer-build hosts through a small set of trait seams:
 //!
 //! - [`CompactionItem`] / [`CompactionRole`] / [`CompactionItemBuilder`] —
 //!   abstracts a single turn and its reconstruction.
@@ -21,10 +21,10 @@
 //!
 //! Compaction styles live in their own modules:
 //!
-//! - [`code_compaction`] — grok-build's whole-session **full-replace**
+//! - [`code_compaction`] — ezer-build's whole-session **full-replace**
 //!   subsystem (prompt/summary/failure/config, assemble, orchestration).
-//! - [`intra_compaction`] — Grok chat's tail-keep, per-step pass.
-//! - [`inter_compaction`] — Grok chat's chunked, between-turn pass.
+//! - [`intra_compaction`] — ezer chat's tail-keep, per-step pass.
+//! - [`inter_compaction`] — ezer chat's chunked, between-turn pass.
 //!
 //! Compaction-type content (parallel subfolders): [`steps`] (the step-level
 //! prompt) and [`history`] (filtering, history prompts, validation +
@@ -34,8 +34,8 @@
 //! [`prompt::CompactionPrompt`], [`select`] (tool-pair-safe tail-keep
 //! selection — shared by the intra `Steps` and `History` targets, so it stays
 //! neutral at the crate root rather than under `steps`), and [`reminder`]
-//! (active-agent-state `<system-reminder>` formatting shared by Grok chat and
-//! grok-build; hosts still own snapshotting and host-only sections).
+//! (active-agent-state `<system-reminder>` formatting shared by ezer chat and
+//! ezer-build; hosts still own snapshotting and host-only sections).
 
 pub mod code_compaction;
 pub mod history;

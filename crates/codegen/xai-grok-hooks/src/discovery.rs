@@ -135,7 +135,7 @@ impl HookRegistry {
 pub enum HookSource<'a> {
     /// A JSON settings file; only its `hooks` key is used.
     SettingsFile(&'a Path),
-    /// A directory of `*.json` hook files (e.g. `~/.grok/hooks/`).
+    /// A directory of `*.json` hook files (e.g. `~/.ezer/hooks/`).
     Directory(&'a Path),
 }
 
@@ -796,7 +796,7 @@ mod tests {
             HookProvenance::Requirements
         );
 
-        // Managed-vs-managed pair: `$GROK_HOME/requirements.toml` arrives before `/etc/grok`, but the root-owned tier outranks it
+        // Managed-vs-managed pair: `$GROK_HOME/requirements.toml` arrives before `/etc/ezer`, but the root-owned tier outranks it
         // The no-disable rule and pinned fields must not resolve under the user-writable copy
         let registry = registry_from_specs_deduped(vec![
             spec(

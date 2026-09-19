@@ -323,10 +323,10 @@ fn assert_id_shape(id: &str, basename: &str) {
 
 #[test]
 fn id_from_path_strips_worktree_prefix_and_hashes_full_path() {
-    let p = Path::new("/home/.grok/worktrees/myrepo/worktree-019caa03");
+    let p = Path::new("/home/.ezer/worktrees/myrepo/worktree-019caa03");
     assert_id_shape(&id_from_path(p), "019caa03");
     assert_id_shape(
-        &id_from_path(Path::new("/home/.grok/worktree_pool/inst/a1b2c3")),
+        &id_from_path(Path::new("/home/.ezer/worktree_pool/inst/a1b2c3")),
         "a1b2c3",
     );
     assert_id_shape(&id_from_path(Path::new("/tmp/my-worktree")), "my-worktree");
@@ -343,8 +343,8 @@ fn same_basename_worktrees_in_different_repos_coexist() {
     // the other via the `id` PRIMARY KEY or the `path UNIQUE` constraint.
     let db = WorktreeDb::open_in_memory().unwrap();
 
-    let path_a = "/home/.grok/worktrees/repo-a/session/wt-abc";
-    let path_b = "/home/.grok/worktrees/repo-b/session/wt-abc";
+    let path_a = "/home/.ezer/worktrees/repo-a/session/wt-abc";
+    let path_b = "/home/.ezer/worktrees/repo-b/session/wt-abc";
     let mut rec_a = make_record(
         &id_from_path(Path::new(path_a)),
         path_a,
@@ -588,7 +588,7 @@ fn journal_mode(db: &WorktreeDb) -> String {
 #[test]
 fn open_at_uses_wal_on_local_fs() {
     // Ambient kill-switch would override the decision; skip if set.
-    if std::env::var("GROK_SQLITE_JOURNAL_MODE").is_ok() {
+    if std::env::var("EZER_SQLITE_JOURNAL_MODE").is_ok() {
         return;
     }
     let tmp = tempfile::TempDir::new().unwrap();
@@ -691,7 +691,7 @@ fn record_label_reads_metadata() {
 #[test]
 fn open_read_only_never_creates_and_reads_existing() {
     let tmp = tempfile::TempDir::new().unwrap();
-    let home = tmp.path().join("grok-home");
+    let home = tmp.path().join("ezer-home");
 
     assert!(matches!(
         WorktreeDb::open_read_only(&home),
@@ -748,7 +748,7 @@ fn sqlite_errors_classify_by_code() {
 #[test]
 fn open_rejects_a_corrupt_db_file() {
     let tmp = tempfile::TempDir::new().unwrap();
-    let home = tmp.path().join("grok-home");
+    let home = tmp.path().join("ezer-home");
     std::fs::create_dir_all(&home).unwrap();
     std::fs::write(
         WorktreeDb::resolve_db_path(&home),
@@ -826,7 +826,7 @@ fn read_only_open_respects_deadline_under_contention() {
 #[test]
 fn read_only_handles_reject_writes_on_both_journal_arms() {
     let tmp = tempfile::TempDir::new().unwrap();
-    let home = tmp.path().join("grok-home");
+    let home = tmp.path().join("ezer-home");
     WorktreeDb::open(&home)
         .unwrap()
         .register(&make_labeled_record("a", "/tmp/wt-a", "x"))

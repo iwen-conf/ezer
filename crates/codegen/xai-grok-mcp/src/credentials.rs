@@ -110,14 +110,14 @@ impl McpCredentialStore {
 
     pub fn save_default(&self) -> Result<()> {
         let path = Self::default_path().ok_or_else(|| {
-            McpCredentialError::Other("no user grok home (set $GROK_HOME or $HOME)".into())
+            McpCredentialError::Other("no user ezer home (set $GROK_HOME or $HOME)".into())
         })?;
         self.save_to(&path)
     }
 
     fn locked_mutate_and_save(&mut self, mutate: &dyn Fn(&mut Self)) -> Result<()> {
         let path = Self::default_path().ok_or_else(|| {
-            McpCredentialError::Other("no user grok home (set $GROK_HOME or $HOME)".into())
+            McpCredentialError::Other("no user ezer home (set $GROK_HOME or $HOME)".into())
         })?;
         match acquire_store_lock(&path) {
             Some(_lock) => {
@@ -486,7 +486,7 @@ mod tests {
 
     #[test]
     fn save_and_load_from_file() {
-        let dir = std::env::temp_dir().join("grok-mcp-credentials-test");
+        let dir = std::env::temp_dir().join("ezer-mcp-credentials-test");
         std::fs::create_dir_all(&dir).unwrap();
         let path = dir.join("test_creds.json");
 

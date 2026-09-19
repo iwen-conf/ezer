@@ -1,4 +1,4 @@
-//! Conversation types: re-exports the canonical set from `xai_grok_sampling_types` plus grok-shell-specific additions.
+//! Conversation types: re-exports the canonical set from `xai_grok_sampling_types` plus ezer-shell-specific additions.
 
 use std::collections::HashSet;
 
@@ -9,7 +9,7 @@ pub use xai_grok_sampling_types::conversation::*;
 mod tests;
 
 /// Tracing context for conversation requests; satisfies `TraceContext` through its blanket impl.
-/// Lives in grok-shell because it references shell-internal config and upload types.
+/// Lives in ezer-shell because it references shell-internal config and upload types.
 #[derive(Debug, Clone)]
 pub struct ConversationRequestTrace {
     pub gcs_config: crate::session::repo_changes::TraceExportConfig,

@@ -32,7 +32,7 @@ fn external_stream_grpc_mtls_end_to_end() {
 
     let mut cfg = xai_grok_telemetry::external::ExternalOtelConfig::resolve_with(
         |name| match name {
-            "GROK_EXTERNAL_OTEL" => Some("1".into()),
+            "EZER_EXTERNAL_OTEL" => Some("1".into()),
             "OTEL_LOGS_EXPORTER" | "OTEL_METRICS_EXPORTER" => Some("otlp".into()),
             "OTEL_EXPORTER_OTLP_ENDPOINT" => Some(endpoint.clone()),
             "OTEL_EXPORTER_OTLP_PROTOCOL" => Some("grpc".into()),
@@ -72,9 +72,9 @@ fn external_stream_grpc_mtls_end_to_end() {
     });
     xai_grok_telemetry::log_event(xai_grok_telemetry::events::SessionHarness {
         session_id: "sess-grpc-mtls-1".into(),
-        client_identifier: Some("grok-pager".into()),
+        client_identifier: Some("ezer".into()),
         model_id: "grok-4".into(),
-        agent_name: "grok-build-plan".into(),
+        agent_name: "ezer-build-plan".into(),
         permission_mode: xai_grok_telemetry::enums::PermissionMode::Ask,
         mcp_server_names: vec![],
         plugin_names: vec![],
@@ -93,8 +93,8 @@ fn external_stream_grpc_mtls_end_to_end() {
         .expect("log records must arrive over mTLS");
     let names = recorder.event_names();
     assert!(
-        names.iter().any(|n| n == "grok_code.session_start"),
-        "expected grok_code.session_start in {names:?}"
+        names.iter().any(|n| n == "ezer.session_start"),
+        "expected ezer.session_start in {names:?}"
     );
 
     col::block_on(recorder.wait_for_signals(Duration::from_secs(10), &[OtelSignal::Metrics]))

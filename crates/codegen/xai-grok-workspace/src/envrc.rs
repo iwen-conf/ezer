@@ -12,7 +12,7 @@ use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
 const ENVRC_LOAD_TIMEOUT: Duration = Duration::from_secs(10);
-const ENVRC_TIMEOUT_ENV: &str = "GROK_ENVRC_TIMEOUT_SECS"; // seconds; 0 disables
+const ENVRC_TIMEOUT_ENV: &str = "EZER_ENVRC_TIMEOUT_SECS"; // seconds; 0 disables
 const MAX_TIMEOUT: Duration = Duration::from_secs(3600);
 const POLL_INTERVAL: Duration = Duration::from_millis(25);
 const PIPE_DRAIN_GRACE: Duration = Duration::from_millis(250); // of silence

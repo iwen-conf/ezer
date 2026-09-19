@@ -860,14 +860,14 @@ async fn non_dismissible_promo_ignores_hide_then_dismissible_hides() {
     harness.quit().expect("clean quit");
 }
 
-/// Pinned (`dismissible:false`) promo seeded via `GROK_ANNOUNCEMENTS_OVERRIDE`.
+/// Pinned (`dismissible:false`) promo seeded via `EZER_ANNOUNCEMENTS_OVERRIDE`.
 fn pinned_promo_override_json() -> String {
     format!(
         r#"[{{"id":"pty-promo-pinned","message":"{PROMO_MSG}","severity":"promo","dismissible":false,"cta":{{"label":"{PROMO_LABEL}","url":"{PROMO_URL}","caption":"{PROMO_CAPTION}"}}}}]"#
     )
 }
 
-/// [`spawn_with_announcements`] with extra env pairs appended (e.g. `GROK_TEST_OPEN_URL_FILE` and a `TERM_PROGRAM` pin for OSC 8).
+/// [`spawn_with_announcements`] with extra env pairs appended (e.g. `EZER_TEST_OPEN_URL_FILE` and a `TERM_PROGRAM` pin for OSC 8).
 fn spawn_with_announcements_and_env(
     content: &ContentController,
     override_json: &str,

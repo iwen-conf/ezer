@@ -14,9 +14,9 @@ pub fn pin_env() {
     static PIN: Once = Once::new();
     // SAFETY: runs before any test builds a client; the kill switch, pool knobs, and OnceLock'd pool_idle_timeout latch once at first use, and racing tests block on the Once.
     PIN.call_once(|| unsafe {
-        std::env::remove_var("GROK_SAMPLER_SHARED_CLIENT");
-        std::env::set_var("GROK_POOL_MAX_IDLE", "2");
-        std::env::set_var("GROK_POOL_IDLE_TIMEOUT_SECS", "90");
+        std::env::remove_var("EZER_SAMPLER_SHARED_CLIENT");
+        std::env::set_var("EZER_POOL_MAX_IDLE", "2");
+        std::env::set_var("EZER_POOL_IDLE_TIMEOUT_SECS", "90");
     });
 }
 

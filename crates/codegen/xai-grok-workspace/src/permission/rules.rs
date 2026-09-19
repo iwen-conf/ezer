@@ -105,7 +105,7 @@ impl std::error::Error for RuleParseError {}
 
 /// Parse a permission rule string into a native `PermissionRule`.
 /// Unrecognized prefixes (`EnterWorktree`, `NotebookEdit`/`NotebookRead`, anything else) return `Err` and the rule is skipped; legacy `SendAgentMessage` still parses.
-/// `WebFetch(domain:…)` matches the host, not a glob; bare tool names are wildcards; `.claude` `mcp__…` is rewritten onto Grok's unprefixed `<server>__<tool>` names.
+/// `WebFetch(domain:…)` matches the host, not a glob; bare tool names are wildcards; `.claude` `mcp__…` is rewritten onto ezer's unprefixed `<server>__<tool>` names.
 pub fn parse_permission_rule(
     rule: &str,
     action: RuleAction,

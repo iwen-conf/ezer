@@ -2,8 +2,8 @@
 //!
 //! Per-tool enable state (default on) is resolved by the host via the shared
 //! config helper `xai-grok-shell::util::config::resolve_search_tools_enabled`
-//! (requirements > env `GROK_TOOLS_FIND_BFS` / `GROK_TOOLS_GREP_UGREP` (+
-//! `GROK_FIND_BFS` / `GROK_GREP_UGREP` aliases, `DISABLE_EMBEDDED_SEARCH_TOOLS`
+//! (requirements > env `EZER_TOOLS_FIND_BFS` / `EZER_TOOLS_GREP_UGREP` (+
+//! `EZER_FIND_BFS` / `EZER_GREP_UGREP` aliases, `DISABLE_EMBEDDED_SEARCH_TOOLS`
 //! master) > `[toolset.bash]` config.toml > managed > default), baked into the
 //! `LocalTerminalBackend` as a [`SearchShadowConfig`] and passed to
 //! [`search_injection`] per command. The enable state lives on the backend (not
@@ -12,8 +12,8 @@
 //! parses the flags itself.
 //!
 //! Resolve (host side, memoized): env override if a regular file → bundled binary
-//! (release builds, self-extracted to `~/.grok/vendor/<name>-<ver>-<target>`) →
-//! `~/.grok/vendor/{name}` if a regular file → `which` on the agent `$PATH`.
+//! (release builds, self-extracted to `~/.ezer/vendor/<name>-<ver>-<target>`) →
+//! `~/.ezer/vendor/{name}` if a regular file → `which` on the agent `$PATH`.
 //! Env/vendor only require `is_file()` as a lenient hint (no `--version` probe).
 //! This memoized path is only a *hint*: the injected shadow re-resolves at
 //! **call time** — it uses the hint when it's still *executable* (`[ -x ]`), else
@@ -49,9 +49,9 @@ const UGREP_DEFAULT_ARGS: &[&str] = &[
 const BFS_BYTES: &[u8] = include_bytes!(concat!(
     env!("OUT_DIR"),
     "/bundle-bfs/bfs-",
-    env!("GROK_TOOLS_BFS_VER"),
+    env!("EZER_TOOLS_BFS_VER"),
     "-",
-    env!("GROK_TOOLS_BFS_TARGET"),
+    env!("EZER_TOOLS_BFS_TARGET"),
     ".bin.zst"
 ));
 
@@ -59,9 +59,9 @@ const BFS_BYTES: &[u8] = include_bytes!(concat!(
 const UGREP_BYTES: &[u8] = include_bytes!(concat!(
     env!("OUT_DIR"),
     "/bundle-ugrep/ugrep-",
-    env!("GROK_TOOLS_UGREP_VER"),
+    env!("EZER_TOOLS_UGREP_VER"),
     "-",
-    env!("GROK_TOOLS_UGREP_TARGET"),
+    env!("EZER_TOOLS_UGREP_TARGET"),
     ".bin.zst"
 ));
 
@@ -110,8 +110,8 @@ struct ResolvedTools {
 fn resolved_tools() -> &'static ResolvedTools {
     static TOOLS: OnceLock<ResolvedTools> = OnceLock::new();
     TOOLS.get_or_init(|| ResolvedTools {
-        bfs: resolve_tool("bfs", "GROK_TOOLS_BFS_PATH", bundled_bfs()),
-        ugrep: resolve_tool("ugrep", "GROK_TOOLS_UGREP_PATH", bundled_ugrep()),
+        bfs: resolve_tool("bfs", "EZER_TOOLS_BFS_PATH", bundled_bfs()),
+        ugrep: resolve_tool("ugrep", "EZER_TOOLS_UGREP_PATH", bundled_ugrep()),
     })
 }
 
@@ -121,12 +121,12 @@ fn bundled_bfs() -> Result<Option<PathBuf>, String> {
         crate::util::vendor::resolve(
             concat!(
                 "bfs-",
-                env!("GROK_TOOLS_BFS_VER"),
+                env!("EZER_TOOLS_BFS_VER"),
                 "-",
-                env!("GROK_TOOLS_BFS_TARGET")
+                env!("EZER_TOOLS_BFS_TARGET")
             ),
             BFS_BYTES,
-            env!("GROK_TOOLS_BFS_SHA256"),
+            env!("EZER_TOOLS_BFS_SHA256"),
         )
         .map_err(|e| e.to_string())
     }
@@ -142,12 +142,12 @@ fn bundled_ugrep() -> Result<Option<PathBuf>, String> {
         crate::util::vendor::resolve(
             concat!(
                 "ugrep-",
-                env!("GROK_TOOLS_UGREP_VER"),
+                env!("EZER_TOOLS_UGREP_VER"),
                 "-",
-                env!("GROK_TOOLS_UGREP_TARGET")
+                env!("EZER_TOOLS_UGREP_TARGET")
             ),
             UGREP_BYTES,
-            env!("GROK_TOOLS_UGREP_SHA256"),
+            env!("EZER_TOOLS_UGREP_SHA256"),
         )
         .map_err(|e| e.to_string())
     }
@@ -176,7 +176,7 @@ fn resolve_tool(
     )
 }
 
-/// Resolution order: explicit env path → bundled (self-extracted) → `~/.grok/vendor/<bin>` → `which`. Env and vendor only require `is_file()`
+/// Resolution order: explicit env path → bundled (self-extracted) → `~/.ezer/vendor/<bin>` → `which`. Env and vendor only require `is_file()`
 /// here (a lenient hint, no `+x` probe) so an odd-permission copy still resolves; the injected shadow gates on `[ -x ]` at call time and falls
 /// back to the OS binary if the hint isn't executable, so a non-exec path can't hard-fail `find`/`grep`.
 fn resolve_tool_from(
@@ -398,7 +398,7 @@ mod tests {
     #[test]
     fn env_override_accepts_regular_file_without_exec_bit() {
         let bin = std::env::temp_dir().join(format!(
-            "grok-bfs-noexec-{}-{}",
+            "ezer-bfs-noexec-{}-{}",
             std::process::id(),
             std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
@@ -428,7 +428,7 @@ mod tests {
     #[test]
     fn resolve_tool_precedence() {
         // Real temp files so the is_file() checks pass.
-        let dir = std::env::temp_dir().join(format!("grok-resolve-{}-{:?}", std::process::id(), {
+        let dir = std::env::temp_dir().join(format!("ezer-resolve-{}-{:?}", std::process::id(), {
             use std::time::{SystemTime, UNIX_EPOCH};
             SystemTime::now()
                 .duration_since(UNIX_EPOCH)
@@ -474,8 +474,8 @@ mod tests {
     }
 
     /// Only compiled when the binaries are actually bundled (release pipeline, or
-    /// `GROK_TOOLS_BUNDLE_{BFS,UGREP}_PATH` at build time). Verifies the embedded
-    /// bytes self-extract under `~/.grok/vendor` and the extracted `bfs` runs.
+    /// `EZER_TOOLS_BUNDLE_{BFS,UGREP}_PATH` at build time). Verifies the embedded
+    /// bytes self-extract under `~/.ezer/vendor` and the extracted `bfs` runs.
     #[cfg(all(bundle_bfs, bundle_ugrep))]
     #[test]
     fn bundled_binaries_extract_and_run() {
@@ -628,7 +628,7 @@ mod tests {
             return;
         };
         let dir = std::env::temp_dir().join(format!(
-            "grok-selfheal-{}-{}",
+            "ezer-selfheal-{}-{}",
             std::process::id(),
             std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
@@ -691,7 +691,7 @@ mod tests {
     }
 
     /// #1 regression: a host hint that exists but is **not executable** (e.g. a mode-0644
-    /// `GROK_TOOLS_*_PATH` / vendor copy) must fall through to the OS binary rather than hard-fail
+    /// `EZER_TOOLS_*_PATH` / vendor copy) must fall through to the OS binary rather than hard-fail
     /// `exec` with EACCES. The `[ -x ]` guard (not `[ -f ]`) is what makes this work.
     #[test]
     fn shadow_falls_back_when_hint_not_executable() {
@@ -699,7 +699,7 @@ mod tests {
             return;
         };
         let dir = std::env::temp_dir().join(format!(
-            "grok-noexec-{}-{}",
+            "ezer-noexec-{}-{}",
             std::process::id(),
             std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)

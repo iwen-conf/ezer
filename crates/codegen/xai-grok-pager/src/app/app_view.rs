@@ -497,14 +497,14 @@ impl PendingAction {
         Instant::now() >= self.expires_at
     }
 }
-/// Cap for the `GROK_ESC_DOUBLE_PRESS_MS` override; the pty_e2e suite sets exactly this value.
+/// Cap for the `EZER_ESC_DOUBLE_PRESS_MS` override; the pty_e2e suite sets exactly this value.
 pub const ESC_DOUBLE_PRESS_TEST_MS: u64 = 60_000;
-/// Idle-Esc double-press confirm window, `GROK_ESC_DOUBLE_PRESS_MS`-overridable (read once, bounded).
+/// Idle-Esc double-press confirm window, `EZER_ESC_DOUBLE_PRESS_MS`-overridable (read once, bounded).
 /// The override exists for tests: a loaded pty_e2e shard's render round-trip between the presses can outlast the 800ms default and expire the arm.
 pub(crate) fn esc_double_press_ttl() -> Duration {
     use std::sync::OnceLock;
     static TTL: OnceLock<Duration> = OnceLock::new();
-    *TTL.get_or_init(|| parse_esc_ttl(std::env::var("GROK_ESC_DOUBLE_PRESS_MS").ok()))
+    *TTL.get_or_init(|| parse_esc_ttl(std::env::var("EZER_ESC_DOUBLE_PRESS_MS").ok()))
 }
 /// Extracted pure (no `OnceLock`) so the bounds are unit-testable: zero or garbage falls back to the default, oversized clamps.
 fn parse_esc_ttl(raw: Option<String>) -> Duration {
@@ -595,7 +595,7 @@ pub struct AppView {
     pub scroll_state: MouseScrollState,
     /// Scroll config derived from terminal detection.
     pub scroll_config: ScrollConfig,
-    /// Current appearance config (hot-reloadable from ~/.grok/pager.toml).
+    /// Current appearance config (hot-reloadable from ~/.ezer/pager.toml).
     /// Stored here so new agents inherit the current config.
     pub appearance: AppearanceConfig,
     /// Notification service (terminal bell, OSC sequences, title updates).
@@ -614,10 +614,10 @@ pub struct AppView {
     /// Tracing log channel receiver. Set by the event loop after `init_tracing()`.
     /// Drained into `tracing_pane` each tick in debug/dev builds; otherwise drained-and-discarded.
     pub tracing_rx: Option<crate::tracing::LogRx>,
-    /// Scroll-diagnostics HUD (`GROK_SCROLL_DEBUG` env / `/scroll-debug`).
+    /// Scroll-diagnostics HUD (`EZER_SCROLL_DEBUG` env / `/scroll-debug`).
     /// Release-compiled behind its runtime gate; see the module doc.
     pub scroll_debug_hud: crate::views::scroll_debug_hud::ScrollDebugHud,
-    /// Release-safe FPS HUD (`/debug fps`; `GROK_FPS` env on release builds, where the dev overlay is compiled out); see the module doc.
+    /// Release-safe FPS HUD (`/debug fps`; `EZER_FPS` env on release builds, where the dev overlay is compiled out); see the module doc.
     pub fps_hud: crate::views::fps_hud::FpsHud,
     pub active_announcements: Vec<xai_grok_announcements::RemoteAnnouncement>,
     /// Persisted hide keys, filtered at the banner selection gate.
@@ -642,7 +642,7 @@ pub struct AppView {
     /// Currently forced off while session share links are temporarily disabled in clients.
     pub sharing_enabled: bool,
     /// Whether the plugin marketplace CTA is enabled.
-    /// Env `GROK_PLUGIN_CTA` overrides `RemoteSettings.plugin_cta` (remote settings); defaults to `false`.
+    /// Env `EZER_PLUGIN_CTA` overrides `RemoteSettings.plugin_cta` (remote settings); defaults to `false`.
     pub plugin_cta_enabled: bool,
     /// Marketplace source name the plugin CTA draws candidates from, when `[marketplace].plugin_cta_marketplace` is set in the effective config.
     /// `None` keeps the default xAI Official source.
@@ -661,7 +661,7 @@ pub struct AppView {
     /// Deny wins over all other visibility gates.
     pub tier_restricted_commands: Vec<String>,
     /// Whether the pager is connected via a leader (leader mode).
-    /// The Agent Dashboard entry points (`/dashboard`, `Ctrl+\`, `grok dashboard`, the startup hook) are gated on this flag.
+    /// The Agent Dashboard entry points (`/dashboard`, `Ctrl+\`, `ezer dashboard`, the startup hook) are gated on this flag.
     /// They are only meaningful when a leader is coordinating a fleet of sessions.
     pub leader_mode: bool,
     /// App-level credit balance used to show the usage warning on the welcome screen before any agent session exists.
@@ -697,10 +697,10 @@ pub struct AppView {
     pub(crate) pending_running_adoptions:
         std::collections::HashMap<AgentId, crate::app::acp_handler::PendingRunningAdoption>,
     /// Whether the session picker groups entries by repo name with non-selectable headers.
-    /// Gated by `GROK_SESSION_PICKER_GROUPED` env var or remote settings `session_picker_grouped`; defaults to `false`.
+    /// Gated by `EZER_SESSION_PICKER_GROUPED` env var or remote settings `session_picker_grouped`; defaults to `false`.
     pub session_picker_grouped: bool,
     /// Whether Ctrl+C before first server activity rewinds the prompt back into the input box.
-    /// Gated by `GROK_CANCEL_REWIND` env / `[features] cancel_rewind` config / remote settings flag.
+    /// Gated by `EZER_CANCEL_REWIND` env / `[features] cancel_rewind` config / remote settings flag.
     pub cancel_rewind_enabled: bool,
     /// Whether session recap (`/recap` and the automatic away recap) is rolled out.
     /// Resolved by the shell and advertised on ACP initialize (`sessionRecap`).
@@ -930,7 +930,7 @@ pub struct AppView {
     pub new_worktree_dialog: Option<NewWorktreeDialogState>,
     /// Default all ON.
     /// Resolved at startup and on settings toggles.
-    /// Precedence: `GROK_CONTEXTUAL_HINTS` (master) > `[ui.contextual_hints]` user config > remote tier > default.
+    /// Precedence: `EZER_CONTEXTUAL_HINTS` (master) > `[ui.contextual_hints]` user config > remote tier > default.
     pub contextual_hints: xai_grok_shell::util::config::ResolvedContextualHints,
     /// Remote tier for the contextual hints, kept so a settings toggle can re-resolve the untouched tips against the same remote defaults.
     pub remote_contextual_hints: Option<xai_grok_shell::util::config::ContextualHintsRemote>,
@@ -947,7 +947,7 @@ pub struct AppView {
     /// One-shot gate for the small-screen `/compact-mode` tip: set after the first evaluation at a stable agent-view draw (regardless of outcome).
     /// Later resizes thus can never re-trigger the tip within this run.
     pub small_screen_tip_evaluated: bool,
-    /// One-shot gate for the SSH `grok wrap` tip: set after the first evaluation at a stable agent-view draw.
+    /// One-shot gate for the SSH `ezer wrap` tip: set after the first evaluation at a stable agent-view draw.
     /// The environment gates are process-constant, so one evaluation decides the run.
     pub ssh_wrap_tip_evaluated: bool,
     /// State for the clipboard-image tip, polled opportunistically and only while the terminal is focused.
@@ -1037,7 +1037,7 @@ pub struct AppView {
     /// Server-controlled via RemoteSettings (remote settings). Default `false` (blocked) during beta.
     pub zdr_access_enabled: bool,
     /// When set, `/usage` shows a link to this URL instead of fetching billing data from the backend.
-    /// Server-controlled via RemoteSettings (remote settings `grok_build_usage_redirect_url`, targeted at personal-team users).
+    /// Server-controlled via RemoteSettings (remote settings `ezer_build_usage_redirect_url`, targeted at personal-team users).
     /// `None` (default) fetches usage from the backend.
     pub usage_billing_redirect_url: Option<String>,
     pub access_gate_shown_logged: bool,
@@ -1045,7 +1045,7 @@ pub struct AppView {
     /// Keyed by `announcement_hide_key` (stable even for id-less items, unlike the event's `id`).
     pub announcement_cta_impressions_logged:
         std::collections::BTreeSet<(String, xai_grok_telemetry::events::AnnouncementCtaSurface)>,
-    /// Access gate from `grok_build_access_gate`. `Some` means blocked.
+    /// Access gate from `ezer_build_access_gate`. `Some` means blocked.
     pub gate: Option<xai_grok_login::GateInfo>,
     /// User-friendly subscription tier name (e.g. "SuperGrok", "Free").
     pub subscription_tier: Option<String>,
@@ -1102,7 +1102,7 @@ pub struct AppView {
     /// Where to return when leaving the dashboard. See [`DashboardReturn`].
     pub dashboard_return: Option<DashboardReturn>,
     /// Persisted dashboard configuration (pinned rows, reorderings, grouping).
-    /// Loaded once on startup from `~/.grok/config.toml`.
+    /// Loaded once on startup from `~/.ezer/config.toml`.
     /// `None` when the file/section is absent or contained malformed data; falls back to in-memory defaults.
     pub dashboard_persisted: Option<crate::views::dashboard::PersistedDashboard>,
     /// Per-platform key event normalizer.
@@ -1110,7 +1110,7 @@ pub struct AppView {
     /// New event consumers that bypass `AppView::handle_input` will not get rescued modifiers unless they also normalize.
     pub(crate) keyboard_normalizer: KeyboardNormalizer,
     /// Voice gate (GA default on at startup resolution).
-    /// When false (remote kill switch or `GROK_VOICE_MODE=0`) the STT pipeline is not started and session voice mode cannot turn on.
+    /// When false (remote kill switch or `EZER_VOICE_MODE=0`) the STT pipeline is not started and session voice mode cannot turn on.
     /// Unit tests leave this false until they call [`Self::apply_voice_mode_enabled`].
     pub voice_mode_enabled: bool,
     /// Session UI mode from `/voice` (this CLI process only, not in config.toml).
@@ -2205,7 +2205,7 @@ impl AppView {
             top_offset,
         })
     }
-    /// Rows the dev `GROK_FPS` overlay occupies (0 in non-dev builds), so runtime debug overlays stack below instead of overpainting it.
+    /// Rows the dev `EZER_FPS` overlay occupies (0 in non-dev builds), so runtime debug overlays stack below instead of overpainting it.
     fn dev_fps_rows(&self) -> u16 {
         0
     }
@@ -5153,7 +5153,7 @@ impl AppView {
         self.small_screen_tip_evaluated = true;
         super::dispatch::show_small_screen_tip(self);
     }
-    /// One-shot SSH `grok wrap` tip trigger, run at the top of every `draw` right after [`Self::maybe_trigger_small_screen_tip`].
+    /// One-shot SSH `ezer wrap` tip trigger, run at the top of every `draw` right after [`Self::maybe_trigger_small_screen_tip`].
     /// The welcome screen has no ephemeral-tip row, so the first stable agent-view draw is the earliest surface that can paint a session-load tip.
     /// Reads the live environment (cached statics) and delegates to the injectable inner so tests never depend on the host's SSH shape.
     pub(crate) fn maybe_trigger_ssh_wrap_tip(&mut self) {

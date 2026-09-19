@@ -28,7 +28,7 @@ use crate::types::tool::{ToolKind, ToolNamespace};
 
 /// Default Imagine model for `image_gen`. Used unless an explicit
 /// `model_override` is supplied via `ImageGenConfig::Enabled`.
-const XAI_IMAGINE_MODEL: &str = "grok-imagine-image-quality";
+const XAI_IMAGINE_MODEL: &str = "ezer-imagine-image-quality";
 // Some Imagine models (e.g. `grok-imagine-image`, selectable via `model_override`) expand the prompt then generate,
 // and the proxy buffers the whole image before sending any bytes — so the client may receive nothing for well over a
 // minute. Keep these generous so a slow-but-progressing generation isn't cut off.
@@ -43,7 +43,7 @@ pub use xai_grok_tools_api::slash_commands::{
 /// Prose returned to the model (as a normal, successful tool result) when a free / X Basic user calls `image_gen` or
 /// `image_edit`. The model relays it to the user. The deliberate `/imagine` slash command shows the richer SuperGrok
 /// upsell modal instead; this covers the natural-language path.
-pub(crate) const TIER_RESTRICTED_UPSELL: &str = "Image generation is a SuperGrok feature and isn't available on the free or X Basic tier. Let the user know they can unlock image and video generation by upgrading to SuperGrok: https://grok.com/supergrok?referrer=grok-build. Do not retry this tool.";
+pub(crate) const TIER_RESTRICTED_UPSELL: &str = "Image generation is a SuperGrok feature and isn't available on the free or X Basic tier. Let the user know they can unlock image and video generation by upgrading to SuperGrok: https://grok.com/supergrok?referrer=ezer-build. Do not retry this tool.";
 
 /// HTTP client for xAI Imagine API. Cloned per-request; shares `Arc` state.
 #[derive(Clone)]
@@ -327,7 +327,7 @@ pub enum ImageGenConfig {
 
 /// Session-id header attached to imagine API requests; matches the header
 /// chat requests already carry.
-pub const SESSION_ID_HEADER: &str = "x-grok-session-id";
+pub const SESSION_ID_HEADER: &str = "x-ezer-session-id";
 
 impl ImageGenConfig {
     /// Credentials present — required to construct any of the clients.
@@ -527,14 +527,14 @@ mod tests {
             extra_headers: indexmap::IndexMap::new(),
             image_gen_enabled: false,
             image_edit_enabled: true,
-            model_override: Some("grok-imagine-image".into()),
+            model_override: Some("ezer-imagine-image".into()),
             edit_model_override: None,
             tier_restricted: false,
         };
         assert!(cfg.has_credentials());
         assert!(!cfg.image_gen_enabled());
         assert!(cfg.image_edit_enabled());
-        assert_eq!(cfg.model_override(), Some("grok-imagine-image"));
+        assert_eq!(cfg.model_override(), Some("ezer-imagine-image"));
 
         assert!(!ImageGenConfig::Disabled.has_credentials());
     }
@@ -640,10 +640,10 @@ mod tests {
         );
         // Override → that exact model slug.
         assert_eq!(
-            ImageGenClient::new(&mk(Some("grok-imagine-image")), None)
+            ImageGenClient::new(&mk(Some("ezer-imagine-image")), None)
                 .unwrap()
                 .model,
-            "grok-imagine-image"
+            "ezer-imagine-image"
         );
     }
 
@@ -669,8 +669,8 @@ mod tests {
                 .edit_model(),
             super::super::image_edit::XAI_IMAGINE_EDIT_MODEL
         );
-        let client = ImageGenClient::new(&mk(Some("grok-imagine-image-v2")), None).unwrap();
-        assert_eq!(client.edit_model(), "grok-imagine-image-v2");
+        let client = ImageGenClient::new(&mk(Some("ezer-imagine-image-v2")), None).unwrap();
+        assert_eq!(client.edit_model(), "ezer-imagine-image-v2");
         assert_eq!(client.model, XAI_IMAGINE_MODEL);
     }
 
@@ -728,7 +728,7 @@ mod tests {
         match result {
             ToolOutput::Text(t) => {
                 assert!(t.text.contains("SuperGrok"), "got: {}", t.text);
-                assert!(t.text.contains("supergrok?referrer=grok-build"));
+                assert!(t.text.contains("supergrok?referrer=ezer-build"));
             }
             other => panic!("expected Text upsell, got {other:?}"),
         }

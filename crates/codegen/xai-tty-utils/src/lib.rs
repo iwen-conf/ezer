@@ -137,7 +137,7 @@ pub fn reset_oom_score_adj() -> io::Result<()> {
 /// protective (negative) `oom_score_adj`, so the commands it spawns stay
 /// ordinary OOM candidates instead of inheriting that protection.
 #[cfg(unix)]
-pub const RESET_CHILD_OOM_ENV: &str = "GROK_TOOLS_RESET_CHILD_OOM";
+pub const RESET_CHILD_OOM_ENV: &str = "EZER_TOOLS_RESET_CHILD_OOM";
 
 /// Lowering the score needs root/`CAP_SYS_RESOURCE`; the error distinguishes a real misconfiguration (`PermissionDenied`)
 /// from an expected non-procfs environment (`NotFound`). The score is inherited across `fork`, so a caller that gets `Ok`

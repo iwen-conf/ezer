@@ -51,7 +51,7 @@ fn resolve_auth_json_path(grok_auth_path: Option<OsString>, grok_home: &Path) ->
 }
 
 pub fn auth_json_path(grok_home: &Path) -> PathBuf {
-    resolve_auth_json_path(std::env::var_os("GROK_AUTH_PATH"), grok_home)
+    resolve_auth_json_path(std::env::var_os("EZER_AUTH_PATH"), grok_home)
 }
 
 pub fn read_auth_json(auth_file: &Path) -> std::io::Result<AuthStore> {
@@ -388,7 +388,7 @@ mod write_fallback_tests {
         assert_eq!(
             resolve_auth_json_path(
                 Some("/custom/creds.json".into()),
-                Path::new("/home/u/.grok")
+                Path::new("/home/u/.ezer")
             ),
             PathBuf::from("/custom/creds.json"),
         );
@@ -397,16 +397,16 @@ mod write_fallback_tests {
     #[test]
     fn auth_json_path_falls_back_to_home() {
         assert_eq!(
-            resolve_auth_json_path(None, Path::new("/home/u/.grok")),
-            PathBuf::from("/home/u/.grok/auth.json"),
+            resolve_auth_json_path(None, Path::new("/home/u/.ezer")),
+            PathBuf::from("/home/u/.ezer/auth.json"),
         );
     }
 
     #[test]
     fn auth_json_path_treats_empty_override_as_unset() {
         assert_eq!(
-            resolve_auth_json_path(Some(OsString::new()), Path::new("/home/u/.grok")),
-            PathBuf::from("/home/u/.grok/auth.json"),
+            resolve_auth_json_path(Some(OsString::new()), Path::new("/home/u/.ezer")),
+            PathBuf::from("/home/u/.ezer/auth.json"),
         );
     }
 

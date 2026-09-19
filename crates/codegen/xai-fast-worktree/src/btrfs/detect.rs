@@ -241,7 +241,7 @@ fn find_btrfs_mount_for_source(source: &str, mountinfo: &str) -> Result<Option<P
 
 /// When no `root="/"` mount exists, find any mount of the same device and
 /// adjust for its root offset. `root=/repo` at `/workspace/repo` maps
-/// `/repo/.grok-snapshots/wt` to `/workspace/repo/.grok-snapshots/wt`.
+/// `/repo/.ezer-snapshots/wt` to `/workspace/repo/.ezer-snapshots/wt`.
 fn resolve_via_subvol_mount(
     device: &str,
     target_root: &str,
@@ -526,11 +526,11 @@ mod tests {
         let mountinfo =
             "8267 8961 0:813 /repo /workspace/repo rw,relatime - btrfs /dev/loop0 rw,ssd";
         let result =
-            resolve_via_subvol_mount("/dev/loop0", "/repo/.grok-snapshots/wt-123", mountinfo)
+            resolve_via_subvol_mount("/dev/loop0", "/repo/.ezer-snapshots/wt-123", mountinfo)
                 .unwrap();
         assert_eq!(
             result,
-            Some(PathBuf::from("/workspace/repo/.grok-snapshots/wt-123"))
+            Some(PathBuf::from("/workspace/repo/.ezer-snapshots/wt-123"))
         );
     }
 

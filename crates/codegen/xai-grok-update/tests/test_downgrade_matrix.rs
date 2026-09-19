@@ -76,7 +76,7 @@ async fn mount_gcs_with_channels(
     }
 
     Mock::given(method("GET"))
-        .and(path(format!("/grok-{binary_version}-{platform}")))
+        .and(path(format!("/ezer-{binary_version}-{platform}")))
         .respond_with(ResponseTemplate::new(200).set_body_bytes(b"#!/bin/sh\nexit 0\n".to_vec()))
         .mount(&server)
         .await;
@@ -108,7 +108,7 @@ async fn internal_install_stable_rollback_0_2_7_to_0_2_5() {
         .join(format!("grok-0.2.5-{platform}"));
     assert!(downloaded.exists(), "rolled-back binary must be downloaded");
 
-    let symlink = home.join("bin").join("grok");
+    let symlink = home.join("bin").join("ezer");
     let target = std::fs::read_link(&symlink).unwrap();
     assert!(
         target.to_string_lossy().contains("0.2.5"),
@@ -130,7 +130,7 @@ async fn internal_install_stable_upgrade_0_2_5_to_0_2_7() {
         .await
         .unwrap();
 
-    let symlink = test_home().join("bin").join("grok");
+    let symlink = test_home().join("bin").join("ezer");
     let target = std::fs::read_link(&symlink).unwrap();
     assert!(target.to_string_lossy().contains("0.2.7"));
 }
@@ -155,7 +155,7 @@ async fn internal_install_rollback_then_upgrade_sequence() {
             .unwrap();
     }
 
-    let target = std::fs::read_link(test_home().join("bin").join("grok")).unwrap();
+    let target = std::fs::read_link(test_home().join("bin").join("ezer")).unwrap();
     assert!(
         target.to_string_lossy().contains("0.2.8"),
         "final symlink must point to 0.2.8: {target:?}"
@@ -268,7 +268,7 @@ fn setup_npm(current_version: &str) -> FakeBinGuard {
     reset_home();
     set_test_version(current_version);
     // SAFETY: serial_test ensures no race; reset_home clears this between tests.
-    unsafe { std::env::set_var("GROK_INSTALLER", "npm") };
+    unsafe { std::env::set_var("EZER_INSTALLER", "npm") };
     FakeBinGuard::install_npm()
 }
 
@@ -277,7 +277,7 @@ fn setup_gh(current_version: &str) -> FakeBinGuard {
     reset_home();
     set_test_version(current_version);
     // SAFETY: serial_test ensures no race; reset_home clears this between tests.
-    unsafe { std::env::set_var("GROK_INSTALLER", "gh-release") };
+    unsafe { std::env::set_var("EZER_INSTALLER", "gh-release") };
     FakeBinGuard::install_gh()
 }
 
@@ -427,18 +427,18 @@ async fn auto_update_target_npm_rollback_returns_none() {
 // installed is never downloaded a second time, but a stale running process still gets the relaunch signal
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// Lay down what `install_internal_from_base` produces in the test GROK_HOME: `bin/grok -> ../downloads/grok-<version>-<platform>`.
+/// Lay down what `install_internal_from_base` produces in the test GROK_HOME: `bin/ezer -> ../downloads/ezer-<version>-<platform>`.
 fn fake_managed_install(version: &str) {
     let home = test_home();
     let downloads = home.join("downloads");
     let bin = home.join("bin");
     std::fs::create_dir_all(&downloads).unwrap();
     std::fs::create_dir_all(&bin).unwrap();
-    let name = format!("grok-{version}-{}", host_platform());
+    let name = format!("ezer-{version}-{}", host_platform());
     std::fs::write(downloads.join(&name), b"#!/bin/sh\nexit 0\n").unwrap();
     std::os::unix::fs::symlink(
         std::path::Path::new("../downloads").join(&name),
-        bin.join("grok"),
+        bin.join("ezer"),
     )
     .unwrap();
 }
@@ -566,7 +566,7 @@ async fn internal_install_double_rollback() {
             .await
             .unwrap();
 
-        let target = std::fs::read_link(test_home().join("bin").join("grok")).unwrap();
+        let target = std::fs::read_link(test_home().join("bin").join("ezer")).unwrap();
         assert!(
             target.to_string_lossy().contains(version),
             "symlink must point to {version} after install: {target:?}"

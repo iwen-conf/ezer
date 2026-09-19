@@ -129,7 +129,7 @@ pub async fn run_command_hook(
         }
     };
 
-    let debug_payloads = std::env::var("GROK_HOOK_DEBUG").is_ok_and(|v| v == "1");
+    let debug_payloads = std::env::var("EZER_HOOK_DEBUG").is_ok_and(|v| v == "1");
     if debug_payloads {
         tracing::trace!(
             hook_name = %spec.name,
@@ -218,10 +218,10 @@ pub async fn run_command_hook(
         .current_dir(ctx.workspace_root)
         // SECURITY: extra_env is applied before the GROK_* identity vars so a hook cannot spoof them.
         .envs(&spec.extra_env)
-        .env("GROK_HOOK_EVENT", envelope.hook_event_name.to_string())
-        .env("GROK_HOOK_NAME", &spec.name)
-        .env("GROK_SESSION_ID", ctx.session_id)
-        .env("GROK_WORKSPACE_ROOT", env_root.as_ref())
+        .env("EZER_HOOK_EVENT", envelope.hook_event_name.to_string())
+        .env("EZER_HOOK_NAME", &spec.name)
+        .env("EZER_SESSION_ID", ctx.session_id)
+        .env("EZER_WORKSPACE_ROOT", env_root.as_ref())
         .env("CLAUDE_PROJECT_DIR", env_root.as_ref())
         .kill_on_drop(true)
         .spawn()
@@ -2173,7 +2173,7 @@ mod tests {
             ),
             (
                 "$CLAUDE_PROJECT_DIR/$GROK_HOOK_NAME.ps1",
-                r#"& "$env:CLAUDE_PROJECT_DIR/$env:GROK_HOOK_NAME.ps1""#,
+                r#"& "$env:CLAUDE_PROJECT_DIR/$env:EZER_HOOK_NAME.ps1""#,
             ),
             (
                 "Join-Path ($CLAUDE_PROJECT_DIR) hooks",

@@ -70,7 +70,7 @@ pub(crate) struct NotificationBridgeConfig {
     /// When `false`, bash task completions fall back to the idle-gated `InjectNotification` path instead of immediate synthetic prompts.
     pub auto_wake_enabled: bool,
     /// When `true`, an approved `PlanModeExited` also queues the tracker's next-turn exit reminder.
-    /// Grok-build leaves this `false`: its exit-plan tool result already informs the model, and a deferred reminder would arrive stale. Shared with the session actor (the `gateway_enabled` pattern).
+    /// ezer-build leaves this `false`: its exit-plan tool result already informs the model, and a deferred reminder would arrive stale. Shared with the session actor (the `gateway_enabled` pattern).
     /// Refreshed on zero-turn rebuilds so the bridge always agrees with the live session gate.
     pub queue_exit_reminder_on_approved_exit: std::sync::Arc<std::sync::atomic::AtomicBool>,
     /// When `true`, suppress the bash auto-wake synthetic prompt.

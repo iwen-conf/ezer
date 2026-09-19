@@ -535,12 +535,12 @@ mod tests {
 
         std::fs::create_dir_all(&source_git).unwrap();
         std::fs::write(source_git.join("HEAD"), "ref: refs/heads/main\n").unwrap();
-        std::fs::write(source_git.join("grok-worktree-source"), "/main/repo").unwrap();
+        std::fs::write(source_git.join("ezer-worktree-source"), "/main/repo").unwrap();
 
         copy_git_dir(&source_git, &dest_git).unwrap();
 
         assert_eq!(
-            std::fs::read_to_string(dest_git.join("grok-worktree-source")).unwrap(),
+            std::fs::read_to_string(dest_git.join("ezer-worktree-source")).unwrap(),
             "/main/repo"
         );
     }

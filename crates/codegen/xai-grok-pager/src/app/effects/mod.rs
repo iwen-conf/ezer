@@ -716,7 +716,7 @@ pub(crate) fn execute(
                             }),
                             );
                             tracing::info!(
-                            target: "grok.pager.workspace_mode",
+                            target: "ezer.pager.workspace_mode",
                             event = "session_list_fetch",
                             kind_filter = ?kinds,
                             query = ?query,
@@ -1080,7 +1080,7 @@ pub(crate) fn execute(
                         Some(auth_manager.clone()),
                         None,
                         Some(session_id.clone()),
-                        "grok-pager",
+                        "ezer",
                     );
                     Some((auth_manager, registry, storage))
                 });

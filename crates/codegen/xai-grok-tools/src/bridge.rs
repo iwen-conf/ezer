@@ -90,7 +90,7 @@ impl ToolBridge {
 
     /// Returns the client-facing name of the tool registered with the given `ToolKind`, if any. Useful for "does this agent
     /// have a way to do X?" checks where the X is identified by kind rather than by namespaced id.
-    /// `Some("get_task_output")` for the grok_build agent and `None` for agents that do not register a tool of that kind.
+    /// `Some("get_task_output")` for the ezer_build agent and `None` for agents that do not register a tool of that kind.
     pub async fn tool_for_kind(&self, kind: ToolKind) -> Option<String> {
         self.registry
             .resources

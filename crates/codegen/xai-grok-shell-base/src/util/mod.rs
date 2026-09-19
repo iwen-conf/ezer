@@ -91,7 +91,7 @@ pub fn matches_trusted_base_url(candidate: &str, trusted_base: &str) -> bool {
         && path_matches
 }
 /// Production cli-chat-proxy base only (compiled-in constant). Unlike [`is_cli_chat_proxy_url`], this rejects loopback and staging/dev hosts. Used for security-sensitive remote kill-switches.
-/// Those must not become env toggles via `GROK_CLI_CHAT_PROXY_BASE_URL` (or similar) pointing at an attacker-controlled origin.
+/// Those must not become env toggles via `EZER_CLI_CHAT_PROXY_BASE_URL` (or similar) pointing at an attacker-controlled origin.
 pub fn is_prod_cli_chat_proxy_url(url: &str) -> bool {
     matches_trusted_base_url(url, crate::env::PROD_CLI_CHAT_PROXY_BASE_URL)
 }
@@ -294,14 +294,14 @@ pub fn process_cmdline_args(pid: u32) -> Option<Vec<String>> {
         None
     }
 }
-/// True if `pid` is a grok process; pairs with [`kill_process_by_pid`] to avoid killing a recycled PID.
+/// True if `pid` is an ezer process; pairs with [`kill_process_by_pid`] to avoid killing a recycled PID.
 /// Best-effort on macOS/BSD (liveness-only via `kill -0`), exact on Linux (/proc cmdline) and Windows (image path).
 pub fn is_grok_process(pid: u32) -> bool {
     #[cfg(target_os = "linux")]
     {
         let cmdline_path = format!("/proc/{pid}/cmdline");
         match std::fs::read(&cmdline_path) {
-            Ok(data) => String::from_utf8_lossy(&data).contains("grok"),
+            Ok(data) => String::from_utf8_lossy(&data).contains("ezer"),
             Err(_) => false,
         }
     }
@@ -336,7 +336,7 @@ pub fn is_grok_process(pid: u32) -> bool {
         };
         String::from_utf16_lossy(name)
             .to_ascii_lowercase()
-            .contains("grok")
+            .contains("ezer")
     }
     #[cfg(all(not(target_os = "linux"), not(windows)))]
     {
@@ -350,7 +350,7 @@ pub fn is_grok_process(pid: u32) -> bool {
     }
 }
 /// Stricter [`is_grok_process`] for the path that auto-kills zombie leaders. On macOS/BSD it matches the name via `ps` instead of liveness-only, so it never SIGKILLs a recycled PID now owned by an unrelated process.
-/// Linux/Windows already match exactly, so this delegates there. Use the permissive [`is_grok_process`] for operator-driven `grok leaders kill`.
+/// Linux/Windows already match exactly, so this delegates there. Use the permissive [`is_grok_process`] for operator-driven `ezer leaders kill`.
 pub fn is_grok_process_strict(pid: u32) -> bool {
     #[cfg(all(not(target_os = "linux"), not(windows)))]
     {
@@ -368,7 +368,7 @@ pub fn is_grok_process_strict(pid: u32) -> bool {
                     .filter(|line| !line.is_empty())
                     .and_then(|line| std::path::Path::new(line).file_name())
                     .and_then(|name| name.to_str())
-                    .is_some_and(|name| name.to_ascii_lowercase().contains("grok"))
+                    .is_some_and(|name| name.to_ascii_lowercase().contains("ezer"))
             }
             _ => false,
         }

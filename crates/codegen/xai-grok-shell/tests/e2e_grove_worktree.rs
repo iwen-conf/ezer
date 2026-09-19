@@ -471,7 +471,7 @@ fn worktree_create_daemon_down_starts_daemon_and_reports_fuse() {
     });
 }
 
-/// Second attach: `create_from_worktree_sync` from a live Grove dest (grok -w
+/// Second attach: `create_from_worktree_sync` from a live Grove dest (ezer -w
 /// from a Grove cwd). Must stay grove-fuse, preserve dirty, isolate the child.
 #[test]
 fn worktree_create_from_grove_dest_forks_fuse() {

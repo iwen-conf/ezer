@@ -60,7 +60,7 @@ env_key = ["EZER_API_KEY", "XAI_API_KEY"]
 pub fn default_byok_config_toml() -> String {
     let mut toml = format!(
         r#"# ezer — BYOK-first default (OpenAI Responses).
-# No xAI / grok.com login is required.
+# No xAI login is required.
 #
 # Gateway (WorkBuddy2API-Hub style):
 #   POST {{base_url}}/responses          (default)
@@ -112,10 +112,10 @@ pub fn should_write_first_run_config() -> bool {
     let ezer = std::env::var_os(xai_dirs::EZER_HOME_ENV)
         .filter(|v| !v.is_empty())
         .is_some();
-    let grok = std::env::var_os(xai_dirs::GROK_HOME_ENV)
+    let legacy_home = std::env::var_os(xai_dirs::GROK_HOME_ENV)
         .filter(|v| !v.is_empty())
         .is_some();
-    ezer || !grok
+    ezer || !legacy_home
 }
 
 /// Create `{home}/config.toml` from [`default_byok_config_toml`] when missing.

@@ -8,8 +8,8 @@ fn temp_workspace(tag: &str, toml_body: &str) -> PathBuf {
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap()
         .as_nanos();
-    let ws = std::env::temp_dir().join(format!("grok-rdv-{tag}-{}-{nanos}", std::process::id()));
-    let grok = ws.join(".grok");
+    let ws = std::env::temp_dir().join(format!("ezer-rdv-{tag}-{}-{nanos}", std::process::id()));
+    let grok = ws.join(".ezer");
     std::fs::create_dir_all(&grok).unwrap();
     std::fs::write(
         grok.join(xai_grok_config::SANDBOX_CONFIG_FILENAME),
@@ -199,7 +199,7 @@ fn temp_parent(tag: &str) -> PathBuf {
         .unwrap()
         .as_nanos();
     let dir = std::env::temp_dir().join(format!(
-        "grok-sentinel-{tag}-{}-{nanos}",
+        "ezer-sentinel-{tag}-{}-{nanos}",
         std::process::id()
     ));
     std::fs::create_dir_all(&dir).unwrap();

@@ -1,4 +1,4 @@
-//! `ToolMetadata` — grok-tools-specific metadata for tools.
+//! `ToolMetadata` — ezer-tools-specific metadata for tools.
 //!
 //! Each tool implements two traits:
 //! 1. `xai_tool_runtime::Tool` — typed Args/Output, `run()` with actual logic
@@ -24,7 +24,7 @@ use crate::types::resources::SharedResources;
 use crate::types::template_renderer::TemplateRenderer;
 use crate::types::tool::{ToolKind, ToolNamespace};
 
-/// Grok-tools-specific metadata trait. Each tool struct implements this alongside `xai_tool_runtime::Tool`. Only `kind()`, `namespace()`, and
+/// ezer-tools-specific metadata trait. Each tool struct implements this alongside `xai_tool_runtime::Tool`. Only `kind()`, `namespace()`, and
 /// `description_template()` are required; all other methods have defaults. The `ToolRegistry` stores a type-erased handle to each tool's
 /// `ToolMetadata` impl so it can call `versioned_definition()`, etc. after dispatch.
 pub trait ToolMetadata: Send + Sync {
@@ -33,9 +33,9 @@ pub trait ToolMetadata: Send + Sync {
     /// default `is_read_only()` derivation.
     fn kind(&self) -> ToolKind;
 
-    /// Namespace grouping (GrokBuild, Cursor, OpenCode, ...).
+    /// Namespace grouping (Ezer, Cursor, OpenCode, ...).
     /// Used to build the fully-qualified tool ID at registration time
-    /// (e.g., `"GrokBuild:grep"`).
+    /// (e.g., `"Ezer:grep"`).
     fn tool_namespace(&self) -> ToolNamespace;
 
     /// Raw MiniJinja description template with `${{ tools.by_kind.X }}` and

@@ -1,5 +1,5 @@
 //! Provides persistent caching of git marketplace repos.
-//! Cache root: `~/.grok/marketplace-cache/<url-hash>/`
+//! Cache root: `~/.ezer/marketplace-cache/<url-hash>/`
 
 use std::collections::VecDeque;
 use std::fs::File;

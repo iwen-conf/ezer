@@ -11,7 +11,7 @@ const DEFAULT_EARLY_INVALIDATION_SECS: u64 = 300; // 5 minutes
 /// Legacy auth.json scope key. Fallback for old devbox auth files.
 pub(super) const LEGACY_SCOPE: &str = "https://accounts.x.ai/sign-in";
 
-/// auth.json scope key for plain API key auth (desktop login, `grok login --api-key`).
+/// auth.json scope key for plain API key auth (desktop login, `ezer login --api-key`).
 pub(super) const API_KEY_SCOPE: &str = "xai::api_key";
 
 const BLOCKED_REASON_NO_LOGS: &str = "BLOCKED_REASON_NO_LOGS";
@@ -28,14 +28,14 @@ pub fn default_coding_data_retention_opt_out() -> bool {
 #[serde(rename_all = "snake_case")]
 pub enum AuthMode {
     /// Deprecated. Kept for deserializing old auth.json files.
-    #[serde(alias = "grok")]
+    #[serde(alias = "ezer")]
     WebLogin,
     /// OIDC or OAuth2 interactive login via customer IdP
     #[serde(alias = "oidc")]
     Oidc,
     /// External auth provider binary
     External,
-    /// Plain API key (e.g. from grok-desktop login or `grok login --api-key`)
+    /// Plain API key (e.g. from ezer-desktop login or `ezer login --api-key`)
     ApiKey,
 }
 
@@ -298,7 +298,7 @@ pub struct UserInfo {
     pub subscription_tier: Option<String>,
 }
 
-/// Look up auth from the store by scope key. Legacy `WebLogin` tokens (from the pre-OIDC `grok login --legacy` flow) are skipped. They are validated via a per-request DB lookup server-side, which fails at high volume.
+/// Look up auth from the store by scope key. Legacy `WebLogin` tokens (from the pre-OIDC `ezer login --legacy` flow) are skipped. They are validated via a per-request DB lookup server-side, which fails at high volume.
 /// Skipping them here forces affected users to re-authenticate via OIDC on next launch.
 pub fn lookup_auth(map: &AuthStore, scope: &str) -> Option<GrokAuth> {
     let auth = map
@@ -324,9 +324,9 @@ fn inherited_lookup(map: &AuthStore, scope: &str) -> Option<GrokAuth> {
 }
 
 /// Early-invalidation buffer.
-/// Override with `GROK_AUTH_EARLY_INVALIDATION_SECS` for testing (e.g. `=5` to shrink the buffer to 5 seconds).
+/// Override with `EZER_AUTH_EARLY_INVALIDATION_SECS` for testing (e.g. `=5` to shrink the buffer to 5 seconds).
 pub(super) fn early_invalidation() -> Duration {
-    std::env::var("GROK_AUTH_EARLY_INVALIDATION_SECS")
+    std::env::var("EZER_AUTH_EARLY_INVALIDATION_SECS")
         .ok()
         .and_then(|v| v.parse::<u64>().ok())
         .map(|s| Duration::seconds(s as i64))

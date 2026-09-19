@@ -45,7 +45,7 @@ async fn prefetch_runs_concurrently_and_results_are_ready_at_join() {
 #[serial_test::serial]
 async fn plugin_refresh_reads_reconciled_trust_and_does_not_start_before_it() {
     let _sim = EnvGuard::set(xai_grok_version::TEST_VERSION_ENV, "0.0.0-sim");
-    let _flag = EnvGuard::unset("GROK_FOLDER_TRUST");
+    let _flag = EnvGuard::unset("EZER_FOLDER_TRUST");
     super::REFRESH_STARTS.store(0, Ordering::SeqCst);
     super::REFRESH_VERDICTS.lock().unwrap().clear();
     super::CAPTURE_TRUST_ONLY.store(true, Ordering::SeqCst);

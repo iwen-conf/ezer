@@ -870,7 +870,7 @@ fn committed_edit_keeps_diff_line_backgrounds() {
                 "committed ANSI must keep the insert band SGR {needle}: {rows:?}"
             );
         }
-        bg => panic!("pin_theme TrueColor groknight insert bg should be RGB, got {bg:?}"),
+        bg => panic!("pin_theme TrueColor ezernight insert bg should be RGB, got {bg:?}"),
     }
 }
 

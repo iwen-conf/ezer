@@ -124,7 +124,7 @@ fn no_combination_of_working_tree_shapes_loses_uncarried_work() {
             (shape.write)(&worktree);
         }
         let carried = chosen.iter().all(|shape| shape.carried);
-        let ref_name = format!("refs/grok/subagents/{name}");
+        let ref_name = format!("refs/ezer/subagents/{name}");
 
         let safety = reclaim_after_snapshot(&worktree, &fixture.source, &ref_name);
 
@@ -171,7 +171,7 @@ fn reclaiming_a_worktree_runs_none_of_its_hooks() {
         std::fs::set_permissions(&at, std::fs::Permissions::from_mode(0o755)).unwrap();
     }
 
-    snapshot_into(&worktree, &fixture.source, "refs/grok/subagents/has-hooks");
+    snapshot_into(&worktree, &fixture.source, "refs/ezer/subagents/has-hooks");
 
     assert!(
         !ran.exists(),
@@ -231,7 +231,7 @@ fn snapshot_under_a_foreign_clean_filter() {
         std::env::var_os("GIT_CONFIG_GLOBAL").is_some(),
         "the parent must set the variable this test is about"
     );
-    let ref_name = "refs/grok/subagents/inherits-a-filter";
+    let ref_name = "refs/ezer/subagents/inherits-a-filter";
     snapshot_into(&worktree, &source, ref_name);
 
     assert_eq!(

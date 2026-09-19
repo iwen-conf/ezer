@@ -1,17 +1,17 @@
-//! Advisory image capability tokens, declared by the sandbox image as marker files under `/usr/share/grok/capabilities.d/<token>`.
+//! Advisory image capability tokens, declared by the sandbox image as marker files under `/usr/share/ezer/capabilities.d/<token>`.
 //!
 //! ADVISORY ONLY: never an authorization input.
 //! Guest processes run as root and can create files here at will.
-//! The directory deliberately sits outside `/etc/grok`, the root-owned permission-policy tier.
+//! The directory deliberately sits outside `/etc/ezer`, the root-owned permission-policy tier.
 
 use std::sync::OnceLock;
 
 use tracing::{info, warn};
 
-/// Default in-image declaration directory (image content tier, matching `/usr/share/grok/bundled-skills`).
-pub const DEFAULT_CAPABILITIES_DIR: &str = "/usr/share/grok/capabilities.d";
+/// Default in-image declaration directory (image content tier, matching `/usr/share/ezer/bundled-skills`).
+pub const DEFAULT_CAPABILITIES_DIR: &str = "/usr/share/ezer/capabilities.d";
 /// Override for tests / local dev / non-Linux hosts.
-pub const CAPABILITIES_DIR_ENV: &str = "GROK_IMAGE_CAPABILITIES_DIR";
+pub const CAPABILITIES_DIR_ENV: &str = "EZER_IMAGE_CAPABILITIES_DIR";
 /// Re-exported so the reader and the bind reply that carries its output cannot drift on the spelling.
 pub use xai_tool_protocol::IMAGE_CAPABILITIES_V1;
 // The gate and the caps live beside the wire field they bound: every hop that validates the set must apply identical rules
@@ -200,8 +200,8 @@ mod tests {
         let caps = load(&tmp.path().join("absent"));
         assert!(!caps.is_declared());
         assert!(caps.wire().is_empty());
-        assert_eq!(caps.state("grok-files.occ"), None);
-        assert!(!caps.has("grok-files.occ"));
+        assert_eq!(caps.state("ezer-files.occ"), None);
+        assert!(!caps.has("ezer-files.occ"));
     }
 
     #[test]
@@ -216,15 +216,15 @@ mod tests {
     fn self_token_makes_the_read_authoritative() {
         let tmp = tempfile::tempdir().unwrap();
         touch(tmp.path(), IMAGE_CAPABILITIES_V1);
-        touch(tmp.path(), "grok-files.occ");
+        touch(tmp.path(), "ezer-files.occ");
         let caps = load(tmp.path());
         assert!(caps.is_declared());
-        assert_eq!(caps.state("grok-files.occ"), Some(true));
-        assert!(caps.has("grok-files.occ"));
+        assert_eq!(caps.state("ezer-files.occ"), Some(true));
+        assert!(caps.has("ezer-files.occ"));
         // Declared-and-absent, not unknown.
         assert_eq!(caps.state("vercel.cli"), Some(false));
         assert!(!caps.has("vercel.cli"));
-        assert_eq!(caps.wire(), ["capabilities.v1", "grok-files.occ"]);
+        assert_eq!(caps.wire(), ["capabilities.v1", "ezer-files.occ"]);
     }
 
     #[test]

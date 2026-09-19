@@ -14,10 +14,10 @@ pub const CUT_REPLY: &str = "MOCK-CUT-PART-ONE";
 /// The text of a reply from a model caught looping.
 pub const LOOPING_REPLY: &str = "MOCK-LOOP MOCK-LOOP MOCK-LOOP MOCK-LOOP";
 /// The header a client sends to opt into the inference API's loop detector.
-pub const DOOM_LOOP_CHECK_HEADER: &str = "x-grok-doom-loop-check";
+pub const DOOM_LOOP_CHECK_HEADER: &str = "x-ezer-doom-loop-check";
 /// A single SSE data frame whose payload is not valid JSON, so the client's stream decoder fails to
 /// deserialize a chunk and surfaces a serialization error.
-pub(crate) const MALFORMED_SSE_BODY: &str = "data: {grok-mock malformed chunk\n\n";
+pub(crate) const MALFORMED_SSE_BODY: &str = "data: {ezer-mock malformed chunk\n\n";
 /// The detector report a looping reply carries: the tightest tail repetition on the thinking channel.
 pub const DOOM_LOOP_TRIGGER: &str = "tail_repetition:2@thinking";
 

@@ -286,7 +286,7 @@ async fn tokenize_one(
     let resp = client
         .post(url)
         .header(reqwest::header::AUTHORIZATION, auth)
-        .header("x-grok-client-version", xai_grok_version::VERSION)
+        .header("x-ezer-client-version", xai_grok_version::VERSION)
         .json(&serde_json::json!({
             "text": text,
             "model": model,
@@ -342,7 +342,7 @@ mod tests {
 
     fn info() -> SessionInfoData {
         SessionInfoData {
-            agent_name: Some("grok-build".into()),
+            agent_name: Some("ezer-build".into()),
             model: Some("grok-4".into()),
             model_display_name: None,
             resolved_model_id: None,
@@ -373,7 +373,7 @@ mod tests {
 
     #[test]
     fn tokenize_uses_baked_product_default_model() {
-        assert_eq!(crate::models::default_model(), "grok-4.6");
+        assert_eq!(crate::models::default_model(), "workbuddy");
     }
 
     #[test]

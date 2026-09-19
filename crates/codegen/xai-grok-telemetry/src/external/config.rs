@@ -2,7 +2,7 @@
 //! The shell resolves the startup value once and passes the resolved struct to [`crate::external::init`].
 //! The `[telemetry]` `otel_*` config keys are layered under the env vars.
 //!
-//! Activation requires a **double opt-in**: `GROK_EXTERNAL_OTEL=1` plus a real exporter in `OTEL_METRICS_EXPORTER` or `OTEL_LOGS_EXPORTER`.
+//! Activation requires a **double opt-in**: `EZER_EXTERNAL_OTEL=1` plus a real exporter in `OTEL_METRICS_EXPORTER` or `OTEL_LOGS_EXPORTER`.
 //! The master switch alone enables nothing; the exporter vars alone enable nothing.
 
 use std::time::Duration;
@@ -36,9 +36,9 @@ impl OtlpTransport {
 }
 
 /// Master switch env var.
-/// Deliberately *not* `GROK_ENABLE_TELEMETRY`: that is a word-order typo away from `GROK_TELEMETRY_ENABLED` (product events/Mixpanel mode).
+/// Deliberately *not* `EZER_ENABLE_TELEMETRY`: that is a word-order typo away from `EZER_TELEMETRY_ENABLED` (product events/Mixpanel mode).
 /// The two vars control data flowing in opposite directions (to xAI vs. to the customer's collector).
-pub const ENV_MASTER_SWITCH: &str = "GROK_EXTERNAL_OTEL";
+pub const ENV_MASTER_SWITCH: &str = "EZER_EXTERNAL_OTEL";
 
 /// Exporter selection for one signal (`OTEL_METRICS_EXPORTER` / `OTEL_LOGS_EXPORTER`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -73,13 +73,13 @@ impl ExporterSelection {
 /// They may only **tighten** post-init: a remote policy can force them off, never on.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct ContentGates {
-    /// `OTEL_LOG_USER_PROMPTS=1`: prompt text on `grok_code.user_prompt` (60 KB cap, secret-scrubbed).
+    /// `OTEL_LOG_USER_PROMPTS=1`: prompt text on `ezer.user_prompt` (60 KB cap, secret-scrubbed).
     pub log_user_prompts: bool,
     /// `OTEL_LOG_TOOL_DETAILS=1`: gated tool params preview / full paths / verbatim
     /// MCP, skill, and plugin names. Does **not** include full bodies.
     pub log_tool_details: bool,
     /// `OTEL_LOG_ASSISTANT_RESPONSES`: gated `response` on
-    /// `grok_code.assistant_response`. Unset follows `log_user_prompts`;
+    /// `ezer.assistant_response`. Unset follows `log_user_prompts`;
     /// explicit `0` keeps responses redacted while prompts stay on.
     pub log_assistant_responses: bool,
     /// `OTEL_LOG_TOOL_CONTENT=1`: full bodies (`tool_input`, `tool_output`,
@@ -114,7 +114,7 @@ pub struct ExternalClientInfo {
 #[derive(Debug, Clone, Default, serde::Deserialize, serde::Serialize)]
 #[serde(default)]
 pub struct ExternalOtelFileConfig {
-    /// Mirrors `GROK_EXTERNAL_OTEL` (env wins).
+    /// Mirrors `EZER_EXTERNAL_OTEL` (env wins).
     pub enabled: Option<bool>,
     /// `otlp` | `console` | `none`.
     pub metrics_exporter: Option<String>,
@@ -731,7 +731,7 @@ mod tests {
     #[test]
     fn master_switch_alone_enables_nothing() {
         assert!(
-            ExternalOtelConfig::resolve_with(env(&[("GROK_EXTERNAL_OTEL", "1")]), None).is_none()
+            ExternalOtelConfig::resolve_with(env(&[("EZER_EXTERNAL_OTEL", "1")]), None).is_none()
         );
     }
 
@@ -747,7 +747,7 @@ mod tests {
     fn double_opt_in_activates() {
         let cfg = ExternalOtelConfig::resolve_with(
             env(&[
-                ("GROK_EXTERNAL_OTEL", "1"),
+                ("EZER_EXTERNAL_OTEL", "1"),
                 ("OTEL_METRICS_EXPORTER", "otlp"),
             ]),
             None,
@@ -772,7 +772,7 @@ mod tests {
     fn grpc_protocol_accepted() {
         let cfg = ExternalOtelConfig::resolve_with(
             env(&[
-                ("GROK_EXTERNAL_OTEL", "1"),
+                ("EZER_EXTERNAL_OTEL", "1"),
                 ("OTEL_LOGS_EXPORTER", "otlp"),
                 ("OTEL_EXPORTER_OTLP_PROTOCOL", "grpc"),
             ]),
@@ -788,7 +788,7 @@ mod tests {
     fn http_protobuf_protocol_accepted() {
         let cfg = ExternalOtelConfig::resolve_with(
             env(&[
-                ("GROK_EXTERNAL_OTEL", "1"),
+                ("EZER_EXTERNAL_OTEL", "1"),
                 ("OTEL_LOGS_EXPORTER", "otlp"),
                 ("OTEL_EXPORTER_OTLP_PROTOCOL", "http/protobuf"),
             ]),
@@ -803,7 +803,7 @@ mod tests {
     fn unknown_protocol_disables() {
         let cfg = ExternalOtelConfig::resolve_with(
             env(&[
-                ("GROK_EXTERNAL_OTEL", "1"),
+                ("EZER_EXTERNAL_OTEL", "1"),
                 ("OTEL_LOGS_EXPORTER", "otlp"),
                 ("OTEL_EXPORTER_OTLP_PROTOCOL", "http/json"),
             ]),
@@ -816,7 +816,7 @@ mod tests {
     fn endpoint_resolution_follows_otlp_http_spec() {
         let cfg = ExternalOtelConfig::resolve_with(
             env(&[
-                ("GROK_EXTERNAL_OTEL", "1"),
+                ("EZER_EXTERNAL_OTEL", "1"),
                 ("OTEL_LOGS_EXPORTER", "otlp"),
                 ("OTEL_METRICS_EXPORTER", "otlp"),
                 (
@@ -843,7 +843,7 @@ mod tests {
     fn grpc_endpoint_resolution_uses_collector_endpoint_without_http_paths() {
         let cfg = ExternalOtelConfig::resolve_with(
             env(&[
-                ("GROK_EXTERNAL_OTEL", "1"),
+                ("EZER_EXTERNAL_OTEL", "1"),
                 ("OTEL_LOGS_EXPORTER", "otlp"),
                 ("OTEL_METRICS_EXPORTER", "otlp"),
                 ("OTEL_EXPORTER_OTLP_PROTOCOL", "grpc"),
@@ -888,7 +888,7 @@ mod tests {
     fn per_signal_protocol_overrides_base() {
         let cfg = ExternalOtelConfig::resolve_with(
             env(&[
-                ("GROK_EXTERNAL_OTEL", "1"),
+                ("EZER_EXTERNAL_OTEL", "1"),
                 ("OTEL_LOGS_EXPORTER", "otlp"),
                 ("OTEL_METRICS_EXPORTER", "otlp"),
                 ("OTEL_EXPORTER_OTLP_PROTOCOL", "http/protobuf"),
@@ -915,7 +915,7 @@ mod tests {
         assert!(
             ExternalOtelConfig::resolve_with(
                 env(&[
-                    ("GROK_EXTERNAL_OTEL", "1"),
+                    ("EZER_EXTERNAL_OTEL", "1"),
                     ("OTEL_LOGS_EXPORTER", "otlp"),
                     ("OTEL_EXPORTER_OTLP_LOGS_PROTOCOL", "http/json"),
                 ]),
@@ -929,7 +929,7 @@ mod tests {
     fn unrecognized_protocol_on_inactive_signal_is_ignored() {
         let cfg = ExternalOtelConfig::resolve_with(
             env(&[
-                ("GROK_EXTERNAL_OTEL", "1"),
+                ("EZER_EXTERNAL_OTEL", "1"),
                 ("OTEL_METRICS_EXPORTER", "otlp"),
                 // logs exporter is off: a bad logs protocol must not kill metrics
                 ("OTEL_EXPORTER_OTLP_LOGS_PROTOCOL", "http/json"),
@@ -945,7 +945,7 @@ mod tests {
     fn empty_signal_protocol_inherits_base() {
         let cfg = ExternalOtelConfig::resolve_with(
             env(&[
-                ("GROK_EXTERNAL_OTEL", "1"),
+                ("EZER_EXTERNAL_OTEL", "1"),
                 ("OTEL_LOGS_EXPORTER", "otlp"),
                 ("OTEL_METRICS_EXPORTER", "otlp"),
                 ("OTEL_EXPORTER_OTLP_PROTOCOL", "grpc"),
@@ -963,7 +963,7 @@ mod tests {
     fn invalid_base_protocol_allows_valid_signal_overrides() {
         let cfg = ExternalOtelConfig::resolve_with(
             env(&[
-                ("GROK_EXTERNAL_OTEL", "1"),
+                ("EZER_EXTERNAL_OTEL", "1"),
                 ("OTEL_LOGS_EXPORTER", "otlp"),
                 ("OTEL_METRICS_EXPORTER", "otlp"),
                 ("OTEL_EXPORTER_OTLP_PROTOCOL", "http/json"),
@@ -982,7 +982,7 @@ mod tests {
         assert!(
             ExternalOtelConfig::resolve_with(
                 env(&[
-                    ("GROK_EXTERNAL_OTEL", "1"),
+                    ("EZER_EXTERNAL_OTEL", "1"),
                     ("OTEL_LOGS_EXPORTER", "otlp"),
                     ("OTEL_EXPORTER_OTLP_PROTOCOL", "http/json"),
                 ]),
@@ -997,7 +997,7 @@ mod tests {
     fn headers_parsed_and_signal_specific_scoped() {
         let cfg = ExternalOtelConfig::resolve_with(
             env(&[
-                ("GROK_EXTERNAL_OTEL", "1"),
+                ("EZER_EXTERNAL_OTEL", "1"),
                 ("OTEL_LOGS_EXPORTER", "otlp"),
                 ("OTEL_EXPORTER_OTLP_HEADERS", "x-token=abc, x-org=corp"),
                 ("OTEL_EXPORTER_OTLP_LOGS_HEADERS", "x-token=override"),
@@ -1025,7 +1025,7 @@ mod tests {
     fn logs_and_metrics_headers_stay_isolated() {
         let cfg = ExternalOtelConfig::resolve_with(
             env(&[
-                ("GROK_EXTERNAL_OTEL", "1"),
+                ("EZER_EXTERNAL_OTEL", "1"),
                 ("OTEL_LOGS_EXPORTER", "otlp"),
                 ("OTEL_METRICS_EXPORTER", "otlp"),
                 ("OTEL_EXPORTER_OTLP_HEADERS", "authorization=Bearer base"),
@@ -1055,7 +1055,7 @@ mod tests {
     fn ca_certificate_resolved_with_signal_overrides() {
         let cfg = ExternalOtelConfig::resolve_with(
             env(&[
-                ("GROK_EXTERNAL_OTEL", "1"),
+                ("EZER_EXTERNAL_OTEL", "1"),
                 ("OTEL_LOGS_EXPORTER", "otlp"),
                 ("OTEL_METRICS_EXPORTER", "otlp"),
                 ("OTEL_EXPORTER_OTLP_CERTIFICATE", "/etc/ssl/corp-ca.pem"),
@@ -1080,7 +1080,7 @@ mod tests {
     #[test]
     fn ca_certificate_defaults_to_none() {
         let cfg = ExternalOtelConfig::resolve_with(
-            env(&[("GROK_EXTERNAL_OTEL", "1"), ("OTEL_LOGS_EXPORTER", "otlp")]),
+            env(&[("EZER_EXTERNAL_OTEL", "1"), ("OTEL_LOGS_EXPORTER", "otlp")]),
             None,
         )
         .unwrap();
@@ -1092,7 +1092,7 @@ mod tests {
     fn content_gates_default_off_env_enables() {
         let cfg = ExternalOtelConfig::resolve_with(
             env(&[
-                ("GROK_EXTERNAL_OTEL", "1"),
+                ("EZER_EXTERNAL_OTEL", "1"),
                 ("OTEL_LOGS_EXPORTER", "otlp"),
                 ("OTEL_LOG_USER_PROMPTS", "1"),
                 ("OTEL_LOG_TOOL_DETAILS", "true"),
@@ -1116,7 +1116,7 @@ mod tests {
     fn assistant_gate_explicit_zero_does_not_follow_prompts() {
         let cfg = ExternalOtelConfig::resolve_with(
             env(&[
-                ("GROK_EXTERNAL_OTEL", "1"),
+                ("EZER_EXTERNAL_OTEL", "1"),
                 ("OTEL_LOGS_EXPORTER", "otlp"),
                 ("OTEL_LOG_USER_PROMPTS", "1"),
                 ("OTEL_LOG_ASSISTANT_RESPONSES", "0"),
@@ -1132,7 +1132,7 @@ mod tests {
     fn tool_content_gate_is_independent_and_defaults_off() {
         let cfg = ExternalOtelConfig::resolve_with(
             env(&[
-                ("GROK_EXTERNAL_OTEL", "1"),
+                ("EZER_EXTERNAL_OTEL", "1"),
                 ("OTEL_LOGS_EXPORTER", "otlp"),
                 ("OTEL_LOG_TOOL_DETAILS", "1"),
                 ("OTEL_LOG_TOOL_CONTENT", "1"),
@@ -1145,7 +1145,7 @@ mod tests {
 
         let details_only = ExternalOtelConfig::resolve_with(
             env(&[
-                ("GROK_EXTERNAL_OTEL", "1"),
+                ("EZER_EXTERNAL_OTEL", "1"),
                 ("OTEL_LOGS_EXPORTER", "otlp"),
                 ("OTEL_LOG_TOOL_DETAILS", "1"),
             ]),
@@ -1173,7 +1173,7 @@ mod tests {
     fn intervals_and_timeout_parsed_with_blrp_precedence() {
         let cfg = ExternalOtelConfig::resolve_with(
             env(&[
-                ("GROK_EXTERNAL_OTEL", "1"),
+                ("EZER_EXTERNAL_OTEL", "1"),
                 ("OTEL_METRICS_EXPORTER", "otlp"),
                 ("OTEL_EXPORTER_OTLP_TIMEOUT", "2500"),
                 ("OTEL_METRIC_EXPORT_INTERVAL", "30000"),
@@ -1194,7 +1194,7 @@ mod tests {
     fn logs_export_interval_alias_honored_when_spec_name_absent() {
         let cfg = ExternalOtelConfig::resolve_with(
             env(&[
-                ("GROK_EXTERNAL_OTEL", "1"),
+                ("EZER_EXTERNAL_OTEL", "1"),
                 ("OTEL_METRICS_EXPORTER", "otlp"),
                 ("OTEL_LOGS_EXPORT_INTERVAL", "9999"),
             ]),
@@ -1241,7 +1241,7 @@ mod tests {
 
         // Env master switch off wins over file `enabled = true`.
         let cfg =
-            ExternalOtelConfig::resolve_with(env(&[("GROK_EXTERNAL_OTEL", "0")]), Some(&file));
+            ExternalOtelConfig::resolve_with(env(&[("EZER_EXTERNAL_OTEL", "0")]), Some(&file));
         assert!(cfg.is_none());
     }
 
@@ -1249,7 +1249,7 @@ mod tests {
     fn cumulative_temporality_honored() {
         let cfg = ExternalOtelConfig::resolve_with(
             env(&[
-                ("GROK_EXTERNAL_OTEL", "1"),
+                ("EZER_EXTERNAL_OTEL", "1"),
                 ("OTEL_METRICS_EXPORTER", "otlp"),
                 (
                     "OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE",
@@ -1265,7 +1265,7 @@ mod tests {
     #[test]
     fn client_identity_defaults_to_none() {
         let cfg = ExternalOtelConfig::resolve_with(
-            env(&[("GROK_EXTERNAL_OTEL", "1"), ("OTEL_LOGS_EXPORTER", "otlp")]),
+            env(&[("EZER_EXTERNAL_OTEL", "1"), ("OTEL_LOGS_EXPORTER", "otlp")]),
             None,
         )
         .unwrap();
@@ -1279,7 +1279,7 @@ mod tests {
     fn client_identity_base_vars_apply_to_both_signals() {
         let cfg = ExternalOtelConfig::resolve_with(
             env(&[
-                ("GROK_EXTERNAL_OTEL", "1"),
+                ("EZER_EXTERNAL_OTEL", "1"),
                 ("OTEL_LOGS_EXPORTER", "otlp"),
                 ("OTEL_METRICS_EXPORTER", "otlp"),
                 (
@@ -1310,7 +1310,7 @@ mod tests {
     fn client_identity_per_signal_overrides_isolate() {
         let cfg = ExternalOtelConfig::resolve_with(
             env(&[
-                ("GROK_EXTERNAL_OTEL", "1"),
+                ("EZER_EXTERNAL_OTEL", "1"),
                 ("OTEL_LOGS_EXPORTER", "otlp"),
                 ("OTEL_METRICS_EXPORTER", "otlp"),
                 ("OTEL_EXPORTER_OTLP_CLIENT_CERTIFICATE", "/etc/ssl/base.crt"),
@@ -1346,7 +1346,7 @@ mod tests {
     fn client_identity_half_config_clears_both() {
         let cert_only = ExternalOtelConfig::resolve_with(
             env(&[
-                ("GROK_EXTERNAL_OTEL", "1"),
+                ("EZER_EXTERNAL_OTEL", "1"),
                 ("OTEL_LOGS_EXPORTER", "otlp"),
                 (
                     "OTEL_EXPORTER_OTLP_CLIENT_CERTIFICATE",
@@ -1361,7 +1361,7 @@ mod tests {
 
         let key_only = ExternalOtelConfig::resolve_with(
             env(&[
-                ("GROK_EXTERNAL_OTEL", "1"),
+                ("EZER_EXTERNAL_OTEL", "1"),
                 ("OTEL_METRICS_EXPORTER", "otlp"),
                 ("OTEL_EXPORTER_OTLP_CLIENT_KEY", "/etc/ssl/client.key"),
             ]),
@@ -1376,7 +1376,7 @@ mod tests {
     fn client_identity_signal_override_pair_without_base() {
         let cfg = ExternalOtelConfig::resolve_with(
             env(&[
-                ("GROK_EXTERNAL_OTEL", "1"),
+                ("EZER_EXTERNAL_OTEL", "1"),
                 ("OTEL_LOGS_EXPORTER", "otlp"),
                 ("OTEL_METRICS_EXPORTER", "otlp"),
                 (
@@ -1495,7 +1495,7 @@ mod tests {
     fn half_signal_env_identity_does_not_cross_with_base_pair() {
         let cfg = ExternalOtelConfig::resolve_with(
             env(&[
-                ("GROK_EXTERNAL_OTEL", "1"),
+                ("EZER_EXTERNAL_OTEL", "1"),
                 ("OTEL_LOGS_EXPORTER", "otlp"),
                 ("OTEL_METRICS_EXPORTER", "otlp"),
                 ("OTEL_EXPORTER_OTLP_CLIENT_CERTIFICATE", "/base/client.crt"),

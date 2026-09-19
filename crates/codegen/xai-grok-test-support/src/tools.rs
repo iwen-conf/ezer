@@ -1,4 +1,4 @@
-//! The name GrokBuild offers for every tool a script can call, and the GrokBuild shape of its
+//! The name Ezer offers for every tool a script can call, and the Ezer shape of its
 //! arguments. A case writes arguments once, and [`Tool::pick`] fills required fields a case omits,
 //! reshapes a call written in another tool's vocabulary, and resolves it against the names offered.
 use crate::inference_request::{HistoryToolCall, OfferedTools};
@@ -47,7 +47,7 @@ pub enum Tool {
     CronCreate,
     McpListResources,
     McpReadResource,
-    /// GrokBuild offers `server__tool` taking the arguments directly.
+    /// Ezer offers `server__tool` taking the arguments directly.
     Mcp {
         server: String,
         tool: String,
@@ -186,14 +186,14 @@ impl Tool {
             }
         }
     }
-    /// An MCP tool is `server__tool`; the MCP resource kinds have no GrokBuild name.
+    /// An MCP tool is `server__tool`; the MCP resource kinds have no Ezer name.
     fn grok_build_name(&self) -> Option<String> {
         if let Tool::Mcp { server, tool } = self {
             return Some(format!("{server}{MCP_NAME_SEPARATOR}{tool}"));
         }
         self.row().name.map(str::to_owned)
     }
-    /// The case's arguments in GrokBuild's shape: the fields a case may leave out are filled, and
+    /// The case's arguments in Ezer's shape: the fields a case may leave out are filled, and
     /// the row's shape applies. Arguments that are not a table pass through unchanged.
     fn grok_build_arguments(&self, arguments: &Value) -> Value {
         let Some(fields) = arguments.as_object() else {
@@ -211,7 +211,7 @@ impl Tool {
             None => shaped,
         })
     }
-    /// The call for GrokBuild's name when the request offers it.
+    /// The call for Ezer's name when the request offers it.
     pub(crate) fn pick(&self, offered: &OfferedTools, arguments: &Value) -> Option<PickedToolCall> {
         let arguments = self.grok_build_arguments(arguments);
         if let Some(name) = self.grok_build_name().filter(|name| offered.has_tool(name)) {
@@ -231,7 +231,7 @@ impl Tool {
         }
         None
     }
-    /// Whether a call the agent carried back in its history is this tool's under GrokBuild's name.
+    /// Whether a call the agent carried back in its history is this tool's under Ezer's name.
     pub(crate) fn is_called_by(&self, call: &HistoryToolCall) -> bool {
         if self.grok_build_name().is_some_and(|name| call.name == name) {
             return true;

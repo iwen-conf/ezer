@@ -311,13 +311,13 @@ async fn acquire_succeeds_over_leftover_lock_file_of_dead_process() {
 #[cfg(unix)]
 const LOCK_HOLDER_READY: &str = "__GROK_LOCK_HOLDER_READY__";
 
-/// Inert unless `GROK_TEST_LOCK_HOLDER` holds `"<lock_path>|<pid|dead_pid|empty>|<age_secs>"`:
+/// Inert unless `EZER_TEST_LOCK_HOLDER` holds `"<lock_path>|<pid|dead_pid|empty>|<age_secs>"`:
 /// flocks with backdated info (or a dead recorded PID, or an empty file), prints ready, then blocks on stdin.
 #[cfg(unix)]
 #[test]
 #[ignore = "spawned as a subprocess by the cross-process lock tests"]
 fn subprocess_lock_holder() {
-    let Ok(spec) = std::env::var("GROK_TEST_LOCK_HOLDER") else {
+    let Ok(spec) = std::env::var("EZER_TEST_LOCK_HOLDER") else {
         return;
     };
     let mut parts = spec.splitn(3, '|');
@@ -384,7 +384,7 @@ fn spawn_lock_holder_subprocess(
     let spec = format!("{}|{mode}|{age_secs}", lock_path.to_str().unwrap());
     #[allow(clippy::disallowed_methods)] // test fixture; the test kills it
     let mut child = std::process::Command::new(exe)
-        .env("GROK_TEST_LOCK_HOLDER", spec)
+        .env("EZER_TEST_LOCK_HOLDER", spec)
         .args([
             "--ignored",
             "--exact",
