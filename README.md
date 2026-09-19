@@ -110,6 +110,19 @@ EZER_HOME="$HOME/.ezer" ezer --version
 EZER_HOME="$HOME/.ezer" ezer -p "Reply with the word pong only."
 ```
 
+### Gateway wire notes (for WorkBuddy / `wb_proxy.py`)
+
+Observed / handled on the ezer client (do **not** require a live 63 test from CI):
+
+| Quirk | Client behavior |
+| --- | --- |
+| `response.function_call_arguments.delta` / `.done` omits `item_id`, sends `call_id` | Inject `item_id` from `call_id` (or `""`) before async-openai deserialize |
+| Empty `finish_reason` on some Chat Completions streams | Treat as unset |
+| Rich `/v1/models` (`id` only, dotted slugs) | Parse `id` as the wire model; default `api_backend = responses` |
+| Session title using compiled `grok-4.6` | Use the active BYOK model (avoids 402 on free models) |
+
+If you patch the hub on the LAN host, emitting `item_id` on function-call SSE (equal to `call_id` is fine) matches stock OpenAI Responses.
+
 **Home override:**
 
 ```sh
