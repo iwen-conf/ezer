@@ -86,7 +86,7 @@ See ~/.ezer/ for config and sessions.
     Export(crate::export_cmd::ExportArgs),
     /// Export or upload session trace data
     Trace(crate::trace_cmd::TraceArgs),
-    /// Check for updates or install a specific version
+    /// Check for updates or install a specific version (opt-in; default runtime never self-updates)
     Update {
         /// Check for updates without installing.
         #[arg(long)]

@@ -2168,7 +2168,6 @@ fn render_welcome_done(
                 width: tip_centered.width.saturating_sub(inset * 2),
                 height: tip_centered.height,
             };
-            let key_name = "ctrl+u";
             let line = Line::from(vec![
                 Span::styled(
                     "Update: ",
@@ -2177,7 +2176,7 @@ fn render_welcome_done(
                         .add_modifier(Modifier::BOLD),
                 ),
                 Span::styled(
-                    format!("v{ver} available, press {key_name} to restart"),
+                    format!("v{ver} available — ezer will not auto-upgrade"),
                     Style::default().fg(theme.accent_user),
                 ),
             ]);

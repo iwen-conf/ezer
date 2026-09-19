@@ -8267,8 +8267,9 @@ fn announcements_push_gate_emits_on_expiry_crossing() {
         None
     );
 }
-/// A poll apply must touch ONLY `remote_settings.announcements` (and the request-encoding advertisement).
-/// Every other stored field keeps its pre-poll value (full reapply stays owned by startup, auth, and `/new`).
+/// A poll apply must strip `remote_settings.announcements` (never copy xAI banners)
+/// and refresh the request-encoding advertisement. Every other stored field keeps
+/// its pre-poll value (full reapply stays owned by startup, auth, and `/new`).
 #[tokio::test]
 #[serial_test::serial(remote_sig_disarm)]
 async fn polled_settings_apply_touches_announcements_only() {
@@ -8288,7 +8289,10 @@ async fn polled_settings_apply_touches_announcements_only() {
         .remote_settings
         .as_ref()
         .expect("settings still present");
-    assert_eq!(after.announcements, Some(vec![ann("new")]));
+    assert_eq!(
+        after.announcements, None,
+        "BYOK: poll apply must strip xAI announcement payloads"
+    );
     assert_eq!(
         after.tips,
         Some(vec!["stored-tip".to_string()]),
@@ -8412,6 +8416,28 @@ async fn polled_settings_apply_skips_when_the_advertisement_changed_mid_fetch() 
         "the mid-fetch writer's store must win over the stale poll result"
     );
 }
+/// Installing a settings snapshot from the xAI proxy must drop announcement and tip payloads.
+#[tokio::test]
+async fn store_remote_settings_strips_xai_announcements_and_tips() {
+    let agent = build_minimal_agent_for_tests();
+    let mut settings = settings_with(Some(vec![ann("xai-banner")]));
+    settings.tips = Some(vec!["xai-tip".to_string()]);
+    agent.store_remote_settings(settings);
+    let stored = agent
+        .cfg
+        .borrow()
+        .remote_settings
+        .clone()
+        .expect("settings stored");
+    assert_eq!(
+        stored.announcements, None,
+        "BYOK: xAI announcement payloads must not be kept"
+    );
+    assert_eq!(
+        stored.tips, None,
+        "BYOK: xAI marketing tips must not be kept"
+    );
+}
 /// A poll apply must never fabricate `remote_settings` from scratch.
 /// The full-refresh owners key their retry and gating on `is_none()`, so absence must stay observable.
 #[tokio::test]
@@ -8443,81 +8469,45 @@ async fn polled_settings_apply_skips_when_writer_landed_mid_fetch() {
         "the mid-fetch writer's store must win over the stale poll result"
     );
 }
-/// End-to-end through the shared gate: every emission advances the baseline and carries a strictly larger gen.
-/// Unchanged state is silent unless seeding a new client.
+/// BYOK: leftover grok.com settings must never emit `x.ai/announcements/update`.
 #[tokio::test]
-async fn emit_announcements_gate_emits_updates_baseline_and_bumps_gen() {
+async fn emit_announcements_gate_never_pushes_xai_announcements() {
     let (agent, mut rx) = build_agent_with_gateway_rx();
     agent.cfg.borrow_mut().remote_settings = Some(settings_with(Some(vec![ann("a")])));
-    let recv_gen =
-        |rx: &mut tokio::sync::mpsc::UnboundedReceiver<xai_acp_lib::AcpClientMessage>| {
-            let msg = rx.try_recv().expect("expected an announcements push");
-            let xai_acp_lib::AcpClientMessage::ExtNotification(args) = msg else {
-                panic!("expected ExtNotification, got another message kind");
-            };
-            assert_eq!(args.request.method.as_ref(), "x.ai/announcements/update");
-            let parsed: serde_json::Value =
-                serde_json::from_str(args.request.params.get()).expect("valid JSON payload");
-            parsed
-                .get("gen")
-                .and_then(|g| g.as_u64())
-                .expect("gen field")
-        };
-    agent.emit_announcements(AnnouncementsPushMode::IfChanged);
-    let first_gen = recv_gen(&mut rx);
-    agent.emit_announcements(AnnouncementsPushMode::IfChanged);
-    assert!(rx.try_recv().is_err(), "unchanged list must not re-push");
-    agent.emit_announcements(AnnouncementsPushMode::SeedNewClient);
-    let seed_gen = recv_gen(&mut rx);
-    assert!(
-        seed_gen > first_gen,
-        "gen must strictly increase: {first_gen} -> {seed_gen}"
-    );
-    agent.cfg.borrow_mut().remote_settings = Some(settings_with(None));
-    agent.emit_announcements(AnnouncementsPushMode::IfChanged);
-    let clear_gen = recv_gen(&mut rx);
-    assert!(clear_gen > seed_gen);
-    agent.emit_announcements(AnnouncementsPushMode::IfChanged);
+    for mode in [
+        AnnouncementsPushMode::IfChanged,
+        AnnouncementsPushMode::SeedNewClient,
+        AnnouncementsPushMode::Force,
+    ] {
+        agent.emit_announcements(mode);
+    }
     assert!(
         rx.try_recv().is_err(),
-        "cleared state must push exactly once"
+        "BYOK builds must not push xAI announcements"
     );
-    agent.emit_announcements(AnnouncementsPushMode::Force);
-    let force_gen = recv_gen(&mut rx);
     assert!(
-        force_gen > clear_gen,
-        "forced push must keep gens increasing"
+        agent.last_emitted_announcements.borrow().is_empty(),
+        "disabled emit must not advance the baseline"
     );
 }
-/// A send the gateway channel rejects must not advance the last-emitted baseline.
-/// The next gate call then re-diffs and re-pushes the same list (the poll's natural retry, no dedicated retry machinery).
+/// A send path that would have retried after a closed gateway must stay silent.
 #[tokio::test]
-async fn emit_announcements_gate_keeps_baseline_on_failed_send_and_retries() {
+async fn emit_announcements_gate_stays_silent_after_failed_channel() {
     let (mut agent, rx) = build_agent_with_gateway_rx();
     agent.cfg.borrow_mut().remote_settings = Some(settings_with(Some(vec![ann("a")])));
     drop(rx);
     agent.emit_announcements(AnnouncementsPushMode::IfChanged);
     assert!(
         agent.last_emitted_announcements.borrow().is_empty(),
-        "a failed send must leave the baseline untouched"
+        "disabled emit must leave the baseline untouched"
     );
     let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
     agent.gateway = GatewaySender::new(tx);
     agent.emit_announcements(AnnouncementsPushMode::IfChanged);
-    let msg = rx
-        .try_recv()
-        .expect("next gate call must re-push after a failed send");
-    let xai_acp_lib::AcpClientMessage::ExtNotification(args) = msg else {
-        panic!("expected ExtNotification, got another message kind");
-    };
-    assert_eq!(args.request.method.as_ref(), "x.ai/announcements/update");
-    assert_eq!(
-        *agent.last_emitted_announcements.borrow(),
-        vec![ann("a")],
-        "a successful send advances the baseline"
+    assert!(
+        rx.try_recv().is_err(),
+        "reconnecting the gateway must still not push xAI announcements"
     );
-    agent.emit_announcements(AnnouncementsPushMode::IfChanged);
-    assert!(rx.try_recv().is_err(), "unchanged list must not re-push");
 }
 mod direct_hub_cloud_removed {
     use super::super::{DIRECT_HUB_CLOUD_REMOVED_MSG, reject_direct_hub_cloud_meta};

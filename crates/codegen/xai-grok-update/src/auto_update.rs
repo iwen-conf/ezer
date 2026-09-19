@@ -28,9 +28,7 @@ pub enum UpdateRunMode {
     NonBlocking,
 }
 
-const PROMPT_UPDATE_NOW: &str = "Update now? [Y/n/d]";
-const MSG_AUTO_UPDATE_BACKGROUND: &str = "Auto-update running in background.";
-const MSG_RUN_UPDATE_MANUAL: &str = "Run `ezer update` to get the latest version.";
+const MSG_RUN_UPDATE_MANUAL: &str = "ezer will not auto-install. Pull and rebuild, or run `ezer update` to install the published binary.";
 /// An empty or `"stable"` channel means stable, the installers' default (`CHANNEL="${EZER_CHANNEL:-stable}"` in install.sh).
 fn is_stable_channel(channel: &str) -> bool {
     channel.is_empty() || channel == "stable"
@@ -184,10 +182,7 @@ pub fn print_update_status(status: &UpdateStatus, json: bool) -> anyhow::Result<
     }
 
     if let Some(error) = status.error.as_deref() {
-        println!(
-            "ezer - v{} [{}]",
-            status.current_version, status.channel
-        );
+        println!("ezer - v{} [{}]", status.current_version, status.channel);
         println!("Update check failed: {error}");
         return Ok(());
     }
@@ -545,281 +540,103 @@ pub struct UpdateAvailable {
 
 /// Outcome of [`check_update_background`].
 pub struct BackgroundUpdateCheck {
-    /// `Some` when the *running* binary is older than the channel pointer; drives the in-TUI restart hint regardless of who downloads the binary.
+    /// `Some` when the *running* binary is older than the channel pointer and this
+    /// version has not been notified yet. Drives the one-shot in-TUI notice.
     pub update: Option<UpdateAvailable>,
-    /// Handle to the background `ezer update` child, `Some` only when a download was actually started (the on-disk install was behind the pointer).
-    /// The TUI parks this and `wait()`s on it at quit-for-update time instead of spawning a second downloader.
+    /// Always `None`. Default runtime never downloads or replaces the binary;
+    /// field kept so TUI callers do not need a second type.
     pub download: Option<tokio::process::Child>,
 }
 
-impl BackgroundUpdateCheck {
-    fn none() -> Self {
-        Self {
-            update: None,
-            download: None,
-        }
+/// Check for available updates without blocking TUI startup.
+///
+/// Never downloads or installs. When a newer version exists and this process
+/// has not yet notified for it, sets [`BackgroundUpdateCheck::update`] so the
+/// TUI can show a one-shot notice. [`BackgroundUpdateCheck::download`] is
+/// always `None`.
+pub async fn check_update_background(update_config: &UpdateConfig) -> BackgroundUpdateCheck {
+    BackgroundUpdateCheck {
+        update: take_unnotified_update(update_config)
+            .await
+            .map(|pending| UpdateAvailable {
+                latest_version: pending.latest_version,
+            }),
+        download: None,
     }
 }
 
-/// Check for available updates without blocking the TUI startup. Sets [`BackgroundUpdateCheck::update`] when the running
-/// binary is older than the channel pointer. If `auto_update` is enabled and the on-disk install is also behind the
-/// pointer, kicks off a download (a detached `ezer update` child). Only the restart hint is shown.
-pub async fn check_update_background(update_config: &UpdateConfig) -> BackgroundUpdateCheck {
-    let Some(installer) = get_installer().await else {
-        return BackgroundUpdateCheck::none();
-    };
+/// Pending one-shot notice: current vs latest, after the once-flag is claimed.
+struct PendingUpdateNotice {
+    current_version: String,
+    latest_version: String,
+}
 
-    heal_managed_install(installer).await;
-
+/// Version-check only against this fork's GitHub releases. Never downloads,
+/// installs, or talks to xAI / x.ai / grok.com update channels.
+///
+/// Returns `Some` the first time we see this `latest` version (or after a
+/// failed once-flag write). Subsequent launches for the same version return
+/// `None`. `cli.auto_update = false` skips the check entirely.
+async fn take_unnotified_update(_update_config: &UpdateConfig) -> Option<PendingUpdateNotice> {
     if is_version_cache_fresh().await {
-        return BackgroundUpdateCheck::none();
+        return None;
     }
 
     let current_config = config::load_config().await;
+    // `None` defaults to "check and notify" (not "auto-install").
     if current_config.cli.auto_update == Some(false) {
-        return BackgroundUpdateCheck::none();
+        return None;
     }
 
     let current_version = get_installed_grok_version();
-    let policy = config::VersionPolicy::resolve();
-    let target_version = match fetch_update_plan(installer, update_config, &policy).await {
-        Ok(UpdatePlan::Install { target, .. }) => target,
-        Ok(UpdatePlan::Skip { .. } | UpdatePlan::Unavailable { .. }) | Err(_) => {
-            return BackgroundUpdateCheck::none();
-        }
-    };
+    let target_version = crate::notice::fetch_ezer_upstream_version().await?;
 
-    let allow_downgrade = installer_allows_downgrade(installer);
-    if !needs_update(
-        &current_version,
+    if !needs_update(&current_version, &target_version, "stable", false).unwrap_or(false) {
+        write_version_cache(&target_version, None).await;
+        return None;
+    }
+
+    if crate::notice::notice_already_shown(
+        &grok_home(),
         &target_version,
-        &update_config.channel,
-        allow_downgrade,
-    )
-    .unwrap_or(false)
-    {
-        let stable_ptr = try_fetch_stable_pointer().await;
-        write_version_cache(&target_version, stable_ptr.as_deref()).await;
-        return BackgroundUpdateCheck::none();
+        current_config.cli.dismissed_version.as_deref(),
+    ) {
+        return None;
+    }
+    if !crate::notice::claim_update_notice(&grok_home(), &target_version) {
+        return None;
     }
 
-    // Only download when the on-disk install is behind the pointer. The running process being stale (checked above) just
-    // means "show the restart hint". The quit-for-update path's `grok update` child resolves to "Already up to date" against
-    // the same disk state. For npm a leftover symlink would wrongly suppress the download (see `disk_version_for_installer`)
-    let disk_needs_download = match disk_version_for_installer(installer) {
-        Some(disk) => needs_update(
-            &disk,
-            &target_version,
-            &update_config.channel,
-            allow_downgrade,
-        )
-        .unwrap_or(true),
-        None => true,
-    };
+    // Cache after claiming so we do not refetch every launch; the once-flag
+    // already suppresses a repeat notice if the TTL expires.
+    write_version_cache(&target_version, None).await;
 
-    // Kick off a non-blocking download so the binary is ready when the user restarts (or accepts the in-TUI restart prompt)
-    let download = if disk_needs_download {
-        match run_update_subcommand(UpdateRunMode::NonBlocking, CliUpdateTrigger::AutoBackground)
-            .await
-        {
-            Ok(child) => child,
-            Err(e) => {
-                tracing::warn!("Background update download failed to start: {e}");
-                None
-            }
-        }
-    } else {
-        tracing::info!(
-            target_version = %target_version,
-            "Background update: target already on disk, skipping download"
-        );
-        None
-    };
-
-    BackgroundUpdateCheck {
-        update: Some(UpdateAvailable {
-            latest_version: target_version,
-        }),
-        download,
-    }
+    Some(PendingUpdateNotice {
+        current_version,
+        latest_version: target_version,
+    })
 }
 
-/// Returns Ok(true) if a blocking update ran; otherwise Ok(false).
+/// Startup / background path: one-shot notice only. Never installs.
+///
+/// Always returns `Ok(false)` (no update was applied). Explicit `ezer update`
+/// goes through [`run_update`], not this function. `run_mode` / `interactive` /
+/// `trigger` are unused; kept so call sites do not need a second API.
 pub async fn run_update_if_available(
-    run_mode: UpdateRunMode,
-    interactive: bool,
-    trigger: CliUpdateTrigger,
+    _run_mode: UpdateRunMode,
+    _interactive: bool,
+    _trigger: CliUpdateTrigger,
     update_config: &UpdateConfig,
 ) -> Result<bool> {
-    let Some(inst) = get_installer().await else {
-        return Ok(false);
-    };
-
-    heal_managed_install(inst).await;
-
-    if is_version_cache_fresh().await {
-        return Ok(false);
-    }
-
-    let current_config = config::load_config().await;
-
-    if current_config.cli.auto_update == Some(false) {
-        return Ok(false);
-    }
-
-    // Resolve effective auto_update: None defaults to true (first-run).
-    let auto_update = current_config.cli.auto_update.unwrap_or(true);
-
-    if current_config.cli.auto_update.is_none()
-        && let Err(e) = config::update_config(|st| {
-            if st.cli.auto_update.is_none() {
-                st.cli.auto_update = Some(true);
-            }
-        })
-        .await
-    {
-        tracing::warn!("Failed to save auto-update setting: {}", e);
-    }
-
-    let current_version = get_installed_grok_version();
-    let policy = config::VersionPolicy::resolve();
-    // Don't write version.json here
-    // Only cache after confirming no update is needed or after a successful install
-    // Otherwise a failed background download would suppress retries for the TTL window
-    let latest_version = match fetch_update_plan(inst, update_config, &policy).await {
-        Ok(UpdatePlan::Install { target, .. }) => target,
-        Ok(UpdatePlan::Skip { .. } | UpdatePlan::Unavailable { .. }) | Err(_) => return Ok(false),
-    };
-    if !needs_update(
-        &current_version,
-        &latest_version,
-        &update_config.channel,
-        installer_allows_downgrade(inst),
-    )
-    .unwrap_or(false)
-    {
-        let stable_ptr = try_fetch_stable_pointer().await;
-        write_version_cache(&latest_version, stable_ptr.as_deref()).await;
-        return Ok(false);
-    }
-
-    let channel_label = format!(" [{}]", update_config.channel);
-    if auto_update {
+    if let Some(pending) = take_unnotified_update(update_config).await {
+        let channel_label = format!(" [{}]", update_config.channel);
         eprintln!(
             "A new version of ezer is available: {} -> {}{}",
-            current_version, latest_version, channel_label
+            pending.current_version, pending.latest_version, channel_label
         );
-        if interactive {
-            if let Err(e) = run_update_subcommand(run_mode, trigger).await {
-                eprintln!("Update failed: {}", e);
-            } else if matches!(run_mode, UpdateRunMode::Blocking) {
-                return Ok(true);
-            } else {
-                eprintln!("{}", MSG_AUTO_UPDATE_BACKGROUND);
-                return Ok(false);
-            }
-        } else if let Err(e) = run_update_subcommand(run_mode, trigger).await {
-            eprintln!("Update failed: {}", e);
-        } else if matches!(run_mode, UpdateRunMode::Blocking) {
-            return Ok(true);
-        }
-        return Ok(false);
-    } else {
-        if current_config
-            .cli
-            .dismissed_version
-            .as_deref()
-            .is_some_and(|v| v == latest_version)
-        {
-            return Ok(false);
-        }
-        eprintln!(
-            "A new version of ezer is available: {} -> {}{}",
-            current_version, latest_version, channel_label
-        );
-        if interactive {
-            eprintln!("{}", PROMPT_UPDATE_NOW);
-            let mut line = String::new();
-            if io::stdin().read_line(&mut line).is_ok() {
-                let ans = line.trim().to_ascii_lowercase();
-                if ans.is_empty() || ans == "y" || ans == "yes" {
-                    // Accepting the prompt is consent, whatever the caller was
-                    if let Err(e) =
-                        run_update_subcommand(run_mode, CliUpdateTrigger::UserCommand).await
-                    {
-                        eprintln!("Update failed: {}", e);
-                    } else if matches!(run_mode, UpdateRunMode::Blocking) {
-                        return Ok(true);
-                    } else {
-                        eprintln!("{}", MSG_AUTO_UPDATE_BACKGROUND);
-                        return Ok(false);
-                    }
-                } else if ans == "d" || ans == "dismiss" {
-                    let dismissed = latest_version.clone();
-                    if let Err(e) = config::update_config(|st| {
-                        st.cli.dismissed_version = Some(dismissed);
-                    })
-                    .await
-                    {
-                        tracing::warn!("Failed to save dismissed version: {}", e);
-                    }
-                }
-            }
-        } else {
-            eprintln!("{}", MSG_RUN_UPDATE_MANUAL);
-        }
+        eprintln!("{MSG_RUN_UPDATE_MANUAL}");
     }
     Ok(false)
-}
-
-/// Launch "ezer update" in blocking or non-blocking mode. `NonBlocking` mode returns the spawned child's handle. The
-/// TUI's quit-for-update path `wait()`s on that in-flight download instead of spawning a second downloader. Dropping the
-/// handle does not kill the child (`kill_on_drop` is off), so callers that don't care can ignore it.
-async fn run_update_subcommand(
-    run_mode: UpdateRunMode,
-    trigger: CliUpdateTrigger,
-) -> Result<Option<tokio::process::Child>> {
-    let exe = std::env::current_exe()?;
-    let mut cmd = tokio::process::Command::new(exe);
-    // One trigger representation end to end: the enum crosses the process boundary as --trigger=<value> (FromStr on the other side)
-    cmd.arg("update");
-    cmd.arg(format!("--trigger={}", trigger.as_ref()));
-    // Hand the resolved telemetry mode to the child, which cannot see the remote-settings layer (requirement pins still beat env)
-    // None at the startup spawns: they run before the settings prefetch, when this process knows no more than the child
-    // Waiting would let telemetry delay an update
-    if let Some(mode) = xai_grok_telemetry::client::current_mode() {
-        cmd.env("EZER_TELEMETRY_ENABLED", mode.to_string());
-    }
-    match run_mode {
-        UpdateRunMode::Blocking => {
-            // stderr must be null, not piped: `.status()` does not drain pipes, so if the child writes more than the OS pipe buffer
-            // (~16 KB macOS / ~64 KB Linux) to stderr (e.g. download progress bars), the child blocks on the write while the parent
-            // blocks on waitpid — deadlocking both processes. With `panic = "abort"`, the blocked child eventually receives SIGABRT.
-            cmd.stdin(Stdio::null())
-                .stdout(Stdio::null())
-                // inherit, not piped: the TUI is already restored so the parent's stderr fd is a normal terminal inherit lets the
-                // child's diagnostic output reach the user. With piped stderr, `status()` would immediately close the read end. The
-                // child then hits EPIPE and panics, which is SIGABRT (signal 6) under panic=abort
-                .stderr(Stdio::inherit());
-            // No detach: the child must stay in the foreground process group so Ctrl+C cancels it with the parent
-            // The atomic install protocol makes mid-download kills safe
-            let status = cmd.status().await?;
-            if !status.success() {
-                anyhow::bail!("ezer update failed with {}", status);
-            }
-            Ok(None)
-        }
-        UpdateRunMode::NonBlocking => {
-            cmd.stdin(Stdio::null())
-                .stdout(Stdio::null())
-                .stderr(Stdio::null());
-            // Detach means a new session (Ctrl+C isolation), not handle abandonment: the child is still ours to wait() on
-            xai_grok_tools::util::detach_command(&mut cmd);
-            #[allow(clippy::disallowed_methods)] // the caller owns the returned handle
-            let child = cmd.spawn()?;
-            Ok(Some(child))
-        }
-    }
 }
 
 /// Resolve the ezer binary path for re-execution after an update. `current_exe()` resolves symlinks via `/proc/self/exe`
@@ -1245,11 +1062,7 @@ async fn remove_stale_models_cache() {
 /// Remove the stale `ezer` symlink/binary from `~/.ezer/bin/` left by
 /// older installations that shipped a separate pager binary.
 async fn remove_stale_pager(bin_dir: &std::path::Path) {
-    let name = if cfg!(windows) {
-        "ezer.exe"
-    } else {
-        "ezer"
-    };
+    let name = if cfg!(windows) { "ezer.exe" } else { "ezer" };
     let link = bin_dir.join(name);
     if link.exists() || link.is_symlink() {
         let _ = tokio::fs::remove_file(&link).await;
@@ -2401,7 +2214,7 @@ fn install_npm(target: Option<&str>, channel: &str, npm_registry: Option<&str>) 
 
     cmd.stdin(Stdio::null())
         .stdout(Stdio::null())
-        // inherit, not piped; same rationale as run_update_subcommand
+        // inherit, not piped: `.status()` does not drain pipes
         .stderr(Stdio::inherit());
     xai_grok_tools::util::detach_std_command(&mut cmd);
     let status = cmd.status()?;

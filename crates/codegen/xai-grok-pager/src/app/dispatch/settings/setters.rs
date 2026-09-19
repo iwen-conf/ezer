@@ -1977,7 +1977,7 @@ pub(in crate::app::dispatch) fn set_auto_update(app: &mut AppView, new: bool) ->
     tracing::info!(target: "settings", key = "auto_update", value = new, "setting changed");
     app.show_toast(&format!(
         "{} (restart to apply)",
-        save_success_toast("Auto-update", new),
+        save_success_toast("Update check", new),
     ));
     vec![Effect::PersistSetting {
         key: "auto_update",

@@ -43,7 +43,7 @@ Location: `~/.ezer/config.toml` (`EZER_HOME` override). If the file is missing o
 
 ```toml
 [cli]
-auto_update = true                     # check for updates on launch
+auto_update = true                     # one-time GitHub notice on launch; never auto-install; never xAI banners
 
 [models]
 default = "workbuddy"                   # model used for new sessions
@@ -596,6 +596,11 @@ process env (destination lock). `managed_config.toml` does not. There is no
 [Monitoring & Usage](24-monitoring-usage.md).
 
 ### Version pinning
+
+Default runtime never auto-installs and never shows prompts fetched from xAI /
+grok.com / x.com (changelog CDN, inbox announcements, marketing tips). The
+one-shot "update available" notice is GitHub (`iwen-conf/ezer` or
+`$EZER_UPSTREAM_REPO`) only.
 
 Control which versions the CLI may auto-update to and which versions may run. Set
 these in `[cli]`, or in a managed layer for fleet-wide policy. Each has an
