@@ -6,21 +6,21 @@ use std::path::PathBuf;
 /// Top-level commands for the pager binary.
 #[derive(Debug, Clone, Subcommand)]
 pub enum Command {
-    /// Run Grok without the interactive UI
+    /// Run ezer without the interactive UI
     Agent(Box<AgentArgs>),
-    /// Show the configuration Grok discovers for this directory
+    /// Show the configuration ezer discovers for this directory
     Inspect {
         /// Emit machine-readable JSON output.
         #[arg(long)]
         json: bool,
     },
-    /// Check terminal, clipboard, color, and input support without starting Grok
+    /// Check terminal, clipboard, color, and input support without starting ezer
     Doctor(crate::doctor_cmd::DoctorArgs),
     /// Manage running leader processes
     Leader(LeaderMgmtArgs),
     /// Sign out and clear cached credentials
     Logout,
-    /// Sign in to Grok
+    /// Sign in (optional xAI / grok.com; not required for BYOK)
     Login {
         /// Ignored (kept for backwards compatibility). OAuth2 is now the only auth method.
         #[arg(long, hide = true)]
@@ -54,7 +54,7 @@ pub enum Command {
     Usage(crate::usage_cmd::UsageArgs),
     /// Fetch and install managed configuration
     Setup {
-        /// Print the fetched configuration as JSON instead of installing it; writes nothing to ~/.grok.
+        /// Print the fetched configuration as JSON instead of installing it; writes nothing to ~/.ezer.
         #[arg(long)]
         json: bool,
     },
@@ -131,7 +131,7 @@ See ~/.ezer/ for config and sessions.
     },
     /// Manage git worktrees
     Worktree(crate::worktree_cmd::WorktreeArgs),
-    /// Show what the grok home (~/.grok) uses on disk
+    /// Show what the ezer home (~/.ezer) uses on disk
     #[command(name = "du", visible_alias = "disk-usage")]
     DiskUsage(crate::disk_usage_cmd::DiskUsageArgs),
     /// Expose this workspace to the Computer Hub (via the leader).
@@ -141,7 +141,7 @@ See ~/.ezer/ for config and sessions.
     Workspace(WorkspaceMgmtArgs),
     /// Open the Agent Dashboard view at startup.
     /// The dashboard shows every session, top-level and subagents.
-    /// Disabled when `[dashboard].enabled = false` in `~/.grok/config.toml` or when the `GROK_AGENT_DASHBOARD=0` env var is set.
+    /// Disabled when `[dashboard].enabled = false` in `~/.ezer/config.toml` or when the `GROK_AGENT_DASHBOARD=0` env var is set.
     Dashboard,
 }
 /// Arguments for the `wrap` subcommand: the command to run, then its args.
