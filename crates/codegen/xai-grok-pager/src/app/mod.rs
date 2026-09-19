@@ -2245,9 +2245,9 @@ mod tests {
         assert!(!args.no_alt_screen);
     }
     #[test]
-    fn cli_command_name_is_grok() {
+    fn cli_command_name_is_ezer() {
         use clap::CommandFactory;
-        assert_eq!(PagerArgs::command().get_name(), "grok");
+        assert_eq!(PagerArgs::command().get_name(), "ezer");
     }
     #[test]
     fn cli_help_output_header() {
@@ -2257,9 +2257,9 @@ mod tests {
         assert_eq!(
             first_5,
             vec![
-                "Grok Build TUI",
+                "ezer — terminal AI coding agent (BYOK / OpenAI Responses)",
                 "",
-                "Usage: grok [OPTIONS] [PROMPT] [COMMAND]",
+                "Usage: ezer [OPTIONS] [PROMPT] [COMMAND]",
                 "",
                 "Arguments:",
             ]

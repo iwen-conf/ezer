@@ -338,9 +338,9 @@ if ($Version) {
 }
 
 if ($AuthSource) {
-    Write-Host "Installing Grok $resolvedVersion ($platform, $AuthSource)..." -ForegroundColor Cyan
+    Write-Host "Installing ezer $resolvedVersion ($platform, $AuthSource)..." -ForegroundColor Cyan
 } else {
-    Write-Host "Installing Grok $resolvedVersion ($platform)..." -ForegroundColor Cyan
+    Write-Host "Installing ezer $resolvedVersion ($platform)..." -ForegroundColor Cyan
 }
 
 # --- Download binary ---
@@ -367,7 +367,7 @@ if (-not $downloaded) {
 
 # --- Install binary (locked-file safe) ---
 
-foreach ($binName in @('grok.exe', 'agent.exe')) {
+foreach ($binName in @('ezer.exe', 'grok.exe', 'agent.exe')) {
     try {
         Install-Exe $binaryPath (Join-Path $BinDir $binName)
     } catch {
@@ -376,7 +376,7 @@ foreach ($binName in @('grok.exe', 'agent.exe')) {
     }
 }
 
-Write-Host "  Installed to $BinDir\grok.exe and $BinDir\agent.exe." -ForegroundColor DarkGray
+Write-Host "  Installed to $BinDir\ezer.exe (compat: grok.exe) and $BinDir\agent.exe." -ForegroundColor DarkGray
 
 # --- Windows payload (best-effort): grove hook exes beside grok.exe + bundled MinGit ---
 
@@ -474,7 +474,7 @@ if ($env:GROK_DEPLOYMENT_KEY) {
     }
 }
 
-Write-Host "Grok $resolvedVersion installed to $BinDir\grok.exe" -ForegroundColor Green
+Write-Host "ezer $resolvedVersion installed to $BinDir\ezer.exe" -ForegroundColor Green
 
 # --- Ensure grok is on PATH ---
 
@@ -491,4 +491,4 @@ if ($pathEntries -notcontains $BinDir) {
 }
 
 Write-Host ''
-Write-Host "Run 'grok' or 'agent' to get started!" -ForegroundColor Cyan
+Write-Host "Run 'ezer' (or 'agent') to get started!" -ForegroundColor Cyan

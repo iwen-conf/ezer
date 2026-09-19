@@ -168,6 +168,7 @@ mod tests {
         assert!(toml.contains(DEFAULT_GATEWAY_API_KEY));
         assert!(toml.contains("reasoning_effort = \"max\""));
         assert!(toml.contains("session_summary = \"workbuddy\""));
+        assert!(toml.contains("model = \"deepseek-v4.1-flash\""));
         assert!(toml.contains("deepseek-v4.1-flash-low"));
         assert!(toml.contains("hy4-preview-f"));
         assert!(toml.contains("hy3"));

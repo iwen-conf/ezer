@@ -247,9 +247,9 @@ if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9._]+)?$ ]]; then
 fi
 
 if [ -n "$AUTH_SOURCE" ]; then
-    echo "Installing Grok $version ($platform, $AUTH_SOURCE)..." >&2
+    echo "Installing ezer $version ($platform, $AUTH_SOURCE)..." >&2
 else
-    echo "Installing Grok $version ($platform)..." >&2
+    echo "Installing ezer $version ($platform)..." >&2
 fi
 
 binary_path="$DOWNLOAD_DIR/grok-$platform"
@@ -262,7 +262,7 @@ fi
 binary_tmp="${binary_path}.tmp.$$"
 rm -f "$binary_tmp" 2>/dev/null || true
 
-echo "  Downloading grok ${version}..." >&2
+echo "  Downloading ezer ${version}..." >&2
 if [ "$os" = "windows" ]; then
     if ! fetch_binary "${artifact_base}.exe" "$binary_tmp"; then
         if ! fetch_binary "$artifact_base" "$binary_tmp"; then
@@ -305,7 +305,7 @@ if [ "$os" = "windows" ]; then
 else
     chmod +x "$binary_tmp"
     if ! "$binary_tmp" --version </dev/null >/dev/null 2>&1; then
-        echo "Error: downloaded grok failed to run; keeping the existing install." >&2
+        echo "Error: downloaded ezer failed to run; keeping the existing install." >&2
         rm -f "$binary_tmp"
         exit 1
     fi
@@ -413,13 +413,13 @@ else
     echo "ezer $version installed to $BIN_DIR/ezer" >&2
 fi
 
-# --- Ensure grok is on PATH ---
+# --- Ensure ezer is on PATH ---
 
 path_has_dir() {
     case ":$PATH:" in *":$1:"*) return 0 ;; *) return 1 ;; esac
 }
 
-# Try to symlink into a directory already on PATH so grok works immediately
+# Try to symlink into a directory already on PATH so ezer works immediately
 # without restarting the shell. Candidate dirs in preference order.
 SYMLINK_CREATED=""
 if [ "$os" != "windows" ] && ! path_has_dir "$BIN_DIR"; then
@@ -520,5 +520,5 @@ else
 fi
 
 if [ "$os" = "windows" ]; then
-    echo "To use grok from cmd.exe or PowerShell, add %USERPROFILE%\\.grok\\bin to your PATH." >&2
+    echo "To use ezer from cmd.exe or PowerShell, add %USERPROFILE%\\.ezer\\bin to your PATH." >&2
 fi

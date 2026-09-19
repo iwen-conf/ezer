@@ -339,9 +339,9 @@ if ($Version) {
 }
 
 if ($AuthSource) {
-    Write-Host "Installing Grok $resolvedVersion ($platform, $AuthSource)..." -ForegroundColor Cyan
+    Write-Host "Installing ezer $resolvedVersion ($platform, $AuthSource)..." -ForegroundColor Cyan
 } else {
-    Write-Host "Installing Grok $resolvedVersion ($platform)..." -ForegroundColor Cyan
+    Write-Host "Installing ezer $resolvedVersion ($platform)..." -ForegroundColor Cyan
 }
 
 # --- Download binary ---
@@ -483,7 +483,7 @@ if ($env:GROK_DEPLOYMENT_KEY) {
 
 Write-Host "ezer $resolvedVersion installed to $BinDir\ezer.exe" -ForegroundColor Green
 
-# --- Ensure grok is on PATH ---
+# --- Ensure ezer is on PATH ---
 
 $userPath = [Environment]::GetEnvironmentVariable('Path', 'User')
 $pathEntries = if ($userPath) { $userPath -split ';' | Where-Object { $_ -ne '' } } else { @() }
@@ -491,11 +491,11 @@ if ($pathEntries -notcontains $BinDir) {
     $newPath = (@($BinDir) + $pathEntries) -join ';'
     [Environment]::SetEnvironmentVariable('Path', $newPath, 'User')
     Write-Host "  Added $BinDir to your User PATH." -ForegroundColor DarkGray
-    # Update current session so grok works immediately.
+    # Update current session so ezer works immediately.
     if ($env:Path -notlike "*$BinDir*") {
         $env:Path = "$BinDir;$env:Path"
     }
 }
 
 Write-Host ''
-Write-Host "Run 'grok' or 'agent' to get started!" -ForegroundColor Cyan
+Write-Host "Run 'ezer' (or 'agent') to get started!" -ForegroundColor Cyan

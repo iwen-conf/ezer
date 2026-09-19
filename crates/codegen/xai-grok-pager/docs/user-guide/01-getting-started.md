@@ -25,19 +25,19 @@ ezer --version
 ```
 
 To fetch a repository through Grove (NFS on macOS, FUSE on Linux), enable
-`grok clone` with `[clone] enabled = true` in Grove config, `GROK_CLONE=1`,
+`ezer clone` with `[clone] enabled = true` in Grove config, `GROK_CLONE=1`,
 or the enable-both convenience `GROK_GROVE=1` / `[cli] grove = true` in
-`~/.grok/config.toml`:
+`~/.ezer/config.toml`:
 
 ```bash
-grok clone <url> [dir]
+ezer clone <url> [dir]
 ```
 
 The default is a depth-1 checkout of the selected branch. Pass `--full-history`
 for a complete clone. Clone enablement is independent of session / `-w` Grove
 worktrees (the convenience above turns both on; the specific knobs still win).
-the grok.com sign-in below — see [grok clone](27-grok-clone.md#authentication)
-and [Configuration reference](26-config-reference.md).
+See [grok clone](27-grok-clone.md#authentication) and
+[Configuration reference](26-config-reference.md).
 
 ---
 
@@ -93,7 +93,7 @@ The `@` operator opens a fuzzy file picker. By default it respects `.gitignore` 
 By default, Grok asks for permission before executing shell commands or editing files. You can approve individually or toggle always-approve mode:
 
 - Press `Ctrl+O` to toggle always-approve mode
-- Use the `--yolo` flag at launch: `grok --yolo`
+- Use the `--yolo` flag at launch: `ezer --yolo`
 - Type `/always-approve` in the prompt to toggle the mode
 
 ---
@@ -102,11 +102,11 @@ By default, Grok asks for permission before executing shell commands or editing 
 
 ### Sessions
 
-Every conversation is a **session**. Sessions are automatically saved to `~/.grok/sessions/` and can be resumed later. Each session tracks the full conversation history, tool calls, file edits, and task state.
+Every conversation is a **session**. Sessions are automatically saved to `~/.ezer/sessions/` and can be resumed later. Each session tracks the full conversation history, tool calls, file edits, and task state.
 
 - Start a new session: `Ctrl+N` or `/new`
 - Resume a previous session: `/resume` in the TUI, or `--resume <ID>` from the CLI
-- Continue the most recent session: `grok -c`
+- Continue the most recent session: `ezer -c`
 
 ### Scrollback
 
@@ -142,7 +142,7 @@ Tools can be extended with [MCP servers](05-configuration.md#mcp-servers) for in
 Type `/` in the prompt to access commands. These provide quick actions without writing a full prompt:
 
 ```
-/model grok-4.6                 # Switch model
+/model workbuddy                # Switch model (wire id: deepseek-v4.1-flash)
 /compact                          # Compress conversation history
 /always-approve                   # Toggle always-approve mode
 /new                              # Start a new session
@@ -156,44 +156,44 @@ See [Slash Commands](04-slash-commands.md) for the complete reference.
 
 ```bash
 # Launch the interactive TUI and submit an initial prompt as the first turn
-grok "fix the failing auth test and run it"
+ezer "fix the failing auth test and run it"
 
 # Initial prompt in a new git worktree. Use --worktree=<name> (with `=`) so the
-# prompt isn't swallowed as the worktree name — `grok -w "refactor module X"`
+# prompt isn't swallowed as the worktree name — `ezer -w "refactor module X"`
 # would treat "refactor module X" as the worktree label, not the prompt.
-grok --worktree=feat "refactor module X"
+ezer --worktree=feat "refactor module X"
 
 # Base the worktree on a specific branch (e.g. main) instead of the current HEAD:
-grok -w --ref main "implement feature from main"
+ezer -w --ref main "implement feature from main"
 
 
 # Start in a specific project directory
-grok --cwd ~/projects/my-app
+ezer --cwd ~/projects/my-app
 
 # Add project-specific rules
-grok --rules "Always use TypeScript. Prefer functional components."
+ezer --rules "Always use TypeScript. Prefer functional components."
 
 # Auto-approve all tool executions
-grok --yolo
+ezer --yolo
 
-# Use a specific model
-grok -m grok-4.6
+# Use a specific model (catalog key; wire id is deepseek-v4.1-flash)
+ezer -m workbuddy
 
 # Resume a previous session
-grok --resume <session-id>
+ezer --resume <session-id>
 
 # Continue the most recent session
-grok -c
+ezer -c
 
-# Experimental scrollback-native render mode. Sticky: plain `grok` reopens in
+# Experimental scrollback-native render mode. Sticky: plain `ezer` reopens in
 # the mode last chosen via --minimal/--fullscreen (or /minimal//fullscreen).
-grok --minimal
+ezer --minimal
 
 # Back to the standard fullscreen TUI (and make it sticky again)
-grok --fullscreen
+ezer --fullscreen
 
 # Headless mode (for scripts)
-grok -p "Explain this codebase"
+ezer -p "Explain this codebase"
 ```
 
 ---
@@ -203,7 +203,7 @@ grok -p "Explain this codebase"
 Run Grok non-interactively for scripting, CI/CD, and automation:
 
 ```bash
-grok -p "Your prompt here"
+ezer -p "Your prompt here"
 ```
 
 Output formats:
@@ -217,7 +217,7 @@ Output formats:
 Example CI/CD usage:
 
 ```bash
-grok -p "Review changes for bugs" --output-format json --yolo | jq -r '.text'
+ezer -p "Review changes for bugs" --output-format json --yolo | jq -r '.text'
 ```
 
 ---
@@ -227,7 +227,7 @@ grok -p "Review changes for bugs" --output-format json --yolo | jq -r '.text'
 Add per-project instructions by creating an `AGENTS.md` file in your repository. Grok reads these files and injects their contents as a project-instructions message at the start of the conversation:
 
 ```
-~/.grok/AGENTS.md           # Global rules (apply to all projects)
+~/.ezer/AGENTS.md           # Global rules (apply to all projects)
 <repo-root>/AGENTS.md       # Repository-level rules
 <cwd>/AGENTS.md             # Directory-level rules (highest priority)
 ```

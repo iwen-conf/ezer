@@ -94,9 +94,9 @@ You can also override the API endpoint to point at your own proxy:
 export GROK_CLI_CHAT_PROXY_BASE_URL="https://grok-proxy.acme.com/v1"
 ```
 
-### 3. Run `grok`
+### 3. Run `ezer`
 
-The CLI discovers endpoints via `{issuer}/.well-known/openid-configuration`, opens the IdP login page, and stores tokens in `~/.grok/auth.json`. Tokens auto-refresh silently via the stored `refresh_token`.
+The CLI discovers endpoints via `{issuer}/.well-known/openid-configuration`, opens the IdP login page, and stores tokens in `~/.ezer/auth.json`. Tokens auto-refresh silently via the stored `refresh_token`.
 
 ### Optional fields
 
@@ -194,7 +194,7 @@ same JSON fields (such as `issuer`) on every invocation, including refreshes.
   rejected. Nobody is watching. stdin is closed, your stderr is swallowed, and
   the binary is given a few seconds before it is killed. Mint silently or exit
   non-zero — never block.
-- **Unset — a sign-in.** `grok login`, the sign-in screen, or the escalation
+- **Unset — a sign-in.** `ezer login`, the sign-in screen, or the escalation
   Grok performs when a headless run couldn't mint. A user is waiting, your
   stderr reaches them, and you have 300 seconds — enough for a browser round
   trip or a device code.
@@ -253,7 +253,7 @@ goes to `~/.grok/leader.log` rather than to you.
 For headless environments (SSH sessions, Docker containers, remote VMs) where no browser is available locally:
 
 ```bash
-grok login --device-auth    # or: grok login --device-code
+ezer login --device-auth    # or: ezer login --device-code
 ```
 
 This prints a URL and code to the terminal. Open the URL on any device, enter the code, and complete authentication. Grok polls until the login is confirmed.
@@ -306,10 +306,10 @@ During a session, the active method handles all mid-session refreshes.
 
 ---
 
-## Grove Git credentials (not this page's `grok login`)
+## Grove Git credentials (not this page's `ezer login`)
 
 
-**`~/.grok/auth.json` is never read for Git.** `grok login` does not create a Git credential and `grok logout` does not revoke one; the daemon builds its own credential cell from `auth_mode` in Grove config. Those credentials are managed with `grove status` and `grove reload-credentials` -- see [grok clone](27-grok-clone.md#authentication) for the failure classes and their next steps.
+**`~/.ezer/auth.json` is never read for Git.** `ezer login` does not create a Git credential and `ezer logout` does not revoke one; the daemon builds its own credential cell from `auth_mode` in Grove config. Those credentials are managed with `grove status` and `grove reload-credentials` -- see [grok clone](27-grok-clone.md#authentication) for the failure classes and their next steps.
 
 ---
 
@@ -368,7 +368,7 @@ RUST_LOG=debug grok -p "hello" 2> /tmp/grok.log
 
 ### Common fixes
 
-- **"Authentication failed"** -- Run `grok logout` to clear cached credentials, then `grok login` to sign in again.
+- **"Authentication failed"** -- Run `ezer logout` to clear cached credentials, then `ezer login` to sign in again.
 - **Token expires too quickly** -- Set `auth_token_ttl` or return `expires_in` in your auth provider's JSON output.
 - **OIDC redirect fails** -- Ensure your IdP allows loopback redirect URIs (`http://127.0.0.1/callback`).
 - **External auth provider not found** -- Check that the `auth_provider_command` path is correct and the binary is executable.
