@@ -29,6 +29,13 @@ pub enum UpdateRunMode {
     NonBlocking,
 }
 
+#[allow(dead_code)]
+const PROMPT_UPDATE_NOW: &str = "Update now? [Y/n/d]";
+#[allow(dead_code)]
+const MSG_AUTO_UPDATE_BACKGROUND: &str = "Auto-update running in background.";
+#[allow(dead_code)]
+const MSG_RUN_UPDATE_MANUAL: &str = "Run `ezer update` to get the latest version.";
+
 /// An empty or `"stable"` channel means stable, the installers' default (`CHANNEL="${EZER_CHANNEL:-stable}"` in install.sh).
 fn is_stable_channel(channel: &str) -> bool {
     channel.is_empty() || channel == "stable"
@@ -633,6 +640,7 @@ pub async fn run_update_if_available(
 /// Launch "ezer update" in blocking or non-blocking mode. `NonBlocking` mode returns the spawned child's handle. The
 /// TUI's quit-for-update path `wait()`s on that in-flight download instead of spawning a second downloader. Dropping the
 /// handle does not kill the child (`kill_on_drop` is off), so callers that don't care can ignore it.
+#[allow(dead_code)]
 async fn run_update_subcommand(
     run_mode: UpdateRunMode,
     trigger: CliUpdateTrigger,
