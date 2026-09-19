@@ -364,7 +364,7 @@ fn worktree_session_created_sets_session_and_cwd() {
     );
     let id = AgentId(0);
     assert!(expect_agent(&app, id).session_starting_since.is_some());
-    let worktree_path = PathBuf::from("/tmp/grok-worktrees/pager-123");
+    let worktree_path = PathBuf::from("/tmp/ezer-worktrees/pager-123");
     let session_cwd = worktree_path.clone();
     let effects = dispatch(
         Action::TaskComplete(TaskResult::WorktreeSessionCreated {
@@ -432,7 +432,7 @@ fn worktree_session_created_clears_sticky_branch_from_main_repo() {
         agent.main_repo = Some("~/old-main".into());
         agent.is_worktree = false;
     }
-    let worktree_path = PathBuf::from("/tmp/grok-worktrees/pager-sticky");
+    let worktree_path = PathBuf::from("/tmp/ezer-worktrees/pager-sticky");
     let session_cwd = worktree_path.clone();
     dispatch(
         Action::TaskComplete(TaskResult::WorktreeSessionCreated {
@@ -470,7 +470,7 @@ fn worktree_session_preserves_subdirectory_offset() {
         &mut app,
     );
     let id = AgentId(0);
-    let worktree_root = PathBuf::from("/home/user/.grok/worktrees/repo/pager-123");
+    let worktree_root = PathBuf::from("/home/user/.ezer/worktrees/repo/pager-123");
     let session_cwd = worktree_root.join("crates/codegen/xai-grok-pager");
     let effects = dispatch(
         Action::TaskComplete(TaskResult::WorktreeSessionCreated {
@@ -605,13 +605,13 @@ fn worktree_session_created_drains_queued_prompts() {
     let effects = dispatch(Action::SendPrompt("hello".into()), &mut app);
     assert!(effects.is_empty(), "no session_id yet, can't drain");
     assert_eq!(expect_agent(&app, id).session.queue_len(), 1);
-    let worktree_path = PathBuf::from("/tmp/grok-worktrees/pager-abc");
+    let worktree_path = PathBuf::from("/tmp/ezer-worktrees/pager-abc");
     let effects = dispatch(
         Action::TaskComplete(TaskResult::WorktreeSessionCreated {
             agent_id: id,
             session_id: acp::SessionId::new("wt-drain-1"),
             worktree_path,
-            session_cwd: PathBuf::from("/tmp/grok-worktrees/pager-abc"),
+            session_cwd: PathBuf::from("/tmp/ezer-worktrees/pager-abc"),
             models: None,
             modes: None,
             strategy_summary: None,
@@ -1479,9 +1479,9 @@ fn an_api_key_run_writes_no_answer_on_either_path() {
 fn a_consent_link_opens_the_url_its_label_stands_for() {
     use crate::app::consent::{ConsentSegment, ConsentState};
     let url_file =
-        std::env::temp_dir().join(format!("grok-consent-open-{}.txt", std::process::id()));
+        std::env::temp_dir().join(format!("ezer-consent-open-{}.txt", std::process::id()));
     let _ = std::fs::remove_file(&url_file);
-    unsafe { std::env::set_var("GROK_TEST_OPEN_URL_FILE", &url_file) };
+    unsafe { std::env::set_var("EZER_TEST_OPEN_URL_FILE", &url_file) };
     let opened = || std::fs::read_to_string(&url_file).unwrap_or_default();
     let mut app = test_app();
     app.consent_state = painted_notice("tos-2026", 3);
@@ -1512,7 +1512,7 @@ fn a_consent_link_opens_the_url_its_label_stands_for() {
     app.consent_state = ConsentState::Done;
     dispatch(Action::OpenConsentLink(0), &mut app);
     assert!(opened().trim().is_empty(), "got {:?}", opened());
-    unsafe { std::env::remove_var("GROK_TEST_OPEN_URL_FILE") };
+    unsafe { std::env::remove_var("EZER_TEST_OPEN_URL_FILE") };
     let _ = std::fs::remove_file(&url_file);
 }
 /// Accepting the trust question (its `finish_trust` tail) resolves trust and replays the deferred startup when auth is already done.
@@ -1589,7 +1589,7 @@ fn trust_folder_quits_when_store_unreadable() {
         "unread store must record a post-exit error: {msg}"
     );
     assert!(
-        msg.contains("Fix or delete ~/.grok/trusted_folders.toml"),
+        msg.contains("Fix or delete ~/.ezer/trusted_folders.toml"),
         "unread store must name the next step: {msg}"
     );
 }
@@ -1622,7 +1622,7 @@ fn trust_folder_continues_session_only_when_embedded_and_persist_denied() {
         .map(|(m, _)| m.as_str())
         .unwrap_or_default();
     assert!(
-        toast.contains("grok --trust"),
+        toast.contains("ezer --trust"),
         "a session-only grant must show how to persist: {toast}"
     );
 }
@@ -3327,7 +3327,7 @@ mod welcome_workspace_mode {
     #[serial_test::serial(GROK_CHAT_LOCAL_WORKSPACE_ACK)]
     fn welcome_new_session_sets_own_override() {
         let _ack = xai_grok_test_support::EnvGuard::set(
-            crate::app::session_startup::GROK_CHAT_LOCAL_WORKSPACE_ACK_ENV,
+            crate::app::session_startup::EZER_CHAT_LOCAL_WORKSPACE_ACK_ENV,
             "1",
         );
         set_active_local_workspace(None).unwrap();
@@ -3434,7 +3434,7 @@ mod welcome_workspace_mode {
     #[serial_test::serial(GROK_CHAT_LOCAL_WORKSPACE_ACK)]
     fn confirm_ack_skips_reapply_and_sets_oneshot() {
         let _ack = xai_grok_test_support::EnvGuard::unset(
-            crate::app::session_startup::GROK_CHAT_LOCAL_WORKSPACE_ACK_ENV,
+            crate::app::session_startup::EZER_CHAT_LOCAL_WORKSPACE_ACK_ENV,
         );
         let home = tempfile::tempdir().unwrap();
         let _home =
@@ -3471,7 +3471,7 @@ mod welcome_workspace_mode {
     #[serial_test::serial(GROK_CHAT_LOCAL_WORKSPACE_ACK)]
     fn welcome_local_worktree_always_keeps_oneshot_until_create() {
         let _ack = xai_grok_test_support::EnvGuard::set(
-            crate::app::session_startup::GROK_CHAT_LOCAL_WORKSPACE_ACK_ENV,
+            crate::app::session_startup::EZER_CHAT_LOCAL_WORKSPACE_ACK_ENV,
             "1",
         );
         set_active_local_workspace(None).unwrap();
@@ -3512,7 +3512,7 @@ mod welcome_workspace_mode {
     #[serial_test::serial(GROK_CHAT_LOCAL_WORKSPACE_ACK)]
     fn failed_worktree_create_clears_welcome_oneshot() {
         let _ack = xai_grok_test_support::EnvGuard::set(
-            crate::app::session_startup::GROK_CHAT_LOCAL_WORKSPACE_ACK_ENV,
+            crate::app::session_startup::EZER_CHAT_LOCAL_WORKSPACE_ACK_ENV,
             "1",
         );
         set_active_local_workspace(None).unwrap();
@@ -3547,7 +3547,7 @@ mod welcome_workspace_mode {
     #[serial_test::serial(GROK_CHAT_LOCAL_WORKSPACE_ACK)]
     fn confirm_ack_honors_worktree_always() {
         let _ack = xai_grok_test_support::EnvGuard::unset(
-            crate::app::session_startup::GROK_CHAT_LOCAL_WORKSPACE_ACK_ENV,
+            crate::app::session_startup::EZER_CHAT_LOCAL_WORKSPACE_ACK_ENV,
         );
         let home = tempfile::tempdir().unwrap();
         let _home =
@@ -3800,7 +3800,7 @@ mod welcome_workspace_mode {
     #[serial_test::serial(GROK_CHAT_LOCAL_WORKSPACE_ACK)]
     fn pick_in_worktree_no_git_clears_history_bypass() {
         let _ack = xai_grok_test_support::EnvGuard::set(
-            crate::app::session_startup::GROK_CHAT_LOCAL_WORKSPACE_ACK_ENV,
+            crate::app::session_startup::EZER_CHAT_LOCAL_WORKSPACE_ACK_ENV,
             "1",
         );
         set_active_local_workspace(None).unwrap();

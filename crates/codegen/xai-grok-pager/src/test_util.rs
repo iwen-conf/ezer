@@ -191,7 +191,7 @@ impl GrokHomeFixture {
             "created_at": "2026-07-01T00:00:00Z",
             "updated_at": "2026-07-01T00:00:00Z",
             "num_messages": 1,
-            "current_model_id": "grok-build",
+            "current_model_id": "ezer-build",
         });
         if let Some(map) = extra.as_object() {
             for (k, val) in map {
@@ -225,14 +225,14 @@ impl TempGitRepo {
         init_git_repo_on_branch(&path, branch);
         Self { _dir: dir, path }
     }
-    /// CoW-style standalone clone: `.git` is a directory plus `grok-worktree-source`.
+    /// CoW-style standalone clone: `.git` is a directory plus `ezer-worktree-source`.
     pub fn standalone_clone(&self, branch: &str) -> Self {
         let dir = tempfile::tempdir().expect("temp clone root");
         let path = dir.path().join("clone");
         copy_dir_all(&self.path, &path);
         checkout_named_branch(&path, branch);
         std::fs::write(
-            path.join(".git").join("grok-worktree-source"),
+            path.join(".git").join("ezer-worktree-source"),
             self.path.to_string_lossy().as_bytes(),
         )
         .unwrap();

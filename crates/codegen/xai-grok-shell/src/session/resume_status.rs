@@ -207,7 +207,7 @@ pub(crate) fn loops_from_resources_state(session_dir: &Path) -> Vec<ResumeLoop> 
         return Vec::new();
     };
     let Some(tasks) = value
-        .pointer("/state/grok_build.Scheduler/tasks")
+        .pointer("/state/ezer_build.Scheduler/tasks")
         .and_then(|t| t.as_array())
     else {
         return Vec::new();
@@ -558,7 +558,7 @@ mod tests {
             dir.path().join("resources_state.json"),
             r#"{
               "state": {
-                "grok_build.Scheduler": {
+                "ezer_build.Scheduler": {
                   "tasks": [
                     {"id":"loop9","intervalSecs":30,"prompt":"ping"}
                   ]

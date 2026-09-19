@@ -1,6 +1,6 @@
 //! The bootstrap-cost regression tier lives in its OWN binary.
 //! The waterfall sink latches on first use, so it cannot share a process with the stderr-mode sweep tests.
-//! Knobs: `GROK_BOOTSTRAP_REGRESSION_SOFT=1` reports without asserting; `GROK_SWEEP_LOG` adjusts tracing.
+//! Knobs: `EZER_BOOTSTRAP_REGRESSION_SOFT=1` reports without asserting; `EZER_SWEEP_LOG` adjusts tracing.
 
 #[allow(dead_code)]
 #[path = "acp_harness/mod.rs"]
@@ -73,7 +73,7 @@ fn regression_bootstrap_cost() {
         "REGRESSION sessboot_n1={boot_n1:.1} sessboot_n25={boot_n25:.1} sessboot_ratio={boot_ratio:.1} \
          bridge_n1={seed_n1:.1} bridge_n25={seed_n25:.1} bridge_ratio={seed_ratio:.1}"
     );
-    if std::env::var_os("GROK_BOOTSTRAP_REGRESSION_SOFT").is_some() {
+    if std::env::var_os("EZER_BOOTSTRAP_REGRESSION_SOFT").is_some() {
         return;
     }
     if boot_ratio > SESSBOOT_MAX_RATIO || seed_ratio > BRIDGE_MAX_RATIO {

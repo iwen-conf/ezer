@@ -1,4 +1,4 @@
-//! Agent definition types, parsed from `.grok/agents/*.md` files.
+//! Agent definition types, parsed from `.ezer/agents/*.md` files.
 use crate::error::AgentBuildError;
 use crate::prompt::context::TemplateOverride;
 use crate::prompt::user_message::UserMessageTemplate;
@@ -67,7 +67,7 @@ fn registered_public_toolset_preset_names() -> Vec<String> {
         .map(|(name, _)| name.clone())
         .collect()
 }
-/// Orchestrator-specific prompt body appended to the standard GrokBuild system prompt (`prompt.md`).
+/// Orchestrator-specific prompt body appended to the standard Ezer system prompt (`prompt.md`).
 /// Instructs the GBL model to delegate coding and exploration work to subagents.
 const ORCHESTRATOR_PROMPT_BODY: &str = "\
 ## Orchestrator Mode
@@ -140,7 +140,7 @@ fn kill_task_tool_config() -> ToolConfig {
     ToolConfig::from(&grok_build::KillTaskTool).with_name("kill_command_or_subagent")
 }
 /// Complete workspace-executable toolset for hub registration.
-/// Extends `default_grok_build_toolset()` with tools injected by `AgentBuilder` or available only in specific modes.
+/// Extends `default_ezer_build_toolset()` with tools injected by `AgentBuilder` or available only in specific modes.
 /// In proxy mode the workspace server executes all tools; the shell has zero local dispatch.
 pub fn workspace_grok_build_toolset() -> ToolServerConfig {
     let mut tools = default_grok_build_toolset().tools;
@@ -161,7 +161,7 @@ pub fn workspace_grok_build_toolset() -> ToolServerConfig {
         behavior_preset: None,
     }
 }
-/// Fully qualified ids of the workspace tools that call the Grok API with the workspace server's own credential.
+/// Fully qualified ids of the workspace tools that call the ezer API with the workspace server's own credential.
 /// A server whose credential only serves the hub cannot run them, so it neither advertises nor serves them.
 pub fn api_backed_tool_ids() -> Vec<String> {
     #[allow(unused_mut)]
@@ -173,7 +173,7 @@ pub fn api_backed_tool_ids() -> Vec<String> {
     ];
     ids
 }
-/// Toolset for the `grok-computer` (workspace/sandbox) preset.
+/// Toolset for the `ezer-computer` (workspace/sandbox) preset.
 fn grok_computer_toolset() -> ToolServerConfig {
     #[allow(unused_mut)]
     let mut tools = vec![
@@ -199,13 +199,13 @@ fn grok_computer_toolset() -> ToolServerConfig {
 /// A new preset is covered the moment it becomes resolvable.
 fn native_toolset_presets() -> Vec<(&'static str, ToolServerConfig)> {
     vec![
-        ("grok-build", workspace_grok_build_toolset()),
-        ("grok-build-concise", grok_build_concise_toolset()),
-        ("grok-build-plan", grok_build_plan_toolset()),
+        ("ezer-build", workspace_grok_build_toolset()),
+        ("ezer-build-concise", grok_build_concise_toolset()),
+        ("ezer-build-plan", grok_build_plan_toolset()),
         ("codex", codex_toolset()),
         ("explore", explore_toolset()),
         ("plan", plan_toolset()),
-        ("grok-computer", grok_computer_toolset()),
+        ("ezer-computer", grok_computer_toolset()),
     ]
 }
 /// Every named **public** toolset preset (native and externally registered public presets), as `(name, config)` pairs.
@@ -246,7 +246,7 @@ fn default_grok_build_toolset() -> ToolServerConfig {
 fn default_agent_toolset() -> ToolServerConfig {
     grok_build_core_toolset(true)
 }
-/// Same as the parent grok-build list, without `workflow`.
+/// Same as the parent ezer-build list, without `workflow`.
 /// The usual `general-purpose` spawn path must not add that tool and then strip it.
 fn general_purpose_toolset() -> ToolServerConfig {
     grok_build_core_toolset(false)
@@ -384,7 +384,7 @@ fn plan_toolset() -> ToolServerConfig {
         behavior_preset: None,
     }
 }
-/// Extends the default `grok-build` toolset with plan mode tools.
+/// Extends the default `ezer-build` toolset with plan mode tools.
 /// This allows the agent to enter a structured planning phase before writing code, with user-approved plans.
 fn grok_build_plan_toolset() -> ToolServerConfig {
     ToolServerConfig {
@@ -462,7 +462,7 @@ fn orchestrator_toolset() -> ToolServerConfig {
         behavior_preset: None,
     }
 }
-/// Same as `grok_build_plan_toolset` but excludes `TaskTool`, `TaskOutputTool`, and `KillTaskTool`.
+/// Same as `ezer_build_plan_toolset` but excludes `TaskTool`, `TaskOutputTool`, and `KillTaskTool`.
 /// Use this when the shell does not have subagent infrastructure wired up.
 fn grok_build_plan_no_subagents_toolset() -> ToolServerConfig {
     ToolServerConfig {
@@ -493,7 +493,7 @@ fn grok_build_plan_no_subagents_toolset() -> ToolServerConfig {
         behavior_preset: None,
     }
 }
-/// Same as `default_grok_build_toolset` with the `AskUserQuestionTool` added, allowing the agent to ask structured questions without full plan mode.
+/// Same as `default_ezer_build_toolset` with the `AskUserQuestionTool` added, allowing the agent to ask structured questions without full plan mode.
 fn grok_build_ask_user_toolset() -> ToolServerConfig {
     ToolServerConfig {
         tools: vec![
@@ -645,10 +645,15 @@ where
 )]
 #[strum(serialize_all = "kebab-case")]
 pub enum BuiltinAgentName {
+    #[strum(serialize = "ezer-build")]
     GrokBuild,
+    #[strum(serialize = "ezer-build-concise")]
     GrokBuildConcise,
+    #[strum(serialize = "ezer-build-plan")]
     GrokBuildPlan,
+    #[strum(serialize = "ezer-build-plan-no-subagents")]
     GrokBuildPlanNoSubagents,
+    #[strum(serialize = "ezer-build-ask-user")]
     GrokBuildAskUser,
     Codex,
     Opencode,
@@ -656,7 +661,7 @@ pub enum BuiltinAgentName {
     Explore,
     Plan,
     BrowserUse,
-    #[strum(serialize = "grok-build-orchestrator")]
+    #[strum(serialize = "ezer-build-orchestrator")]
     GrokBuildOrchestrator,
 }
 /// Resolves via `BuiltinAgentName` and delegates to [`AgentDefinition::is_strict_harness`].
@@ -690,7 +695,7 @@ impl BuiltinAgentName {
         &[Self::GeneralPurpose, Self::Explore, Self::Plan]
     }
 }
-/// Portable agent identity, parsed from .grok/agents/*.md. Usable as a top-level agent or a subagent.
+/// Portable agent identity, parsed from .ezer/agents/*.md. Usable as a top-level agent or a subagent.
 /// Does not contain session-level policies; those are provided by the AgentBuilder at build time.
 #[derive(Debug, Clone, Deserialize, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -840,13 +845,13 @@ fn default_prompt_mode() -> PromptMode {
 /// Where the agent definition was discovered.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub enum AgentScope {
-    /// .grok/agents/ (project-level, highest priority)
+    /// .ezer/agents/ (project-level, highest priority)
     Project,
-    /// ~/.grok/agents/ (user-level)
+    /// ~/.ezer/agents/ (user-level)
     User,
-    /// ~/.grok/bundled/agents/ (lowest-priority bundled cache)
+    /// ~/.ezer/bundled/agents/ (lowest-priority bundled cache)
     Bundled,
-    /// Built-in agent (e.g., default_grok_build(), browser_use()).
+    /// Built-in agent (e.g., default_ezer_build(), browser_use()).
     #[default]
     BuiltIn,
 }
@@ -1059,11 +1064,11 @@ where
 #[serde(rename_all = "lowercase")]
 #[strum(serialize_all = "lowercase")]
 pub enum MemoryScope {
-    /// `~/.grok/agent-memory/<name>/`
+    /// `~/.ezer/agent-memory/<name>/`
     User,
-    /// `<project>/.grok/agent-memory/<name>/`
+    /// `<project>/.ezer/agent-memory/<name>/`
     Project,
-    /// `<project>/.grok/agent-memory-local/<name>/`
+    /// `<project>/.ezer/agent-memory-local/<name>/`
     Local,
 }
 impl MemoryScope {
@@ -1086,12 +1091,12 @@ impl MemoryScope {
                 is_project_scoped: false,
             },
             Self::Project => ResolvedMemoryDir {
-                path: project_cwd.join(".grok/agent-memory").join(agent_name),
+                path: project_cwd.join(".ezer/agent-memory").join(agent_name),
                 is_project_scoped: true,
             },
             Self::Local => ResolvedMemoryDir {
                 path: project_cwd
-                    .join(".grok/agent-memory-local")
+                    .join(".ezer/agent-memory-local")
                     .join(agent_name),
                 is_project_scoped: true,
             },
@@ -1296,18 +1301,18 @@ impl AgentDefinition {
     }
     fn scope_from_path(path: &Path) -> AgentScope {
         let path_str = path.to_string_lossy();
-        let grok = xai_grok_config::user_grok_home();
+        let ezer = xai_grok_config::user_grok_home();
         let home = xai_dirs::home_dir();
-        for (dir, scope) in crate::discovery::user_agent_dirs(home.as_deref(), grok.as_deref()) {
+        for (dir, scope) in crate::discovery::user_agent_dirs(home.as_deref(), ezer.as_deref()) {
             if path.starts_with(&dir) {
                 return scope;
             }
         }
-        if path_str.contains(".grok/agents/") || path_str.contains(".grok\\agents\\") {
+        if path_str.contains(".ezer/agents/") || path_str.contains(".ezer\\agents\\") {
             return AgentScope::Project;
         }
-        if path_str.contains(".grok/bundled/agents/")
-            || path_str.contains(".grok\\bundled\\agents\\")
+        if path_str.contains(".ezer/bundled/agents/")
+            || path_str.contains(".ezer\\bundled\\agents\\")
         {
             return AgentScope::Bundled;
         }
@@ -1374,12 +1379,12 @@ impl AgentDefinition {
         file_tools: Vec<xai_grok_tools::registry::types::ToolConfig>,
     ) {
         const FILE_TOOL_SLOTS: &[[&str; 2]] = &[
-            ["GrokBuild:read_file", "GrokBuildHashline:hashline_read"],
+            ["Ezer:read_file", "EzerHashline:hashline_read"],
             [
-                "GrokBuild:search_replace",
-                "GrokBuildHashline:hashline_edit",
+                "Ezer:search_replace",
+                "EzerHashline:hashline_edit",
             ],
-            ["GrokBuild:grep", "GrokBuildHashline:hashline_grep"],
+            ["Ezer:grep", "EzerHashline:hashline_grep"],
         ];
         for tool in self.tool_config.tools.iter_mut() {
             let Some(slot) = FILE_TOOL_SLOTS
@@ -1446,7 +1451,7 @@ impl AgentDefinition {
             tool_config: default_grok_build_toolset(),
             ..Self::base(
                 BuiltinAgentName::GrokBuild,
-                "Grok Build agent for software engineering tasks.",
+                "ezer agent for software engineering tasks.",
             )
         }
     }
@@ -1457,7 +1462,7 @@ impl AgentDefinition {
             agents_md: false,
             ..Self::base(
                 BuiltinAgentName::GrokBuildConcise,
-                "Grok Build agent with concise output format.",
+                "ezer agent with concise output format.",
             )
         }
     }
@@ -1466,7 +1471,7 @@ impl AgentDefinition {
             tool_config: grok_build_plan_toolset(),
             ..Self::base(
                 BuiltinAgentName::GrokBuildPlan,
-                "Grok Build agent with plan mode support.",
+                "ezer agent with plan mode support.",
             )
         }
     }
@@ -1475,7 +1480,7 @@ impl AgentDefinition {
             tool_config: grok_build_plan_no_subagents_toolset(),
             ..Self::base(
                 BuiltinAgentName::GrokBuildPlanNoSubagents,
-                "Grok Build agent with plan mode (no subagents).",
+                "ezer agent with plan mode (no subagents).",
             )
         }
     }
@@ -1484,7 +1489,7 @@ impl AgentDefinition {
             tool_config: grok_build_ask_user_toolset(),
             ..Self::base(
                 BuiltinAgentName::GrokBuildAskUser,
-                "Grok Build agent with ask-user-question tool.",
+                "ezer agent with ask-user-question tool.",
             )
         }
     }
@@ -1553,7 +1558,7 @@ impl AgentDefinition {
             )
         }
     }
-    /// GBL model with full GrokBuild tools that delegates coding/exploration to subagents.
+    /// GBL model with full Ezer tools that delegates coding/exploration to subagents.
     /// Subagent overrides are applied in `handle_subagent_request`.
     pub fn grok_build_orchestrator() -> Self {
         Self {
@@ -1562,7 +1567,7 @@ impl AgentDefinition {
             prompt_body: Some(ORCHESTRATOR_PROMPT_BODY.to_string()),
             ..Self::base(
                 BuiltinAgentName::GrokBuildOrchestrator,
-                "GrokBuild orchestrator that delegates coding to specialized subagents",
+                "Ezer orchestrator that delegates coding to specialized subagents",
             )
         }
     }
@@ -1624,15 +1629,15 @@ mod tests {
     #[test]
     fn toolset_for_preset_resolves_known_names() {
         for name in [
-            "grok-build",
-            "grok_build",
-            "grok-build-concise",
-            "grok-build-plan",
+            "ezer-build",
+            "ezer_build",
+            "ezer-build-concise",
+            "ezer-build-plan",
             "codex",
             "explore",
             "plan",
-            "grok-computer",
-            "grok_computer",
+            "ezer-computer",
+            "ezer_computer",
         ] {
             assert!(
                 toolset_for_preset(name).is_some(),
@@ -1643,7 +1648,7 @@ mod tests {
     }
     #[test]
     fn presets_select_distinct_toolsets_by_size() {
-        let gb = toolset_for_preset("grok-build").unwrap();
+        let gb = toolset_for_preset("ezer-build").unwrap();
         let plan = toolset_for_preset("plan").unwrap();
         let explore = toolset_for_preset("explore").unwrap();
         assert!(explore.tools.len() < plan.tools.len());
@@ -1665,11 +1670,11 @@ mod tests {
         ids
     }
     #[test]
-    fn send_feedback_exposure_is_grok_build_only() {
+    fn send_feedback_exposure_is_ezer_build_only() {
         use strum::IntoEnumIterator;
         let presets = all_toolset_presets();
         for (name, config) in &presets {
-            let expected = name == "grok-build";
+            let expected = name == "ezer-build";
             let count = config
                 .tools
                 .iter()
@@ -1705,7 +1710,7 @@ mod tests {
         for (name, config) in [
             ("core", grok_build_core_toolset(true)),
             ("general-purpose", general_purpose_toolset()),
-            ("hashline", grok_build_hashline_toolset(vec![])),
+            ("hashline", ezer_hashline_toolset(vec![])),
         ] {
             assert!(
                 !contains_feedback(&config),
@@ -1743,9 +1748,9 @@ mod tests {
         assert!(!contains_feedback(&acp.tool_config));
     }
     #[test]
-    fn grok_computer_preset_is_curated_grok_build_subset() {
-        let gc = toolset_for_preset("grok-computer").unwrap();
-        let gb = toolset_for_preset("grok-build").unwrap();
+    fn grok_computer_preset_is_curated_ezer_build_subset() {
+        let gc = toolset_for_preset("ezer-computer").unwrap();
+        let gb = toolset_for_preset("ezer-build").unwrap();
         let gb_ids: std::collections::HashSet<&str> =
             gb.tools.iter().map(|t| t.id.as_str()).collect();
         let exclusive_ids = grok_computer_exclusive_ids();
@@ -1756,18 +1761,18 @@ mod tests {
             }
             assert!(
                 gb_ids.contains(t.id.as_str()),
-                "grok-computer tool `{}` must also ship in the grok-build preset",
+                "ezer-computer tool `{}` must also ship in the ezer-build preset",
                 t.id
             );
         }
         assert!(
             gc.tools.len() < gb.tools.len(),
-            "grok-computer should be a curated subset of grok-build"
+            "ezer-computer should be a curated subset of ezer-build"
         );
     }
     #[test]
     fn grok_computer_uses_subagent_free_background_task_tools() {
-        let gc = toolset_for_preset("grok-computer").unwrap();
+        let gc = toolset_for_preset("ezer-computer").unwrap();
         let ids: std::collections::HashSet<&str> = gc.tools.iter().map(|t| t.id.as_str()).collect();
         assert!(
             ids.contains(
@@ -1794,21 +1799,21 @@ mod tests {
             }
         }
     }
-    /// The grok-computer preset must ship a full-file write tool (legacy `write_file` parity), the same OpenCode `write` tool grok-build uses.
+    /// The ezer-computer preset must ship a full-file write tool (legacy `write_file` parity), the same OpenCode `write` tool ezer-build uses.
     /// Guards against `search_replace` being the only file-mutation path.
     /// With the empty-old_string overwrite guard enabled, that path has no single-tool full rewrite.
     #[test]
     fn grok_computer_preset_includes_write_tool() {
-        let gc = toolset_for_preset("grok-computer").unwrap();
+        let gc = toolset_for_preset("ezer-computer").unwrap();
         let write_id = ToolConfig::from(&opencode::OpenCodeWriteTool).id;
         assert!(
             gc.tools.iter().any(|t| t.id == write_id),
-            "grok-computer preset must include the `{write_id}` tool"
+            "ezer-computer preset must include the `{write_id}` tool"
         );
     }
     #[test]
     fn grok_computer_preset_excludes_plan_and_lsp() {
-        let gc = toolset_for_preset("grok-computer").unwrap();
+        let gc = toolset_for_preset("ezer-computer").unwrap();
         let gc_ids: std::collections::HashSet<&str> =
             gc.tools.iter().map(|t| t.id.as_str()).collect();
         for excluded in [
@@ -1818,7 +1823,7 @@ mod tests {
         ] {
             assert!(
                 !gc_ids.contains(excluded.as_str()),
-                "grok-computer preset must not advertise `{excluded}`"
+                "ezer-computer preset must not advertise `{excluded}`"
             );
         }
         let full = workspace_grok_build_toolset();
@@ -1868,22 +1873,22 @@ mod tests {
     }
     #[test]
     fn is_strict_harness_agent_type_classifies_by_name() {
-        for strict in ["codex", "grok-build-orchestrator"] {
+        for strict in ["codex", "ezer-build-orchestrator"] {
             assert!(
                 is_strict_harness_agent_type(strict),
                 "{strict} should be strict"
             );
         }
         for non_strict in [
-            "grok-build",
-            "grok-build-plan",
-            "grok-build-concise",
-            "grok-build-ask-user",
+            "ezer-build",
+            "ezer-build-plan",
+            "ezer-build-concise",
+            "ezer-build-ask-user",
             "opencode",
             "browser-use",
             "custom-user-agent",
             "",
-            "grok-build-totally-made-up",
+            "ezer-build-totally-made-up",
         ] {
             assert!(
                 !is_strict_harness_agent_type(non_strict),
@@ -2252,7 +2257,7 @@ completionRequirement:
         assert!(!def.agents_md);
     }
     #[test]
-    fn test_default_tool_config_has_grok_build_tools() {
+    fn test_default_tool_config_has_ezer_build_tools() {
         let content = r#"---
 name: default-tools
 description: Test default tool config
@@ -2351,7 +2356,7 @@ description: Test default tool config
             "promptBody": "You are a coding assistant."
         });
         let def = AgentDefinition::from_json(&json).unwrap();
-        let task_tool_id = "GrokBuild:task";
+        let task_tool_id = "Ezer:task";
         assert!(
             def.tool_config.tools.iter().any(|tc| tc.id == task_tool_id),
             "from_json() without toolConfig should include TaskTool in default toolset, \
@@ -2494,21 +2499,21 @@ description: Test default tool config
         let json = serde_json::json!({
             "name": "test",
             "description": "Test",
-            "model": "grok-code-fast-1"
+            "model": "ezer-code-fast-1"
         });
         let def = AgentDefinition::from_json(&json).unwrap();
         assert_eq!(
             def.model,
-            ModelOverride::Override("grok-code-fast-1".to_string())
+            ModelOverride::Override("ezer-code-fast-1".to_string())
         );
     }
     #[test]
     fn test_builtin_agent_name_strum_round_trip() {
         use std::str::FromStr;
         for (s, expected) in [
-            ("grok-build", BuiltinAgentName::GrokBuild),
-            ("grok-build-concise", BuiltinAgentName::GrokBuildConcise),
-            ("grok-build-ask-user", BuiltinAgentName::GrokBuildAskUser),
+            ("ezer-build", BuiltinAgentName::GrokBuild),
+            ("ezer-build-concise", BuiltinAgentName::GrokBuildConcise),
+            ("ezer-build-ask-user", BuiltinAgentName::GrokBuildAskUser),
             ("codex", BuiltinAgentName::Codex),
             ("opencode", BuiltinAgentName::Opencode),
             ("general-purpose", BuiltinAgentName::GeneralPurpose),

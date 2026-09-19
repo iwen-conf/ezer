@@ -92,7 +92,7 @@ impl SendMessageScenario {
             DEFAULT_COLS,
             &content,
             &["--yolo", "--trust"],
-            &[EnvOp::set("GROK_ACTIVE_AGENT_MESSAGES", "1")],
+            &[EnvOp::set("EZER_ACTIVE_AGENT_MESSAGES", "1")],
             Some(content.home()),
         )
         .expect("spawn pager");

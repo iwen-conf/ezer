@@ -78,7 +78,7 @@ async fn minimal_slash_switches_to_fullscreen() {
         });
 
     // Mode switches are session-scoped, so /fullscreen must not persist `[ui] screen_mode`
-    let config_path = content.home().join(".grok").join("config.toml");
+    let config_path = content.home().join(".ezer").join("config.toml");
     let deadline = Instant::now() + Duration::from_secs(2);
     while Instant::now() < deadline {
         harness.update(Duration::from_millis(100));

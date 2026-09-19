@@ -1,6 +1,6 @@
-# Grok
+# ezer
 
-Bring Grok into your terminal. Fast, flicker-free CLI built for plans, subagents, and parallel work.
+Bring ezer into your terminal. Fast, flicker-free CLI built for plans, subagents, and parallel work.
 
 **[Homepage](https://x.ai/cli)** | **[Documentation](https://docs.x.ai/build/overview)**
 
@@ -13,20 +13,20 @@ curl -fsSL https://x.ai/cli/install.sh | bash
 Or install with npm:
 
 ```bash
-npm i -g @xai-official/grok
+npm i -g @ezer/ezer
 ```
 
 ## Get Started
 
 ```bash
 # Launch the interactive TUI
-grok
+ezer
 
 # Run a single task
-grok -p "Explain this codebase"
+ezer -p "Explain this codebase"
 ```
 
-On first launch, Grok opens your browser to authenticate. For CI or headless environments, use an API key from [console.x.ai](https://console.x.ai):
+On first launch, ezer opens your browser to authenticate. For CI or headless environments, use an API key from [console.x.ai](https://console.x.ai):
 
 ```bash
 export XAI_API_KEY="xai-..."
@@ -35,13 +35,13 @@ export XAI_API_KEY="xai-..."
 ## Update
 
 ```bash
-grok update
+ezer update
 ```
 
 Or if installed via npm:
 
 ```bash
-npm i -g @xai-official/grok@latest
+npm i -g @ezer/ezer@latest
 ```
 
 ## Supported Platforms
@@ -58,4 +58,4 @@ For full documentation including configuration, MCP servers, custom models, head
 
 ## Feedback
 
-Run `/feedback` inside Grok to report issues or send feedback directly.
+Run `/feedback` inside ezer to report issues or send feedback directly.

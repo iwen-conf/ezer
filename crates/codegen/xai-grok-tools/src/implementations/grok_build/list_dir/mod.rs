@@ -45,7 +45,7 @@ pub struct ListDirParams {
     /// Defaults to `DEFAULT_MAX_OUTPUT_CHARS` (10,000) to match the Python
     pub max_output_chars: Option<usize>,
 }
-crate::register_resource!("grok_build", "ListDir", ListDirParams);
+crate::register_resource!("ezer_build", "ListDir", ListDirParams);
 /// Exact historical invalid-directory message for `list_dir` in legacy-0.4.10. Historical fixture
 /// captured from an earlier (0.4.10) revision of this tool. Historical 0.4.10 collapsed nonexistent
 /// paths, file paths, and other invalid-directory failures into the same generic message.

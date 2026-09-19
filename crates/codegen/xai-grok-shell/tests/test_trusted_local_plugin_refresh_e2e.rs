@@ -4,7 +4,7 @@
 //! 3. Start a headless session: startup must re-copy trusted and user-home local installs.
 //! 4. After exit, check the session JSON under `$GROK_HOME/sessions/` parses.
 //!
-//! Requires a built `grok` binary (`GROK_BINARY` or cargo-built pager) for the ignored headless test.
+//! Requires a built `ezer` binary (`EZER_BINARY` or cargo-built pager) for the ignored headless test.
 //!
 //! ```bash
 //! cargo test -p xai-grok-shell --test test_trusted_local_plugin_refresh_e2e
@@ -103,7 +103,7 @@ fn trusted_local_refresh_surfaces_new_agent_via_discovery() {
     // Canonicalize so auto-trust for installs under the home dir holds when the temp root is a symlink (on macOS `/var` links to `/private/var`)
     let home_tmp = TempDir::new().unwrap();
     let home = dunce::canonicalize(home_tmp.path()).unwrap();
-    let grok_home = home.join(".grok");
+    let grok_home = home.join(".ezer");
     let _home_guard = EnvVarGuard::set("HOME", &home);
     let _grok_guard = EnvVarGuard::set("GROK_HOME", &grok_home);
 
@@ -192,7 +192,7 @@ fn trusted_local_refresh_surfaces_new_agent_via_discovery() {
 
 /// Runs the real binary end to end: session start refreshes the snapshot, then writes session JSON.
 #[tokio::test]
-#[ignore = "requires pre-built grok binary; run with --ignored"]
+#[ignore = "requires pre-built ezer binary; run with --ignored"]
 #[serial]
 async fn headless_session_refreshes_trusted_local_plugin_and_writes_session_json() {
     let server = MockInferenceServer::start()
@@ -202,7 +202,7 @@ async fn headless_session_refreshes_trusted_local_plugin_and_writes_session_json
     // Canonicalize so auto-trust for installs under the home dir holds when the temp root is a symlink (on macOS `/var` links to `/private/var`)
     let home_tmp = TempDir::new().unwrap();
     let home = dunce::canonicalize(home_tmp.path()).unwrap();
-    let grok_home = home.join(".grok");
+    let grok_home = home.join(".ezer");
     std::fs::create_dir_all(&grok_home).unwrap();
 
     let source = home

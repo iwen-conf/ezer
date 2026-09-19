@@ -263,16 +263,16 @@ mod tests {
     #[test]
     fn extra_takes_precedence_over_process_env() {
         with_env_var(
-            "GROK_HOOKS_ENV_EXPAND_TEST_PRECEDENCE",
+            "EZER_HOOKS_ENV_EXPAND_TEST_PRECEDENCE",
             Some("from-process"),
             || {
                 let mut extra = HashMap::new();
                 extra.insert(
-                    "GROK_HOOKS_ENV_EXPAND_TEST_PRECEDENCE".to_string(),
+                    "EZER_HOOKS_ENV_EXPAND_TEST_PRECEDENCE".to_string(),
                     "from-extra".to_string(),
                 );
                 let out =
-                    expand_env_vars_with_extra("${GROK_HOOKS_ENV_EXPAND_TEST_PRECEDENCE}", &extra);
+                    expand_env_vars_with_extra("${EZER_HOOKS_ENV_EXPAND_TEST_PRECEDENCE}", &extra);
                 assert_eq!(out, "from-extra");
             },
         );
@@ -281,12 +281,12 @@ mod tests {
     #[test]
     fn falls_back_to_process_env() {
         with_env_var(
-            "GROK_HOOKS_ENV_EXPAND_TEST_FALLBACK",
+            "EZER_HOOKS_ENV_EXPAND_TEST_FALLBACK",
             Some("/from/proc/env"),
             || {
                 let extra = HashMap::new();
                 let out =
-                    expand_env_vars_with_extra("${GROK_HOOKS_ENV_EXPAND_TEST_FALLBACK}/x", &extra);
+                    expand_env_vars_with_extra("${EZER_HOOKS_ENV_EXPAND_TEST_FALLBACK}/x", &extra);
                 assert_eq!(out, "/from/proc/env/x");
             },
         );
@@ -296,9 +296,9 @@ mod tests {
     fn preserves_unresolved_references() {
         // shellexpand's no-errors variant returns the original `${VAR}` text when the var is unset in both `extra` and the process env
         // This makes load-time expansion idempotent and lets runtime-only vars survive the pass to be caught by `find_unresolved_env_vars`
-        with_env_var("GROK_HOOKS_ENV_EXPAND_NEVER_SET", None, || {
+        with_env_var("EZER_HOOKS_ENV_EXPAND_NEVER_SET", None, || {
             let extra = HashMap::new();
-            let input = "${GROK_HOOKS_ENV_EXPAND_NEVER_SET}/x.sh";
+            let input = "${EZER_HOOKS_ENV_EXPAND_NEVER_SET}/x.sh";
             let out = expand_env_vars_with_extra(input, &extra);
             assert_eq!(out, input);
         });
@@ -333,8 +333,8 @@ mod tests {
     #[test]
     fn preserves_default_modifier_when_var_unset() {
         let extra = HashMap::new();
-        with_env_var("GROK_HOOKS_ENV_EXPAND_MODIFIER_UNSET", None, || {
-            let input = "${GROK_HOOKS_ENV_EXPAND_MODIFIER_UNSET:-/default/path.sh}";
+        with_env_var("EZER_HOOKS_ENV_EXPAND_MODIFIER_UNSET", None, || {
+            let input = "${EZER_HOOKS_ENV_EXPAND_MODIFIER_UNSET:-/default/path.sh}";
             let out = expand_env_vars_with_extra(input, &extra);
             assert_eq!(out, input);
         });
@@ -346,10 +346,10 @@ mod tests {
     fn preserves_default_modifier_when_var_set() {
         let mut extra = HashMap::new();
         extra.insert(
-            "GROK_HOOKS_DEFAULT_SET".to_string(),
+            "EZER_HOOKS_DEFAULT_SET".to_string(),
             "/from/extra".to_string(),
         );
-        let input = "${GROK_HOOKS_DEFAULT_SET:-/fallback}";
+        let input = "${EZER_HOOKS_DEFAULT_SET:-/fallback}";
         let out = expand_env_vars_with_extra(input, &extra);
         assert_eq!(out, input);
     }
@@ -357,7 +357,7 @@ mod tests {
     #[test]
     fn preserves_no_colon_default_modifier() {
         let extra = HashMap::new();
-        let input = "${GROK_HOOKS_NCD-/fallback}";
+        let input = "${EZER_HOOKS_NCD-/fallback}";
         let out = expand_env_vars_with_extra(input, &extra);
         assert_eq!(out, input);
     }
@@ -365,7 +365,7 @@ mod tests {
     #[test]
     fn preserves_assignment_modifier() {
         let extra = HashMap::new();
-        let input = "${GROK_HOOKS_ASSIGN:=/assigned/path.sh}";
+        let input = "${EZER_HOOKS_ASSIGN:=/assigned/path.sh}";
         let out = expand_env_vars_with_extra(input, &extra);
         assert_eq!(out, input);
     }
@@ -373,7 +373,7 @@ mod tests {
     #[test]
     fn preserves_error_modifier() {
         let extra = HashMap::new();
-        let input = "${GROK_HOOKS_ERR:?error message}";
+        let input = "${EZER_HOOKS_ERR:?error message}";
         let out = expand_env_vars_with_extra(input, &extra);
         assert_eq!(out, input);
     }
@@ -381,7 +381,7 @@ mod tests {
     #[test]
     fn preserves_alternate_modifier() {
         let extra = HashMap::new();
-        let input = "${GROK_HOOKS_ALT:+/used/if/set}";
+        let input = "${EZER_HOOKS_ALT:+/used/if/set}";
         let out = expand_env_vars_with_extra(input, &extra);
         assert_eq!(out, input);
     }
@@ -389,7 +389,7 @@ mod tests {
     #[test]
     fn preserves_suffix_strip_modifier() {
         let extra = HashMap::new();
-        let input = "${GROK_HOOKS_SUFFIX%.sh}";
+        let input = "${EZER_HOOKS_SUFFIX%.sh}";
         let out = expand_env_vars_with_extra(input, &extra);
         assert_eq!(out, input);
     }
@@ -397,7 +397,7 @@ mod tests {
     #[test]
     fn preserves_prefix_strip_modifier() {
         let extra = HashMap::new();
-        let input = "${GROK_HOOKS_PREFIX#prefix/}";
+        let input = "${EZER_HOOKS_PREFIX#prefix/}";
         let out = expand_env_vars_with_extra(input, &extra);
         assert_eq!(out, input);
     }
@@ -405,7 +405,7 @@ mod tests {
     #[test]
     fn preserves_substitution_modifier() {
         let extra = HashMap::new();
-        let input = "${GROK_HOOKS_SUB/foo/bar}";
+        let input = "${EZER_HOOKS_SUB/foo/bar}";
         let out = expand_env_vars_with_extra(input, &extra);
         assert_eq!(out, input);
     }
@@ -413,7 +413,7 @@ mod tests {
     #[test]
     fn preserves_substring_modifier() {
         let extra = HashMap::new();
-        let input = "${GROK_HOOKS_SUBSTR:0:5}";
+        let input = "${EZER_HOOKS_SUBSTR:0:5}";
         let out = expand_env_vars_with_extra(input, &extra);
         assert_eq!(out, input);
     }
@@ -422,10 +422,10 @@ mod tests {
     #[test]
     fn mixed_plain_and_modifier_only_plain_expanded() {
         let mut extra = HashMap::new();
-        extra.insert("GROK_HOOKS_PLAIN".to_string(), "/usr/local".to_string());
-        let input = "${GROK_HOOKS_PLAIN}/${GROK_HOOKS_DEFER:-/fallback}";
+        extra.insert("EZER_HOOKS_PLAIN".to_string(), "/usr/local".to_string());
+        let input = "${EZER_HOOKS_PLAIN}/${EZER_HOOKS_DEFER:-/fallback}";
         let out = expand_env_vars_with_extra(input, &extra);
-        assert_eq!(out, "/usr/local/${GROK_HOOKS_DEFER:-/fallback}");
+        assert_eq!(out, "/usr/local/${EZER_HOOKS_DEFER:-/fallback}");
     }
 
     // ── Set-but-empty regression test ────────────────────────────
@@ -434,8 +434,8 @@ mod tests {
     #[test]
     fn empty_extra_value_resolves_to_empty_for_plain_form() {
         let mut extra = HashMap::new();
-        extra.insert("GROK_HOOKS_EMPTY".to_string(), "".to_string());
-        let out = expand_env_vars_with_extra("[${GROK_HOOKS_EMPTY}]", &extra);
+        extra.insert("EZER_HOOKS_EMPTY".to_string(), "".to_string());
+        let out = expand_env_vars_with_extra("[${EZER_HOOKS_EMPTY}]", &extra);
         assert_eq!(out, "[]");
     }
 
@@ -444,8 +444,8 @@ mod tests {
     #[test]
     fn empty_extra_value_does_not_trigger_default() {
         let mut extra = HashMap::new();
-        extra.insert("GROK_HOOKS_EMPTY_MOD".to_string(), "".to_string());
-        let input = "${GROK_HOOKS_EMPTY_MOD:-/fallback}";
+        extra.insert("EZER_HOOKS_EMPTY_MOD".to_string(), "".to_string());
+        let input = "${EZER_HOOKS_EMPTY_MOD:-/fallback}";
         let out = expand_env_vars_with_extra(input, &extra);
         assert_eq!(out, input);
     }
@@ -458,16 +458,16 @@ mod tests {
     #[test]
     fn extra_values_are_not_recursively_expanded() {
         with_env_var(
-            "GROK_HOOKS_RECURSION_BAR",
+            "EZER_HOOKS_RECURSION_BAR",
             Some("should-not-appear"),
             || {
                 let mut extra = HashMap::new();
                 extra.insert(
-                    "GROK_HOOKS_RECURSION_FOO".to_string(),
-                    "$GROK_HOOKS_RECURSION_BAR".to_string(),
+                    "EZER_HOOKS_RECURSION_FOO".to_string(),
+                    "$EZER_HOOKS_RECURSION_BAR".to_string(),
                 );
-                let out = expand_env_vars_with_extra("${GROK_HOOKS_RECURSION_FOO}", &extra);
-                assert_eq!(out, "$GROK_HOOKS_RECURSION_BAR");
+                let out = expand_env_vars_with_extra("${EZER_HOOKS_RECURSION_FOO}", &extra);
+                assert_eq!(out, "$EZER_HOOKS_RECURSION_BAR");
             },
         );
     }

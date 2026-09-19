@@ -1,4 +1,4 @@
-//! Process-isolated: valid GROK_EXTRA_CA_BUNDLE loads one root via OnceLock.
+//! Process-isolated: valid EZER_EXTRA_CA_BUNDLE loads one root via OnceLock.
 
 #[test]
 fn valid_bundle_loads_one_root() {

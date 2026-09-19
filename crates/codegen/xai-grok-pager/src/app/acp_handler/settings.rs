@@ -116,11 +116,11 @@ pub(super) fn handle_settings_update(notif: &acp::ExtNotification, app: &mut App
     // Otherwise the proxy's explicit `false` (sent as a kill switch) clobbers a local test override moments after launch
     if let Some(v) = update.privacy_notice_rollout {
         app.privacy_notice_rollout =
-            xai_grok_config::env_bool("GROK_PRIVACY_NOTICE_ROLLOUT").unwrap_or(v);
+            xai_grok_config::env_bool("EZER_PRIVACY_NOTICE_ROLLOUT").unwrap_or(v);
     }
     if let Some(v) = update.privacy_banner_reshow_days {
         app.privacy_banner_reshow_days = Some(
-            std::env::var("GROK_PRIVACY_BANNER_RESHOW_DAYS")
+            std::env::var("EZER_PRIVACY_BANNER_RESHOW_DAYS")
                 .ok()
                 .and_then(|s| s.trim().parse().ok())
                 .unwrap_or(v),
@@ -182,7 +182,7 @@ pub(super) fn handle_settings_update(notif: &acp::ExtNotification, app: &mut App
     // TODO: extract resolve_session_picker_grouped helper (duplicates event_loop.rs:143-160)
     // The env var beats config, which beats remote (mirrors event_loop.rs startup)
     if let Some(remote_val) = update.session_picker_grouped {
-        let resolved = std::env::var("GROK_SESSION_PICKER_GROUPED")
+        let resolved = std::env::var("EZER_SESSION_PICKER_GROUPED")
             .ok()
             .and_then(|v| match v.as_str() {
                 "1" | "true" => Some(true),
@@ -447,7 +447,7 @@ pub(super) fn handle_announcements_update(notif: &acp::ExtNotification, app: &mu
 }
 
 /// Apply half of [`handle_announcements_update`], with config layers injected so the merge/prune behavior is unit-testable without disk state.
-/// `resolve_announcements` honors `GROK_ANNOUNCEMENTS_OVERRIDE` first, so a backend push can't reintroduce announcements when the override is set.
+/// `resolve_announcements` honors `EZER_ANNOUNCEMENTS_OVERRIDE` first, so a backend push can't reintroduce announcements when the override is set.
 pub(super) fn apply_announcements_update(
     app: &mut AppView,
     next_gen: u64,

@@ -9,7 +9,7 @@
 //!
 //! Because terminal mouse scroll events do not encode magnitude (only direction), wheel-vs-trackpad detection is heuristic.
 //! We bias toward trackpad-like (avoids overshoot) and "promote" to wheel-like when the first tick-worth of events arrives quickly.
-//! A user can force wheel or trackpad behavior when the heuristic is wrong: `scroll_mode` (or `GROK_SCROLL_MODE`) pins [`ScrollInputMode`].
+//! A user can force wheel or trackpad behavior when the heuristic is wrong: `scroll_mode` (or `EZER_SCROLL_MODE`) pins [`ScrollInputMode`].
 //! `invert_scroll` / `scroll_lines` / `scroll_speed` tune direction and throughput; see [`ScrollConfigOverrides::from_settings_caches`].
 
 use crate::input::scroll_log::{
@@ -489,7 +489,7 @@ pub struct ScrollDebugSnapshot {
     pub viewport_height: u16,
     /// Per-flush delta cap in effect ([`ScrollConfig::flush_cap`]).
     pub flush_cap: i32,
-    /// Effective scroll flush cadence in ms (`GROK_SCROLL_CADENCE_MS` / default 16).
+    /// Effective scroll flush cadence in ms (`EZER_SCROLL_CADENCE_MS` / default 16).
     pub cadence_ms: u64,
 }
 
@@ -537,7 +537,7 @@ pub struct MouseScrollState {
     /// Diagnostic breadcrumb for the scroll-debug HUD: the most recently finalized stream.
     /// Write-only for the state machine (never read back), so it cannot affect scroll behavior.
     last_finalized: Option<ScrollStreamSummary>,
-    /// `GROK_SCROLL_LOG` flight recorder ([`crate::input::scroll_log`]).
+    /// `EZER_SCROLL_LOG` flight recorder ([`crate::input::scroll_log`]).
     /// Write-only like `last_finalized`: emission cannot affect scroll behavior; `None` (env unset) costs one branch per emission point.
     recorder: Option<ScrollLogRecorder>,
     /// Wheel/trackpad flush cadence (default 16ms; the event loop may override it from the environment).
@@ -560,7 +560,7 @@ impl MouseScrollState {
         }
     }
 
-    /// Inject flush cadence (`GROK_SCROLL_CADENCE_MS`); Default stays 16ms.
+    /// Inject flush cadence (`EZER_SCROLL_CADENCE_MS`); Default stays 16ms.
     pub fn set_redraw_cadence(&mut self, cadence: Duration) {
         self.redraw_cadence = cadence;
     }

@@ -1,7 +1,7 @@
 {
-    "name": "@xai-official/grok-linux-x64",
+    "name": "@ezer/ezer-linux-x64",
     "version": "0.2.0-dev",
-    "description": "linux-x64 binary for @xai-official/grok. Do not install directly; install @xai-official/grok instead.",
+    "description": "linux-x64 binary for @ezer/ezer. Do not install directly; install @ezer/ezer instead.",
     "license": "Apache-2.0",
     "files": [
         "bin/",

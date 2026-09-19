@@ -40,7 +40,7 @@ fn start_device_test_goal(actor: &SessionActor) {
 
 fn stale_pre_goal_conversation() -> Vec<ConversationItem> {
     vec![
-        ConversationItem::system("You are Grok."),
+        ConversationItem::system("You are ezer."),
         ConversationItem::user(format!(
             "<user_info>OS: linux</user_info>\n\n<user_query>\n{STALE_CODE_REVIEW}\n</user_query>"
         )),
@@ -176,7 +176,7 @@ async fn post_compact_history_keeps_objective_and_goal_summary_continuation() {
             );
 
             let compacted = build_compacted_history(CompactedHistoryInput {
-                system_message: ConversationItem::system("You are Grok."),
+                system_message: ConversationItem::system("You are ezer."),
                 user_message_prefix: "<user_info>OS: linux</user_info>".into(),
                 agents_md_reminder: None,
                 state_context: &state_context,

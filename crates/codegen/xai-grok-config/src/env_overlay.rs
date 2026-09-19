@@ -1,4 +1,4 @@
-//! `GROK_CONFIG` / `GROK_CONFIG_PATH` config overlay resolution.
+//! `EZER_CONFIG` / `EZER_CONFIG_PATH` config overlay resolution.
 
 use std::path::{Path, PathBuf};
 
@@ -7,12 +7,12 @@ use crate::loader::{
 };
 
 /// Inline config overlay: a JSON object.
-pub const GROK_CONFIG_ENV: &str = "GROK_CONFIG";
+pub const EZER_CONFIG_ENV: &str = "EZER_CONFIG";
 
 /// Path to an additional JSON or TOML config-overlay file (read by extension).
-pub const GROK_CONFIG_PATH_ENV: &str = "GROK_CONFIG_PATH";
+pub const EZER_CONFIG_PATH_ENV: &str = "EZER_CONFIG_PATH";
 
-/// Hard cap on a `GROK_CONFIG_PATH` overlay read.
+/// Hard cap on a `EZER_CONFIG_PATH` overlay read.
 /// A huge file, or a special node like `/dev/zero`, must never stall or OOM the agent, so the read is bounded.
 const MAX_OVERLAY_BYTES: u64 = 4 * 1024 * 1024;
 
@@ -29,7 +29,7 @@ pub enum OverlaySource {
     Path(PathBuf),
 }
 
-/// A resolved overlay for the merge and for `grok inspect`.
+/// A resolved overlay for the merge and for `ezer inspect`.
 #[derive(Debug, Clone)]
 pub struct ResolvedOverlay {
     pub source: OverlaySource,
@@ -38,17 +38,17 @@ pub struct ResolvedOverlay {
 }
 
 fn env_overlay_inputs() -> (Option<String>, Option<PathBuf>) {
-    let inline = match std::env::var_os(GROK_CONFIG_ENV) {
+    let inline = match std::env::var_os(EZER_CONFIG_ENV) {
         Some(raw) => match raw.into_string() {
             Ok(s) => Some(s),
             Err(_) => {
-                tracing::warn!("GROK_CONFIG is not valid UTF-8; ignoring the overlay");
+                tracing::warn!("EZER_CONFIG is not valid UTF-8; ignoring the overlay");
                 None
             }
         },
         None => None,
     };
-    let path = std::env::var_os(GROK_CONFIG_PATH_ENV)
+    let path = std::env::var_os(EZER_CONFIG_PATH_ENV)
         .filter(|v| !v.is_empty())
         .map(PathBuf::from);
     (inline, path)
@@ -58,18 +58,18 @@ pub(crate) fn load_env_overlay() -> Option<toml::Value> {
     let (inline, path) = env_overlay_inputs();
     let (overlay, source, sections) = resolve_overlay_detailed(inline.as_deref(), path.as_deref())?;
     let source_label = match source {
-        OverlaySource::Inline => GROK_CONFIG_ENV,
-        OverlaySource::Path(_) => GROK_CONFIG_PATH_ENV,
+        OverlaySource::Inline => EZER_CONFIG_ENV,
+        OverlaySource::Path(_) => EZER_CONFIG_PATH_ENV,
     };
     tracing::trace!(
         source = source_label,
         ?sections,
-        "resolved GROK_CONFIG overlay"
+        "resolved EZER_CONFIG overlay"
     );
     Some(overlay)
 }
 
-/// The resolved overlay for `grok inspect`.
+/// The resolved overlay for `ezer inspect`.
 pub fn resolved_env_overlay() -> Option<ResolvedOverlay> {
     let (inline, path) = env_overlay_inputs();
     let (value, source, sections) = resolve_overlay_detailed(inline.as_deref(), path.as_deref())?;
@@ -108,26 +108,26 @@ fn resolve_inline_overlay(inline: &str) -> Option<(toml::Value, OverlaySource, V
     if trimmed.is_empty() {
         return None;
     }
-    let overlay = parse_overlay(trimmed, OverlayFormat::Json, GROK_CONFIG_ENV)?;
-    finalize_overlay(overlay, GROK_CONFIG_ENV, OverlaySource::Inline)
+    let overlay = parse_overlay(trimmed, OverlayFormat::Json, EZER_CONFIG_ENV)?;
+    finalize_overlay(overlay, EZER_CONFIG_ENV, OverlaySource::Inline)
 }
 
-/// Read, parse, and run the full pipeline for the `GROK_CONFIG_PATH` candidate.
+/// Read, parse, and run the full pipeline for the `EZER_CONFIG_PATH` candidate.
 fn resolve_path_overlay(path: &Path) -> Option<(toml::Value, OverlaySource, Vec<String>)> {
     let raw = read_capped_overlay_file(path)?;
     let format = match path.extension() {
         Some(ext) if ext.eq_ignore_ascii_case("json") => OverlayFormat::Json,
         _ => OverlayFormat::Toml,
     };
-    let overlay = parse_overlay(&raw, format, GROK_CONFIG_PATH_ENV)?;
+    let overlay = parse_overlay(&raw, format, EZER_CONFIG_PATH_ENV)?;
     finalize_overlay(
         overlay,
-        GROK_CONFIG_PATH_ENV,
+        EZER_CONFIG_PATH_ENV,
         OverlaySource::Path(path.to_path_buf()),
     )
 }
 
-/// Read `GROK_CONFIG_PATH` with a hard byte cap ([`MAX_OVERLAY_BYTES`]).
+/// Read `EZER_CONFIG_PATH` with a hard byte cap ([`MAX_OVERLAY_BYTES`]).
 /// The caller then falls through to no overlay.
 /// It never logs file content.
 fn read_capped_overlay_file(path: &Path) -> Option<String> {
@@ -136,19 +136,19 @@ fn read_capped_overlay_file(path: &Path) -> Option<String> {
     let file = match std::fs::File::open(path) {
         Ok(f) => f,
         Err(e) => {
-            tracing::warn!(path = %path.display(), error = %e, "GROK_CONFIG_PATH is unreadable; ignoring the overlay");
+            tracing::warn!(path = %path.display(), error = %e, "EZER_CONFIG_PATH is unreadable; ignoring the overlay");
             return None;
         }
     };
     // Reject special nodes (fifos, `/dev/zero`, ...) before reading: their reported length is meaningless and they can stream without end
     match file.metadata() {
         Ok(meta) if !meta.file_type().is_file() => {
-            tracing::warn!(path = %path.display(), "GROK_CONFIG_PATH is not a regular file; ignoring the overlay");
+            tracing::warn!(path = %path.display(), "EZER_CONFIG_PATH is not a regular file; ignoring the overlay");
             return None;
         }
         Ok(_) => {}
         Err(e) => {
-            tracing::warn!(path = %path.display(), error = %e, "GROK_CONFIG_PATH is unreadable; ignoring the overlay");
+            tracing::warn!(path = %path.display(), error = %e, "EZER_CONFIG_PATH is unreadable; ignoring the overlay");
             return None;
         }
     }
@@ -156,11 +156,11 @@ fn read_capped_overlay_file(path: &Path) -> Option<String> {
     // `take` also guards a regular file that grows between the metadata check and the read
     let mut raw = String::new();
     if let Err(e) = file.take(MAX_OVERLAY_BYTES + 1).read_to_string(&mut raw) {
-        tracing::warn!(path = %path.display(), error = %e, "GROK_CONFIG_PATH is unreadable; ignoring the overlay");
+        tracing::warn!(path = %path.display(), error = %e, "EZER_CONFIG_PATH is unreadable; ignoring the overlay");
         return None;
     }
     if raw.len() as u64 > MAX_OVERLAY_BYTES {
-        tracing::warn!(path = %path.display(), max = MAX_OVERLAY_BYTES, "GROK_CONFIG_PATH exceeds the max overlay size; ignoring the overlay");
+        tracing::warn!(path = %path.display(), max = MAX_OVERLAY_BYTES, "EZER_CONFIG_PATH exceeds the max overlay size; ignoring the overlay");
         return None;
     }
     Some(raw)

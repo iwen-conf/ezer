@@ -17,7 +17,7 @@ async fn minimal_feedback_small_terminal_shows_hint() {
         12,
         100,
         &[],
-        &[EnvOp::set("GROK_FEEDBACK_ENABLED", "true")],
+        &[EnvOp::set("EZER_FEEDBACK_ENABLED", "true")],
         Some(content.home()),
     );
     wait_minimal_ready(&mut harness);

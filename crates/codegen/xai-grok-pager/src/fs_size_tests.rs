@@ -68,7 +68,7 @@ fn physical_dir_size_sums_files_without_following_symlinks() {
 // CI runs as root, so no permission trick can force the Err arm; a missing root reaches it
 #[test]
 fn missing_root_counts_one_unreadable_dir() {
-    let missing = Path::new("/nonexistent-grok-du-root");
+    let missing = Path::new("/nonexistent-ezer-du-root");
     let size = physical_dir_size(missing, Volume::of(missing));
     assert_eq!(size.measure.bytes(), Some(0));
     assert_eq!(size.issues.unreadable_dirs, 1);
@@ -81,7 +81,7 @@ fn a_volume_holds_only_its_own_device() {
     let path = tmp.path();
     assert!(Volume(None).holds(path), "unknown anchor excludes nothing");
     assert!(
-        Volume::of(path).holds(Path::new("/nonexistent-grok-du-path")),
+        Volume::of(path).holds(Path::new("/nonexistent-ezer-du-path")),
         "unknown entry device is not a proven crossing"
     );
     assert!(Volume::of(path).holds(path), "same device");

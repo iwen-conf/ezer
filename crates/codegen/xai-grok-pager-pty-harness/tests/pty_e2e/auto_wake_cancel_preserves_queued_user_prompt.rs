@@ -9,7 +9,7 @@
 //! The next Ctrl+C then resolves THE USER'S prompt as Cancelled, and it never reaches the model.
 //! User messages are only persisted when their turn starts, so the prompt is silently gone after a `--continue` resume.
 //!
-//! Set `GROK_PTY_CAST_DIR` to also dump asciinema casts of both pager runs (written before the final asserts so a failing run still produces them).
+//! Set `EZER_PTY_CAST_DIR` to also dump asciinema casts of both pager runs (written before the final asserts so a failing run still produces them).
 //!
 //! [`run_wake_cancel_scenario`] shares the scenario body with the [stop]-click mirror test in `auto_wake_cancel_via_stop_click_…`.
 #[allow(unused_imports)]
@@ -293,7 +293,7 @@ pub(crate) async fn run_wake_cancel_scenario(gesture: WakeCancelGesture, cast_pr
 
 #[cfg(unix)]
 fn unified_log_diagnostics(content: &ContentController) -> String {
-    let path = content.home().join(".grok/logs/unified.jsonl");
+    let path = content.home().join(".ezer/logs/unified.jsonl");
     let log = std::fs::read_to_string(path).unwrap_or_default();
     let mut tail: Vec<&str> = log.lines().rev().take(80).collect();
     tail.reverse();

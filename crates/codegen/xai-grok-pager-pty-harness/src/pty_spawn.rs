@@ -16,15 +16,15 @@ use xai_grok_test_support::TestSandbox;
 
 use crate::pty::EnvOp;
 
-const CLIPBOARD_SINK_ENV_VARS: &[&str] = &["GROK_OSC52_SINK", "LC_GROK_OSC52_SINK"];
+const CLIPBOARD_SINK_ENV_VARS: &[&str] = &["EZER_OSC52_SINK", "LC_EZER_OSC52_SINK"];
 
 /// Host / wrap appearance hints that would make `theme=auto` non-deterministic
 /// in PTY tests (layout depends on the resolved palette).
 const APPEARANCE_ENV_VARS: &[&str] = &[
-    "GROK_APPEARANCE",
-    "LC_GROK_APPEARANCE",
-    "GROK_THEME",
-    "LC_GROK_THEME",
+    "EZER_APPEARANCE",
+    "LC_EZER_APPEARANCE",
+    "EZER_THEME",
+    "LC_EZER_THEME",
     "COLORFGBG",
 ];
 
@@ -287,7 +287,7 @@ mod tests {
         }
         // Sandboxed launches remove unrelated inherited variables before
         // re-applying the baseline and explicit overrides.
-        cmd.env("GROK_SCROLL_LOG", "/tmp/scroll.jsonl");
+        cmd.env("EZER_SCROLL_LOG", "/tmp/scroll.jsonl");
         let sandbox = TestSandbox::new();
         cmd.env_clear();
         sandbox.apply_to_command_builder(&mut cmd);
@@ -329,7 +329,7 @@ mod tests {
             Some("xterm-256color")
         );
         assert_eq!(
-            cmd.get_env("GROK_SCROLL_LOG").and_then(|v| v.to_str()),
+            cmd.get_env("EZER_SCROLL_LOG").and_then(|v| v.to_str()),
             None,
             "hermetic baseline must remove unrelated inherited vars"
         );
@@ -356,7 +356,7 @@ mod tests {
             cmd.get_env("GROK_HOME").and_then(|v| v.to_str()),
             sandbox.grok_home().to_str()
         );
-        assert_eq!(cmd.get_env("GROK_LEADER_SOCKET"), None);
+        assert_eq!(cmd.get_env("EZER_LEADER_SOCKET"), None);
     }
 
     /// Sandbox baseline wins, hygiene strips markers seeded into the same map, caller ops apply last.
@@ -425,7 +425,7 @@ mod tests {
 
         assert_eq!(cmd.get_env("XAI_API_KEY"), None);
         assert_eq!(
-            cmd.get_env("GROK_XAI_API_BASE_URL")
+            cmd.get_env("EZER_XAI_API_BASE_URL")
                 .and_then(|v| v.to_str()),
             Some("http://127.0.0.1:43123/v1")
         );
@@ -461,7 +461,7 @@ mod tests {
                 EnvOp::set("TERM_PROGRAM", "vscode"),
                 EnvOp::set("NVIM", "/tmp/fake-nvim.sock"),
                 EnvOp::set("TERM", "xterm-kitty"),
-                EnvOp::set("GROK_OSC52_SINK", "1"),
+                EnvOp::set("EZER_OSC52_SINK", "1"),
             ],
         );
 
@@ -483,7 +483,7 @@ mod tests {
             Some("xterm-kitty")
         );
         assert_eq!(
-            cmd.get_env("GROK_OSC52_SINK").and_then(|v| v.to_str()),
+            cmd.get_env("EZER_OSC52_SINK").and_then(|v| v.to_str()),
             Some("1"),
             "explicit sink scenarios must be able to re-inject the marker"
         );

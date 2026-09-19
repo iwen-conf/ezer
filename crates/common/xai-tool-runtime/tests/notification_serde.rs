@@ -143,11 +143,11 @@ fn plan_mode_exited_round_trip() {
     let n = ToolNotification::PlanModeExited(PlanModeExited {
         tool_call_id: "call-5".into(),
         plan_content: Some("plan".into()),
-        plan_file_path: ".grok/plan.md".into(),
+        plan_file_path: ".ezer/plan.md".into(),
     });
     let json = round_trip(&n);
     assert_type_tag(&json, "PlanModeExited");
-    assert_eq!(json["plan_file_path"], json!(".grok/plan.md"));
+    assert_eq!(json["plan_file_path"], json!(".ezer/plan.md"));
 }
 
 #[test]

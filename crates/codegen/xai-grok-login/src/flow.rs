@@ -79,7 +79,7 @@ fn resolve_device_flow(
     config: Option<bool>,
     remote: Option<bool>,
 ) -> xai_grok_config_types::Resolved<bool> {
-    xai_grok_config_types::BoolFlag::env("GROK_LOGIN_DEVICE_FLOW")
+    xai_grok_config_types::BoolFlag::env("EZER_LOGIN_DEVICE_FLOW")
         .cli(login_override.as_cli_bool())
         .config(config)
         .feature_flag(remote)
@@ -111,7 +111,7 @@ async fn should_use_device_flow(
     let resolved = if login_override.as_cli_bool().is_some() {
         resolve_device_flow(login_override, None, None)
     } else {
-        let env = xai_grok_config::env_bool("GROK_LOGIN_DEVICE_FLOW");
+        let env = xai_grok_config::env_bool("EZER_LOGIN_DEVICE_FLOW");
         let remote = if env.is_none() && config_device_flow.is_none() {
             tokio::time::timeout(
                 std::time::Duration::from_secs(2),
@@ -166,7 +166,7 @@ pub struct AuthChannels {
     pub url_tx: Option<oneshot::Sender<AuthUrlInfo>>,
     pub code_rx: mpsc::Receiver<String>,
 }
-/// Sets no `GROK_AUTH_EXPIRED`: operator binaries, which live outside this repo, read that variable as "headless, don't prompt" and decline the run.
+/// Sets no `EZER_AUTH_EXPIRED`: operator binaries, which live outside this repo, read that variable as "headless, don't prompt" and decline the run.
 pub async fn run_external_auth_provider(
     command: &str,
     auth_manager: &Arc<AuthManager>,
@@ -610,7 +610,7 @@ pub(super) async fn run_auth_flow_steps(
         "auth: no OAuth2 configuration available (neither enterprise OIDC nor xAI OAuth2 configured)"
     );
     anyhow::bail!(
-        "No OAuth2 configuration available. Run `grok login` to authenticate, or contact your administrator if you use enterprise SSO."
+        "No OAuth2 configuration available. Run `ezer login` to authenticate, or contact your administrator if you use enterprise SSO."
     )
 }
 /// Non-interactive auth refresh: returns valid credentials if available without ever triggering interactive login (browser, device code, etc.).
@@ -812,8 +812,8 @@ pub async fn ensure_authenticated_or_noninteractive(
         .map(Some)
     }
 }
-/// Unified `grok login` handler for CLI entry points (tui, pager). Precedence: `--oauth` forces loopback, `--device-auth` forces device.
-/// Otherwise `GROK_LOGIN_DEVICE_FLOW` env, then `[auth] login_device_flow` config, then the loopback default.
+/// Unified `ezer login` handler for CLI entry points (tui, pager). Precedence: `--oauth` forces loopback, `--device-auth` forces device.
+/// Otherwise `EZER_LOGIN_DEVICE_FLOW` env, then `[auth] login_device_flow` config, then the loopback default.
 /// Both transports run through `run_auth_flow_inner` so the external auth provider and devbox auto-migration are tried first.
 pub async fn run_cli_login(
     grok_com_config: GrokComConfig,
@@ -907,7 +907,7 @@ pub struct LogoutResult {
     pub was_logged_in: bool,
     /// Email of the session that was cleared (if available).
     pub email: Option<String>,
-    /// `true` if `XAI_API_KEY` / `GROK_CODE_XAI_API_KEY` env var is set.
+    /// `true` if `XAI_API_KEY` / `EZER_CODE_XAI_API_KEY` env var is set.
     pub api_key_still_set: bool,
 }
 /// Core logout logic shared by the CLI subcommand and the ACP handler.
@@ -966,10 +966,10 @@ async fn fetch_login_device_flow(cli_chat_proxy_base_url: &str) -> Option<bool> 
     let response = client
         .get(&url)
         .timeout(std::time::Duration::from_millis(1500))
-        .header("x-grok-agent-id", agent_id)
-        .header("x-grok-client-version", xai_grok_version::VERSION)
+        .header("x-ezer-agent-id", agent_id)
+        .header("x-ezer-client-version", xai_grok_version::VERSION)
         .header(
-            "x-grok-client-identifier",
+            "x-ezer-client-identifier",
             xai_grok_http::process_client_identifier(),
         )
         .header(
@@ -1047,13 +1047,13 @@ mod tests {
         let nested = abandoned.context("Login failed. Please try again.");
         assert!(login_failure_event(&nested).is_none());
     }
-    /// Run `f` with `GROK_LOGIN_DEVICE_FLOW` set to `value` (unset for `None`).
+    /// Run `f` with `EZER_LOGIN_DEVICE_FLOW` set to `value` (unset for `None`).
     /// `EnvVarGuard` serializes the process env and restores it on drop, so `resolve_device_flow` reads the env tier from a known state.
     fn with_device_flow_env<T>(value: Option<bool>, f: impl FnOnce() -> T) -> T {
         let _guard = match value {
-            Some(true) => EnvVarGuard::set("GROK_LOGIN_DEVICE_FLOW", "true"),
-            Some(false) => EnvVarGuard::set("GROK_LOGIN_DEVICE_FLOW", "false"),
-            None => EnvVarGuard::remove("GROK_LOGIN_DEVICE_FLOW"),
+            Some(true) => EnvVarGuard::set("EZER_LOGIN_DEVICE_FLOW", "true"),
+            Some(false) => EnvVarGuard::set("EZER_LOGIN_DEVICE_FLOW", "false"),
+            None => EnvVarGuard::remove("EZER_LOGIN_DEVICE_FLOW"),
         };
         f()
     }
@@ -1146,7 +1146,7 @@ mod tests {
     }
     #[tokio::test]
     async fn interactive_login_carries_no_expired_flag_even_over_a_stale_credential() {
-        let echo_env = "printf '%s' \"e=${GROK_AUTH_EXPIRED:-unset}\"";
+        let echo_env = "printf '%s' \"e=${EZER_AUTH_EXPIRED:-unset}\"";
         let dir = tempfile::tempdir().unwrap();
         let mgr = Arc::new(
             AuthManager::new(dir.path(), GrokComConfig::default())
@@ -1168,7 +1168,7 @@ mod tests {
     #[tokio::test]
     async fn a_provider_written_to_the_published_contract_can_sign_in_after_an_expiry() {
         let conforming =
-            r#"if [ "$GROK_AUTH_EXPIRED" = "1" ]; then exit 1; else printf '%s' sso-token; fi"#;
+            r#"if [ "$EZER_AUTH_EXPIRED" = "1" ]; then exit 1; else printf '%s' sso-token; fi"#;
         let dir = tempfile::tempdir().unwrap();
         let mgr = Arc::new(
             AuthManager::new(dir.path(), GrokComConfig::default())
@@ -1330,14 +1330,14 @@ mod tests {
     #[tokio::test]
     async fn preresolved_bypasses_resolver_and_is_never_cli() {
         {
-            let _guard = EnvVarGuard::set("GROK_LOGIN_DEVICE_FLOW", "false");
+            let _guard = EnvVarGuard::set("EZER_LOGIN_DEVICE_FLOW", "false");
             assert!(
                 should_use_device_flow(LoginTransportOverride::Preresolved(true), None, "").await,
                 "Preresolved(true) honors device without re-resolving"
             );
         }
         {
-            let _guard = EnvVarGuard::set("GROK_LOGIN_DEVICE_FLOW", "true");
+            let _guard = EnvVarGuard::set("EZER_LOGIN_DEVICE_FLOW", "true");
             assert!(
                 !should_use_device_flow(LoginTransportOverride::Preresolved(false), None, "").await,
                 "Preresolved(false) honors loopback without re-resolving"
@@ -1792,7 +1792,7 @@ mod tests {
         };
         assert_eq!(
             extract(
-                "Visit the following link to sign into Grok: https://auth.example.com/login?code=abc"
+                "Visit the following link to sign into ezer: https://auth.example.com/login?code=abc"
             ),
             "https://auth.example.com/login?code=abc"
         );
@@ -1806,7 +1806,7 @@ mod tests {
         );
         assert_eq!(extract("some opaque output"), "some opaque output");
     }
-    /// CLI `grok login` passes `on_stderr=None`; stderr must be inherited so sign-in URLs appear in real time.
+    /// CLI `ezer login` passes `on_stderr=None`; stderr must be inherited so sign-in URLs appear in real time.
     /// Piped stderr with no reader deadlocks once the child writes past the pipe buffer (~64 KiB).
     #[tokio::test]
     async fn external_provider_cli_path_does_not_deadlock_on_large_stderr() {

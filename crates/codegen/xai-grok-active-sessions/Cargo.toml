@@ -3,7 +3,7 @@ license = "Apache-2.0"
 name = "xai-grok-active-sessions"
 version = "0.1.0"
 edition.workspace = true
-description = "Crash-recovery registry of open TUI sessions, stored as a lock-guarded JSON file under the grok home"
+description = "Crash-recovery registry of open TUI sessions, stored as a lock-guarded JSON file under the ezer home"
 
 [dependencies]
 # `SessionId`, the key each registry entry is filed under.

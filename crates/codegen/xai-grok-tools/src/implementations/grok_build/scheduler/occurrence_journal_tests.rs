@@ -278,7 +278,7 @@ async fn production_loader_preserves_tasks_and_quarantine_metadata() {
     std::fs::write(
         &path,
         serde_json::to_vec(&serde_json::json!({
-            "state": { "grok_build.Scheduler": {
+            "state": { "ezer_build.Scheduler": {
                 "tasks": [task("recurring", true, true)],
                 "occurrenceJournal": [invalid]
             } }
@@ -308,7 +308,7 @@ async fn production_loader_preserves_tasks_and_quarantine_metadata() {
         std::fs::write(
             &path,
             serde_json::to_vec(&serde_json::json!({
-                "state": { "grok_build.Scheduler": {
+                "state": { "ezer_build.Scheduler": {
                     "tasks": [task("kept", true, true)],
                     "occurrenceJournal": journal
                 } }

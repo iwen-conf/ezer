@@ -1,4 +1,4 @@
-//! These tests verify the parallel dispatch path (GROK_PARALLEL_TOOL_DISPATCH):
+//! These tests verify the parallel dispatch path (EZER_PARALLEL_TOOL_DISPATCH):
 //! - Phase 1: prepare_tool_call for each tool
 //! - Phase 2: permission prompts (if any)
 //! - Phase 3: parallel dispatch via dispatch_tool
@@ -451,7 +451,7 @@ async fn incremental_dispatch_surfaces_fast_tool_before_slow_sibling() {
 
 /// Regression for the race where two toolsets edited the same file concurrently.
 /// `lock_path_for_args` is the per-call key `execute_tool_calls` Phase 2 uses to bucket concurrent calls into per-file `tokio::sync::Mutex` groups.
-/// The compat toolset input types use `path`, and grok_build's `read_file` uses `target_file`.
+/// The compat toolset input types use `path`, and ezer_build's `read_file` uses `target_file`.
 #[test]
 fn lock_path_for_args_matches_grok_build_file_path() {
     // grok_build search_replace / opencode EditTool / WriteTool / etc.

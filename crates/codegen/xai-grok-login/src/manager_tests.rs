@@ -1756,7 +1756,7 @@ async fn refresh_chain_demotes_when_attributed_tried_rt_differs_from_disk() {
     assert!(
         mgr.permanent_failure().is_none(),
         "demotion must not record a sticky verdict that locks out every \
-         sibling process until the user re-runs `grok login`",
+         sibling process until the user re-runs `ezer login`",
     );
 }
 /// The demotion must *not* fire when disk still holds the very RT that was just rejected.
@@ -3076,8 +3076,8 @@ async fn current_api_key_async_drives_refresh_chain() {
     use xai_grok_test_support::EnvGuard;
     use xai_grok_tools::types::ApiKeyProvider;
     let _xai = EnvGuard::unset("XAI_API_KEY");
-    let _legacy = EnvGuard::unset("GROK_CODE_XAI_API_KEY");
-    let _auth_path = EnvGuard::unset("GROK_AUTH_PATH");
+    let _legacy = EnvGuard::unset("EZER_CODE_XAI_API_KEY");
+    let _auth_path = EnvGuard::unset("EZER_AUTH_PATH");
     let dir = tempfile::tempdir().unwrap();
     let mgr = Arc::new(AuthManager::new(dir.path(), GrokComConfig::default()));
     mgr.hot_swap(GrokAuth {
@@ -4288,7 +4288,7 @@ fn is_dark_wake_false_when_power_listener_not_started() {
         "is_dark_wake must be false when the power listener was never started"
     );
 }
-/// `GROK_AUTH_FORCE_DARK_WAKE` forces the dark-wake answer for manual and integration testing.
+/// `EZER_AUTH_FORCE_DARK_WAKE` forces the dark-wake answer for manual and integration testing.
 /// It is read BEFORE the `power_listener_started` check: a headless run never starts the listener.
 /// The override exists precisely so such a run can drive the dark-wake paths against a real binary.
 #[test]

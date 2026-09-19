@@ -1,4 +1,4 @@
-//! E2E path-deny and Grok hook write-deny (subprocess; arm64-tagged).
+//! E2E path-deny and ezer hook write-deny (subprocess; arm64-tagged).
 //! Soft-skips when enforcement is unavailable; only `SANDBOX_E2E_REQUIRE_ENFORCEMENT` hard-requires a usable backend.
 #![cfg(all(unix, feature = "enforce"))]
 use std::fs;
@@ -108,7 +108,7 @@ fn skip_if_enforcement_unavailable() -> bool {
 }
 fn unique_temp_dir(tag: &str) -> PathBuf {
     let dir = std::env::temp_dir().join(format!(
-        "grok-sandbox-e2e-{tag}-{}-{}",
+        "ezer-sandbox-e2e-{tag}-{}-{}",
         std::process::id(),
         std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
@@ -632,7 +632,7 @@ fn subprocess_devbox_genuine(workspace: &Path) {
     eprintln!("OK: devbox enforcement applied inside genuine bwrap");
     std::process::exit(0);
 }
-/// Workspace-profile Grok-owned hook write-deny probes (existing sources and first-run).
+/// Workspace-profile ezer-owned hook write-deny probes (existing sources and first-run).
 fn subprocess_hook_write_deny(workspace: &Path, first_run: bool) {
     let home = PathBuf::from(std::env::var(GROK_HOME_ENV).expect(GROK_HOME_ENV));
     let profile = xai_grok_sandbox::ProfileName::Workspace;
@@ -676,7 +676,7 @@ fn subprocess_hook_write_deny(workspace: &Path, first_run: bool) {
             }
             assert_write_denied(&format!("{name} (first-run)"), path);
         }
-        eprintln!("OK: first-run Grok hook slots denied");
+        eprintln!("OK: first-run ezer hook slots denied");
     } else {
         let keep = hooks_dir.join("keep.json");
         match fs::read_to_string(&keep) {
@@ -810,7 +810,7 @@ fn subprocess_hook_write_deny(workspace: &Path, first_run: bool) {
         }
     }
     assert_write_ok(
-        "grok runtime sibling",
+        "ezer runtime sibling",
         &home.join(format!("leader-{}.lock", std::process::id())),
     );
     assert_write_ok("workspace sibling", &workspace.join("fresh.rs"));
@@ -832,7 +832,7 @@ fn fixture_homes(
     TempDirGuard,
 ) {
     let home = unique_temp_dir(&format!("{tag}-home"));
-    let grok = unique_temp_dir(&format!("{tag}-grok"));
+    let grok = unique_temp_dir(&format!("{tag}-ezer"));
     let workspace = unique_temp_dir(&format!("{tag}-ws"));
     fs::write(grok.join(xai_grok_config::SANDBOX_CONFIG_FILENAME), "")
         .expect("empty global sandbox.toml");
@@ -865,9 +865,9 @@ fn run_deny_case(
         .map(|p| format!("\"{p}\""))
         .collect::<Vec<_>>()
         .join(", ");
-    fs::create_dir_all(tmp.join(".grok")).expect("mkdir .grok");
+    fs::create_dir_all(tmp.join(".ezer")).expect("mkdir .ezer");
     fs::write(
-        tmp.join(".grok")
+        tmp.join(".ezer")
             .join(xai_grok_config::SANDBOX_CONFIG_FILENAME),
         format!("[profiles.{profile}]\nextends = \"workspace\"\ndeny = [{deny_list}]\n"),
     )
@@ -981,9 +981,9 @@ fn deny_globs_block_read_write_rename() {
 #[cfg(target_os = "linux")]
 fn read_deny_marker_spoof_refused() {
     let (home, grok, workspace, _ch, _cg, _cw) = fixture_homes("read-deny-spoof");
-    fs::create_dir_all(workspace.join(".grok")).expect("mkdir .grok");
+    fs::create_dir_all(workspace.join(".ezer")).expect("mkdir .ezer");
     fs::write(
-            workspace.join(".grok").join(xai_grok_config::SANDBOX_CONFIG_FILENAME),
+            workspace.join(".ezer").join(xai_grok_config::SANDBOX_CONFIG_FILENAME),
             "[profiles.netspoof]\nextends = \"devbox\"\nrestrict_network = true\ndeny = [\"secret.pem\"]\n",
         )
         .expect("write sandbox.toml");
@@ -1015,10 +1015,10 @@ fn read_deny_forged_mounts_are_refused() {
     }
     use std::os::unix::fs::PermissionsExt;
     let (home, grok, workspace, _ch, _cg, _cw) = fixture_homes("read-deny-forged");
-    fs::create_dir_all(workspace.join(".grok")).expect("mkdir .grok");
+    fs::create_dir_all(workspace.join(".ezer")).expect("mkdir .ezer");
     fs::write(
         workspace
-            .join(".grok")
+            .join(".ezer")
             .join(xai_grok_config::SANDBOX_CONFIG_FILENAME),
         "[profiles.forged]\nextends = \"devbox\"\ndeny = [\"secret.pem\"]\n",
     )
@@ -1061,10 +1061,10 @@ fn read_deny_empty_set_verifies_inside_bwrap() {
         return;
     }
     let (home, grok, workspace, _ch, _cg, _cw) = fixture_homes("read-deny-empty");
-    fs::create_dir_all(workspace.join(".grok")).expect("mkdir .grok");
+    fs::create_dir_all(workspace.join(".ezer")).expect("mkdir .ezer");
     fs::write(
         workspace
-            .join(".grok")
+            .join(".ezer")
             .join(xai_grok_config::SANDBOX_CONFIG_FILENAME),
         "[profiles.netempty]\nextends = \"devbox\"\nrestrict_network = true\n",
     )
@@ -1087,7 +1087,7 @@ fn read_deny_empty_set_verifies_inside_bwrap() {
         "empty deny set must verify via the sentinel inside genuine bwrap\nstderr: {stderr}"
     );
 }
-/// The complete unprivileged forgery: a caller-run bwrap carrying the marker and a read-only sentinel self-bind, but no grok-managed deny mounts.
+/// The complete unprivileged forgery: a caller-run bwrap carrying the marker and a read-only sentinel self-bind, but no ezer-managed deny mounts.
 /// It must not skip devbox enforcement: Landlock still applies and a mount-writable, devbox-excluded path stays write-denied.
 #[test]
 #[cfg(target_os = "linux")]
@@ -1185,9 +1185,9 @@ fn hardlinked_hooks_paths_refuses_startup() {
         "expected hard-link refusal signal\nstderr: {stderr}"
     );
 }
-/// Workspace profile: Grok-owned direct hook sources are write-denied but readable.
+/// Workspace profile: ezer-owned direct hook sources are write-denied but readable.
 /// Create / overwrite / unlink / rename / mkdir fail; absolute hooks-paths targets are denied; parent rename is blocked.
-/// Grok/CWD/temp siblings stay writable.
+/// ezer/CWD/temp siblings stay writable.
 #[test]
 fn workspace_protects_direct_hook_sources() {
     if skip_if_enforcement_unavailable() {
@@ -1197,19 +1197,19 @@ fn workspace_protects_direct_hook_sources() {
     fs::create_dir_all(grok.join("hooks")).expect("mkdir hooks");
     fs::write(grok.join("hooks").join("keep.json"), r#"{"keep-me":true}"#)
         .expect("write keep.json");
-    let dynamic = grok.join("sessions").join("extra-hooks");
+    let dynamic = ezer.join("sessions").join("extra-hooks");
     fs::create_dir_all(&dynamic).expect("mkdir dynamic hooks target");
     fs::write(dynamic.join("x.json"), r#"{"x":1}"#).expect("write dynamic hook");
     let ws_hooks = workspace.join("extra-parent").join("vendor-hooks");
     fs::create_dir_all(&ws_hooks).expect("mkdir ws vendor hooks");
     fs::write(ws_hooks.join("x.json"), r#"{"x":1}"#).expect("write ws hook");
     fs::write(
-        grok.join("hooks-paths"),
+        ezer.join("hooks-paths"),
         format!("{}\n{}\n", dynamic.display(), ws_hooks.display()),
     )
     .expect("write hooks-paths");
     let (status, stderr) =
-        run_hook_write_deny_scenario(&home, &grok, &workspace, "hook_write_deny");
+        run_hook_write_deny_scenario(&home, &ezer, &workspace, "hook_write_deny");
     assert!(
         status.success(),
         "hook write-deny e2e failed: {status}\nstderr: {stderr}"
@@ -1260,15 +1260,15 @@ fn hardlinked_hooks_json_refuses_startup() {
     if skip_if_enforcement_unavailable() {
         return;
     }
-    let (home, grok, workspace, _ch, _cg, _cw) = fixture_homes("hook-json-hl");
-    fs::create_dir_all(grok.join("hooks")).unwrap();
-    fs::write(grok.join("hooks-paths"), b"").unwrap();
-    let active = grok.join("hooks").join("active.json");
-    let alias = grok.join("hooks").join("active-alias.json");
+    let (home, ezer, workspace, _ch, _cg, _cw) = fixture_homes("hook-json-hl");
+    fs::create_dir_all(ezer.join("hooks")).unwrap();
+    fs::write(ezer.join("hooks-paths"), b"").unwrap();
+    let active = ezer.join("hooks").join("active.json");
+    let alias = ezer.join("hooks").join("active-alias.json");
     fs::write(&active, r#"{"hooks":{}}"#).unwrap();
     fs::hard_link(&active, &alias).unwrap();
     let (status, stderr) =
-        run_hook_write_deny_scenario(&home, &grok, &workspace, "hook_write_deny");
+        run_hook_write_deny_scenario(&home, &ezer, &workspace, "hook_write_deny");
     assert!(
         !status.success(),
         "hard-linked hooks JSON must refuse startup\nstderr: {stderr}"
@@ -1280,30 +1280,30 @@ fn symlinked_hooks_json_refuses_startup() {
     if skip_if_enforcement_unavailable() {
         return;
     }
-    let (home, grok, workspace, _ch, _cg, _cw) = fixture_homes("hook-json-sym");
-    fs::create_dir_all(grok.join("hooks")).unwrap();
-    fs::write(grok.join("hooks-paths"), b"").unwrap();
-    let real = grok.join("real-active.json");
-    let active = grok.join("hooks").join("active.json");
+    let (home, ezer, workspace, _ch, _cg, _cw) = fixture_homes("hook-json-sym");
+    fs::create_dir_all(ezer.join("hooks")).unwrap();
+    fs::write(ezer.join("hooks-paths"), b"").unwrap();
+    let real = ezer.join("real-active.json");
+    let active = ezer.join("hooks").join("active.json");
     fs::write(&real, r#"{"hooks":{}}"#).unwrap();
     std::os::unix::fs::symlink(&real, &active).unwrap();
     let (status, stderr) =
-        run_hook_write_deny_scenario(&home, &grok, &workspace, "hook_write_deny");
+        run_hook_write_deny_scenario(&home, &ezer, &workspace, "hook_write_deny");
     assert!(
         !status.success(),
         "symlinked hooks JSON must refuse startup\nstderr: {stderr}"
     );
 }
-/// First-run: missing fixed slots are created as real Grok state before apply, then write-denied.
+/// First-run: missing fixed slots are created as real ezer state before apply, then write-denied.
 /// Parent asserts post-exit host tree is valid (no vendor stubs).
 #[test]
 fn workspace_protects_direct_hook_sources_first_run() {
     if skip_if_enforcement_unavailable() {
         return;
     }
-    let (home, grok, workspace, _ch, _cg, _cw) = fixture_homes("hook-fr");
+    let (home, ezer, workspace, _ch, _cg, _cw) = fixture_homes("hook-fr");
     let (status, stderr) =
-        run_hook_write_deny_scenario(&home, &grok, &workspace, "hook_write_deny_first_run");
+        run_hook_write_deny_scenario(&home, &ezer, &workspace, "hook_write_deny_first_run");
     assert!(
         status.success(),
         "hook write-deny first-run e2e failed: {status}\nstderr: {stderr}"
@@ -1334,21 +1334,21 @@ fn workspace_protects_direct_hook_sources_first_run() {
         );
     }
     assert!(
-        grok.join("hooks").is_dir(),
+        ezer.join("hooks").is_dir(),
         "post-exit: hooks dir must exist as a real directory"
     );
     assert!(
-        grok.join("hooks-paths").is_file(),
+        ezer.join("hooks-paths").is_file(),
         "post-exit: hooks-paths must exist as a real file"
     );
     assert_eq!(
-        fs::read(grok.join("hooks-paths")).expect("read hooks-paths"),
+        fs::read(ezer.join("hooks-paths")).expect("read hooks-paths"),
         b"",
         "post-exit: first-run hooks-paths must be empty"
     );
     for name in xai_grok_config::TRUST_BOUNDARY_FILENAMES {
         assert!(
-            grok.join(name).is_file(),
+            ezer.join(name).is_file(),
             "post-exit: {name} must exist as a real file"
         );
     }
@@ -1368,12 +1368,12 @@ fn hook_write_deny_refuses_marker_spoof() {
     {}
     #[cfg(target_os = "linux")]
     {
-        let (home, grok, workspace, _ch, _cg, _cw) = fixture_homes("hook-spoof");
-        fs::create_dir_all(grok.join("hooks")).unwrap();
-        fs::write(grok.join("hooks").join("x.json"), b"{}").unwrap();
-        fs::write(grok.join("hooks-paths"), b"").unwrap();
+        let (home, ezer, workspace, _ch, _cg, _cw) = fixture_homes("hook-spoof");
+        fs::create_dir_all(ezer.join("hooks")).unwrap();
+        fs::write(ezer.join("hooks").join("x.json"), b"{}").unwrap();
+        fs::write(ezer.join("hooks-paths"), b"").unwrap();
         let (status, stderr) =
-            run_hook_write_deny_scenario(&home, &grok, &workspace, "hook_write_deny_marker_spoof");
+            run_hook_write_deny_scenario(&home, &ezer, &workspace, "hook_write_deny_marker_spoof");
         assert!(
             status.success(),
             "marker spoof e2e failed: {status}\nstderr: {stderr}"

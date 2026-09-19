@@ -24,10 +24,10 @@ pub(crate) fn cache_remote_accept_request_encodings(
     }
 }
 
-/// Compression the sampler may apply toward `base_url`. `GROK_REQUEST_COMPRESSION=0`
+/// Compression the sampler may apply toward `base_url`. `EZER_REQUEST_COMPRESSION=0`
 /// is the operator kill switch, re-read whenever a sampler config is built.
 pub(crate) fn request_compression_for_url(base_url: &str) -> RequestCompression {
-    if xai_grok_config::env_bool("GROK_REQUEST_COMPRESSION") == Some(false) {
+    if xai_grok_config::env_bool("EZER_REQUEST_COMPRESSION") == Some(false) {
         return RequestCompression::None;
     }
     let origin = ZSTD_ORIGIN.read().ok().and_then(|guard| guard.clone());

@@ -66,7 +66,7 @@ pub(crate) fn build_instruction_items(
     items
 }
 
-/// This is the verified `max_prompt_length` for current `grok-build` / `grok-4.5` product backends (`500000`).
+/// This is the verified `max_prompt_length` for current `ezer-build` / `grok-4.5` product backends (`500000`).
 /// Applied via `min(window, CAP)`, so a smaller real window still wins (e.g. a 256k legacy model or a debug override).
 const RECAP_CONTEXT_WINDOW_CAP: u64 = 500_000;
 
@@ -733,7 +733,7 @@ mod tests {
         assert!(
             out.iter()
                 .any(|i| matches!(i, ConversationItem::Reasoning(_))),
-            "fits path on grok must keep reasoning verbatim"
+            "fits path on ezer must keep reasoning verbatim"
         );
     }
 

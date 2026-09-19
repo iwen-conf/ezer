@@ -693,7 +693,7 @@ mod tests {
             path: "/home/user/.grok/worktrees.db".into(),
         };
         let json = serde_json::to_string(&resp).unwrap();
-        assert!(json.contains("\"path\":\"/home/user/.grok/worktrees.db\""));
+        assert!(json.contains("\"path\":\"/home/user/.ezer/worktrees.db\""));
     }
 
     #[test]

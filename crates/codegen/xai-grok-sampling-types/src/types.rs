@@ -1392,7 +1392,7 @@ mod tests {
     fn parse_reasoning_efforts_meta_absent_is_none() {
         assert!(parse_reasoning_efforts_meta(None).is_none());
         assert!(
-            parse_reasoning_efforts_meta(Some(json!({ "agentType": "grok" }).as_object().unwrap()))
+            parse_reasoning_efforts_meta(Some(json!({ "agentType": "ezer" }).as_object().unwrap()))
                 .is_none()
         );
     }

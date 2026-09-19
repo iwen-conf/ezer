@@ -398,17 +398,17 @@ fn snapshot_ref_field_in_meta_roundtrips() {
         duration_ms: Some(10),
         tool_calls: Some(1),
         turns: Some(1),
-        worktree_path: Some("/tmp/grok-wt/sa-snap".into()),
-        snapshot_ref: Some("refs/grok/subagent-snapshots/sa-snap".into()),
+        worktree_path: Some("/tmp/ezer-wt/sa-snap".into()),
+        snapshot_ref: Some("refs/ezer/subagent-snapshots/sa-snap".into()),
         ..base_meta()
     };
     let json = serde_json::to_string(&meta).unwrap();
     assert!(json.contains("snapshot_ref"));
-    assert!(json.contains("refs/grok/subagent-snapshots/sa-snap"));
+    assert!(json.contains("refs/ezer/subagent-snapshots/sa-snap"));
     let parsed: SubagentMeta = serde_json::from_str(&json).unwrap();
     assert_eq!(
             parsed.snapshot_ref.as_deref(),
-            Some("refs/grok/subagent-snapshots/sa-snap")
+            Some("refs/ezer/subagent-snapshots/sa-snap")
         );
 }
 #[test]

@@ -321,7 +321,7 @@ pub struct SchedulerState {
     pub(crate) occurrence_journal: super::occurrence_journal::OccurrenceJournal,
 }
 
-crate::register_resource!("grok_build", "Scheduler", SchedulerState);
+crate::register_resource!("ezer_build", "Scheduler", SchedulerState);
 
 #[derive(Debug, Clone)]
 pub struct SchedulerSnapshot {

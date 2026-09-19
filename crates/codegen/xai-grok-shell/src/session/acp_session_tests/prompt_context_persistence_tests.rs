@@ -56,7 +56,7 @@ fn test_system_prompt_write_and_read() {
 
 #[test]
 fn test_system_prompt_is_plain_text_not_json() {
-    let prompt = "You are a Grok Build subagent.";
+    let prompt = "You are a ezer subagent.";
     // system_prompt.txt is raw text, NOT JSON-encoded.
     assert!(!prompt.starts_with('"'), "must not be JSON-quoted");
     assert!(!prompt.starts_with('{'), "must not be JSON object");

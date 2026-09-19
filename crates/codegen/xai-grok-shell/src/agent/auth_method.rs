@@ -214,7 +214,7 @@ fn build_unpinned(
 fn xai_login_enabled() -> bool {
     matches!(
         xai_grok_env::env_bool("EZER_ENABLE_XAI_LOGIN")
-            .or_else(|| xai_grok_env::env_bool("GROK_ENABLE_XAI_LOGIN")),
+            .or_else(|| xai_grok_env::env_bool("EZER_ENABLE_XAI_LOGIN")),
         Some(true)
     )
 }
@@ -256,7 +256,7 @@ impl AuthMethodKind {
         match id.0.as_ref() {
             XAI_API_KEY_METHOD_ID => Self::XaiApiKey,
             CACHED_TOKEN_AUTH_METHOD_ID => Self::CachedToken,
-            GROK_COM_METHOD_ID => Self::GrokCom,
+            EZER_COM_METHOD_ID => Self::GrokCom,
             OIDC_METHOD_ID => Self::Oidc,
             _ => Self::Unknown,
         }
@@ -328,7 +328,7 @@ pub(crate) fn method_id_after_cached_token_unavailable(
         None => Some(if has_external_api_key {
             XAI_API_KEY_METHOD_ID
         } else {
-            GROK_COM_METHOD_ID
+            EZER_COM_METHOD_ID
         }),
     }
 }
@@ -338,7 +338,7 @@ pub const PREFERRED_API_KEY_UNAVAILABLE: &str = "preferred_method=api_key but no
 
 /// Error when `preferred_method=oidc` but the session path cannot proceed.
 pub const PREFERRED_OIDC_UNAVAILABLE: &str =
-    "preferred_method=oidc but no session is available. Run `grok login` to authenticate.";
+    "preferred_method=oidc but no session is available. Run `ezer login` to authenticate.";
 
 pub const XAI_API_KEY_METHOD_ID: &str = "xai.api_key";
 pub(crate) fn xai_api_key_auth_method() -> acp::AuthMethod {
@@ -364,14 +364,14 @@ pub(crate) fn cached_token_auth_method() -> acp::AuthMethod {
     )
 }
 
-pub const GROK_COM_METHOD_ID: &str = "grok.com";
+pub const EZER_COM_METHOD_ID: &str = "grok.com";
 
 /// xAI OAuth2/OIDC auth. Method id `"grok.com"` kept for ACP wire compatibility.
 pub(crate) fn grok_com_auth_method(
     label: Option<&str>,
     has_auth_provider_command: bool,
 ) -> acp::AuthMethod {
-    let name = label.unwrap_or("Grok");
+    let name = label.unwrap_or("ezer");
     let meta = if has_auth_provider_command {
         let mut m = acp::Meta::new();
         m.insert("external_provider".to_owned(), serde_json::json!(true));
@@ -380,7 +380,7 @@ pub(crate) fn grok_com_auth_method(
         None
     };
     acp::AuthMethod::Agent(
-        acp::AuthMethodAgent::new(acp::AuthMethodId::new(GROK_COM_METHOD_ID), name.to_string())
+        acp::AuthMethodAgent::new(acp::AuthMethodId::new(EZER_COM_METHOD_ID), name.to_string())
             .description(Some(format!("Sign in with {name}")))
             .meta(meta),
     )
@@ -420,7 +420,7 @@ mod tests {
     fn after_cached_token_unavailable_falls_to_grok_com_without_api_key() {
         assert_eq!(
             method_id_after_cached_token_unavailable(false, None),
-            Some(GROK_COM_METHOD_ID),
+            Some(EZER_COM_METHOD_ID),
         );
     }
 
@@ -442,7 +442,7 @@ mod tests {
     fn auth_method_kind_classifier_matrix() {
         let session_methods = [
             CACHED_TOKEN_AUTH_METHOD_ID,
-            GROK_COM_METHOD_ID,
+            EZER_COM_METHOD_ID,
             OIDC_METHOD_ID,
         ];
         for method_id in session_methods {
@@ -667,7 +667,7 @@ mod tests {
 
     // ── End-to-end: enterprise TOML to resolved models to build_auth_methods ─
 
-    /// END-TO-END REGRESSION TEST: parses the literal enterprise-style `~/.grok/config.toml` skeleton from the bug report, walks it through the same predicate (`should_advertise_xai_api_key`) and the same list-builder (`build_auth_methods`) that `MvpAgent::initialize()` uses in production, and asserts that `auth_methods.first()` is `xai.api_key` (which causes the pager to skip the login screen).
+    /// END-TO-END REGRESSION TEST: parses the literal enterprise-style `~/.ezer/config.toml` skeleton from the bug report, walks it through the same predicate (`should_advertise_xai_api_key`) and the same list-builder (`build_auth_methods`) that `MvpAgent::initialize()` uses in production, and asserts that `auth_methods.first()` is `xai.api_key` (which causes the pager to skip the login screen).
     /// This is the test that *would have caught* that regression.
     /// If the bug returns (xai.api_key pushed LAST when only per-model credentials exist), `first_kind` stops being `XaiApiKey` and this test fails.
     #[test]
@@ -860,7 +860,7 @@ mod tests {
         );
     }
 
-    /// Legacy `GROK_CODE_XAI_API_KEY` env var is accepted as a fallback when `XAI_API_KEY` is not set, so existing deployments keep working.
+    /// Legacy `EZER_CODE_XAI_API_KEY` env var is accepted as a fallback when `XAI_API_KEY` is not set, so existing deployments keep working.
     #[test]
     #[serial]
     fn legacy_env_var_fallback_advertises_xai_api_key() {
@@ -875,7 +875,7 @@ mod tests {
         assert!(has_external_api_key);
     }
 
-    /// When both `XAI_API_KEY` and `GROK_CODE_XAI_API_KEY` are set, the new name takes precedence.
+    /// When both `XAI_API_KEY` and `EZER_CODE_XAI_API_KEY` are set, the new name takes precedence.
     #[test]
     #[serial]
     fn new_env_var_takes_precedence_over_legacy() {
@@ -884,11 +884,11 @@ mod tests {
         assert_eq!(read_xai_api_key_env().unwrap(), "new-key");
     }
 
-    // -- grok login --legacy regression coverage ------------------------ `grok login --legacy` produces a GrokAuth with `auth_mode: WebLogin`, `oidc_issuer: None`, and no `expires_at` (30-day hardcoded TTL)
-    // When this token is in the `GROK_AUTH` env var (or the legacy scope fallback in auth.json), `AuthManager::new` returns it from `current()`
+    // -- ezer login --legacy regression coverage ------------------------ `ezer login --legacy` produces a GrokAuth with `auth_mode: WebLogin`, `oidc_issuer: None`, and no `expires_at` (30-day hardcoded TTL)
+    // When this token is in the `EZER_AUTH` env var (or the legacy scope fallback in auth.json), `AuthManager::new` returns it from `current()`
     // That feeds `has_cached_token = true` into `build_auth_methods`, which puts `cached_token` first `startup_auth_metadata()` then returns `needs_login = false`: legacy users get frictionless auth, no login screen This test pins the env-var path (highest priority in AuthManager) end-to-end
 
-    /// END-TO-END REGRESSION TEST for a legacy auth token (WebLogin, no expires_at) in the `GROK_AUTH` env var with no other auth available.
+    /// END-TO-END REGRESSION TEST for a legacy auth token (WebLogin, no expires_at) in the `EZER_AUTH` env var with no other auth available.
     /// `AuthManager` MUST load it and `build_auth_methods` must advertise `cached_token` first.
     /// The pager therefore skips the login screen (frictionless legacy auth).
     #[test]
@@ -900,7 +900,7 @@ mod tests {
         let _g1 = EnvGuard::unset("GROK_AUTH_PATH");
         let _g2 = EnvGuard::unset(XAI_API_KEY_ENV_VAR);
 
-        // Construct a legacy-style token exactly as `grok login --legacy` produces it
+        // Construct a legacy-style token exactly as `ezer login --legacy` produces it
         // That means WebLogin mode, no OIDC fields, no refresh_token, no expires_at (is_expired falls back to the 30-day age check)
         let legacy_token = GrokAuth {
             key: "legacy-relay-token".into(),
@@ -915,7 +915,7 @@ mod tests {
             ..GrokAuth::test_default()
         };
 
-        // Provide it via the GROK_AUTH env var (highest priority code path in AuthManager::new)
+        // Provide it via the EZER_AUTH env var (highest priority code path in AuthManager::new)
         // This is the "legacy auth token exists in the env" case with no other auth
         let legacy_json = serde_json::to_string(&legacy_token).expect("serialize legacy token");
         let _g = EnvGuard::set("GROK_AUTH", &legacy_json);
@@ -1035,7 +1035,7 @@ mod tests {
         });
         assert_eq!(
             method_ids(&built),
-            vec![CACHED_TOKEN_AUTH_METHOD_ID, GROK_COM_METHOD_ID]
+            vec![CACHED_TOKEN_AUTH_METHOD_ID, EZER_COM_METHOD_ID]
         );
         assert_eq!(default_id(&built), Some(CACHED_TOKEN_AUTH_METHOD_ID));
     }
@@ -1048,7 +1048,7 @@ mod tests {
             preferred_method: Some(PreferredAuthMethod::Oidc),
             ..default_inputs()
         });
-        assert_eq!(method_ids(&built), vec![GROK_COM_METHOD_ID]);
+        assert_eq!(method_ids(&built), vec![EZER_COM_METHOD_ID]);
         assert!(built.default_auth_method_id.is_none());
     }
 }

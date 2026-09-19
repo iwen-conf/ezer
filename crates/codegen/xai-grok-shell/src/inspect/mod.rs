@@ -1,6 +1,6 @@
-//! `grok inspect`: configuration introspection.
+//! `ezer inspect`: configuration introspection.
 //!
-//! Shows everything Grok discovers in the current directory.
+//! Shows everything ezer discovers in the current directory.
 //! That covers project instructions, permissions, hooks, skills, agents, plugins, MCP servers, LSP config, and config.toml sources.
 //! Supports `--json` for machine output.
 
@@ -108,9 +108,9 @@ pub(crate) enum ManagedOnlyScope {
     /// No source pins the lockdown.
     Off,
     /// Only the advisory Claude file pins it: binds foreign-defined servers,
-    /// grok-native servers exempt.
+    /// ezer-native servers exempt.
     Advisory,
-    /// A grok TOML layer pins it: binds every server.
+    /// A ezer TOML layer pins it: binds every server.
     Enforced,
 }
 
@@ -133,7 +133,7 @@ impl ManagedOnlyScope {
 #[serde(rename_all = "camelCase")]
 pub(crate) struct LockdownSource {
     pub source: String,
-    /// The advisory vendor file: binds foreign-defined subjects only, grok-native exempt.
+    /// The advisory vendor file: binds foreign-defined subjects only, ezer-native exempt.
     pub advisory: bool,
 }
 
@@ -141,7 +141,7 @@ impl LockdownSource {
     /// Human row; `exempt` names what an advisory source does not bind.
     fn human_row(&self, exempt: &str) -> String {
         if self.advisory {
-            format!("{} (advisory; grok-native {exempt} exempt)", self.source)
+            format!("{} (advisory; ezer-native {exempt} exempt)", self.source)
         } else {
             self.source.clone()
         }
@@ -179,7 +179,7 @@ pub(crate) struct PermissionsReport {
     /// One row per active policy clamp; other requirements-pinned fields are not listed.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub enforced: Vec<EnforcedPolicy>,
-    /// A Claude managed-settings `disableBypassPermissionsMode` request, which grok deliberately does not enforce ([`claude_bypass_lock_request`](xai_grok_workspace::permission::resolution::claude_bypass_lock_request)).
+    /// A Claude managed-settings `disableBypassPermissionsMode` request, which ezer deliberately does not enforce ([`claude_bypass_lock_request`](xai_grok_workspace::permission::resolution::claude_bypass_lock_request)).
     /// Always emitted so "no request" is distinguishable from an old binary.
     pub claude_bypass_lock_advisory: bool,
 }
@@ -224,7 +224,7 @@ pub(crate) struct SkippedRule {
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct LoginPolicyReport {
-    /// Raw `disable_api_key_auth` knob (env `GROK_DISABLE_API_KEY_AUTH`).
+    /// Raw `disable_api_key_auth` knob (env `EZER_DISABLE_API_KEY_AUTH`).
     pub disable_api_key_auth: Option<bool>,
     /// Configured team pin: single string, list, or null when unset.
     pub force_login_team_uuid: Option<ForceLoginTeam>,
@@ -346,7 +346,7 @@ pub(crate) struct ConfigSources {
     pub layers: Vec<ConfigLayer>,
 }
 
-/// A single config layer entry for `grok inspect`.
+/// A single config layer entry for `ezer inspect`.
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct ConfigLayer {
@@ -364,7 +364,7 @@ pub async fn inspect(cwd: &Path, json: bool) -> anyhow::Result<()> {
     write_inspect(&report, json, &mut std::io::stdout().lock())
 }
 
-/// A closed stdout (`grok inspect | head`) is a clean stop.
+/// A closed stdout (`ezer inspect | head`) is a clean stop.
 fn write_inspect(report: &InspectReport, json: bool, out: &mut impl Write) -> anyhow::Result<()> {
     let written = if json {
         writeln!(out, "{}", serde_json::to_string_pretty(report)?)
@@ -544,7 +544,7 @@ fn instruction_file_type(file_path: &str, grok_home: &Path, claude_imported: boo
     if path
         .parent()
         .is_some_and(|parent| parent == grok_home.join("rules"))
-        || has_rules_directory(file_path, ".grok")
+        || has_rules_directory(file_path, ".ezer")
         || has_rules_directory(file_path, ".cursor")
         || (!claude_imported && has_rules_directory(file_path, ".claude"))
     {
@@ -1218,8 +1218,8 @@ fn list_config_sources(cwd: &Path) -> ConfigSources {
         }
     }
 
-    let inline_env = crate::config::GROK_CONFIG_ENV;
-    let path_env = crate::config::GROK_CONFIG_PATH_ENV;
+    let inline_env = crate::config::EZER_CONFIG_ENV;
+    let path_env = crate::config::EZER_CONFIG_PATH_ENV;
     if let Some(overlay) = crate::config::resolved_env_overlay() {
         if !overlay.sections.is_empty() {
             let path = match overlay.source {
@@ -1422,7 +1422,7 @@ fn enforced_label(p: &EnforcedPolicy) -> String {
 /// to the caller.
 fn claude_bypass_advisory_message(p: &PermissionsReport) -> Option<&'static str> {
     p.claude_bypass_lock_advisory.then_some(
-        "Claude disableBypassPermissionsMode: advisory only -- not enforced for grok \
+        "Claude disableBypassPermissionsMode: advisory only -- not enforced for ezer \
          (lock via requirements.toml [ui] disable_bypass_permissions_mode)",
     )
 }
@@ -1590,7 +1590,7 @@ fn print_human(r: &InspectReport, out: &mut impl Write) -> std::io::Result<()> {
         )?,
         ManagedOnlyScope::Advisory => writeln!(
             out,
-            "  {TREE} MCP managed servers only: advisory (Claude managed-settings; grok-native servers exempt)"
+            "  {TREE} MCP managed servers only: advisory (Claude managed-settings; ezer-native servers exempt)"
         )?,
     }
     if !r.permissions.marketplace_allowlist.is_empty() {
@@ -1718,7 +1718,7 @@ fn print_human(r: &InspectReport, out: &mut impl Write) -> std::io::Result<()> {
     if r.mcp_servers.is_empty() {
         writeln!(out)?;
         writeln!(out, "  MCP Servers (0)")?;
-        writeln!(out, "  {TREE} (none) \u{2014} see `grok mcp add --help`")?;
+        writeln!(out, "  {TREE} (none) \u{2014} see `ezer mcp add --help`")?;
     } else {
         print_columns(
             out,
@@ -1939,7 +1939,7 @@ mod tests {
             enforced: vec![EnforcedPolicy {
                 setting: EnforcedSetting::ProjectMcpServers,
                 enabled: false,
-                source: "/etc/grok/managed-settings.json".to_owned(),
+                source: "/etc/ezer/managed-settings.json".to_owned(),
             }],
             claude_bypass_lock_advisory: true,
         };
@@ -1960,7 +1960,7 @@ mod tests {
                 "enforced": [{
                     "setting": "projectMcpServers",
                     "enabled": false,
-                    "source": "/etc/grok/managed-settings.json"
+                    "source": "/etc/ezer/managed-settings.json"
                 }],
                 "claudeBypassLockAdvisory": true
             })
@@ -2002,7 +2002,7 @@ mod tests {
             ("claude", "/repo/.claude/rules/team.md"),
             ("claude", r"C:\repo\.claude\rules\team.md"),
         ] {
-            let file_type = instruction_file_type(path, Path::new("/home/user/.grok"), false);
+            let file_type = instruction_file_type(path, Path::new("/home/user/.ezer"), false);
             assert_eq!(file_type, "rules");
             assert_eq!(
                 instruction_compat_status(&Some(vendor.to_owned()), file_type, &report),
@@ -2010,9 +2010,9 @@ mod tests {
             );
         }
 
-        for path in ["/repo/.grok/rules/team.md", r"C:\repo\.grok\rules\team.md"] {
+        for path in ["/repo/.ezer/rules/team.md", r"C:\repo\.ezer\rules\team.md"] {
             assert_eq!(
-                instruction_file_type(path, Path::new("/home/user/.grok"), false),
+                instruction_file_type(path, Path::new("/home/user/.ezer"), false),
                 "rules"
             );
         }
@@ -2021,7 +2021,7 @@ mod tests {
             r"C:\repo\.cursor\rules\team.md",
         ] {
             assert_eq!(
-                instruction_file_type(path, Path::new("/home/user/.grok"), true),
+                instruction_file_type(path, Path::new("/home/user/.ezer"), true),
                 "rules"
             );
         }
@@ -2029,7 +2029,7 @@ mod tests {
             "/repo/.claude/rules/team.md",
             r"C:\repo\.claude\rules\team.md",
         ] {
-            let file_type = instruction_file_type(path, Path::new("/home/user/.grok"), true);
+            let file_type = instruction_file_type(path, Path::new("/home/user/.ezer"), true);
             assert_eq!(file_type, "agents_md");
             assert_eq!(
                 instruction_compat_status(&Some("claude".to_owned()), file_type, &report),
@@ -2041,7 +2041,7 @@ mod tests {
             r"C:\repo\.cursor\ruleset\team.md",
         ] {
             assert_eq!(
-                instruction_file_type(path, Path::new("/home/user/.grok"), false),
+                instruction_file_type(path, Path::new("/home/user/.ezer"), false),
                 "agents_md"
             );
         }
@@ -2058,7 +2058,7 @@ mod tests {
             ));
         }
         for path in [
-            "/repo/config/.grok/rules/project.md",
+            "/repo/config/.ezer/rules/project.md",
             "/repo/config/src/AGENTS.md",
         ] {
             assert!(matches!(
@@ -2074,7 +2074,7 @@ mod tests {
         let workspace = Path::new("/repo");
         for path in ["/repo/.claude/rules/global.md", "/repo/.claude/CLAUDE.md"] {
             assert!(matches!(
-                instruction_scope(path, Path::new("/other/grok"), &vendor_homes, workspace),
+                instruction_scope(path, Path::new("/other/ezer"), &vendor_homes, workspace),
                 Scope::Global
             ));
         }
@@ -2083,7 +2083,7 @@ mod tests {
             "/repo/.claude/src/AGENTS.md",
         ] {
             assert!(matches!(
-                instruction_scope(path, Path::new("/other/grok"), &vendor_homes, workspace),
+                instruction_scope(path, Path::new("/other/ezer"), &vendor_homes, workspace),
                 Scope::Project
             ));
         }
@@ -2091,11 +2091,11 @@ mod tests {
 
     #[test]
     fn workspace_scope_wins_inside_grok_home() {
-        let grok_home = Path::new("/custom/grok");
-        let workspace = Path::new("/custom/grok/worktrees/repo");
+        let grok_home = Path::new("/custom/ezer");
+        let workspace = Path::new("/custom/ezer/worktrees/repo");
         for path in [
-            "/custom/grok/worktrees/repo/.cursor/rules/project.md",
-            "/custom/grok/worktrees/repo/src/AGENTS.md",
+            "/custom/ezer/worktrees/repo/.cursor/rules/project.md",
+            "/custom/ezer/worktrees/repo/src/AGENTS.md",
         ] {
             assert!(matches!(
                 instruction_scope(path, grok_home, &[], workspace),
@@ -2103,7 +2103,7 @@ mod tests {
             ));
         }
         assert!(matches!(
-            instruction_scope("/custom/grok/rules/global.md", grok_home, &[], workspace,),
+            instruction_scope("/custom/ezer/rules/global.md", grok_home, &[], workspace,),
             Scope::Global
         ));
     }
@@ -2173,7 +2173,7 @@ mod tests {
     #[test]
     fn requirements_layer_contributes_requires_non_empty_post_strip_table() {
         // A `fail_closed`-only file is kept by the loader but with an empty post-strip table, so it must not count as contributing
-        let path = "/home/u/.grok/requirements.toml";
+        let path = "/home/u/.ezer/requirements.toml";
         let layer = |v| crate::config::RequirementsLayer {
             value: v,
             source: crate::config::RequirementsSource::File(std::path::PathBuf::from(path)),
@@ -2247,7 +2247,7 @@ mod tests {
         let row = EnforcedPolicy {
             setting: EnforcedSetting::AlwaysApprove,
             enabled: false,
-            source: "/etc/grok/requirements.toml".to_string(),
+            source: "/etc/ezer/requirements.toml".to_string(),
         };
         let json = serde_json::to_value(permissions_report(true, vec![row])).unwrap();
         assert_eq!(
@@ -2259,7 +2259,7 @@ mod tests {
             Some(&serde_json::json!([{
                 "setting": "alwaysApprove",
                 "enabled": false,
-                "source": "/etc/grok/requirements.toml",
+                "source": "/etc/ezer/requirements.toml",
             }]))
         );
     }
@@ -2325,13 +2325,13 @@ mod tests {
         assert_eq!(fb.source, "/etc/claude-code/managed-settings.json");
     }
 
-    /// The enforced alwaysApprove row comes from grok's own requirements lock,
+    /// The enforced alwaysApprove row comes from ezer's own requirements lock,
     /// attributed to the pinning layer, independent of any Claude
     /// managed-settings file.
     #[test]
     fn requirements_lock_reports_always_approve_enforced() {
         let lock = xai_grok_workspace::permission::resolution::YoloPolicyLock {
-            source_label: "/etc/grok/requirements.toml".to_string(),
+            source_label: "/etc/ezer/requirements.toml".to_string(),
             reason: xai_grok_workspace::permission::resolution::YoloPinReason::DisableBypassPermissionsMode,
         };
         let PermissionPolicyReport {
@@ -2344,7 +2344,7 @@ mod tests {
         };
         assert_eq!(row.setting, EnforcedSetting::AlwaysApprove);
         assert!(!row.enabled);
-        assert_eq!(row.source, "/etc/grok/requirements.toml");
+        assert_eq!(row.source, "/etc/ezer/requirements.toml");
 
         // Both present: the real lock row + the advisory flag, no duplicate row.
         let PermissionPolicyReport {
@@ -2355,7 +2355,7 @@ mod tests {
         let [row] = enforced.as_slice() else {
             panic!("expected one alwaysApprove row: {enforced:?}");
         };
-        assert_eq!(row.source, "/etc/grok/requirements.toml");
+        assert_eq!(row.source, "/etc/ezer/requirements.toml");
     }
 
     /// An MDM-only lockdown has no requirements.toml; the enforced row must
@@ -2385,11 +2385,11 @@ mod tests {
         use xai_grok_workspace::permission::resolution::{PolicyLayerOwnership, PolicyPin};
         let mut ms = ManagedSettings::default();
         ms.project_mcp = PolicyPin::Disabled {
-            source: "/etc/grok/managed_config.toml".into(),
+            source: "/etc/ezer/managed_config.toml".into(),
             ownership: PolicyLayerOwnership::Admin,
         };
         ms.plugin_auto_update = PolicyPin::Disabled {
-            source: "/etc/grok/requirements.toml".into(),
+            source: "/etc/ezer/requirements.toml".into(),
             ownership: PolicyLayerOwnership::Admin,
         };
         let PermissionPolicyReport { enforced, .. } = permission_policy_report(&ms, None);
@@ -2399,12 +2399,12 @@ mod tests {
                 {
                     "setting": "projectMcpServers",
                     "enabled": false,
-                    "source": "/etc/grok/managed_config.toml",
+                    "source": "/etc/ezer/managed_config.toml",
                 },
                 {
                     "setting": "pluginAutoUpdate",
                     "enabled": false,
-                    "source": "/etc/grok/requirements.toml",
+                    "source": "/etc/ezer/requirements.toml",
                 },
             ])
         );
@@ -2523,24 +2523,24 @@ mod tests {
 
     #[test]
     fn skill_entry_source_maps_scopes() {
-        let s = skill_fixture("a", "/repo/.grok/skills/a/SKILL.md", SkillScope::Local);
+        let s = skill_fixture("a", "/repo/.ezer/skills/a/SKILL.md", SkillScope::Local);
         assert!(matches!(
             skill_entry_source(&s),
             ConfigSource::Project { .. }
         ));
 
-        let s = skill_fixture("b", "/repo/.grok/skills/b/SKILL.md", SkillScope::Repo);
+        let s = skill_fixture("b", "/repo/.ezer/skills/b/SKILL.md", SkillScope::Repo);
         assert!(matches!(
             skill_entry_source(&s),
             ConfigSource::Project { .. }
         ));
 
-        let s = skill_fixture("c", "/home/u/.grok/skills/c/SKILL.md", SkillScope::User);
+        let s = skill_fixture("c", "/home/u/.ezer/skills/c/SKILL.md", SkillScope::User);
         assert!(matches!(skill_entry_source(&s), ConfigSource::User { .. }));
 
         let s = skill_fixture(
             "d",
-            "/home/u/.grok/server-skills/d/SKILL.md",
+            "/home/u/.ezer/server-skills/d/SKILL.md",
             SkillScope::Server,
         );
         assert!(matches!(
@@ -2548,7 +2548,7 @@ mod tests {
             ConfigSource::Server { .. }
         ));
 
-        let s = skill_fixture("e", "/home/u/.grok/bundled/e/SKILL.md", SkillScope::Bundled);
+        let s = skill_fixture("e", "/home/u/.ezer/bundled/e/SKILL.md", SkillScope::Bundled);
         assert!(matches!(
             skill_entry_source(&s),
             ConfigSource::Bundled { .. }
@@ -2846,12 +2846,12 @@ mod tests {
             EnforcedPolicy {
                 setting: EnforcedSetting::ProjectMcpServers,
                 enabled: false,
-                source: "/etc/grok/managed_config.toml".into(),
+                source: "/etc/ezer/managed_config.toml".into(),
             },
             EnforcedPolicy {
                 setting: EnforcedSetting::PluginAutoUpdate,
                 enabled: false,
-                source: "/etc/grok/managed_config.toml".into(),
+                source: "/etc/ezer/managed_config.toml".into(),
             },
         ];
         report.permissions.managed_marketplaces =
@@ -2862,8 +2862,8 @@ mod tests {
         let text = String::from_utf8(out).unwrap();
         for needle in [
             "MCP managed servers only: enforced",
-            "Project MCP servers disabled (/etc/grok/managed_config.toml)",
-            "Plugin auto-update disabled (/etc/grok/managed_config.toml)",
+            "Project MCP servers disabled (/etc/ezer/managed_config.toml)",
+            "Plugin auto-update disabled (/etc/ezer/managed_config.toml)",
             "Managed marketplaces (1 pinned)",
             "approved-plugins (https://github.com/corp/approved.git@stable)",
         ] {
@@ -2898,9 +2898,9 @@ mod tests {
     fn print_human_surfaces_zero_entry_lockdowns() {
         let mut report = empty_report();
         report.permissions.mcp_lockdown_sources =
-            vec![native_lockdown("/etc/grok/managed_config.toml")];
+            vec![native_lockdown("/etc/ezer/managed_config.toml")];
         report.permissions.marketplace_lockdown_sources =
-            vec![native_lockdown("/etc/grok/managed_config.toml")];
+            vec![native_lockdown("/etc/ezer/managed_config.toml")];
 
         let mut out = Vec::new();
         print_human(&report, &mut out).expect("buffer write succeeds");
@@ -2908,7 +2908,7 @@ mod tests {
         for needle in [
             "MCP servers locked down",
             "Marketplaces locked down",
-            "/etc/grok/managed_config.toml",
+            "/etc/ezer/managed_config.toml",
         ] {
             assert!(text.contains(needle), "missing {needle:?} in:\n{text}");
         }
@@ -2923,7 +2923,7 @@ mod tests {
     fn json_output_carries_lockdown_fields() {
         let mut report = empty_report();
         report.permissions.mcp_lockdown_sources =
-            vec![native_lockdown("/etc/grok/managed_config.toml")];
+            vec![native_lockdown("/etc/ezer/managed_config.toml")];
         report.permissions.marketplace_lockdown_sources = vec![LockdownSource {
             source: "managed-settings.json".into(),
             advisory: true,
@@ -2935,7 +2935,7 @@ mod tests {
         assert_eq!(
             json.get("mcpLockdownSources"),
             Some(
-                &serde_json::json!([{ "source": "/etc/grok/managed_config.toml", "advisory": false }])
+                &serde_json::json!([{ "source": "/etc/ezer/managed_config.toml", "advisory": false }])
             )
         );
         assert_eq!(
@@ -2957,7 +2957,7 @@ mod tests {
             McpServerAllowlist::new(
                 vec![],
                 vec![],
-                Some(std::path::PathBuf::from("/etc/grok/managed_config.toml")),
+                Some(std::path::PathBuf::from("/etc/ezer/managed_config.toml")),
             )
             .with_lockdown(),
         );
@@ -2966,11 +2966,11 @@ mod tests {
                 url_pattern: "https://ok.example.com/*".into(),
             }],
             vec![],
-            Some(std::path::PathBuf::from("/etc/grok/requirements.toml")),
+            Some(std::path::PathBuf::from("/etc/ezer/requirements.toml")),
         ));
         ms.marketplace_allowlist.sources.push(MarketplaceAllowlist {
             allowed_urls: vec![],
-            source_path: Some(std::path::PathBuf::from("/etc/grok/managed_config.toml")),
+            source_path: Some(std::path::PathBuf::from("/etc/ezer/managed_config.toml")),
             authority: PolicySourceAuthority::Native,
         });
 
@@ -2979,13 +2979,13 @@ mod tests {
             let [src] = sources.as_slice() else {
                 panic!("expected one lockdown source: {sources:?}");
             };
-            assert_eq!(src.source, "/etc/grok/managed_config.toml");
+            assert_eq!(src.source, "/etc/ezer/managed_config.toml");
             assert!(!src.advisory);
         }
     }
 
     /// An advisory lockdown binds foreign-defined subjects only; the report must
-    /// say so instead of announcing a lockdown grok-native servers are exempt from.
+    /// say so instead of announcing a lockdown ezer-native servers are exempt from.
     #[test]
     fn advisory_lockdown_sources_are_tagged() {
         use xai_grok_workspace::permission::resolution::{
@@ -3013,8 +3013,8 @@ mod tests {
         print_human(&report, &mut out).expect("buffer write succeeds");
         let text = String::from_utf8(out).unwrap();
         for needle in [
-            "managed-settings.json (advisory; grok-native servers exempt)",
-            "managed-settings.json (advisory; grok-native marketplaces exempt)",
+            "managed-settings.json (advisory; ezer-native servers exempt)",
+            "managed-settings.json (advisory; ezer-native marketplaces exempt)",
         ] {
             assert!(text.contains(needle), "missing {needle:?} in:\n{text}");
         }

@@ -62,25 +62,25 @@ pub unsafe fn isolate_grok_env(home: &Path) {
     // SAFETY: forwarded to the caller.
     unsafe {
         std::env::set_var("GROK_HOME", home);
-        std::env::set_var("GROK_TELEMETRY_ENABLED", "false");
-        std::env::set_var("GROK_TELEMETRY_MIXPANEL_ENABLED", "false");
-        std::env::set_var("GROK_TELEMETRY_MIXPANEL_TOKEN", "");
-        std::env::set_var("GROK_TELEMETRY_EVENTS_URL", "");
-        std::env::set_var("GROK_TELEMETRY_EVENTS_API_KEY", "");
-        std::env::set_var("GROK_FEEDBACK_ENABLED", "false");
-        std::env::set_var("GROK_TRACE_UPLOAD", "false");
+        std::env::set_var("EZER_TELEMETRY_ENABLED", "false");
+        std::env::set_var("EZER_TELEMETRY_MIXPANEL_ENABLED", "false");
+        std::env::set_var("EZER_TELEMETRY_MIXPANEL_TOKEN", "");
+        std::env::set_var("EZER_TELEMETRY_EVENTS_URL", "");
+        std::env::set_var("EZER_TELEMETRY_EVENTS_API_KEY", "");
+        std::env::set_var("EZER_FEEDBACK_ENABLED", "false");
+        std::env::set_var("EZER_TRACE_UPLOAD", "false");
         for var in [
-            "GROK_AUTH",
-            "GROK_AUTH_PATH",
-            "GROK_DEPLOYMENT_KEY",
-            "GROK_MANAGED_CONFIG",
-            "GROK_CONFIG",
-            "GROK_CONFIG_PATH",
-            "GROK_CLI_CHAT_PROXY_BASE_URL",
-            "GROK_MODELS_BASE_URL",
-            "GROK_MODELS_LIST_URL",
+            "EZER_AUTH",
+            "EZER_AUTH_PATH",
+            "EZER_DEPLOYMENT_KEY",
+            "EZER_MANAGED_CONFIG",
+            "EZER_CONFIG",
+            "EZER_CONFIG_PATH",
+            "EZER_CLI_CHAT_PROXY_BASE_URL",
+            "EZER_MODELS_BASE_URL",
+            "EZER_MODELS_LIST_URL",
             "XAI_API_KEY",
-            "GROK_API_KEY",
+            "EZER_API_KEY",
             "HTTP_PROXY",
             "HTTPS_PROXY",
             "ALL_PROXY",
@@ -144,11 +144,11 @@ pub fn ensure_cargo_bin(package: &str, bin: &str) -> PathBuf {
     binary
 }
 
-/// Resolve grok binary: `GROK_BINARY` env (CI) or a locally built `xai-grok-pager` binary.
+/// Resolve ezer binary: `EZER_BINARY` env (CI) or a locally built `xai-grok-pager` binary.
 pub fn grok_binary() -> PathBuf {
-    if let Ok(path) = std::env::var("GROK_BINARY") {
+    if let Ok(path) = std::env::var("EZER_BINARY") {
         let p = PathBuf::from(path);
-        assert!(p.exists(), "GROK_BINARY does not exist: {}", p.display());
+        assert!(p.exists(), "EZER_BINARY does not exist: {}", p.display());
         // Bazel's GROK_BINARY is runfiles-relative; the harness spawns the child with a different cwd
         // Absolutize against the (runfiles-root) cwd now
         return std::path::absolute(&p).unwrap_or(p);

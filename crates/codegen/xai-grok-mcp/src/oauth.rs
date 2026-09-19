@@ -10,7 +10,7 @@ use crate::rmcp::transport::auth::{
     OAuthClientConfig,
 };
 
-const MCP_OAUTH_CLIENT_NAME: &str = "Grok";
+const MCP_OAUTH_CLIENT_NAME: &str = "ezer";
 
 const CREDENTIAL_POLL_INTERVAL: std::time::Duration = std::time::Duration::from_secs(2);
 

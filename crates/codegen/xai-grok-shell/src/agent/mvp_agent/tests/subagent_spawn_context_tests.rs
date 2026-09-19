@@ -193,7 +193,7 @@ async fn subagent_spawn_context_carries_parent_paths_config() {
     let paths = crate::agent::config::PathsConfig {
         extra_rule_dirs: vec![
             "~/team-rules".to_owned(),
-            "/opt/company/grok-rules".to_owned(),
+            "/opt/company/ezer-rules".to_owned(),
         ],
         ..Default::default()
     };
@@ -358,8 +358,8 @@ fn subagent_spawn_context_resolves_compaction_mode_like_parent() {
     use crate::agent::config::Config;
     use xai_chat_state::{CompactionDetail, CompactionMode};
     use xai_grok_test_support::EnvGuard;
-    let _mode = EnvGuard::unset("GROK_COMPACTION_MODE");
-    let _detail = EnvGuard::unset("GROK_COMPACTION_DETAIL");
+    let _mode = EnvGuard::unset("EZER_COMPACTION_MODE");
+    let _detail = EnvGuard::unset("EZER_COMPACTION_DETAIL");
     let mut ctx = crate::test_support::lsp_runtime::ctx_with_toggle(Default::default());
     assert_eq!(
         ctx.resolve_compaction_mode(),
@@ -394,11 +394,11 @@ fn subagent_spawn_context_resolves_compaction_mode_like_parent() {
         CompactionMode::Segments(CompactionDetail::Balanced),
         "parent config detail must win over remote detail"
     );
-    let _env_mode = EnvGuard::set("GROK_COMPACTION_MODE", "transcript");
+    let _env_mode = EnvGuard::set("EZER_COMPACTION_MODE", "transcript");
     assert_eq!(
         ctx.resolve_compaction_mode(),
         CompactionMode::Transcript,
-        "GROK_COMPACTION_MODE must win over parent config and remote"
+        "EZER_COMPACTION_MODE must win over parent config and remote"
     );
 }
 #[test]
@@ -439,8 +439,8 @@ fn run_shell_child_passes_parent_compaction_pins_into_spawn() {
         SubagentSpawnContext::snapshot_parent_compaction_pins(
             CompactionMode::default(),
             true,
-            Some("grok-build"),
-            Some("grok-build"),
+            Some("ezer-build"),
+            Some("ezer-build"),
             std::path::Path::new("/tmp"),
         ),
         CompactionPins {

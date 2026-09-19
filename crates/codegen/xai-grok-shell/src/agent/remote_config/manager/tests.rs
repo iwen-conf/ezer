@@ -449,7 +449,7 @@ async fn first_catalog_wait_is_bounded() {
 #[serial]
 async fn first_catalog_wait_skips_doomed_signed_out_fetch() {
     let _no_key = EnvGuard::unset("XAI_API_KEY");
-    let _no_legacy_key = EnvGuard::unset("GROK_CODE_XAI_API_KEY");
+    let _no_legacy_key = EnvGuard::unset("EZER_CODE_XAI_API_KEY");
     let mgr = cold_manager(config::Config::default(), Arc::new(HangingEndpoint));
     let start = tokio::time::Instant::now();
     mgr.spawn_fetch_inner(None, /*remote_fetch_enabled*/ true);
@@ -1156,7 +1156,7 @@ async fn sign_out_clears_catalog_rebuilds_bundled_without_fetching() {
 
     // Unset keys so fetch_auth resolves to Session (the sign-out branch).
     let _no_key = EnvGuard::unset("XAI_API_KEY");
-    let _no_legacy_key = EnvGuard::unset("GROK_CODE_XAI_API_KEY");
+    let _no_legacy_key = EnvGuard::unset("EZER_CODE_XAI_API_KEY");
     let calls = Arc::new(AtomicUsize::new(0));
     let tmp = tempfile::TempDir::new().unwrap();
     let auth_manager = Arc::new(AuthManager::new(tmp.path(), GrokComConfig::default()));
@@ -1345,7 +1345,7 @@ fn apply_config_falls_back_when_preferred_not_in_catalog() {
     mgr.set_current_model_id(acp::ModelId::new("grok-4"));
 
     let mut new_cfg = config::Config::default();
-    new_cfg.models.default = Some("grok-nonexistent".to_string());
+    new_cfg.models.default = Some("ezer-nonexistent".to_string());
     mgr.apply_config(new_cfg);
 
     let current = mgr.current_model_id();
@@ -1549,13 +1549,13 @@ fn reload_from_disk_cache_ignores_stale_cache() {
         origin: Some(scope.origin.clone()),
         identity: Some(scope.identity.clone()),
         etag: Some("etag-stale".into()),
-        models: make_prefetched(&["grok-stale"]),
+        models: make_prefetched(&["ezer-stale"]),
     };
     cache.atomic_write(&stale);
 
     mgr.reload_from_cache_manager(&cache);
 
-    assert!(!mgr.models().contains_key("grok-stale"));
+    assert!(!mgr.models().contains_key("ezer-stale"));
     assert!(mgr.inner.catalog.read().etag.is_none());
 }
 
@@ -1569,7 +1569,7 @@ async fn renew_ttl_does_not_shadow_a_newer_content_write() {
     // Content A on disk, fetched a minute ago.
     let a_fetched = Utc::now() - ChronoDuration::seconds(60);
     cache.persist(
-        &make_prefetched(&["grok-a"]),
+        &make_prefetched(&["ezer-a"]),
         Some("etag-a"),
         &scope,
         a_fetched,
@@ -1580,7 +1580,7 @@ async fn renew_ttl_does_not_shadow_a_newer_content_write() {
     // newer content and must win despite the renewal's fresh timestamp.
     let b_fetched = Utc::now() - ChronoDuration::seconds(30);
     cache.persist(
-        &make_prefetched(&["grok-b"]),
+        &make_prefetched(&["ezer-b"]),
         Some("etag-b"),
         &scope,
         b_fetched,
@@ -1590,7 +1590,7 @@ async fn renew_ttl_does_not_shadow_a_newer_content_write() {
         .load_fresh(&scope)
         .expect("cache is fresh after renewal");
     assert!(
-        loaded.models.contains_key("grok-b"),
+        loaded.models.contains_key("ezer-b"),
         "a TTL renewal must not block a newer-content write"
     );
 }
@@ -1612,7 +1612,7 @@ fn reload_from_disk_cache_ignores_auth_method_mismatch() {
         ..scope
     };
     cache.persist(
-        &make_prefetched(&["grok-other-auth"]),
+        &make_prefetched(&["ezer-other-auth"]),
         Some("etag-x"),
         &other,
         Utc::now(),
@@ -1620,7 +1620,7 @@ fn reload_from_disk_cache_ignores_auth_method_mismatch() {
 
     mgr.reload_from_cache_manager(&cache);
 
-    assert!(!mgr.models().contains_key("grok-other-auth"));
+    assert!(!mgr.models().contains_key("ezer-other-auth"));
 }
 
 #[test]
@@ -1634,7 +1634,7 @@ fn reload_from_disk_cache_ignores_origin_mismatch() {
         ..mgr.cache_scope()
     };
     cache.persist(
-        &make_prefetched(&["grok-other-origin"]),
+        &make_prefetched(&["ezer-other-origin"]),
         Some("etag-y"),
         &other,
         Utc::now(),
@@ -1642,7 +1642,7 @@ fn reload_from_disk_cache_ignores_origin_mismatch() {
 
     mgr.reload_from_cache_manager(&cache);
 
-    assert!(!mgr.models().contains_key("grok-other-origin"));
+    assert!(!mgr.models().contains_key("ezer-other-origin"));
     assert!(mgr.inner.catalog.read().etag.is_none());
 }
 
@@ -1655,7 +1655,7 @@ fn models_persist_does_not_regress_to_an_older_fetch() {
 
     let newer = Utc::now() - ChronoDuration::seconds(30);
     cache.persist(
-        &make_prefetched(&["grok-new"]),
+        &make_prefetched(&["ezer-new"]),
         Some("etag-new"),
         &scope,
         newer,
@@ -1663,14 +1663,14 @@ fn models_persist_does_not_regress_to_an_older_fetch() {
 
     // An older same-scope fetch must not overwrite the newer catalog.
     cache.persist(
-        &make_prefetched(&["grok-old"]),
+        &make_prefetched(&["ezer-old"]),
         Some("etag-old"),
         &scope,
         newer - ChronoDuration::seconds(60),
     );
 
     let got = cache.load_fresh(&scope).unwrap();
-    assert!(got.models.contains_key("grok-new"));
+    assert!(got.models.contains_key("ezer-new"));
     assert_eq!(got.etag.as_deref(), Some("etag-new"));
 }
 
@@ -1690,7 +1690,7 @@ fn models_cache_read_is_scoped_by_identity() {
     };
 
     cache.persist(
-        &make_prefetched(&["grok-a"]),
+        &make_prefetched(&["ezer-a"]),
         Some("etag-a"),
         &scope_a,
         Utc::now(),
@@ -1703,7 +1703,7 @@ fn models_cache_read_is_scoped_by_identity() {
     assert!(
         cache
             .load_fresh(&scope_a)
-            .is_some_and(|hit| hit.models.contains_key("grok-a")),
+            .is_some_and(|hit| hit.models.contains_key("ezer-a")),
         "the writing account still hits its own entry",
     );
 }
@@ -1725,7 +1725,7 @@ fn models_cache_read_is_scoped_by_alpha_test_key() {
     };
 
     cache.persist(
-        &make_prefetched(&["grok-a"]),
+        &make_prefetched(&["ezer-a"]),
         Some("etag-a"),
         &scope_a,
         Utc::now(),
@@ -1738,7 +1738,7 @@ fn models_cache_read_is_scoped_by_alpha_test_key() {
     assert!(
         cache
             .load_fresh(&scope_a)
-            .is_some_and(|hit| hit.models.contains_key("grok-a")),
+            .is_some_and(|hit| hit.models.contains_key("ezer-a")),
         "the same account and alpha still hits its own entry",
     );
 }
@@ -1746,7 +1746,7 @@ fn models_cache_read_is_scoped_by_alpha_test_key() {
 #[test]
 #[serial]
 fn api_key_scope_identity_differs_per_key() {
-    let _no_legacy = EnvGuard::unset("GROK_CODE_XAI_API_KEY");
+    let _no_legacy = EnvGuard::unset("EZER_CODE_XAI_API_KEY");
     let endpoints = config::EndpointsConfig::default();
     let identity_for = |key: &str| {
         let _key = EnvGuard::set("XAI_API_KEY", key);
@@ -1767,7 +1767,7 @@ fn api_key_scope_identity_differs_per_key() {
 #[test]
 #[serial]
 fn custom_endpoint_scope_identity_differs_per_key() {
-    let _no_legacy = EnvGuard::unset("GROK_CODE_XAI_API_KEY");
+    let _no_legacy = EnvGuard::unset("EZER_CODE_XAI_API_KEY");
     let endpoints = config::EndpointsConfig::default();
     let identity_for = |key: &str| {
         let _key = EnvGuard::set("XAI_API_KEY", key);
@@ -1789,7 +1789,7 @@ fn custom_endpoint_scope_identity_differs_per_key() {
 #[serial]
 fn custom_endpoint_session_scope_keys_on_account_not_bearer() {
     let _no_key = EnvGuard::unset("XAI_API_KEY");
-    let _no_legacy = EnvGuard::unset("GROK_CODE_XAI_API_KEY");
+    let _no_legacy = EnvGuard::unset("EZER_CODE_XAI_API_KEY");
     let endpoints = config::EndpointsConfig::default();
     let identity_for = |user_id: &str, key: &str| {
         let auth = GrokAuth {
@@ -1852,7 +1852,7 @@ fn models_commit_gate_detects_account_switch() {
 #[test]
 #[serial]
 fn resolve_live_keeps_fetch_origin_when_disk_auth_absent() {
-    let _no_legacy = EnvGuard::unset("GROK_CODE_XAI_API_KEY");
+    let _no_legacy = EnvGuard::unset("EZER_CODE_XAI_API_KEY");
     // Session fetch, then disk auth is gone at commit while XAI_API_KEY is set
     // (the just-logged-in / sign-out window). The live scope must stay on the
     // fetch-time Session origin so a good catalog is served, not abandoned.
@@ -1893,13 +1893,13 @@ fn reload_from_disk_cache_ignores_legacy_cache_without_origin() {
         origin: None,
         identity: Some(scope.identity.clone()),
         etag: Some("etag-legacy".into()),
-        models: make_prefetched(&["grok-legacy"]),
+        models: make_prefetched(&["ezer-legacy"]),
     };
     cache.atomic_write(&legacy);
 
     mgr.reload_from_cache_manager(&cache);
 
-    assert!(!mgr.models().contains_key("grok-legacy"));
+    assert!(!mgr.models().contains_key("ezer-legacy"));
 }
 
 #[test]
@@ -2084,7 +2084,7 @@ fn resolve_api_key_used_when_no_session() {
 #[serial]
 fn resolve_falls_back_to_session_when_nothing_set() {
     let _unset = EnvGuard::unset("XAI_API_KEY");
-    let _unset_legacy = EnvGuard::unset("GROK_CODE_XAI_API_KEY");
+    let _unset_legacy = EnvGuard::unset("EZER_CODE_XAI_API_KEY");
     let endpoints = config::EndpointsConfig::default();
     assert_eq!(
         ModelFetchAuth::resolve(&endpoints, false),
@@ -2097,7 +2097,7 @@ fn resolve_falls_back_to_session_when_nothing_set() {
 #[serial]
 fn resolve_deployment_key_when_no_session_or_api_key() {
     let _unset = EnvGuard::unset("XAI_API_KEY");
-    let _unset_legacy = EnvGuard::unset("GROK_CODE_XAI_API_KEY");
+    let _unset_legacy = EnvGuard::unset("EZER_CODE_XAI_API_KEY");
     let endpoints = config::EndpointsConfig {
         deployment_key: Some("deploy-key".to_owned()),
         ..config::EndpointsConfig::default()
@@ -2156,7 +2156,7 @@ fn prefetch_env_none_when_remote_fetch_disabled_despite_credentials() {
 #[serial]
 fn prefetch_env_resolves_when_remote_fetch_enabled() {
     let _unset = EnvGuard::unset("XAI_API_KEY");
-    let _unset_legacy = EnvGuard::unset("GROK_CODE_XAI_API_KEY");
+    let _unset_legacy = EnvGuard::unset("EZER_CODE_XAI_API_KEY");
     let endpoints = config::EndpointsConfig {
         deployment_key: Some("deploy-key".to_owned()),
         ..config::EndpointsConfig::default()
@@ -2250,31 +2250,31 @@ fn make_entry_config_with_id(
 #[test]
 fn build_prefetched_map_distinct_ids_same_slug() {
     let entries = vec![
-        make_entry_config_with_id(Some("auto"), "grok-build", Some("Auto")),
-        make_entry_config_with_id(Some("grok-build"), "grok-build", Some("Grok Build")),
+        make_entry_config_with_id(Some("auto"), "ezer-build", Some("Auto")),
+        make_entry_config_with_id(Some("ezer-build"), "ezer-build", Some("ezer")),
         make_entry_config_with_id(
             Some("experimental-fast"),
             "experimental-fast",
-            Some("Grok Fast"),
+            Some("ezer Fast"),
         ),
     ];
     let map = build_prefetched_map(entries, None);
 
     assert_eq!(map.len(), 3, "all three entries should survive");
     assert!(map.contains_key("auto"));
-    assert!(map.contains_key("grok-build"));
+    assert!(map.contains_key("ezer-build"));
     assert!(map.contains_key("experimental-fast"));
     let Some(auto) = map.get("auto") else {
         panic!("expected auto: {map:?}");
     };
     assert_eq!(
-        auto.info.model, "grok-build",
-        "auto entry should still route to grok-build"
+        auto.info.model, "ezer-build",
+        "auto entry should still route to ezer-build"
     );
-    let Some(build) = map.get("grok-build") else {
-        panic!("expected grok-build: {map:?}");
+    let Some(build) = map.get("ezer-build") else {
+        panic!("expected ezer-build: {map:?}");
     };
-    assert_eq!(build.info.model, "grok-build");
+    assert_eq!(build.info.model, "ezer-build");
 }
 
 #[test]
@@ -2293,14 +2293,14 @@ fn build_prefetched_map_no_id_falls_back_to_slug() {
 #[test]
 fn build_prefetched_map_duplicate_id_overwrites() {
     let entries = vec![
-        make_entry_config_with_id(Some("grok-build"), "grok-build", Some("First")),
-        make_entry_config_with_id(Some("grok-build"), "grok-build", Some("Second")),
+        make_entry_config_with_id(Some("ezer-build"), "ezer-build", Some("First")),
+        make_entry_config_with_id(Some("ezer-build"), "ezer-build", Some("Second")),
     ];
     let map = build_prefetched_map(entries, None);
 
     assert_eq!(map.len(), 1, "duplicate id: second overwrites first");
-    let Some(build) = map.get("grok-build") else {
-        panic!("expected grok-build: {map:?}");
+    let Some(build) = map.get("ezer-build") else {
+        panic!("expected ezer-build: {map:?}");
     };
     assert_eq!(build.info.name.as_deref(), Some("Second"));
 }
@@ -2309,30 +2309,30 @@ fn build_prefetched_map_duplicate_id_overwrites() {
 fn resolve_default_model_prefers_id_over_model_slug() {
     let mut catalog: IndexMap<String, ModelEntry> = IndexMap::new();
     catalog.insert(
-        "auto-grok-build".to_string(),
-        make_model_entry("grok-build"),
+        "auto-ezer-build".to_string(),
+        make_model_entry("ezer-build"),
     );
-    catalog.insert("grok-build".to_string(), make_model_entry("grok-build"));
+    catalog.insert("ezer-build".to_string(), make_model_entry("ezer-build"));
 
     let mut cfg = config::Config::default();
-    cfg.models.default = Some("grok-build".to_string());
+    cfg.models.default = Some("ezer-build".to_string());
 
     let (key, _, _) = resolve_default_model(&cfg, &catalog, true);
-    assert_eq!(key, "grok-build", "must match id, not first slug hit");
+    assert_eq!(key, "ezer-build", "must match id, not first slug hit");
 }
 
 #[test]
 fn resolve_catalog_key_maps_routing_slug_to_config_key() {
     let mut models = IndexMap::new();
     models.insert(
-        "enterprise-grok-build".to_string(),
+        "enterprise-ezer-build".to_string(),
         make_model_entry("grok-4.5"),
     );
     models.insert("grok-4.3".to_string(), make_model_entry("grok-4.3"));
 
     let persisted = acp::ModelId::new("grok-4.5");
     let key = resolve_catalog_key(&models, &persisted).expect("slug must resolve");
-    assert_eq!(key.0.as_ref(), "enterprise-grok-build");
+    assert_eq!(key.0.as_ref(), "enterprise-ezer-build");
 }
 
 #[test]
@@ -2349,21 +2349,21 @@ fn resolve_catalog_key_prefers_exact_key_match() {
 fn resolve_catalog_key_last_slug_match_wins() {
     let mut models = IndexMap::new();
     models.insert(
-        "default-grok-build".to_string(),
+        "default-ezer-build".to_string(),
         make_model_entry("grok-4.5"),
     );
-    models.insert("user-grok-build".to_string(), make_model_entry("grok-4.5"));
+    models.insert("user-ezer-build".to_string(), make_model_entry("grok-4.5"));
 
     let persisted = acp::ModelId::new("grok-4.5");
     let key = resolve_catalog_key(&models, &persisted).expect("slug must resolve");
-    assert_eq!(key.0.as_ref(), "user-grok-build");
+    assert_eq!(key.0.as_ref(), "user-ezer-build");
 }
 
 #[test]
 fn selectable_catalog_key_for_persisted_none_when_resolved_not_available() {
     let mut models = IndexMap::new();
     models.insert(
-        "enterprise-grok-build".to_string(),
+        "enterprise-ezer-build".to_string(),
         make_model_entry("grok-4.5"),
     );
 
@@ -2375,57 +2375,57 @@ fn selectable_catalog_key_for_persisted_none_when_resolved_not_available() {
 #[test]
 fn selectable_prefers_available_identity_over_non_selectable_exact_key() {
     let mut models = IndexMap::new();
-    models.insert("grok-build".to_string(), make_model_entry("grok-build"));
+    models.insert("ezer-build".to_string(), make_model_entry("ezer-build"));
     models.insert(
-        "enterprise-grok-build".to_string(),
-        make_model_entry("grok-build"),
+        "enterprise-ezer-build".to_string(),
+        make_model_entry("ezer-build"),
     );
     models.insert("grok-4.3".to_string(), make_model_entry("grok-4.3"));
 
-    let available = test_available_keys(&["enterprise-grok-build", "grok-4.3"]);
+    let available = test_available_keys(&["enterprise-ezer-build", "grok-4.3"]);
 
-    let persisted = acp::ModelId::new("grok-build");
+    let persisted = acp::ModelId::new("ezer-build");
     assert_eq!(
         resolve_catalog_key(&models, &persisted)
             .expect("exact key exists")
             .0
             .as_ref(),
-        "grok-build"
+        "ezer-build"
     );
     let key = selectable_catalog_key_for_persisted(&models, &available, &persisted)
         .expect("must resolve to selectable section");
-    assert_eq!(key.0.as_ref(), "enterprise-grok-build");
+    assert_eq!(key.0.as_ref(), "enterprise-ezer-build");
 }
 
 #[test]
 fn selectable_matches_routing_slug_when_no_exact_key() {
     let mut models = IndexMap::new();
     models.insert(
-        "enterprise-grok-build".to_string(),
-        make_model_entry("grok-build"),
+        "enterprise-ezer-build".to_string(),
+        make_model_entry("ezer-build"),
     );
     models.insert("grok-4.3".to_string(), make_model_entry("grok-4.3"));
 
-    let available = test_available_keys(&["enterprise-grok-build", "grok-4.3"]);
+    let available = test_available_keys(&["enterprise-ezer-build", "grok-4.3"]);
 
-    let persisted = acp::ModelId::new("grok-build");
+    let persisted = acp::ModelId::new("ezer-build");
     let key = selectable_catalog_key_for_persisted(&models, &available, &persisted)
         .expect("slug must resolve to selectable key");
-    assert_eq!(key.0.as_ref(), "enterprise-grok-build");
+    assert_eq!(key.0.as_ref(), "enterprise-ezer-build");
 }
 
 #[test]
 fn selectable_prefers_exact_key_over_later_slug_match() {
     let mut models = IndexMap::new();
-    models.insert("grok-build".to_string(), make_model_entry("grok-4.5"));
-    models.insert("other".to_string(), make_model_entry("grok-build"));
+    models.insert("ezer-build".to_string(), make_model_entry("grok-4.5"));
+    models.insert("other".to_string(), make_model_entry("ezer-build"));
 
-    let available = test_available_keys(&["grok-build", "other"]);
+    let available = test_available_keys(&["ezer-build", "other"]);
 
-    let persisted = acp::ModelId::new("grok-build");
+    let persisted = acp::ModelId::new("ezer-build");
     let key = selectable_catalog_key_for_persisted(&models, &available, &persisted)
         .expect("exact selectable key must win");
-    assert_eq!(key.0.as_ref(), "grok-build");
+    assert_eq!(key.0.as_ref(), "ezer-build");
 }
 
 fn test_available_keys(keys: &[&str]) -> IndexMap<acp::ModelId, acp::ModelInfo> {

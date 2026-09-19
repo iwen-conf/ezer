@@ -1,4 +1,4 @@
-//! `grok mcp doctor`: runtime health check for MCP servers.
+//! `ezer mcp doctor`: runtime health check for MCP servers.
 
 use std::collections::HashMap;
 use std::path::Path;
@@ -192,14 +192,14 @@ fn discover_servers(cwd: &Path) -> (Vec<ConfigSourceStatus>, Vec<DiscoveredServe
 
     if user_config.is_file() {
         sources.push(ConfigSourceStatus {
-            path: "~/.grok/config.toml".to_string(),
+            path: "~/.ezer/config.toml".to_string(),
             status: ConfigSourceState::Found {
                 server_count: toml_counts.get(&user_config).copied().unwrap_or(0),
             },
         });
     } else {
         sources.push(ConfigSourceStatus {
-            path: "~/.grok/config.toml".to_string(),
+            path: "~/.ezer/config.toml".to_string(),
             status: ConfigSourceState::NotFound,
         });
     }
@@ -560,7 +560,7 @@ fn policy_blocked_reasons(
     )
 }
 
-/// Definitions `grok mcp list`/`enable` judge, with subjects: the TOML walk blind to `enabled` and
+/// Definitions `ezer mcp list`/`enable` judge, with subjects: the TOML walk blind to `enabled` and
 /// folder trust (so disabled or untrusted-repo definitions keep a verdict), then non-TOML tiers.
 fn policy_subjects(
     cwd: &Path,
@@ -624,7 +624,7 @@ fn policy_subjects(
     subjects
 }
 
-/// The verdict map for `grok mcp list`, keyed by server name.
+/// The verdict map for `ezer mcp list`, keyed by server name.
 pub fn policy_blocked_servers(
     cwd: &Path,
 ) -> HashMap<String, xai_grok_workspace::permission::resolution::McpBlockReason> {
@@ -636,7 +636,7 @@ pub fn policy_blocked_servers(
     )
 }
 
-/// The `grok mcp enable` gate: the org-policy refusal the TUI and `grok mcp add` emit, or `None`.
+/// The `ezer mcp enable` gate: the org-policy refusal the TUI and `ezer mcp add` emit, or `None`.
 pub fn policy_enable_refusal(cwd: &Path, name: &str) -> Option<String> {
     let ms = xai_grok_workspace::permission::resolution::managed_settings();
     policy_subjects(cwd)
@@ -650,14 +650,14 @@ pub fn policy_enable_refusal(cwd: &Path, name: &str) -> Option<String> {
 /// Which config file a new MCP definition is written to.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum McpWriteScope {
-    /// `~/.grok/config.toml`.
+    /// `~/.ezer/config.toml`.
     User,
-    /// `./.grok/config.toml`.
+    /// `./.ezer/config.toml`.
     Project,
 }
 
-/// Add-time policy gate for a NEW server definition (`grok mcp add`; the TUI upsert applies the
-/// same rule): grok-native unless a project source is the write target or claims the name.
+/// Add-time policy gate for a NEW server definition (`ezer mcp add`; the TUI upsert applies the
+/// same rule): ezer-native unless a project source is the write target or claims the name.
 pub fn policy_add_refusal(
     cwd: &Path,
     name: &str,
@@ -833,7 +833,7 @@ pub fn print_report(report: &DoctorReport) {
 
     if report.servers.is_empty() {
         println!("  No MCP servers configured.");
-        println!("  Run `grok mcp add --help` to get started.");
+        println!("  Run `ezer mcp add --help` to get started.");
         println!();
         return;
     }
@@ -863,7 +863,7 @@ pub fn print_report(report: &DoctorReport) {
         report.healthy_count,
         report.failing_count,
         if report.failing_count > 0 {
-            " Run `grok mcp doctor --json` for full diagnostics."
+            " Run `ezer mcp doctor --json` for full diagnostics."
         } else {
             ""
         }
@@ -882,7 +882,7 @@ mod tests {
         let checks = skip_verdict_checks(
             Some((
                 "matches deniedMcpServers",
-                "/etc/grok/managed_config.toml".into(),
+                "/etc/ezer/managed_config.toml".into(),
             )),
             true,
             true,
@@ -897,7 +897,7 @@ mod tests {
         );
         assert_eq!(
             first.detail.as_deref(),
-            Some("/etc/grok/managed_config.toml")
+            Some("/etc/ezer/managed_config.toml")
         );
         assert!(
             checks.iter().all(|c| c.hint.is_none()),
@@ -929,8 +929,8 @@ mod tests {
             "[mcp_servers.projsrv]\ncommand = 'c'\n[mcp_servers.home2]\ncommand = 'override'\n",
         )
         .unwrap();
-        let user_path = Path::new("/home/u/.grok/config.toml");
-        let proj_path = std::path::PathBuf::from("/repo/.grok/config.toml");
+        let user_path = Path::new("/home/u/.ezer/config.toml");
+        let proj_path = std::path::PathBuf::from("/repo/.ezer/config.toml");
 
         let declaring = toml_declaring_paths(user_path, Some(&user), &[(proj_path.clone(), proj)]);
         assert_eq!(declaring.get("home1").map(|p| p.as_path()), Some(user_path));
@@ -992,9 +992,9 @@ mod tests {
         crate::claude_import::refresh_marker_cache(false);
         let repo = tempfile::tempdir().unwrap();
         git2::Repository::init(repo.path()).unwrap();
-        std::fs::create_dir_all(repo.path().join(".grok")).unwrap();
+        std::fs::create_dir_all(repo.path().join(".ezer")).unwrap();
         std::fs::write(
-            repo.path().join(".grok/config.toml"),
+            repo.path().join(".ezer/config.toml"),
             "[mcp_servers.corp]\nurl = \"https://corp.example/mcp\"\n",
         )
         .unwrap();
@@ -1016,7 +1016,7 @@ mod tests {
         assert!(names.iter().any(|n| n == "repo-tool"), "got: {names:?}");
     }
 
-    /// `grok mcp add --scope project` writes a project source, so a fresh name is judged
+    /// `ezer mcp add --scope project` writes a project source, so a fresh name is judged
     /// project-scoped: the project-MCP pin refuses it while the same user-scope add passes.
     #[test]
     fn add_refusal_applies_project_pin_to_project_scope_writes() {
@@ -1025,7 +1025,7 @@ mod tests {
         };
         let mut ms = ManagedSettings::default();
         ms.project_mcp = PolicyPin::Disabled {
-            source: std::path::PathBuf::from("/etc/grok/managed_config.toml"),
+            source: std::path::PathBuf::from("/etc/ezer/managed_config.toml"),
             ownership: PolicyLayerOwnership::Admin,
         };
         let none = std::collections::HashSet::new();
@@ -1043,7 +1043,7 @@ mod tests {
         assert_eq!(
             policy_add_refusal_with(&ms, none, McpWriteScope::User, "fresh", &config),
             None,
-            "the same definition in user config.toml is grok-native and unpinned"
+            "the same definition in user config.toml is ezer-native and unpinned"
         );
     }
 

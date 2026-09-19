@@ -846,31 +846,31 @@ pub fn resolve_label_collision(base_dir: &Path, label: &str) -> String {
     auto_label()
 }
 
-/// Grok home for worktree paths: the same resolver as `worktrees.db`, with a `temp_dir()/.grok` last resort.
-/// This is not grok-config's cwd-relative `.grok`: worktree paths need an absolute, always-writable anchor that does not move with the process cwd.
+/// ezer home for worktree paths: the same resolver as `worktrees.db`, with a `temp_dir()/.ezer` last resort.
+/// This is not ezer-config's cwd-relative `.ezer`: worktree paths need an absolute, always-writable anchor that does not move with the process cwd.
 fn grok_home() -> std::path::PathBuf {
-    xai_fast_worktree::resolve_grok_home().unwrap_or_else(|_| std::env::temp_dir().join(".grok"))
+    xai_fast_worktree::resolve_grok_home().unwrap_or_else(|_| std::env::temp_dir().join(".ezer"))
 }
 
-/// Returns `~/.grok/worktrees/<repo_slug>` for the given git root.
+/// Returns `~/.ezer/worktrees/<repo_slug>` for the given git root.
 pub fn worktree_base_dir(git_root: &Path) -> std::path::PathBuf {
     worktree_base_dir_in(&grok_home(), git_root)
 }
 
-/// [`worktree_base_dir`] under an explicit grok home.
+/// [`worktree_base_dir`] under an explicit ezer home.
 pub fn worktree_base_dir_in(grok_home: &Path, git_root: &Path) -> std::path::PathBuf {
     let slug = repo_slug(git_root);
     grok_home.join("worktrees").join(slug)
 }
 
-/// Resolves the worktree base directory (`~/.grok/worktrees/<repo_name>`) for a given source path, correctly handling grok-managed worktrees.
-/// When `source_path` is already under `~/.grok/worktrees/<repo>/...`, the repo name is derived from the directory structure directly.
+/// Resolves the worktree base directory (`~/.ezer/worktrees/<repo_name>`) for a given source path, correctly handling ezer-managed worktrees.
+/// When `source_path` is already under `~/.ezer/worktrees/<repo>/...`, the repo name is derived from the directory structure directly.
 /// This avoids `find_main_repo_root_from_path`, which misidentifies standalone worktrees as the main repo root.
 pub fn worktree_base_dir_for_source(source_path: &Path) -> Result<std::path::PathBuf> {
     worktree_base_dir_for_source_in(&grok_home(), source_path)
 }
 
-/// [`worktree_base_dir_for_source`] under an explicit grok home.
+/// [`worktree_base_dir_for_source`] under an explicit ezer home.
 pub fn worktree_base_dir_for_source_in(
     grok_home: &Path,
     source_path: &Path,
@@ -916,13 +916,13 @@ pub fn label_from_path(worktree_path: &str) -> String {
         .unwrap_or_default()
 }
 
-/// Walk up from `cwd` (staying within `~/.grok/worktrees/`) to its registered worktree record. Shared resolver for [`lookup_worktree_label`] and [`touch_worktree_for_cwd`].
+/// Walk up from `cwd` (staying within `~/.ezer/worktrees/`) to its registered worktree record. Shared resolver for [`lookup_worktree_label`] and [`touch_worktree_for_cwd`].
 /// Returns the open DB alongside the record so callers can issue follow-up queries.
 fn worktree_record_for_cwd(cwd: &str) -> Option<(WorktreeDb, WorktreeRecord)> {
     worktree_record_for_cwd_in(&grok_home(), cwd)
 }
 
-/// [`worktree_record_for_cwd`] against the `worktrees.db` and worktree root under an explicit grok home.
+/// [`worktree_record_for_cwd`] against the `worktrees.db` and worktree root under an explicit ezer home.
 fn worktree_record_for_cwd_in(grok_home: &Path, cwd: &str) -> Option<(WorktreeDb, WorktreeRecord)> {
     let worktrees_dir = grok_home.join("worktrees");
     let mut path = Path::new(cwd);
@@ -946,7 +946,7 @@ fn worktree_record_for_cwd_in(grok_home: &Path, cwd: &str) -> Option<(WorktreeDb
     None
 }
 
-/// The recorded source repo of the grok-managed worktree containing `cwd`, if any. Thin wrapper over [`worktree_record_for_cwd`] that drops the DB handle; returns `None` (without DB I/O) for paths outside `~/.grok/worktrees/`.
+/// The recorded source repo of the ezer-managed worktree containing `cwd`, if any. Thin wrapper over [`worktree_record_for_cwd`] that drops the DB handle; returns `None` (without DB I/O) for paths outside `~/.ezer/worktrees/`.
 pub(crate) fn source_repo_for_cwd(cwd: &str) -> Option<std::path::PathBuf> {
     worktree_record_for_cwd(cwd).map(|(_db, rec)| rec.source_repo)
 }
@@ -963,7 +963,7 @@ pub fn touch_worktree_for_cwd(cwd: &str) {
     touch_worktree_for_cwd_in(&grok_home(), cwd);
 }
 
-/// [`touch_worktree_for_cwd`] under an explicit grok home.
+/// [`touch_worktree_for_cwd`] under an explicit ezer home.
 pub fn touch_worktree_for_cwd_in(grok_home: &Path, cwd: &str) {
     if let Some((db, record)) = worktree_record_for_cwd_in(grok_home, cwd)
         && let Err(e) = db.touch(&record.id)
@@ -1103,7 +1103,7 @@ pub async fn create_worktree_streaming<N: WorktreeNotificationSender>(
 }
 
 /// [`create_worktree_streaming`] with the default worktree base and the
-/// `worktrees.db` registration under an explicit grok home.
+/// `worktrees.db` registration under an explicit ezer home.
 pub async fn create_worktree_streaming_in<N: WorktreeNotificationSender>(
     grok_home: &Path,
     req: &CreateWorktreeRequest,
@@ -1712,7 +1712,7 @@ impl From<CreateWorktreeFromWorktreeRequestWire> for CreateWorktreeFromWorktreeR
     }
 }
 
-/// Resolve the target worktree path for a fork operation. When the source path is already inside `~/.grok/worktrees/<repo>/`, the repo name is derived from the directory structure rather than calling `find_main_repo_root_from_path` (which would return the standalone worktree root itself, causing nested paths).
+/// Resolve the target worktree path for a fork operation. When the source path is already inside `~/.ezer/worktrees/<repo>/`, the repo name is derived from the directory structure rather than calling `find_main_repo_root_from_path` (which would return the standalone worktree root itself, causing nested paths).
 fn resolve_fork_worktree_path(
     source_worktree_path: &Path,
     _new_session_id: &str,
@@ -2709,7 +2709,7 @@ pub async fn remove_jj_workspace(workspace_path: &str) -> Result<()> {
 
 /// Request to resume an existing session in a fresh worktree.
 ///
-/// ACP equivalent of `grok -w -r <session_id>` (optionally with `--ref`).
+/// ACP equivalent of `ezer -w -r <session_id>` (optionally with `--ref`).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ResumeSessionInWorktreeRequest {
@@ -3083,7 +3083,7 @@ pub fn candidate_worktree_cwds_for_same_repo(current_cwd: &std::path::Path) -> R
     ))
 }
 
-/// Scan `~/.grok/worktrees/<repo_name>/` for subdirectories not tracked
+/// Scan `~/.ezer/worktrees/<repo_name>/` for subdirectories not tracked
 /// in the DB. Returns a sorted list of absolute directory paths.
 fn scan_worktree_dirs_on_disk(main_repo_root: &std::path::Path) -> Vec<String> {
     let base = worktree_base_dir(main_repo_root);
@@ -3282,7 +3282,7 @@ mod tests {
         std::fs::write(wt.join("tracked.txt"), "edited").unwrap();
         std::fs::write(wt.join("untracked.txt"), "brand new").unwrap();
 
-        let ref_name = "refs/grok/subagents/dispose-1";
+        let ref_name = "refs/ezer/subagents/dispose-1";
         let returned = snapshot_and_remove_subagent_worktree(&wt, &repo, ref_name)
             .await
             .unwrap();
@@ -3306,7 +3306,7 @@ mod tests {
         std::fs::write(wt.join("tracked.txt"), "edited").unwrap();
         std::fs::write(wt.join("untracked.txt"), "brand new").unwrap();
 
-        let ref_name = "refs/grok/subagents/dispose-2";
+        let ref_name = "refs/ezer/subagents/dispose-2";
         snapshot_and_remove_subagent_worktree(&wt, &repo, ref_name)
             .await
             .unwrap();
@@ -3352,7 +3352,7 @@ mod tests {
         std::fs::write(wt.join("tracked.txt"), "edited").unwrap();
         std::fs::write(wt.join("untracked.txt"), "brand new").unwrap();
 
-        let ref_name = "refs/grok/subagents/standalone-1";
+        let ref_name = "refs/ezer/subagents/standalone-1";
         let returned = snapshot_subagent_worktree(&wt, &repo, ref_name)
             .await
             .unwrap();
@@ -3400,7 +3400,7 @@ mod tests {
         let result = snapshot_and_remove_subagent_worktree(
             &not_a_worktree,
             &not_a_worktree,
-            "refs/grok/subagents/dispose-3",
+            "refs/ezer/subagents/dispose-3",
         )
         .await;
 
@@ -3422,7 +3422,7 @@ mod tests {
     ) -> (LockedTestEnv, std::path::PathBuf, std::path::PathBuf) {
         // Canonicalize so the stored record path and `db.get`'s canonicalized query path agree on macOS, where /var resolves to /private/var
         let root = dunce::canonicalize(temp.path()).unwrap();
-        let home = root.join("grok-home");
+        let home = root.join("ezer-home");
         let wt = home.join("worktrees").join("repo").join("wt");
         std::fs::create_dir_all(&wt).unwrap();
         // Acquire the lock, then set the env under it (LockedTestEnv restores the env before releasing the lock on drop)
@@ -3566,7 +3566,7 @@ mod tests {
     fn worktree_base_dir_for_source_in_targets_the_given_home() {
         xai_test_utils::require_git!();
         let temp = tempfile::TempDir::new().unwrap();
-        let home = temp.path().join("grok-home");
+        let home = temp.path().join("ezer-home");
         let managed = home.join("worktrees").join("repo").join("wt").join("src");
         assert_eq!(
             home.join("worktrees").join("repo"),
@@ -3588,7 +3588,7 @@ mod tests {
     #[test]
     fn run_auto_gc_best_effort_in_without_opt_in_leaves_the_given_home_alone() {
         let temp = tempfile::TempDir::new().unwrap();
-        let home = dunce::canonicalize(temp.path()).unwrap().join("grok-home");
+        let home = dunce::canonicalize(temp.path()).unwrap().join("ezer-home");
         let wt = worktree_db_at(&home);
         std::fs::remove_dir_all(&wt).unwrap();
 

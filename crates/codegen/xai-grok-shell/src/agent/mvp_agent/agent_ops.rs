@@ -142,7 +142,7 @@ impl MvpAgent {
                 crate::agent::config::prefer_active_model_for_byok_aux(cfg, primary)
             }
             None => {
-                // Do not stamp a compiled xAI slug (grok-4.6) onto the BYOK
+                // Do not stamp a compiled xAI catalog slug onto the BYOK
                 // endpoint — WorkBuddy returns 402 for those ids.
                 primary.clone()
             }
@@ -341,7 +341,7 @@ impl MvpAgent {
     }
     /// Resolve folder trust and load launch-dir MCP configs after `initialize` returns.
     /// The walks are synchronous and expensive in large monorepos.
-    /// They must not block the ACP response (grok-desktop sends `initialize` immediately).
+    /// They must not block the ACP response (ezer-desktop sends `initialize` immediately).
     pub(super) fn spawn_initialize_launch_mcp_setup(&self) {
         let cwd = self.launch_cwd.clone();
         let compat = self.cfg.borrow().compat_resolved;
@@ -383,7 +383,7 @@ impl MvpAgent {
         self.agent_mcp_state.clone()
     }
     /// Build the launch-dir plugin registry snapshot on first use. Boot-time discovery was deferred past ACP `initialize`, leaving `plugin_registry_handle` empty.
-    /// The cwd-to-git-root and user/marketplace walks stalled grok-desktop's first `initialize`. That shared snapshot still backs the launch-dir plugin MCP/LSP merges read in `resolve_mcp_servers` and the session LSP build.
+    /// The cwd-to-git-root and user/marketplace walks stalled ezer-desktop's first `initialize`. That shared snapshot still backs the launch-dir plugin MCP/LSP merges read in `resolve_mcp_servers` and the session LSP build.
     /// So populate it lazily, off the `initialize` critical path, on the first session-creating call. Runs the discovery walk once; per-session `build_for_cwd` still re-resolves project-scoped plugins for each session's own cwd.
     pub(crate) fn ensure_plugin_registry(&self) {
         if self.plugin_registry_initialized.replace(true) {
@@ -1281,7 +1281,7 @@ impl MvpAgent {
     /// Operator-attested FS-only toolset for mid-session attach.
     #[cfg(feature = "local-workspace")]
     fn ensure_attach_fs_only_advertised_tools() -> Result<(), String> {
-        const ENV: &str = "GROK_CHAT_LOCAL_WORKSPACE_ADVERTISED_TOOLS";
+        const ENV: &str = "EZER_CHAT_LOCAL_WORKSPACE_ADVERTISED_TOOLS";
         const ALLOW: &[&str] = &[
             "workspace.fs_list",
             "workspace.fs_exists",
@@ -1297,7 +1297,7 @@ impl MvpAgent {
             .filter(|s| !s.is_empty()) else {
             return Err(
                 "attached workspace_server advertised toolset is uncheckable; refuse attach \
-                 (set GROK_CHAT_LOCAL_WORKSPACE_ADVERTISED_TOOLS to a comma-separated FS-only catalog)"
+                 (set EZER_CHAT_LOCAL_WORKSPACE_ADVERTISED_TOOLS to a comma-separated FS-only catalog)"
                     .into(),
             );
         };
@@ -1374,7 +1374,7 @@ impl MvpAgent {
     }
     /// Build the process-lifetime local `WorkspaceOps` on first use.
     /// Deferred past ACP wiring so `initialize` can respond before folder-trust scans and `WorkspaceHandle::new_minimal` run.
-    /// This is the same boot stall as plugin discovery on grok-desktop Windows.
+    /// This is the same boot stall as plugin discovery on ezer-desktop Windows.
     fn ensure_local_workspace_ops(
         &self,
     ) -> Result<xai_grok_workspace::WorkspaceOps, acp::Error> {
@@ -1491,7 +1491,7 @@ impl MvpAgent {
             );
             return Err(acp::Error::auth_required().data(msg));
         };
-        let meta = if method_id.0.as_ref() == auth_method::GROK_COM_METHOD_ID {
+        let meta = if method_id.0.as_ref() == auth_method::EZER_COM_METHOD_ID {
             serde_json::json!({ "use_oauth": true }).as_object().cloned()
         } else {
             arguments.meta
@@ -2345,8 +2345,8 @@ impl MvpAgent {
         Ok(Self::with_models(gateway, &cfg, auth_manager, models_manager))
     }
     /// Prepare the web fetch configuration based on feature flags.
-    /// Enabled gate: `disable_web_search` kill-switch > `GROK_WEB_FETCH` env > remote settings `web_fetch_enabled` > default (false).
-    /// Params resolution (TOML > env > remote settings > default): `proxy_endpoint`: `[toolset.web_fetch] proxy_endpoint` > `GROK_WEB_FETCH_PROXY` > remote settings > None `allowed_domains`: `[toolset.web_fetch] allowed_domains` > remote settings > built-in defaults `allow_local`: `[toolset.web_fetch] allow_local` > `GROK_WEB_FETCH_ALLOW_LOCAL` > false
+    /// Enabled gate: `disable_web_search` kill-switch > `EZER_WEB_FETCH` env > remote settings `web_fetch_enabled` > default (false).
+    /// Params resolution (TOML > env > remote settings > default): `proxy_endpoint`: `[toolset.web_fetch] proxy_endpoint` > `EZER_WEB_FETCH_PROXY` > remote settings > None `allowed_domains`: `[toolset.web_fetch] allowed_domains` > remote settings > built-in defaults `allow_local`: `[toolset.web_fetch] allow_local` > `EZER_WEB_FETCH_ALLOW_LOCAL` > false
     pub(super) fn prepare_web_fetch_config(
         &self,
     ) -> xai_grok_tools::implementations::grok_build::web_fetch::WebFetchConfig {
@@ -2423,9 +2423,9 @@ impl MvpAgent {
             "WORKTREE_CONFIG_SHELL: resolved worktree type at agent startup"
         );
         if relay_sync_enabled {
-            tracing::info!("[grok] Relay sync: ENABLED");
+            tracing::info!("[ezer] Relay sync: ENABLED");
         } else if tui_mode && relay_config_enabled && !has_xai_auth {
-            tracing::info!("[grok] Relay sync: DISABLED (no auth - run 'grok login' first)");
+            tracing::info!("[ezer] Relay sync: DISABLED (no auth - run 'ezer login' first)");
         } else if tui_mode && !relay_config_enabled {
             tracing::debug!("Relay sync: DISABLED (not configured in config.toml or env)");
         } else {
@@ -3021,7 +3021,7 @@ impl MvpAgent {
         }
     }
     /// RelaySync is only enabled when: Running in TUI interactive mode (cfg.enable_relay_sync)
-    /// Config file/env enables it ([relay] enabled or GROK_RELAY_SYNC_ENABLED)
+    /// Config file/env enables it ([relay] enabled or EZER_RELAY_SYNC_ENABLED)
     /// User is authenticated
     pub(super) fn create_relay_sync(
         &self,
@@ -3929,7 +3929,7 @@ impl MvpAgent {
         })
     }
     /// Resolve the agent definition for a session. Priority (highest to lowest): Model `agent_type` if it names a strict harness (codex, …). `acp_agent_profile` from ACP `_meta.agentProfile` (remote clients).
-    /// `agent_profile_path` from CLI `--agent-profile`. `agent_config` from config.toml `[agent]`. `GROK_AGENT` env var. Built-in default agent. `GROK_AGENT` and an explicit `[agent] name` bypass step 1.
+    /// `agent_profile_path` from CLI `--agent-profile`. `agent_config` from config.toml `[agent]`. `EZER_AGENT` env var. Built-in default agent. `EZER_AGENT` and an explicit `[agent] name` bypass step 1.
     /// Strict-harness classification is structural; see [`xai_grok_agent::config::is_strict_harness_agent_type`]. Harness inheritance for a profile that pins its own model is applied by the caller via [`inherited_harness_template`], not here.
     pub fn resolve_agent_definition(
         cwd: &std::path::Path,
@@ -3939,7 +3939,7 @@ impl MvpAgent {
         model_agent_type: Option<&str>,
     ) -> xai_grok_agent::AgentDefinition {
         use xai_grok_agent::AgentDefinition;
-        let grok_agent_env_set = std::env::var("GROK_AGENT")
+        let grok_agent_env_set = std::env::var("EZER_AGENT")
             .ok()
             .is_some_and(|s| !s.trim().is_empty());
         let config_agent_explicitly_set = agent_config.name.is_some();
@@ -4014,10 +4014,10 @@ impl MvpAgent {
                 name
             );
         }
-        let agent_name = std::env::var("GROK_AGENT").ok();
+        let agent_name = std::env::var("EZER_AGENT").ok();
         let resolved = match agent_name.as_deref() {
             Some("browser-use") | Some("browser_use") => AgentDefinition::browser_use(),
-            Some("grok-build-concise") | Some("grok_build_concise") => {
+            Some("ezer-build-concise") | Some("ezer_concise") => {
                 AgentDefinition::grok_build_concise()
             }
             Some(path) if std::path::Path::new(path).is_absolute() => {
@@ -4335,7 +4335,7 @@ impl MvpAgent {
                 .as_ref()
                 .and_then(|s| s.loc_tracking)
                 .unwrap_or(false)
-                || std::env::var("GROK_LOC_TRACKING")
+                || std::env::var("EZER_LOC_TRACKING")
                     .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
                     .unwrap_or(false));
         let (feedback_resolved, feedback_flags) = {
@@ -4631,7 +4631,7 @@ impl MvpAgent {
             if servers.is_empty() {
                 let user_path = xai_grok_tools::util::grok_home::grok_home()
                     .join("lsp.json");
-                let project_path = tool_ctx.cwd.as_path().join(".grok").join("lsp.json");
+                let project_path = tool_ctx.cwd.as_path().join(".ezer").join("lsp.json");
                 tracing::debug!(
                     cwd = %tool_ctx.cwd,
                     user_lsp_path = %user_path.display(),

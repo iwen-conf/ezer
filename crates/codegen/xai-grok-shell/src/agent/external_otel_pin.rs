@@ -195,14 +195,14 @@ fn apply_content_gate_inherit_trap(
 }
 
 /// Map a `[telemetry] otel_*` file key to the env var the resolver reads.
-/// Mechanical: `otel_enabled` → `GROK_EXTERNAL_OTEL`; otherwise `OTEL_` + screaming-snake remainder — except the OTLP exporter family, whose spec names insert `EXPORTER_OTLP`. Headers are never mapped.
+/// Mechanical: `otel_enabled` → `EZER_EXTERNAL_OTEL`; otherwise `OTEL_` + screaming-snake remainder — except the OTLP exporter family, whose spec names insert `EXPORTER_OTLP`. Headers are never mapped.
 pub fn otel_file_key_to_env(key: &str) -> Option<String> {
     let rest = key.strip_prefix("otel_")?;
     if rest.contains("header") {
         return None;
     }
     Some(match rest {
-        "enabled" => "GROK_EXTERNAL_OTEL".into(),
+        "enabled" => "EZER_EXTERNAL_OTEL".into(),
         "endpoint" => GENERIC_ENDPOINT.into(),
         "logs_endpoint" => LOGS_ENDPOINT.into(),
         "metrics_endpoint" => METRICS_ENDPOINT.into(),
@@ -395,7 +395,7 @@ mod tests {
     fn mechanical_env_names() {
         assert_eq!(
             otel_file_key_to_env("otel_enabled").as_deref(),
-            Some("GROK_EXTERNAL_OTEL")
+            Some("EZER_EXTERNAL_OTEL")
         );
         assert_eq!(
             otel_file_key_to_env("otel_log_user_prompts").as_deref(),

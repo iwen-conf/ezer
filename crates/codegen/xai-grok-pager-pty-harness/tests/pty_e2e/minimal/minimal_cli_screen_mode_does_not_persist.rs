@@ -3,7 +3,7 @@
 use crate::common::*;
 
 /// CLI `--minimal` / `--fullscreen` must not write `[ui] screen_mode` to config.toml.
-/// Mode flags last for one session; only a manual config.toml edit should make a mode stick across plain `grok` launches.
+/// Mode flags last for one session; only a manual config.toml edit should make a mode stick across plain `ezer` launches.
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 #[ignore]
 async fn minimal_cli_screen_mode_does_not_persist() {
@@ -19,7 +19,7 @@ async fn minimal_cli_screen_mode_does_not_persist() {
     wait_minimal_ready(&mut first);
 
     // If a background config write still existed it gets time to land here; pump the PTY so the pager never blocks on a full buffer
-    let config_path = content.home().join(".grok").join("config.toml");
+    let config_path = content.home().join(".ezer").join("config.toml");
     let deadline = Instant::now() + Duration::from_secs(3);
     while Instant::now() < deadline {
         first.update(Duration::from_millis(100));
@@ -48,7 +48,7 @@ async fn minimal_cli_screen_mode_does_not_persist() {
         .wait_for_text(WELCOME_SCREEN_SENTINEL, WELCOME_TIMEOUT)
         .unwrap_or_else(|e| {
             panic!(
-                "plain grok should open fullscreen after --minimal (no sticky write): {e}\nscreen:\n{}",
+                "plain ezer should open fullscreen after --minimal (no sticky write): {e}\nscreen:\n{}",
                 second.screen_contents()
             )
         });

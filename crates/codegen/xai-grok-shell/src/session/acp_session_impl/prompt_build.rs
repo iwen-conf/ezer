@@ -84,7 +84,7 @@ mod partition_rules_by_scope_tests {
         ];
         let (workspace, user) = partition_rules_by_scope(
             files,
-            Path::new("/home/user/.grok"),
+            Path::new("/home/user/.ezer"),
             &[],
             &[Path::new("/repo")],
         );
@@ -134,7 +134,7 @@ mod partition_rules_by_scope_tests {
         let files = vec![
             file("/repo/config/AGENTS.md"),
             file("/repo/config/rules/global.md"),
-            file("/repo/config/.grok/rules/project.md"),
+            file("/repo/config/.ezer/rules/project.md"),
             file("/repo/config/src/AGENTS.md"),
         ];
         let (workspace, user) =
@@ -146,7 +146,7 @@ mod partition_rules_by_scope_tests {
         assert_eq!(
             paths(&workspace),
             vec![
-                "/repo/config/.grok/rules/project.md",
+                "/repo/config/.ezer/rules/project.md",
                 "/repo/config/src/AGENTS.md",
             ]
         );
@@ -162,7 +162,7 @@ mod partition_rules_by_scope_tests {
         let vendor_homes = vec![(Path::new("/repo/.claude").to_path_buf(), true)];
         let (workspace, user) = partition_rules_by_scope(
             files,
-            Path::new("/other/grok"),
+            Path::new("/other/ezer"),
             &vendor_homes,
             &[Path::new("/repo")],
         );
@@ -181,22 +181,22 @@ mod partition_rules_by_scope_tests {
     #[test]
     fn nested_grok_home_workspace_files_stay_workspace_scoped() {
         let files = vec![
-            file("/custom/grok/rules/global.md"),
-            file("/custom/grok/worktrees/repo/.cursor/rules/project.md"),
-            file("/custom/grok/worktrees/repo/src/AGENTS.md"),
+            file("/custom/ezer/rules/global.md"),
+            file("/custom/ezer/worktrees/repo/.cursor/rules/project.md"),
+            file("/custom/ezer/worktrees/repo/src/AGENTS.md"),
         ];
         let (workspace, user) = partition_rules_by_scope(
             files,
-            Path::new("/custom/grok"),
+            Path::new("/custom/ezer"),
             &[],
-            &[Path::new("/custom/grok/worktrees/repo")],
+            &[Path::new("/custom/ezer/worktrees/repo")],
         );
-        assert_eq!(paths(&user), vec!["/custom/grok/rules/global.md"]);
+        assert_eq!(paths(&user), vec!["/custom/ezer/rules/global.md"]);
         assert_eq!(
             paths(&workspace),
             vec![
-                "/custom/grok/worktrees/repo/.cursor/rules/project.md",
-                "/custom/grok/worktrees/repo/src/AGENTS.md",
+                "/custom/ezer/worktrees/repo/.cursor/rules/project.md",
+                "/custom/ezer/worktrees/repo/src/AGENTS.md",
             ]
         );
     }
@@ -217,8 +217,8 @@ mod partition_rules_by_scope_tests {
             },
             AgentConfigFile {
                 file_name: "AGENTS.md".into(),
-                file_path: "/home/user/.grok/AGENTS.md".into(),
-                content: "home-grok-body".into(),
+                file_path: "/home/user/.ezer/AGENTS.md".into(),
+                content: "home-ezer-body".into(),
                 source: Default::default(),
             },
             AgentConfigFile {
@@ -229,15 +229,15 @@ mod partition_rules_by_scope_tests {
             },
             AgentConfigFile {
                 file_name: "x.md".into(),
-                file_path: "/repo/.grok/rules/x.md".into(),
-                content: "repo-grok-rules-x".into(),
+                file_path: "/repo/.ezer/rules/x.md".into(),
+                content: "repo-ezer-rules-x".into(),
                 source: Default::default(),
             },
         ];
         let vendor_homes = vec![(Path::new("/home/user/.claude").to_path_buf(), true)];
         let (workspace, user) = partition_rules_by_scope(
             files.clone(),
-            Path::new("/home/user/.grok"),
+            Path::new("/home/user/.ezer"),
             &vendor_homes,
             &[Path::new("/repo")],
         );
@@ -247,17 +247,17 @@ mod partition_rules_by_scope_tests {
         for body in [
             "repo-agents-body",
             "repo-claude-body",
-            "home-grok-body",
+            "home-ezer-body",
             "home-claude-body",
-            "repo-grok-rules-x",
+            "repo-ezer-rules-x",
         ] {
             assert!(rules.contains(body), "rules missing {body}");
             assert!(reminder.contains(body), "reminder missing {body}");
         }
         assert!(rules.contains("name=\"/repo/AGENTS.md\""));
         assert!(rules.contains("name=\"/repo/CLAUDE.md\""));
-        assert!(rules.contains("name=\"/repo/.grok/rules/x.md\""));
-        assert!(rules.contains("<user_rule>\nhome-grok-body\n</user_rule>"));
+        assert!(rules.contains("name=\"/repo/.ezer/rules/x.md\""));
+        assert!(rules.contains("<user_rule>\nhome-ezer-body\n</user_rule>"));
         assert!(rules.contains("<user_rule>\nhome-claude-body\n</user_rule>"));
         assert!(!rules.contains("## From:"));
         assert!(!rules.contains("<system-reminder>"));
@@ -265,27 +265,27 @@ mod partition_rules_by_scope_tests {
     #[test]
     fn fork_ondisk_and_display_prefixes_both_count_as_workspace() {
         let files = vec![
-            file("/home/user/.grok/worktrees/repo/AGENTS.md"),
+            file("/home/user/.ezer/worktrees/repo/AGENTS.md"),
             file("/home/user/repo/crates/foo/AGENTS.md"),
-            file("/home/user/.grok/AGENTS.md"),
+            file("/home/user/.ezer/AGENTS.md"),
         ];
         let (workspace, user) = partition_rules_by_scope(
             files,
-            Path::new("/home/user/.grok"),
+            Path::new("/home/user/.ezer"),
             &[],
             &[
-                Path::new("/home/user/.grok/worktrees/repo"),
+                Path::new("/home/user/.ezer/worktrees/repo"),
                 Path::new("/home/user/repo/crates/foo"),
             ],
         );
         assert_eq!(
             paths(&workspace),
             vec![
-                "/home/user/.grok/worktrees/repo/AGENTS.md",
+                "/home/user/.ezer/worktrees/repo/AGENTS.md",
                 "/home/user/repo/crates/foo/AGENTS.md",
             ]
         );
-        assert_eq!(paths(&user), vec!["/home/user/.grok/AGENTS.md"]);
+        assert_eq!(paths(&user), vec!["/home/user/.ezer/AGENTS.md"]);
     }
 }
 /// True iff `conversation` already contains a project-instructions reminder (see [`is_project_instructions`]).

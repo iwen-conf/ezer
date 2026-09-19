@@ -1,4 +1,4 @@
-//! Provisioned-repo listing (`workspace.repos_list`) and the on-disk in-sandbox manifest contract (`{workspace}/.grok/repos.json`).
+//! Provisioned-repo listing (`workspace.repos_list`) and the on-disk in-sandbox manifest contract (`{workspace}/.ezer/repos.json`).
 //!
 //! The sandbox provisioner writes this manifest; the workspace list op reads it.
 //! Field names are the frontend/integration API: add optional fields with `#[serde(default)]` rather than renaming existing ones.
@@ -10,7 +10,7 @@ use super::{RpcActivityClass, WorkspaceRpc};
 /// Relative path of the provisioner manifest from the **sandbox** `workspace_directory` (init root, usually `/workspace`).
 /// It is not relative to the agent / workspace-server `--cwd` after a single-repo rewrite (`/workspace/app`).
 /// Writers and `workspace.repos_list` must join this to that sandbox root.
-pub const REPOS_MANIFEST_RELATIVE_PATH: &str = ".grok/repos.json";
+pub const REPOS_MANIFEST_RELATIVE_PATH: &str = ".ezer/repos.json";
 
 /// Current on-disk / wire manifest version.
 pub const REPOS_MANIFEST_VERSION: u32 = 1;
@@ -80,7 +80,7 @@ impl RepoManifest {
         }
     }
 
-    /// Parse bytes from `{workspace}/.grok/repos.json`.
+    /// Parse bytes from `{workspace}/.ezer/repos.json`.
     pub fn from_json_bytes(bytes: &[u8]) -> Result<Self, serde_json::Error> {
         serde_json::from_slice(bytes)
     }
@@ -134,7 +134,7 @@ mod tests {
                 repository: "acme/app".into(),
                 mount_path: "/workspace/app".into(),
                 base_branch: "main".into(),
-                session_branch: "grok/s1".into(),
+                session_branch: "ezer/s1".into(),
                 repo_backend: Some(RepoBackend::Grove),
             },
             ProvisionedRepo {
@@ -166,7 +166,7 @@ mod tests {
                 "repository": "acme/app",
                 "mount_path": "/workspace/app",
                 "base_branch": "main",
-                "session_branch": "grok/s1"
+                "session_branch": "ezer/s1"
             }]
         }"#;
         let recovered = RepoManifest::from_json_bytes(json.as_bytes()).expect("parse");
@@ -191,7 +191,7 @@ mod tests {
                 "repository": "acme/app",
                 "mount_path": "/workspace",
                 "base_branch": "main",
-                "session_branch": "grok/s1",
+                "session_branch": "ezer/s1",
                 "repo_backend": "future_backend"
             }]
         }"#;

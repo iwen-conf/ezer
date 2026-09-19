@@ -238,7 +238,7 @@ pub struct GcReport {
     pub names_collected: u64,
     #[serde(default)]
     pub remove_failed: u64,
-    /// Grove pin-ref union-liveness sweep (`refs/grok/worktrees/*`).
+    /// Grove pin-ref union-liveness sweep (`refs/ezer/worktrees/*`).
     #[serde(default)]
     pub pin_gc_examined: u64,
     #[serde(default)]

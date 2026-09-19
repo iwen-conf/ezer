@@ -14,7 +14,7 @@ use xai_grok_workspace::permission::claude_settings::find_claude_settings_paths;
 
 // Types
 
-/// Persistent import state, loaded from / saved to `~/.grok/claude_import_state.json`.
+/// Persistent import state, loaded from / saved to `~/.ezer/claude_import_state.json`.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub(crate) struct ImportState {
     /// Schema version for forward compatibility.

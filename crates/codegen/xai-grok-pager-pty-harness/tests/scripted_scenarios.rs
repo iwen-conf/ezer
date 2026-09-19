@@ -332,7 +332,7 @@ async fn scripted_inline_image_memory() {
     );
 }
 
-/// Enterprise deploy report: with `GROK_GOAL=1`, `/goal` must show in the slash menu on the welcome screen before the first user turn.
+/// Enterprise deploy report: with `EZER_GOAL=1`, `/goal` must show in the slash menu on the welcome screen before the first user turn.
 /// The scenario types `/goal` pre-session and asserts the dropdown carries the builtin's description, then captures screenshot artifacts.
 /// The description only renders when the command is advertised.
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
@@ -341,7 +341,7 @@ async fn scripted_goal_slash_presession() {
     run_scenario("goal_slash_presession.yaml").await;
 }
 
-/// Counterpart to `scripted_goal_slash_presession`, with the goal flag explicitly off (`GROK_GOAL=0`; goal mode defaults on).
+/// Counterpart to `scripted_goal_slash_presession`, with the goal flag explicitly off (`EZER_GOAL=0`; goal mode defaults on).
 /// `/goal` must stay hidden pre-session: the gate fails closed.
 /// The AlwaysOn builtin `/compact` still shows, proving the gate hides `/goal` and the dropdown itself works.
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
@@ -350,7 +350,7 @@ async fn scripted_goal_slash_presession_disabled() {
     run_scenario("goal_slash_presession_disabled.yaml").await;
 }
 
-/// Full folder-trust session: `GROK_FOLDER_TRUST=1` and a git repo that ships a repo-local `.mcp.json` (declared via the scenario `workspace`).
+/// Full folder-trust session: `EZER_FOLDER_TRUST=1` and a git repo that ships a repo-local `.mcp.json` (declared via the scenario `workspace`).
 /// The trust question renders before any session, accepting it (`y`) lets the session proceed, and a submitted prompt streams the mock response.
 /// This is the declarative counterpart to the programmatic `folder_trust_*` PTY tests.
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
@@ -418,7 +418,7 @@ async fn scripted_plan_nudge_shows() {
     run_scenario("plan_nudge_shows.yaml").await;
 }
 
-/// Plan-nudge opt-out edge: contextual hints are off by default, and this scenario also pins `GROK_CONTEXTUAL_HINTS=0` to be sure.
+/// Plan-nudge opt-out edge: contextual hints are off by default, and this scenario also pins `EZER_CONTEXTUAL_HINTS=0` to be sure.
 /// The same planning keyword shows nothing.
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 #[ignore = "scripted scenario; run with cargo test -- --ignored"]

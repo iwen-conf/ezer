@@ -1,4 +1,4 @@
-//! Parsers for the managed policy keys (Claude camelCase JSON and grok
+//! Parsers for the managed policy keys (Claude camelCase JSON and ezer
 //! snake_case TOML-as-JSON): MCP allow/deny lists, marketplace lists, and
 //! boolean pins.
 
@@ -71,7 +71,7 @@ pub(super) fn parse_strict_marketplaces(json: &serde_json::Value) -> PolicyKey<V
 }
 
 /// Parsed `extraKnownMarketplaces`. A per-entry `autoUpdate: false` has no
-/// granular grok equivalent, so it (or an unreadable entry) pins the GLOBAL auto-update off.
+/// granular ezer equivalent, so it (or an unreadable entry) pins the GLOBAL auto-update off.
 #[derive(Default)]
 pub(super) struct ExtraMarketplaces {
     pub entries: Vec<ManagedMarketplace>,
@@ -132,7 +132,7 @@ pub(super) fn parse_extra_marketplaces(
             warn!(
                 path = %path.display(),
                 name,
-                "extraKnownMarketplaces entry disables auto-update; grok has no \
+                "extraKnownMarketplaces entry disables auto-update; ezer has no \
                  per-marketplace switch, so plugin auto-update is pinned off for all"
             );
             out.pin_auto_update_off = true;
@@ -195,7 +195,7 @@ impl McpPolicyList {
 }
 
 /// Policy keys read from each TOML layer (exempt from the shell's unknown-key scan). The global
-/// plugin pin is grok-only; both its spellings are accepted for symmetry with the other keys.
+/// plugin pin is ezer-only; both its spellings are accepted for symmetry with the other keys.
 pub const MANAGED_POLICY_CONFIG_KEYS: &[&str] = &[
     "allowedMcpServers",
     "allowed_mcp_servers",

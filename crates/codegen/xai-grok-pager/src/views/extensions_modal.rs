@@ -384,7 +384,7 @@ pub fn plugin_group(plugin: &xai_hooks_plugins_types::PluginInfo) -> PluginGroup
             ..
         }) => PluginGroup {
             rank: 5,
-            key: format!("grok-mp:{source}"),
+            key: format!("ezer-mp:{source}"),
             label: source.clone(),
         },
         Some(PluginOrigin::MarketplaceInstall {
@@ -400,7 +400,7 @@ pub fn plugin_group(plugin: &xai_hooks_plugins_types::PluginInfo) -> PluginGroup
                 }
                 Some(source) => PluginGroup {
                     rank: 5,
-                    key: format!("grok-mp:{source}"),
+                    key: format!("ezer-mp:{source}"),
                     label: source.to_string(),
                 },
                 None => PluginGroup::new(2, "origin:user", "User"),
@@ -2496,7 +2496,7 @@ fn classify_hook_source(source_dir: &str) -> HookSourceMeta {
             let [a, b, c] = w else {
                 return None;
             };
-            (a == ".grok" && b == subdir && !c.is_empty()).then(|| c.clone())
+            (a == ".ezer" && b == subdir && !c.is_empty()).then(|| c.clone())
         })
     };
     if let Some(name) = plugin_name("plugins").or_else(|| plugin_name("installed-plugins")) {
@@ -2522,7 +2522,7 @@ fn classify_hook_source(source_dir: &str) -> HookSourceMeta {
         };
     }
     // Project hooks
-    if source_dir.ends_with("/.grok/hooks") || source_dir.contains("/.grok/hooks/") {
+    if source_dir.ends_with("/.ezer/hooks") || source_dir.contains("/.ezer/hooks/") {
         return HookSourceMeta {
             label: "Project hooks".into(),
             kind: HookSourceKind::Project,
@@ -2653,8 +2653,8 @@ fn skill_source_str(skill: &SkillInfo) -> String {
             }
             xai_grok_tools::types::config_source::ConfigSource::Project { path } => {
                 let s = path.display().to_string();
-                if s.contains("/.grok/") {
-                    ".grok/skills".into()
+                if s.contains("/.ezer/") {
+                    ".ezer/skills".into()
                 } else if s.contains("/.claude/") {
                     ".claude/skills".into()
                 } else {
@@ -4278,12 +4278,12 @@ mod tests {
     fn derive_source_label_detects_project_scoped_plugins() {
         // Regression: project-scoped `{cwd}/.grok/plugins/<name>/` must label as a (non-removable) plugin, not a removable "Custom" source
         // The user grok-home branch is GROK_HOME-aware; this covers the project fallback
-        let (label, is_custom) = derive_source_label("/repo/work/.grok/plugins/my-plugin/hooks");
+        let (label, is_custom) = derive_source_label("/repo/work/.ezer/plugins/my-plugin/hooks");
         assert_eq!(label, "Plugin: my-plugin");
         assert!(!is_custom);
 
         let (label, is_custom) =
-            derive_source_label("/repo/work/.grok/installed-plugins/vendor-abc123/skills");
+            derive_source_label("/repo/work/.ezer/installed-plugins/vendor-abc123/skills");
         assert_eq!(label, "Plugin: vendor-abc123");
         assert!(!is_custom);
     }
@@ -4689,7 +4689,7 @@ mod tests {
         blocked.enabled = false;
         blocked.status = McpServerDisplayStatus::BlockedByPolicy;
         blocked.blocked_reason =
-            Some("matches deniedMcpServers (/etc/grok/managed_config.toml)".into());
+            Some("matches deniedMcpServers (/etc/ezer/managed_config.toml)".into());
         let mut disabled = make_mcp_server_for_rows("ok-disabled", McpWireSource::Local, vec![]);
         disabled.enabled = false;
         disabled.status = McpServerDisplayStatus::Unavailable;
@@ -5426,23 +5426,23 @@ mod tests {
     /// The remove gate is source-level: a pinned hook blocks its whole source, and only its own source.
     #[test]
     fn hook_source_pinned_is_source_level() {
-        let mut pinned = make_hook("policy/a", "/etc/grok", false);
+        let mut pinned = make_hook("policy/a", "/etc/ezer", false);
         pinned.pinned = true;
-        let sibling = make_hook("user/b", "/etc/grok", false);
-        let elsewhere = make_hook("user/c", "/home/u/.grok", false);
+        let sibling = make_hook("user/b", "/etc/ezer", false);
+        let elsewhere = make_hook("user/c", "/home/u/.ezer", false);
         let hooks = vec![pinned, sibling, elsewhere];
 
-        assert!(hook_source_pinned(&hooks, "/etc/grok"));
-        assert!(!hook_source_pinned(&hooks, "/home/u/.grok"));
+        assert!(hook_source_pinned(&hooks, "/etc/ezer"));
+        assert!(!hook_source_pinned(&hooks, "/home/u/.ezer"));
         assert!(!hook_source_pinned(&hooks, "/nonexistent"));
     }
 
     /// The Space hint is suppressed for policy-enforced selections; mixed groups and unpinned rows keep it.
     #[test]
     fn policy_enforced_selection_suppresses_space_hint() {
-        let mut pinned = make_hook("policy/a", "/etc/grok", false);
+        let mut pinned = make_hook("policy/a", "/etc/ezer", false);
         pinned.pinned = true;
-        let mut user = make_hook("user/b", "/home/u/.grok", false);
+        let mut user = make_hook("user/b", "/home/u/.ezer", false);
         user.removable = true;
 
         // Entry maps as the picker builds them (headers carry a group key, no data index):
@@ -5455,9 +5455,9 @@ mod tests {
         });
         let data_indices = vec![None, Some(0), None, Some(1)];
         let group_keys = vec![
-            Some("/etc/grok".to_string()),
+            Some("/etc/ezer".to_string()),
             None,
-            Some("/home/u/.grok".to_string()),
+            Some("/home/u/.ezer".to_string()),
             None,
         ];
 
@@ -6269,17 +6269,17 @@ mod tests {
     /// An all-pinned group reads enabled (everything in it always runs).
     #[test]
     fn hook_group_direction_ignores_pinned_hooks() {
-        let mut pinned = make_hook("policy", "/etc/grok", false);
+        let mut pinned = make_hook("policy", "/etc/ezer", false);
         pinned.pinned = true;
 
         // Mixed group, all unpinned disabled: direction is "enable" even though the pinned hook always reports enabled
-        let disabled_user = make_hook("user", "/etc/grok", true);
+        let disabled_user = make_hook("user", "/etc/ezer", true);
         assert!(!hook_group_any_enabled(
             [&pinned, &disabled_user].into_iter()
         ));
 
         // Mixed group with an enabled unpinned hook: "disable".
-        let enabled_user = make_hook("user2", "/etc/grok", false);
+        let enabled_user = make_hook("user2", "/etc/ezer", false);
         assert!(hook_group_any_enabled([&pinned, &enabled_user].into_iter()));
 
         // All-pinned group: reads enabled, never "off".
@@ -7080,7 +7080,7 @@ mod tests {
                     git_url: Some("https://example.com/r.git".into()),
                 },
                 5,
-                "grok-mp:xAI Official",
+                "ezer-mp:xAI Official",
                 "xAI Official",
             ),
             (
@@ -7140,7 +7140,7 @@ mod tests {
         let mut mp = make_plugin("mp-tool");
         mp.marketplace_source = Some("xAI Official".into());
         let group = plugin_group(&mp);
-        assert_eq!(group.key, "grok-mp:xAI Official");
+        assert_eq!(group.key, "ezer-mp:xAI Official");
         assert_eq!(group.label, "xAI Official");
 
         let mut direct = make_plugin("direct-tool");
@@ -7157,7 +7157,7 @@ mod tests {
         assert_eq!(plugin_group(&unknown).key, "origin:user");
 
         unknown.marketplace_source = Some("xAI Official".into());
-        assert_eq!(plugin_group(&unknown).key, "grok-mp:xAI Official");
+        assert_eq!(plugin_group(&unknown).key, "ezer-mp:xAI Official");
     }
 
     #[test]
@@ -7869,7 +7869,7 @@ mod tests {
         project_z.scope = xai_grok_tools::implementations::skills::types::SkillScope::Local;
         project_z.config_source = Some(
             xai_grok_tools::types::config_source::ConfigSource::Project {
-                path: std::path::PathBuf::from("/repo/.grok/skills/zzz"),
+                path: std::path::PathBuf::from("/repo/.ezer/skills/zzz"),
             },
         );
         project_z.display_name = Some("zeta-proj".into());
@@ -7878,7 +7878,7 @@ mod tests {
         project_a.scope = xai_grok_tools::implementations::skills::types::SkillScope::Repo;
         project_a.config_source = Some(
             xai_grok_tools::types::config_source::ConfigSource::Project {
-                path: std::path::PathBuf::from("/repo/.grok/skills/aaa"),
+                path: std::path::PathBuf::from("/repo/.ezer/skills/aaa"),
             },
         );
         project_a.display_name = Some("alpha-proj".into());
@@ -7985,7 +7985,7 @@ mod tests {
         let hooks = vec![
             make_hook("c", "/zzz/custom", false),
             h_stop,
-            make_hook("a", "/repo/.grok/hooks", false),
+            make_hook("a", "/repo/.ezer/hooks", false),
             h_pre,
             h_notify,
             make_hook("b", "/aaa/custom", false),
@@ -7996,7 +7996,7 @@ mod tests {
         assert_eq!(
             dirs,
             [
-                "/repo/.grok/hooks",
+                "/repo/.ezer/hooks",
                 "/aaa/custom",
                 "/tmp/hooks-src",
                 "/zzz/custom"

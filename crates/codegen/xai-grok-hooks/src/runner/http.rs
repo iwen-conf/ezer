@@ -156,10 +156,10 @@ pub async fn run_http_hook(
 
     let mut url_env = spec.extra_env.clone();
     for (k, v) in [
-        ("GROK_HOOK_EVENT", envelope.hook_event_name.to_string()),
-        ("GROK_HOOK_NAME", spec.name.clone()),
-        ("GROK_SESSION_ID", ctx.session_id.to_string()),
-        ("GROK_WORKSPACE_ROOT", ctx.workspace_root.to_string()),
+        ("EZER_HOOK_EVENT", envelope.hook_event_name.to_string()),
+        ("EZER_HOOK_NAME", spec.name.clone()),
+        ("EZER_SESSION_ID", ctx.session_id.to_string()),
+        ("EZER_WORKSPACE_ROOT", ctx.workspace_root.to_string()),
         ("CLAUDE_PROJECT_DIR", ctx.workspace_root.to_string()),
     ] {
         url_env.insert(k.to_string(), v);

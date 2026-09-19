@@ -112,7 +112,7 @@ fn format_acp_error_rate_limit_surfaces_detail_or_fallback() {
         ));
     assert_eq!(format_acp_error(&capacity, false), cap_body);
     assert_eq!(format_acp_error(&capacity, true), cap_body);
-    let rpm_body = "You are sending requests too quickly. Please slow down, or upgrade to a Grok subscription for higher limits: https://grok.com/supergrok";
+    let rpm_body = "You are sending requests too quickly. Please slow down, or upgrade to a ezer subscription for higher limits: https://grok.com/supergrok";
     let rpm = acp::Error::new(RATE_LIMITED_ERROR_CODE, "Rate limited")
         .data(format!("API error (status 429 Too Many Requests): {rpm_body}"));
     assert!(format_acp_error(&rpm, false).contains("grok.com/supergrok"));
@@ -2063,7 +2063,7 @@ fn agent_profile_names_are_valid_builtins() {
                 ask_user: false,
                 ..Default::default()
             },
-            "grok-build-plan",
+            "ezer-build-plan",
         ),
         (
             SessionFlags {
@@ -2072,7 +2072,7 @@ fn agent_profile_names_are_valid_builtins() {
                 ask_user: false,
                 ..Default::default()
             },
-            "grok-build-plan-no-subagents",
+            "ezer-build-plan-no-subagents",
         ),
         (
             SessionFlags {
@@ -2081,7 +2081,7 @@ fn agent_profile_names_are_valid_builtins() {
                 ask_user: true,
                 ..Default::default()
             },
-            "grok-build-plan",
+            "ezer-build-plan",
         ),
         (
             SessionFlags {
@@ -2090,7 +2090,7 @@ fn agent_profile_names_are_valid_builtins() {
                 ask_user: true,
                 ..Default::default()
             },
-            "grok-build-plan-no-subagents",
+            "ezer-build-plan-no-subagents",
         ),
         (
             SessionFlags {
@@ -2099,7 +2099,7 @@ fn agent_profile_names_are_valid_builtins() {
                 ask_user: true,
                 ..Default::default()
             },
-            "grok-build-ask-user",
+            "ezer-build-ask-user",
         ),
         (
             SessionFlags {
@@ -2108,7 +2108,7 @@ fn agent_profile_names_are_valid_builtins() {
                 ask_user: true,
                 ..Default::default()
             },
-            "grok-build-ask-user",
+            "ezer-build-ask-user",
         ),
     ];
     for (flags, expected_name) in test_cases {
@@ -2126,13 +2126,13 @@ fn agent_profile_names_are_valid_builtins() {
             );
     }
 }
-/// Default flags produce no agent profile (uses grok-build default).
+/// Default flags produce no agent profile (uses ezer-build default).
 #[test]
 fn default_flags_produce_no_profile() {
     let flags = SessionFlags::default();
     assert_eq!(flags.agent_profile(), None);
 }
-/// --subagents alone produces no profile (grok-build already has TaskTool).
+/// --subagents alone produces no profile (ezer-build already has TaskTool).
 #[test]
 fn subagents_without_plan_produces_no_profile() {
     let flags = SessionFlags {
@@ -2143,11 +2143,11 @@ fn subagents_without_plan_produces_no_profile() {
     };
     assert_eq!(flags.agent_profile(), None);
 }
-/// Neutralize `GROK_AGENT` for the profile-matrix tests below.
+/// Neutralize `EZER_AGENT` for the profile-matrix tests below.
 /// The tests would then assert the wrong branch.
-/// Callers must be `#[serial_test::serial(GROK_AGENT)]` (process-global env).
+/// Callers must be `#[serial_test::serial(EZER_AGENT)]` (process-global env).
 fn without_grok_agent() -> crate::test_util::EnvVarGuard {
-    crate::test_util::EnvVarGuard::set("GROK_AGENT", "")
+    crate::test_util::EnvVarGuard::set("EZER_AGENT", "")
 }
 /// At the runtime defaults every `--no-*` flag is false, so every `SessionFlags` bool is true via `!args.no_*`.
 /// `to_meta()` then reflects the full plan profile and no separate `askUserQuestion` toggle.
@@ -2162,7 +2162,7 @@ fn runtime_default_flags_produce_plan_meta() {
         ..Default::default()
     };
     let meta = flags.to_meta().unwrap();
-    assert_eq!(j(&meta, "agentProfile"), "grok-build-plan");
+    assert_eq!(j(&meta, "agentProfile"), "ezer-build-plan");
     assert!(meta.get("askUserQuestion").is_none());
     assert_eq!(j(&meta, "yoloMode"), false);
 }
@@ -2178,7 +2178,7 @@ fn plan_only_meta() {
         ..Default::default()
     };
     let meta = flags.to_meta().unwrap();
-    assert_eq!(j(&meta, "agentProfile"), "grok-build-plan-no-subagents");
+    assert_eq!(j(&meta, "agentProfile"), "ezer-build-plan-no-subagents");
     assert_eq!(j(&meta, "askUserQuestion"), false);
     assert_eq!(j(&meta, "yoloMode"), false);
 }
@@ -2194,11 +2194,11 @@ fn plan_with_subagents_meta() {
         ..Default::default()
     };
     let meta = flags.to_meta().unwrap();
-    assert_eq!(j(&meta, "agentProfile"), "grok-build-plan");
+    assert_eq!(j(&meta, "agentProfile"), "ezer-build-plan");
     assert_eq!(j(&meta, "askUserQuestion"), false);
     assert_eq!(j(&meta, "yoloMode"), false);
 }
-/// --ask-user alone selects the grok-build-ask-user profile.
+/// --ask-user alone selects the ezer-build-ask-user profile.
 #[serial_test::serial(GROK_AGENT)]
 #[test]
 fn ask_user_alone_meta() {
@@ -2210,7 +2210,7 @@ fn ask_user_alone_meta() {
         ..Default::default()
     };
     let meta = flags.to_meta().unwrap();
-    assert_eq!(j(&meta, "agentProfile"), "grok-build-ask-user");
+    assert_eq!(j(&meta, "agentProfile"), "ezer-build-ask-user");
     assert!(meta.get("askUserQuestion").is_none());
     assert_eq!(j(&meta, "yoloMode"), false);
 }
@@ -2226,13 +2226,13 @@ fn plan_with_ask_user_uses_plan_profile() {
         ..Default::default()
     };
     let meta = flags.to_meta().unwrap();
-    assert_eq!(j(&meta, "agentProfile"), "grok-build-plan-no-subagents");
+    assert_eq!(j(&meta, "agentProfile"), "ezer-build-plan-no-subagents");
     assert!(meta.get("askUserQuestion").is_none());
     assert_eq!(j(&meta, "yoloMode"), false);
 }
 /// --no-plan --no-subagents --no-ask-user picks the default profile.
 /// It must still emit `askUserQuestion: false` so the shell can strip the tool at the builder.
-/// Mirrors the runtime: the `subagents` toggle alone does not need an `agentProfile` (default `grok-build` already has it).
+/// Mirrors the runtime: the `subagents` toggle alone does not need an `agentProfile` (default `ezer-build` already has it).
 #[test]
 fn subagents_alone_emits_only_ask_user_question_disable() {
     let flags = SessionFlags {
@@ -2245,7 +2245,7 @@ fn subagents_alone_emits_only_ask_user_question_disable() {
     assert!(meta.get("agentProfile").is_none());
     assert_eq!(j(&meta, "askUserQuestion"), false);
 }
-/// All three flags on at the runtime default produce grok-build-plan and no `askUserQuestion` field.
+/// All three flags on at the runtime default produce ezer-build-plan and no `askUserQuestion` field.
 #[serial_test::serial(GROK_AGENT)]
 #[test]
 fn all_flags_meta() {
@@ -2257,7 +2257,7 @@ fn all_flags_meta() {
         ..Default::default()
     };
     let meta = flags.to_meta().unwrap();
-    assert_eq!(j(&meta, "agentProfile"), "grok-build-plan");
+    assert_eq!(j(&meta, "agentProfile"), "ezer-build-plan");
     assert!(meta.get("askUserQuestion").is_none());
     assert_eq!(j(&meta, "yoloMode"), false);
 }
@@ -2605,9 +2605,9 @@ fn agent_profile_definitions_have_correct_names() {
     use std::str::FromStr;
     use xai_grok_agent::config::BuiltinAgentName;
     for name in [
-        "grok-build-plan",
-        "grok-build-plan-no-subagents",
-        "grok-build-ask-user",
+        "ezer-build-plan",
+        "ezer-build-plan-no-subagents",
+        "ezer-build-ask-user",
     ] {
         let builtin = BuiltinAgentName::from_str(name).unwrap();
         let def = builtin.definition();
@@ -2655,7 +2655,7 @@ fn format_session_info_session_auth_ignores_api_key_env() {
     assert!(!text.contains("Manage account and credits"), "{text}");
     assert!(!text.contains("Also present: XAI_API_KEY"), "{text}");
     assert!(!text.contains("console.x.ai"), "{text}");
-    assert!(!text.contains("grok login"), "{text}");
+    assert!(!text.contains("ezer login"), "{text}");
 }
 #[test]
 fn format_session_info_api_key_without_env() {
@@ -2665,7 +2665,7 @@ fn format_session_info_api_key_without_env() {
     assert!(!text.contains("XAI_API_KEY"), "{text}");
     assert!(!text.contains("Manage account and credits"), "{text}");
     assert!(
-            text.contains("Run `grok login` to use your SuperGrok subscription instead."),
+            text.contains("Run `ezer login`"),
             "{text}"
         );
     assert!(!text.contains("grok.com"), "{text}");
@@ -2677,7 +2677,7 @@ fn format_session_info_api_key_auth_suggests_grok_login() {
     assert!(text.contains("Auth method: API key (XAI_API_KEY)"), "{text}");
     assert!(!text.contains("Manage account and credits"), "{text}");
     assert!(
-            text.contains("Run `grok login` to use your SuperGrok subscription instead."),
+            text.contains("Run `ezer login`"),
             "{text}"
         );
     assert!(!text.contains("Also present: XAI_API_KEY"), "{text}");
@@ -2692,7 +2692,7 @@ fn format_session_info_session_only_shows_oauth() {
     assert!(!text.contains("Manage account and credits"), "{text}");
     assert!(!text.contains("Also present: XAI_API_KEY"), "{text}");
     assert!(!text.contains("console.x.ai"), "{text}");
-    assert!(!text.contains("grok login"), "{text}");
+    assert!(!text.contains("ezer login"), "{text}");
 }
 #[test]
 fn format_session_info_shows_conversation_id_when_present() {

@@ -607,7 +607,7 @@ pub(crate) async fn run_shell_child(
                     "Could not resolve worktree base dir, using temp dir for subagent worktree"
                 );
                 std::env::temp_dir()
-                    .join("grok-subagent-worktrees")
+                    .join("ezer-subagent-worktrees")
                     .join(&request.id)
             }
         };
@@ -2441,7 +2441,7 @@ pub(crate) async fn dispose_worktree_after_completion(
     final_status: &str,
     subagent_id: &str,
 ) -> Disposal {
-    let ref_name = format!("refs/grok/subagents/{subagent_id}");
+    let ref_name = format!("refs/ezer/subagents/{subagent_id}");
     let snapshot_ref = match crate::session::worktree::snapshot_subagent_worktree(
         worktree,
         source_repo,

@@ -1,4 +1,4 @@
-//! Voice input for Grok Build CLI: an xAI streaming STT client and the [`run_voice_pipeline`] task that emits [`VoiceEvent`]s for the pager.
+//! Voice input for ezer CLI: an xAI streaming STT client and the [`run_voice_pipeline`] task that emits [`VoiceEvent`]s for the pager.
 //!
 //! Voice is dictation only: the mic streams to STT and the transcript lands in the prompt box.
 //!
@@ -92,17 +92,17 @@ mod intercept_tests {
 
     #[test]
     fn capture_subcommand_matches_only_argv1() {
-        assert!(is_capture_subcommand(&argv(&["grok", "__mic-capture"])));
+        assert!(is_capture_subcommand(&argv(&["ezer", "__mic-capture"])));
         assert!(is_capture_subcommand(&argv(&[
-            "grok",
+            "ezer",
             "__mic-capture",
             "--rate",
             "16000"
         ])));
-        assert!(!is_capture_subcommand(&argv(&["grok"])));
-        assert!(!is_capture_subcommand(&argv(&["grok", "chat"])));
+        assert!(!is_capture_subcommand(&argv(&["ezer"])));
+        assert!(!is_capture_subcommand(&argv(&["ezer", "chat"])));
         assert!(!is_capture_subcommand(&argv(&[
-            "grok",
+            "ezer",
             "chat",
             "__mic-capture"
         ])));

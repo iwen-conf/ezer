@@ -154,7 +154,7 @@ fn header_location_renders_from_staged_cwd() {
     let mut state = DashboardState::new();
     // A distinct absolute path outside $HOME (rendered verbatim) that differs from the process cwd
     // No git cache entry, so no branch span
-    state.cwd = std::path::PathBuf::from("/grok-staged-cwd-marker");
+    state.cwd = std::path::PathBuf::from("/ezer-staged-cwd-marker");
 
     let mut buf = Buffer::empty(area);
     render_header_only(&mut buf, area, &theme, &rows, &mut state);
@@ -163,7 +163,7 @@ fn header_location_renders_from_staged_cwd() {
         .map(|x| buf_cell(&buf, x, 0).symbol().to_string())
         .collect();
     assert!(
-        top_row.contains("/grok-staged-cwd-marker"),
+        top_row.contains("/ezer-staged-cwd-marker"),
         "header must render the staged cwd, not the process cwd; got: {top_row:?}",
     );
 }
@@ -176,7 +176,7 @@ fn header_paints_cwd_then_choose_hint_with_design_colours() {
     let theme = Theme::groknight();
     let area = Rect::new(0, 0, 200, 1);
     let mut state = DashboardState::new();
-    state.cwd = std::path::PathBuf::from("/grok-choose-hint-marker");
+    state.cwd = std::path::PathBuf::from("/ezer-choose-hint-marker");
     let mut buf = Buffer::empty(area);
     render_header_only(&mut buf, area, &theme, &[], &mut state);
     let text = buf_to_text(&buf);
@@ -185,7 +185,7 @@ fn header_paints_cwd_then_choose_hint_with_design_colours() {
         .key_for(crate::actions::ActionId::DashboardOpenLocationPicker)
         .expect("location picker has a dashboard binding")
         .display();
-    let expected = format!("/grok-choose-hint-marker [Choose {key}]");
+    let expected = format!("/ezer-choose-hint-marker [Choose {key}]");
     let start = text
         .find(&expected)
         .unwrap_or_else(|| panic!("header must read `{expected}`, got: {text:?}"));
@@ -196,13 +196,13 @@ fn header_paints_cwd_then_choose_hint_with_design_colours() {
         theme.text_secondary,
         "cwd paints text_secondary"
     );
-    let choose_at = "/grok-choose-hint-marker [".len();
+    let choose_at = "/ezer-choose-hint-marker [".len();
     assert_eq!(
         cell(choose_at).fg,
         theme.gray_dim,
         "`Choose` takes the dim row-secondary colour"
     );
-    let key_at = "/grok-choose-hint-marker [Choose ".len();
+    let key_at = "/ezer-choose-hint-marker [Choose ".len();
     // `key_hint_style` is `Theme::faint` on `bg_base`; a palette edit moves this with it.
     let key_fg = cell(key_at).fg;
     assert_eq!(
@@ -238,7 +238,7 @@ fn header_key_hint_falls_back_to_dim_on_terminal_theme() {
     let theme = Theme::terminal();
     let area = Rect::new(0, 0, 200, 1);
     let mut state = DashboardState::new();
-    state.cwd = std::path::PathBuf::from("/grok-terminal-theme-marker");
+    state.cwd = std::path::PathBuf::from("/ezer-terminal-theme-marker");
     let mut buf = Buffer::empty(area);
     render_header_only(&mut buf, area, &theme, &[], &mut state);
     let text = buf_to_text(&buf);
@@ -261,14 +261,14 @@ fn header_key_hint_falls_back_to_dim_on_terminal_theme() {
 fn header_drops_choose_hint_before_truncating_path() {
     let theme = Theme::current();
     let mut state = DashboardState::new();
-    state.cwd = std::path::PathBuf::from("/grok-narrow-header-marker");
+    state.cwd = std::path::PathBuf::from("/ezer-narrow-header-marker");
     // Exactly the path width: the hint can't fit, the path must
-    let area = Rect::new(0, 0, "/grok-narrow-header-marker".len() as u16, 1);
+    let area = Rect::new(0, 0, "/ezer-narrow-header-marker".len() as u16, 1);
     let mut buf = Buffer::empty(area);
     render_header_only(&mut buf, area, &theme, &[], &mut state);
     let text = buf_to_text(&buf);
     assert!(
-        text.contains("/grok-narrow-header-marker") && !text.contains("Choose"),
+        text.contains("/ezer-narrow-header-marker") && !text.contains("Choose"),
         "path must survive intact and the hint must go, got: {text:?}",
     );
 }
@@ -608,7 +608,7 @@ fn render_header_hover_underlines_only_location_text() {
     let area = Rect::new(0, 0, 400, 1);
     let mut buf = Buffer::empty(area);
     let mut state = DashboardState::new();
-    state.cwd = std::path::PathBuf::from("/grok-hover-marker");
+    state.cwd = std::path::PathBuf::from("/ezer-hover-marker");
     state.location_hit.hovered = true;
     render_header_only(&mut buf, area, &theme, &[], &mut state);
     let text = buf_to_text(&buf);
@@ -620,8 +620,8 @@ fn render_header_hover_underlines_only_location_text() {
             .contains(Modifier::UNDERLINED)
     };
 
-    let path_start = text.find("/grok-hover-marker").expect("path painted");
-    let path_end = path_start + "/grok-hover-marker".len();
+    let path_start = text.find("/ezer-hover-marker").expect("path painted");
+    let path_end = path_start + "/ezer-hover-marker".len();
     assert!(
         underlined(path_start) && underlined(path_end - 1),
         "the path is underlined"
@@ -746,7 +746,7 @@ fn render_header_location_label_never_overlaps_chips() {
     let mut buf = Buffer::empty(area);
     let mut state = DashboardState::new();
     state.cwd = std::path::PathBuf::from(
-        "/grok-overlap/a/very/long/checkout/path/that/overflows-enough-after-shortening",
+        "/ezer-overlap/a/very/long/checkout/path/that/overflows-enough-after-shortening",
     );
     let rows = vec![
         header_test_row(1, RowState::NeedsInput, "a"),

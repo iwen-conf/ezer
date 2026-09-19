@@ -414,7 +414,7 @@ fn run_pass_prunes_orphan_grove_pins_after_grace() {
             .unwrap();
         String::from_utf8_lossy(&out.stdout).trim().to_owned()
     };
-    let pin = "refs/grok/worktrees/wt-orphan";
+    let pin = "refs/ezer/worktrees/wt-orphan";
     let mut uref = std::process::Command::new("git");
     xai_tty_utils::detach_std_command(&mut uref);
     assert!(

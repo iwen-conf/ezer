@@ -403,7 +403,7 @@ async fn connect_and_register_with_mode(
 }
 
 /// A Stdio registration must NOT signal relay demand: a leader serving only interactive clients (TUI dashboard, IDE) keeps the grok.com relay off.
-/// The first Headless registration (the devbox / `grok agent headless` flow) flips the watch so `run_leader` starts the deferred relay connection.
+/// The first Headless registration (the devbox / `ezer agent headless` flow) flips the watch so `run_leader` starts the deferred relay connection.
 #[tokio::test]
 async fn relay_demand_signals_only_on_headless_registration() {
     let temp = TempDir::new().unwrap();
@@ -807,7 +807,7 @@ async fn initialize_preserves_existing_client_identifier() {
     let _: ServerMessage = read_message(&mut reader).await.unwrap();
 
     // Send initialize WITH clientIdentifier already set
-    let payload = r#"{"jsonrpc":"2.0","method":"initialize","id":1,"params":{"protocolVersion":"0.1","_meta":{"clientIdentifier":"grok-web"}}}"#;
+    let payload = r#"{"jsonrpc":"2.0","method":"initialize","id":1,"params":{"protocolVersion":"0.1","_meta":{"clientIdentifier":"ezer-web"}}}"#;
     write_message(
         &mut writer,
         &ClientMessage::Acp {
@@ -2158,7 +2158,7 @@ fn inject_client_identity_adds_identifier_to_initialize() {
 #[test]
 fn inject_client_identity_does_not_override_existing() {
     let mut json = pv(
-        r#"{"jsonrpc":"2.0","method":"initialize","id":1,"params":{"protocolVersion":"0.1","_meta":{"clientIdentifier":"grok-web"}}}"#,
+        r#"{"jsonrpc":"2.0","method":"initialize","id":1,"params":{"protocolVersion":"0.1","_meta":{"clientIdentifier":"ezer-web"}}}"#,
     );
 
     let (mutated, was_initialize) = inject_client_identity_into_initialize(&mut json, "grok-tui");
@@ -4566,7 +4566,7 @@ async fn models_update_broadcasts_to_all_clients() {
     let (mut reader_b, _writer_b) = connect_and_register(&sock_path, "client-b").await;
     tokio::time::sleep(Duration::from_millis(20)).await;
 
-    let update = r#"{"jsonrpc":"2.0","method":"_x.ai/models/update","params":{"currentModelId":"grok-new","availableModels":[{"modelId":"grok-new","name":"Grok New"}]}}"#;
+    let update = r#"{"jsonrpc":"2.0","method":"_x.ai/models/update","params":{"currentModelId":"ezer-new","availableModels":[{"modelId":"ezer-new","name":"ezer New"}]}}"#;
     response_tx.send(update.to_string()).unwrap();
 
     let got_a = next_acp_payload(&mut reader_a).await;
@@ -4691,7 +4691,7 @@ fn inject_capabilities_sets_code_nav_enabled_false() {
         code_nav_enabled: false,
         ..Default::default()
     };
-    let payload = r#"{"jsonrpc":"2.0","method":"session/new","id":1,"params":{"cwd":"/repo","_meta":{"clientIdentifier":"grok-tui"}}}"#;
+    let payload = r#"{"jsonrpc":"2.0","method":"session/new","id":1,"params":{"cwd":"/repo","_meta":{"clientIdentifier":"ezer-tui"}}}"#;
     let mut json = pv(payload);
     inject_session_request_context(&mut json, &caps, "grok-tui", ClientId(1));
     assert_eq!(

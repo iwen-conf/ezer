@@ -18,7 +18,7 @@ pub fn load_marketplace_sources() -> Vec<MarketplaceSource> {
 }
 
 /// [`load_marketplace_sources`] with each source origin-classified for advisory scoping:
-/// config.toml, admin pins, and `~/.grok` are grok-native; `~/.claude` sources are foreign.
+/// config.toml, admin pins, and `~/.ezer` are ezer-native; `~/.claude` sources are foreign.
 fn load_marketplace_sources_with_origin() -> Vec<(MarketplaceSource, PolicySubjectOrigin)> {
     let config = crate::config::load_effective_config()
         .ok()
@@ -324,7 +324,7 @@ mod tests {
         ));
     }
 
-    /// Origin tagging: config.toml and `~/.grok` sources are grok-native, `~/.claude` foreign; both-home dupes dedup native.
+    /// Origin tagging: config.toml and `~/.ezer` sources are ezer-native, `~/.claude` foreign; both-home dupes dedup native.
     #[test]
     fn load_sources_with_origin_tags_native_and_foreign_roots() {
         fn write_known(root: &std::path::Path, entries: &[(&str, &str)]) {
@@ -384,12 +384,12 @@ mod tests {
         assert_eq!(
             origin_of("https://example.com/cfg.git"),
             PolicySubjectOrigin::GrokNative,
-            "config.toml sources are grok-native"
+            "config.toml sources are ezer-native"
         );
         assert_eq!(
             origin_of("https://example.com/shared.git"),
             PolicySubjectOrigin::GrokNative,
-            "a URL in both homes must dedup to the grok-native entry"
+            "a URL in both homes must dedup to the ezer-native entry"
         );
         assert_eq!(
             origin_of("https://example.com/claude-only.git"),
@@ -399,7 +399,7 @@ mod tests {
     }
 
     /// An advisory (Claude-file) strict list drops only foreign-defined
-    /// sources; grok-native config sources survive it.
+    /// sources; ezer-native config sources survive it.
     #[test]
     fn filter_sources_by_allowlist_advisory_exempts_native_sources() {
         let allowlist = xai_grok_workspace::permission::resolution::MarketplacePolicy::single(

@@ -182,7 +182,7 @@ pub struct UserQuestionSender(
     #[educe(Debug(ignore))] pub mpsc::UnboundedSender<UserQuestionRequest>,
 );
 
-register_resource!("grok_build", "UserQuestionSender", UserQuestionSender);
+register_resource!("ezer_build", "UserQuestionSender", UserQuestionSender);
 
 // ── Conversion helper ────────────────────────────────────────────────────
 

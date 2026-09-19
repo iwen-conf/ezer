@@ -1,4 +1,4 @@
-//! Tracing layer that folds the span tree by wall time when `GROK_SPAN_PROFILE_OUT` names an output; inert otherwise.
+//! Tracing layer that folds the span tree by wall time when `EZER_SPAN_PROFILE_OUT` names an output; inert otherwise.
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -14,7 +14,7 @@ use crate::instrumentation::NoOpLayer;
 
 /// A fixed file is last-writer-wins across processes sharing the variable.
 /// Use a directory for multi-process runs (each writes `<label>-<pid>-.folded`).
-pub const OUT_ENV: &str = "GROK_SPAN_PROFILE_OUT";
+pub const OUT_ENV: &str = "EZER_SPAN_PROFILE_OUT";
 
 const MAX_PATHS: usize = 8192;
 

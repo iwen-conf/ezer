@@ -2,7 +2,7 @@
 //! Runs the REAL shipped `install.sh` against a fake `curl` that can serve the good artifact, truncate it, or serve a right-length garbage body.
 //! Asserts the same invariant as the Rust blitz:
 //!
-//! > After any install attempt, `$BIN_DIR/grok` resolves to a binary that runs, OR is still the previous-good binary, never a partial/garbage binary.
+//! > After any install attempt, `$BIN_DIR/ezer` resolves to a binary that runs, OR is still the previous-good binary, never a partial/garbage binary.
 //!
 //! Also covers shell-rc rewrite: stowed/symlinked `~/.bashrc` etc. must survive reinstall without being replaced by a plain file.
 //!
@@ -38,7 +38,7 @@ fn install_sh_path() -> Option<PathBuf> {
 }
 
 fn desktop_install_sh_path() -> Option<PathBuf> {
-    workspace_file("frontend/apps/grok-desktop/scripts/install.sh")
+    workspace_file("frontend/apps/ezer-desktop/scripts/install.sh")
 }
 
 fn host_platform() -> String {
@@ -56,7 +56,7 @@ fn host_platform() -> String {
 }
 
 const GOOD_SCRIPT: &str = "#!/bin/sh\nexit 0\n";
-const INSTALLER_BLOCK_START: &str = "# >>> grok installer >>>";
+const INSTALLER_BLOCK_START: &str = "# >>> ezer installer >>>";
 
 /// Write a fake `curl` that intercepts every download `install.sh` performs.
 /// `$FAKE_MODE` (full|truncate|garbage) selects the corruption.
@@ -107,36 +107,36 @@ exit 0
 
 /// Seed a valid previous-good binary and symlink in the isolated home.
 fn seed_previous_good(home: &Path, platform: &str) -> PathBuf {
-    let downloads = home.join(".grok").join("downloads");
-    let bin = home.join(".grok").join("bin");
+    let downloads = home.join(".ezer").join("downloads");
+    let bin = home.join(".ezer").join("bin");
     std::fs::create_dir_all(&downloads).unwrap();
     std::fs::create_dir_all(&bin).unwrap();
-    let prev = downloads.join(format!("grok-{platform}"));
+    let prev = downloads.join(format!("ezer-{platform}"));
     std::fs::write(&prev, GOOD_SCRIPT).unwrap();
     std::fs::set_permissions(&prev, std::fs::Permissions::from_mode(0o755)).unwrap();
-    let link = bin.join("grok");
+    let link = bin.join("ezer");
     let _ = std::fs::remove_file(&link);
-    std::os::unix::fs::symlink(format!("../downloads/grok-{platform}"), &link).unwrap();
+    std::os::unix::fs::symlink(format!("../downloads/ezer-{platform}"), &link).unwrap();
     dunce::canonicalize(&prev).unwrap()
 }
 
-/// Re-resolve `$BIN_DIR/grok` from disk and re-run it: the active grok must always execute, and never be a `.tmp`/partial file.
+/// Re-resolve `$BIN_DIR/ezer` from disk and re-run it: the active ezer must always execute, and never be a `.tmp`/partial file.
 fn assert_active_grok_runs(home: &Path) {
-    let link = home.join(".grok").join("bin").join("grok");
-    assert!(link.is_symlink(), "grok must remain a symlink");
+    let link = home.join(".ezer").join("bin").join("ezer");
+    assert!(link.is_symlink(), "ezer must remain a symlink");
     let resolved =
-        dunce::canonicalize(&link).unwrap_or_else(|e| panic!("grok symlink dangles: {e}"));
+        dunce::canonicalize(&link).unwrap_or_else(|e| panic!("ezer symlink dangles: {e}"));
     let name = resolved.file_name().unwrap().to_string_lossy().to_string();
     assert!(
         !name.contains(".tmp"),
-        "active grok must not be a temp file: {name}"
+        "active ezer must not be a temp file: {name}"
     );
     let ok = Command::new(&resolved)
         .arg("--version")
         .status()
         .map(|s| s.success())
         .unwrap_or(false);
-    assert!(ok, "active grok must run: {}", resolved.display());
+    assert!(ok, "active ezer must run: {}", resolved.display());
 }
 
 fn run_installer(install_sh: &Path, home: &Path, fakebin: &Path, mode: &str, shell: &str) -> bool {
@@ -148,8 +148,8 @@ fn run_installer(install_sh: &Path, home: &Path, fakebin: &Path, mode: &str, she
         .env("HOME", home)
         .env("PATH", path_env)
         .env("SHELL", shell)
-        .env("GROK_BIN_DIR", home.join(".grok").join("bin"))
-        .env("GROK_CHANNEL", "stable")
+        .env("EZER_BIN_DIR", home.join(".ezer").join("bin"))
+        .env("EZER_CHANNEL", "stable")
         .env("FAKE_MODE", mode)
         .status()
         .expect("spawn bash install.sh");
@@ -168,7 +168,7 @@ fn assert_single_installer_block(path: &Path, preserved: Option<&str>) {
     assert_eq!(
         n,
         1,
-        "{} must contain exactly one grok installer block, got {n}:\n{body}",
+        "{} must contain exactly one ezer installer block, got {n}:\n{body}",
         path.display()
     );
     if let Some(marker) = preserved {
@@ -379,7 +379,7 @@ fn write_fake_macos_x86_host(dir: &Path, host: FakeHost) {
 }
 
 /// Run an install script against a fake macOS/x86_64 host and return the artifact URLs it requested.
-/// The enterprise script requires auth, provided via a dummy `GROK_DEPLOYMENT_KEY`.
+/// The enterprise script requires auth, provided via a dummy `EZER_DEPLOYMENT_KEY`.
 fn install_urls_on_fake_host(script: &str, host: FakeHost) -> Option<String> {
     let script_file = script_path(script)?;
     let fakedir = tempfile::tempdir().unwrap();
@@ -396,9 +396,9 @@ fn install_urls_on_fake_host(script: &str, host: FakeHost) -> Option<String> {
         .env("HOME", home.path())
         .env("PATH", path_env)
         .env("SHELL", "/bin/bash")
-        .env("GROK_BIN_DIR", home.path().join(".grok").join("bin"))
-        .env("GROK_CHANNEL", "stable")
-        .env("GROK_DEPLOYMENT_KEY", "test-deployment-key")
+        .env("EZER_BIN_DIR", home.path().join(".ezer").join("bin"))
+        .env("EZER_CHANNEL", "stable")
+        .env("EZER_DEPLOYMENT_KEY", "test-deployment-key")
         .env("FAKE_MODE", "full")
         .env("FAKE_URL_LOG", &url_log)
         .status()
@@ -438,23 +438,23 @@ fn run_with_proxy_url(script: &Path, proxy_url: &str) -> (bool, String, bool) {
         .env("HOME", home.path())
         .env("PATH", &path_env)
         .env("SHELL", "/bin/bash")
-        .env("GROK_BIN_DIR", home.path().join(".grok").join("bin"))
-        .env("GROK_CHANNEL", "stable")
-        .env("GROK_DEPLOYMENT_KEY", "test-deployment-key-must-not-leak")
-        .env("GROK_PROXY_URL", proxy_url)
+        .env("EZER_BIN_DIR", home.path().join(".ezer").join("bin"))
+        .env("EZER_CHANNEL", "stable")
+        .env("EZER_DEPLOYMENT_KEY", "test-deployment-key-must-not-leak")
+        .env("EZER_PROXY_URL", proxy_url)
         .env("FAKE_MODE", "full")
         .env("FAKE_URL_LOG", &url_log)
         .status()
         .expect("spawn bash install script");
     let urls = std::fs::read_to_string(&url_log).unwrap_or_default();
-    let managed = home.path().join(".grok/managed_config.toml").exists();
+    let managed = home.path().join(".ezer/managed_config.toml").exists();
     (status.success(), urls, managed)
 }
 
 fn assert_no_credentialed_proxy_request(label: &str, proxy_url: &str, urls: &str) {
     assert!(
         !urls.contains("/deployment/config")
-            && !urls.contains("/grok-cli/update")
+            && !urls.contains("/ezer-cli/update")
             && !urls.contains("127.0.0.1")
             && !urls.contains("evil.example"),
         "{label}: must not issue credentialed proxy request for {proxy_url:?}, urls:\n{urls}"
@@ -483,7 +483,7 @@ fn install_scripts_refuse_bad_proxy_url_for_deployment_key() {
             let (ok, urls, managed) = run_with_proxy_url(script_file, proxy_url);
             assert!(
                 !ok,
-                "{label}: GROK_PROXY_URL={proxy_url:?} must fail closed"
+                "{label}: EZER_PROXY_URL={proxy_url:?} must fail closed"
             );
             assert_no_credentialed_proxy_request(label, proxy_url, &urls);
             assert!(
@@ -513,22 +513,22 @@ fn install_sh_rejects_hostile_grok_channel() {
         .env("HOME", home.path())
         .env("PATH", path_env)
         .env("SHELL", "/bin/bash")
-        .env("GROK_BIN_DIR", home.path().join(".grok").join("bin"))
-        .env("GROK_CHANNEL", hostile)
+        .env("EZER_BIN_DIR", home.path().join(".ezer").join("bin"))
+        .env("EZER_CHANNEL", hostile)
         .env("FAKE_MODE", "full")
         .env("FAKE_URL_LOG", &url_log)
         .output()
         .expect("spawn bash install.sh");
     assert!(
         !output.status.success(),
-        "unlisted GROK_CHANNEL must fail closed"
+        "unlisted EZER_CHANNEL must fail closed"
     );
     let stderr = String::from_utf8_lossy(&output.stderr);
     assert!(
-        stderr.contains("GROK_CHANNEL"),
-        "must name GROK_CHANNEL in the error, stderr:\n{stderr}"
+        stderr.contains("EZER_CHANNEL"),
+        "must name EZER_CHANNEL in the error, stderr:\n{stderr}"
     );
-    let config = home.path().join(".grok/config.toml");
+    let config = home.path().join(".ezer/config.toml");
     if config.exists() {
         let body = std::fs::read_to_string(&config).unwrap();
         assert!(
@@ -564,7 +564,7 @@ fn install_scripts_allow_custom_https_proxy_url() {
             let (ok, urls, _managed) = run_with_proxy_url(script_file, proxy_url);
             assert!(
                 ok,
-                "{label}: custom https GROK_PROXY_URL={proxy_url:?} must succeed"
+                "{label}: custom https EZER_PROXY_URL={proxy_url:?} must succeed"
             );
             assert!(
                 urls.contains("proxy.example.com") || urls.contains("[::1]"),

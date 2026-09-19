@@ -2,7 +2,7 @@
 //! It also holds the fail-closed enforcement gate that combines the signed-cache verdict with the best-effort marker.
 //!
 //! The marker is **unsigned** and user-writable: a refresh hint, not a tamper control.
-//! Real tamper resistance is [`crate::signed_policy`] plus the OS-protected layers (root-owned `/etc/grok`, MDM).
+//! Real tamper resistance is [`crate::signed_policy`] plus the OS-protected layers (root-owned `/etc/ezer`, MDM).
 
 use std::path::Path;
 
@@ -74,7 +74,7 @@ pub fn mark_managed_config_synced(marker: SyncMarker<'_>) {
     }
 }
 
-/// Server-side GrokBuildDeployment UUID from the last deploy-key managed-config sync, bound to the key that synced it.
+/// Server-side EzerDeployment UUID from the last deploy-key managed-config sync, bound to the key that synced it.
 /// A rotated or removed key therefore never reports the previous deployment's id.
 /// Team-path syncs store a team id and no fingerprint, so they never match.
 pub fn managed_deployment_id(key_fingerprint: &str) -> Option<String> {
@@ -531,9 +531,9 @@ fn managed_config_stale_at(home: Option<&Path>, identity: &ServingIdentity) -> b
     }
 }
 
-/// Override with `GROK_DEPLOYMENT_CONFIG_CACHE_TTL_SECS` for testing.
+/// Override with `EZER_DEPLOYMENT_CONFIG_CACHE_TTL_SECS` for testing.
 fn managed_config_stale_threshold() -> std::time::Duration {
-    if let Ok(s) = std::env::var("GROK_DEPLOYMENT_CONFIG_CACHE_TTL_SECS")
+    if let Ok(s) = std::env::var("EZER_DEPLOYMENT_CONFIG_CACHE_TTL_SECS")
         && let Ok(secs) = s.parse::<u64>()
     {
         return std::time::Duration::from_secs(secs);

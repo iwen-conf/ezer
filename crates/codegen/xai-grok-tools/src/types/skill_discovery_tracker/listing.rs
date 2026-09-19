@@ -389,7 +389,7 @@ impl<'a> SkillListing<'a> {
 
 /// Extract the skill source directory from a SKILL.md display path.
 ///
-/// `"/path/.grok/skills/my-skill/SKILL.md"` -> `"/path/.grok/skills/"`
+/// `"/path/.ezer/skills/my-skill/SKILL.md"` -> `"/path/.ezer/skills/"`
 fn skill_source_dir(display_path: &str) -> Option<&str> {
     let p = std::path::Path::new(display_path);
     // SKILL.md -> skill-name dir -> skills dir
@@ -467,7 +467,7 @@ fn strip_leading_trigger_prefix(wtu: &str) -> &str {
 
 /// XML-escape a string for use in attribute values. Replaces the five XML
 /// metacharacters (`<`, `>`, `&`, `"`, `'`) with their named entities.
-/// Used by the budgeted (grok build) XML rendering path.
+/// Used by the budgeted (ezer build) XML rendering path.
 fn xml_attr_escape(s: &str) -> String {
     s.replace('&', "&amp;")
         .replace('<', "&lt;")
@@ -477,7 +477,7 @@ fn xml_attr_escape(s: &str) -> String {
 }
 
 /// XML-escape body text. Same as attribute escape minus the quote handling.
-/// Used by the budgeted (grok build) XML rendering path.
+/// Used by the budgeted (ezer build) XML rendering path.
 fn xml_text_escape(s: &str) -> String {
     s.replace('&', "&amp;")
         .replace('<', "&lt;")
@@ -524,7 +524,7 @@ pub enum XmlRenderMode {
     /// Verbatim rendering: every skill with its full description; no
     /// budget cap, minimal escaping.
     Verbatim,
-    /// Grok build harness: budget-capped three-tier rendering with full
+    /// ezer build harness: budget-capped three-tier rendering with full
     /// XML entity escaping.
     Budgeted {
         /// Character budget for the listing; `None` uses the default.

@@ -458,12 +458,12 @@ async fn get_worktree_info_standalone_grok_marker() {
     copy_dir_all(&main, &clone);
     checkout_named_branch(&clone, "wt-branch");
     std::fs::write(
-        clone.join(".git").join("grok-worktree-source"),
+        clone.join(".git").join("ezer-worktree-source"),
         main.display().to_string(),
     )
     .unwrap();
     assert!(clone.join(".git").is_dir());
-    assert!(clone.join(".git").join("grok-worktree-source").is_file());
+    assert!(clone.join(".git").join("ezer-worktree-source").is_file());
 
     let (is_wt, main_repo) = get_worktree_info(&clone).await.expect("clone is a repo");
     assert!(is_wt);
@@ -494,7 +494,7 @@ async fn get_worktree_info_nested_plain_repo_does_not_inherit_marker() {
     copy_dir_all(&main, &clone);
     checkout_named_branch(&clone, "wt-branch");
     std::fs::write(
-        clone.join(".git").join("grok-worktree-source"),
+        clone.join(".git").join("ezer-worktree-source"),
         main.display().to_string(),
     )
     .unwrap();
@@ -519,7 +519,7 @@ async fn get_worktree_info_tilde_collapses_home_prefix() {
     init_repo_on_branch(&clone, "wt-branch");
     let fake_main = home.join("xai-fake-main-repo-for-wt-display");
     std::fs::write(
-        clone.join(".git").join("grok-worktree-source"),
+        clone.join(".git").join("ezer-worktree-source"),
         fake_main.display().to_string(),
     )
     .unwrap();
@@ -570,7 +570,7 @@ fn register_db_worktree(home: &Path, wt: &Path, source: &Path, label: &str) {
 #[test]
 fn get_worktree_info_db_record_without_marker() {
     let tmp = tempfile::tempdir().unwrap();
-    let home = dunce::canonicalize(tmp.path()).unwrap().join("grok-home");
+    let home = dunce::canonicalize(tmp.path()).unwrap().join("ezer-home");
     std::fs::create_dir_all(&home).unwrap();
     let _env = crate::LockedTestEnv::lock().set("GROK_HOME", &home);
 
@@ -590,7 +590,7 @@ fn get_worktree_info_db_record_without_marker() {
 #[test]
 fn get_worktree_info_nested_repo_does_not_inherit_db_record() {
     let tmp = tempfile::tempdir().unwrap();
-    let home = dunce::canonicalize(tmp.path()).unwrap().join("grok-home");
+    let home = dunce::canonicalize(tmp.path()).unwrap().join("ezer-home");
     std::fs::create_dir_all(&home).unwrap();
     let _env = crate::LockedTestEnv::lock().set("GROK_HOME", &home);
 
@@ -720,26 +720,26 @@ fn test_effective_worktree_path_non_prefix() {
 
 #[test]
 fn test_effective_worktree_cwd_empty_offset() {
-    let result = effective_worktree_cwd("/home/user/.grok/worktrees/repo/ab-123-a", Path::new(""));
-    assert_eq!(result, "/home/user/.grok/worktrees/repo/ab-123-a");
+    let result = effective_worktree_cwd("/home/user/.ezer/worktrees/repo/ab-123-a", Path::new(""));
+    assert_eq!(result, "/home/user/.ezer/worktrees/repo/ab-123-a");
 }
 
 #[test]
 fn test_effective_worktree_cwd_single_level_offset() {
     let result =
-        effective_worktree_cwd("/home/user/.grok/worktrees/repo/ab-123-a", Path::new("src"));
-    assert_eq!(result, "/home/user/.grok/worktrees/repo/ab-123-a/src");
+        effective_worktree_cwd("/home/user/.ezer/worktrees/repo/ab-123-a", Path::new("src"));
+    assert_eq!(result, "/home/user/.ezer/worktrees/repo/ab-123-a/src");
 }
 
 #[test]
 fn test_effective_worktree_cwd_nested_offset() {
     let result = effective_worktree_cwd(
-        "/home/user/.grok/worktrees/repo/ab-123-b",
+        "/home/user/.ezer/worktrees/repo/ab-123-b",
         Path::new("packages/frontend/src"),
     );
     assert_eq!(
         result,
-        "/home/user/.grok/worktrees/repo/ab-123-b/packages/frontend/src"
+        "/home/user/.ezer/worktrees/repo/ab-123-b/packages/frontend/src"
     );
 }
 
@@ -825,7 +825,7 @@ fn test_effective_cwd_roundtrip_with_compute_offset() {
 
     let (offset, _git_root) = compute_subdir_offset(&sub.to_string_lossy());
 
-    let worktree_root = "/home/user/.grok/worktrees/myrepo/ab-test-a";
+    let worktree_root = "/home/user/.ezer/worktrees/myrepo/ab-test-a";
     let effective = effective_worktree_cwd(worktree_root, &offset);
     assert_eq!(effective, format!("{}/src/lib", worktree_root));
 }

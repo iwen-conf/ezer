@@ -1,4 +1,4 @@
-//! CLI-seam tests for `grok mcp enable`/`disable`/`add`/`list` against the real pager binary: no-op
+//! CLI-seam tests for `ezer mcp enable`/`disable`/`add`/`list` against the real pager binary: no-op
 //! toggles leave config.toml alone, policy refusals fire before any write, list reports verdicts.
 
 use std::process::{Command, Stdio};
@@ -19,7 +19,7 @@ fn toggle_env(user_config: &str) -> ToggleEnv {
     // Canonical so paths under $HOME compare equal to their canonicalized form (plugin auto-trust).
     let root = dunce::canonicalize(temp.path()).expect("canonicalize tempdir");
     let home = root.join("home");
-    let grok_home = root.join("grok-home");
+    let grok_home = root.join("ezer-home");
     let cwd = root.join("project");
     std::fs::create_dir_all(&home).expect("create HOME");
     std::fs::create_dir_all(&grok_home).expect("create GROK_HOME");
@@ -264,9 +264,9 @@ fn enable_refuses_denied_project_server_in_untrusted_folder() {
         ("", "enabled = false\n"),
     ] {
         let mut env = blocked_env(user_config);
-        env.extra_env.push(("GROK_TEST_VERSION", "1.0.0"));
-        let project_config = env.cwd.join(".grok").join("config.toml");
-        std::fs::create_dir_all(env.cwd.join(".grok")).expect("create project .grok");
+        env.extra_env.push(("EZER_TEST_VERSION", "1.0.0"));
+        let project_config = env.cwd.join(".ezer").join("config.toml");
+        std::fs::create_dir_all(env.cwd.join(".ezer")).expect("create project .ezer");
         std::fs::write(
             &project_config,
             format!("[mcp_servers.corp]\nurl = \"{BLOCKED_URL}\"\n{project_extra}"),
@@ -293,15 +293,15 @@ fn enable_refuses_denied_project_server_in_untrusted_folder() {
     }
 }
 
-/// `grok mcp disable` writes the personal (user-tier) disable, so "already disabled" is judged
+/// `ezer mcp disable` writes the personal (user-tier) disable, so "already disabled" is judged
 /// against that tier: a project-tier `enabled = false` must not swallow the write.
 #[test]
 #[ignore = "spawns the real pager binary; CI/Bazel provides PAGER_BINARY"]
 fn disable_persists_personal_disable_over_project_tier_disable() {
     let env = toggle_env("");
-    std::fs::create_dir_all(env.cwd.join(".grok")).expect("create project .grok");
+    std::fs::create_dir_all(env.cwd.join(".ezer")).expect("create project .ezer");
     std::fs::write(
-        env.cwd.join(".grok").join("config.toml"),
+        env.cwd.join(".ezer").join("config.toml"),
         "[mcp_servers.x]\nurl = \"https://x.example.test/sse\"\nenabled = false\n",
     )
     .expect("project config.toml");
@@ -340,7 +340,7 @@ fn disable_persists_personal_disable_over_project_tier_disable() {
     );
 }
 
-/// `grok mcp list` co-reports the policy verdict with the personal disable, in the text note and
+/// `ezer mcp list` co-reports the policy verdict with the personal disable, in the text note and
 /// as the additive `blocked_reason` JSON key.
 #[test]
 #[ignore = "spawns the real pager binary; CI/Bazel provides PAGER_BINARY"]
@@ -381,7 +381,7 @@ fn list_reports_policy_block_in_text_and_json() {
     );
 }
 
-/// `grok mcp add` gates on policy before persisting: a URL deny refuses a user-scope add and the
+/// `ezer mcp add` gates on policy before persisting: a URL deny refuses a user-scope add and the
 /// project-MCP pin refuses a fresh `--scope project` add, with no config file written either way.
 #[test]
 #[ignore = "spawns the real pager binary; CI/Bazel provides PAGER_BINARY"]
@@ -399,7 +399,7 @@ fn add_refuses_denied_server_before_any_write() {
     let output = run_mcp(&env, &["add", "--transport", "http", "svc", BLOCKED_URL]);
     assert_refused_without_write(&env, &output, &env.config, &before);
 
-    let project_config = env.cwd.join(".grok").join("config.toml");
+    let project_config = env.cwd.join(".ezer").join("config.toml");
     let output = run_mcp(
         &env,
         &[

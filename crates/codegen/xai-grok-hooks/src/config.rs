@@ -146,7 +146,7 @@ fn resolve_session_end_default(value: Option<&str>) -> u64 {
         _ => {
             tracing::warn!(
                 value,
-                "GROK_SESSION_END_HOOKS_TIMEOUT_MS must be a positive integer; using default {}ms",
+                "EZER_SESSION_END_HOOKS_TIMEOUT_MS must be a positive integer; using default {}ms",
                 SESSION_END_HOOK_BUDGET_DEFAULT_MS
             );
             SESSION_END_HOOK_BUDGET_DEFAULT_MS
@@ -158,7 +158,7 @@ fn session_end_default_timeout_ms() -> u64 {
     static VALUE: std::sync::OnceLock<u64> = std::sync::OnceLock::new();
     *VALUE.get_or_init(|| {
         resolve_session_end_default(
-            std::env::var("GROK_SESSION_END_HOOKS_TIMEOUT_MS")
+            std::env::var("EZER_SESSION_END_HOOKS_TIMEOUT_MS")
                 .ok()
                 .as_deref(),
         )
@@ -232,10 +232,10 @@ pub struct HookSpec {
 }
 
 pub const RUNNER_ALWAYS_SET_ENV: &[&str] = &[
-    "GROK_HOOK_EVENT",
-    "GROK_HOOK_NAME",
-    "GROK_SESSION_ID",
-    "GROK_WORKSPACE_ROOT",
+    "EZER_HOOK_EVENT",
+    "EZER_HOOK_NAME",
+    "EZER_SESSION_ID",
+    "EZER_WORKSPACE_ROOT",
     "CLAUDE_PROJECT_DIR",
 ];
 
@@ -1775,10 +1775,10 @@ mod tests {
                                 "type": "command",
                                 "command": "echo hi",
                                 "env": {
-                                    "GROK_HOOK_EVENT": "spoofed",
-                                    "GROK_HOOK_NAME": "spoofed",
-                                    "GROK_SESSION_ID": "spoofed",
-                                    "GROK_WORKSPACE_ROOT": "/etc",
+                                    "EZER_HOOK_EVENT": "spoofed",
+                                    "EZER_HOOK_NAME": "spoofed",
+                                    "EZER_SESSION_ID": "spoofed",
+                                    "EZER_WORKSPACE_ROOT": "/etc",
                                     "CLAUDE_PROJECT_DIR": "/etc",
                                     "USER_KEY": "kept"
                                 }

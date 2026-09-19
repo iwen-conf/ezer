@@ -3,7 +3,7 @@
 //! The proxy sits between a client and a real listener, `proxy.sock` in front of `real.sock`, parsing the leader IPC framing.
 //! A frame is a 4-byte big-endian length prefix, then the body, so faults land on exact frame boundaries.
 //! The plan can drop exactly the Nth frame, sever after a half-written length prefix, or delay or duplicate one frame.
-//! Everything is path-addressed, so no production changes are needed: point `LeaderClient::connect` or `GROK_LEADER_SOCKET` at the proxy path.
+//! Everything is path-addressed, so no production changes are needed: point `LeaderClient::connect` or `EZER_LEADER_SOCKET` at the proxy path.
 //!
 //! Frame numbering is 1-based and **per proxied connection, per direction**; reconnects restart the count.
 //! Unix-only (the leader transport on Windows is a named pipe, which cannot be interposed this way); gated in `lib.rs`.

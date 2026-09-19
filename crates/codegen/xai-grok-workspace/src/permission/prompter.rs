@@ -13,7 +13,7 @@ use xai_grok_mcp::servers::parse_mcp_qualified_name;
 use xai_grok_session_events::{Event, EventWriter, PermissionDecision};
 use xai_grok_tools::implementations::grok_build::web_fetch::domain_from_url;
 
-const REJECT_ONCE_LABEL: &str = "No, and tell Grok what to do differently";
+const REJECT_ONCE_LABEL: &str = "No, and tell ezer what to do differently";
 
 /// Stable option id for "allow all edits this session", distinct from `"always-allow"` so it maps to [`PromptOutcome::AllowEditsForSession`].
 /// Session-only and never persisted; exposed so the pager does not record it as a sticky cursor target.
@@ -1827,7 +1827,7 @@ mod tests {
     fn mcp_titleize_segment_handles_snake_camel_kebab() {
         // snake_case: split into words, each title-cased
         assert_eq!(mcp_titleize_segment("list_issues"), "List Issues");
-        assert_eq!(mcp_titleize_segment("grok_com_notion"), "Grok Com Notion");
+        assert_eq!(mcp_titleize_segment("grok_com_notion"), "ezer Com Notion");
         // single word: capitalize first letter
         assert_eq!(mcp_titleize_segment("linear"), "Linear");
         // camelCase preserved (no `_` to split on, only first letter touched)

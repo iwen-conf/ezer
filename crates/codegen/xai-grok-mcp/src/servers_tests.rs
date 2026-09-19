@@ -121,7 +121,7 @@ fn is_figma_mcp_matches_name_and_host() {
     assert!(is_figma_mcp("figma", "https://example.com/mcp"));
     assert!(is_figma_mcp("Figma", "https://example.com/mcp"));
     assert!(is_figma_mcp("grok_com_figma", "https://example.com/mcp"));
-    assert!(is_figma_mcp("GROK_COM_FIGMA", "https://example.com/mcp"));
+    assert!(is_figma_mcp("EZER_COM_FIGMA", "https://example.com/mcp"));
     assert!(is_figma_mcp("grok_com_FIGMA", "https://example.com/mcp"));
     assert!(is_figma_mcp("other", "https://mcp.figma.com/mcp"));
     assert!(is_figma_mcp("other", "https://figma.com/mcp"));
@@ -139,14 +139,14 @@ fn ensure_figma_user_agent_sets_grok_cli_when_missing() {
     ensure_figma_user_agent(&mut headers, "figma", "https://mcp.figma.com/mcp");
     assert_eq!(
         headers.get(reqwest::header::USER_AGENT).unwrap(),
-        "grok-cli"
+        "ezer-cli"
     );
 
     let mut host_only = reqwest::header::HeaderMap::new();
     ensure_figma_user_agent(&mut host_only, "other", "https://mcp.figma.com/mcp");
     assert_eq!(
         host_only.get(reqwest::header::USER_AGENT).unwrap(),
-        "grok-cli"
+        "ezer-cli"
     );
 }
 
@@ -192,7 +192,7 @@ fn parse_config_headers_skips_invalid_and_keeps_last_duplicate() {
 fn apply_user_agent_policy_sets_versioned_grok_cli() {
     let mut headers = reqwest::header::HeaderMap::new();
     apply_user_agent_policy(&mut headers, "linear", "https://mcp.linear.app/mcp");
-    let expected = format!("grok-cli/{}", xai_grok_version::VERSION);
+    let expected = format!("ezer-cli/{}", xai_grok_version::VERSION);
     assert_eq!(
         headers.get(reqwest::header::USER_AGENT).unwrap(),
         expected.as_str()
@@ -219,7 +219,7 @@ fn apply_user_agent_policy_preserves_figma_attribution() {
     apply_user_agent_policy(&mut headers, "other", "https://mcp.figma.com/mcp");
     assert_eq!(
         headers.get(reqwest::header::USER_AGENT).unwrap(),
-        "grok-cli"
+        "ezer-cli"
     );
 }
 
@@ -2117,7 +2117,7 @@ async fn http_transport_sends_default_user_agent_on_initialize() {
     client.ensure_initialized().await.expect("handshake");
     assert_eq!(
         *handles.init_user_agents.lock(),
-        vec![format!("grok-cli/{}", xai_grok_version::VERSION)]
+        vec![format!("ezer-cli/{}", xai_grok_version::VERSION)]
     );
 }
 
@@ -4427,7 +4427,7 @@ async fn anonymous_access_probe_sends_default_user_agent() {
         .expect("probe POST must reach the fake server");
     assert_eq!(
         header_values(&captured, axum::http::header::USER_AGENT),
-        vec![format!("grok-cli/{}", xai_grok_version::VERSION)]
+        vec![format!("ezer-cli/{}", xai_grok_version::VERSION)]
     );
     assert_eq!(
         header_values(&captured, axum::http::header::CONTENT_TYPE),
@@ -4586,13 +4586,13 @@ async fn session_spawn_sends_zero_network_requests() {
 #[test]
 fn apply_stdio_env_session_id_cannot_be_shadowed() {
     let mut cmd = Command::new("true");
-    let env = vec![acp::EnvVariable::new("GROK_SESSION_ID", "spoofed")];
+    let env = vec![acp::EnvVariable::new("EZER_SESSION_ID", "spoofed")];
     apply_stdio_env(&mut cmd, &env, Some("sess-real"));
 
     let value = cmd
         .as_std()
         .get_envs()
-        .find(|(k, _)| *k == "GROK_SESSION_ID")
+        .find(|(k, _)| *k == "EZER_SESSION_ID")
         .and_then(|(_, v)| v)
         .map(|v| v.to_string_lossy().into_owned());
     assert_eq!(value.as_deref(), Some("sess-real"));
@@ -4616,7 +4616,7 @@ async fn grok_agent_id_header_rejects_invalid_session_id() {
         Ok(_) => panic!("invalid header value must fail closed"),
         Err(error) => error,
     };
-    assert!(error.to_string().contains("invalid X-Grok-Agent-ID value"));
+    assert!(error.to_string().contains("invalid X-ezer-Agent-ID value"));
 }
 
 #[test]

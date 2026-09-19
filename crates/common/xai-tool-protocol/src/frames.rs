@@ -399,7 +399,7 @@ pub struct ServerIdentityMetadata {
     /// Sandbox that provisioned this server. Absent for local servers.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sandbox_id: Option<String>,
-    /// Logical sandbox-service session UUID (from `GROK_SESSION_ID` in the
+    /// Logical sandbox-service session UUID (from `EZER_SESSION_ID` in the
     /// container). Absent for local servers.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub session_id: Option<String>,
@@ -1908,7 +1908,7 @@ mod tests {
     fn image_capability_tokens_accepted() {
         for name in [
             IMAGE_CAPABILITIES_V1,
-            "grok-files.occ",
+            "ezer-files.occ",
             "playwright.chromium-headless-shell",
             "app-template.v2",
             "a.b.c",

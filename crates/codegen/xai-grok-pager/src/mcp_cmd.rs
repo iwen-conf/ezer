@@ -803,7 +803,7 @@ mod tests {
     fn add_accepts_trailing_command_after_double_dash() {
         // A stdio server whose command follows `--`, with an explicit transport
         let add = parse_add(&[
-            "grok",
+            "ezer",
             "mcp",
             "add",
             "--transport",
@@ -830,7 +830,7 @@ mod tests {
     #[test]
     fn add_passes_hyphen_flags_and_repeated_env_to_server() {
         let add = parse_add(&[
-            "grok",
+            "ezer",
             "mcp",
             "add",
             "fs",
@@ -863,7 +863,7 @@ mod tests {
 
     #[test]
     fn add_hyphen_flag_without_double_dash_is_rejected() {
-        let err = PagerArgs::try_parse_from(["grok", "mcp", "add", "fs", "npx", "-y"])
+        let err = PagerArgs::try_parse_from(["ezer", "mcp", "add", "fs", "npx", "-y"])
             .expect_err("hyphen args must be escaped with --");
         assert_eq!(err.kind(), clap::error::ErrorKind::UnknownArgument);
     }
@@ -871,7 +871,7 @@ mod tests {
     #[test]
     fn add_http_with_headers() {
         let add = parse_add(&[
-            "grok",
+            "ezer",
             "mcp",
             "add",
             "--transport",
@@ -907,7 +907,7 @@ mod tests {
     #[test]
     fn add_sse_sets_transport_type() {
         let add = parse_add(&[
-            "grok",
+            "ezer",
             "mcp",
             "add",
             "--transport",
@@ -929,7 +929,7 @@ mod tests {
     fn add_http_transport_with_non_url_command_is_rejected() {
         // Previously this silently stored `xcrun` as an HTTP URL.
         let add = parse_add(&[
-            "grok",
+            "ezer",
             "mcp",
             "add",
             "--transport",
@@ -947,7 +947,7 @@ mod tests {
     fn add_explicit_stdio_keeps_url_looking_command_as_stdio() {
         // Previously URL sniffing overrode an explicit stdio transport.
         let add = parse_add(&[
-            "grok",
+            "ezer",
             "mcp",
             "add",
             "--transport",
@@ -967,7 +967,7 @@ mod tests {
     #[test]
     fn add_infers_http_for_bare_positional_url() {
         for url in ["https://mcp.example.com/mcp", "http://mcp.example.com/mcp"] {
-            let add = parse_add(&["grok", "mcp", "add", "api", url]);
+            let add = parse_add(&["ezer", "mcp", "add", "api", url]);
             let resolved = resolve_add(&add).expect("bare http(s) URL infers http");
             assert_eq!(resolved.kind, McpTransport::Http);
             match resolved.transport {
@@ -993,7 +993,7 @@ mod tests {
     fn add_infers_http_with_headers() {
         // Previously this bailed: stdio was assumed and --header is remote-only.
         let add = parse_add(&[
-            "grok",
+            "ezer",
             "mcp",
             "add",
             "api",
@@ -1018,7 +1018,7 @@ mod tests {
     #[test]
     fn add_default_transport_warns_on_url_looking_command() {
         // Scheme-less URL-looking commands are not inferred; they get http:// prepended so the suggested command passes URL validation
-        let add = parse_add(&["grok", "mcp", "add", "local", "localhost:3000"]);
+        let add = parse_add(&["ezer", "mcp", "add", "local", "localhost:3000"]);
         let resolved = resolve_add(&add).expect("localhost command warns");
         assert!(matches!(
             resolved.transport,
@@ -1035,7 +1035,7 @@ mod tests {
 
         // Extra args or --env mean a command; URLs stay stdio with a warning.
         let add = parse_add(&[
-            "grok",
+            "ezer",
             "mcp",
             "add",
             "api",
@@ -1057,7 +1057,7 @@ mod tests {
         );
 
         let add = parse_add(&[
-            "grok",
+            "ezer",
             "mcp",
             "add",
             "api",
@@ -1076,21 +1076,21 @@ mod tests {
     #[test]
     fn add_scope_project_parses_and_invalid_scope_is_rejected() {
         let add = parse_add(&[
-            "grok", "mcp", "add", "-s", "project", "fs", "--", "npx", "pkg",
+            "ezer", "mcp", "add", "-s", "project", "fs", "--", "npx", "pkg",
         ]);
         assert_eq!(add.scope, McpScope::Project);
 
         let err = PagerArgs::try_parse_from([
-            "grok", "mcp", "add", "-s", "local", "fs", "--", "npx", "pkg",
+            "ezer", "mcp", "add", "-s", "local", "fs", "--", "npx", "pkg",
         ])
-        .expect_err("local is not a grok scope");
+        .expect_err("local is not a ezer scope");
         assert_eq!(err.kind(), clap::error::ErrorKind::InvalidValue);
     }
 
     #[test]
     fn add_legacy_flag_forms_still_parse() {
         let add = parse_add(&[
-            "grok",
+            "ezer",
             "mcp",
             "add",
             "oldfs",
@@ -1110,7 +1110,7 @@ mod tests {
         }
 
         let add = parse_add(&[
-            "grok",
+            "ezer",
             "mcp",
             "add",
             "remote",
@@ -1138,7 +1138,7 @@ mod tests {
     #[test]
     fn add_legacy_command_conflicts_with_positional() {
         let err = PagerArgs::try_parse_from([
-            "grok",
+            "ezer",
             "mcp",
             "add",
             "fs",
@@ -1154,7 +1154,7 @@ mod tests {
     fn add_legacy_multi_value_env_is_rejected() {
         // The old --env was greedy (`--env A=1 B=2`); with --command the stray pair now lands in the positional and trips the source group
         let err = PagerArgs::try_parse_from([
-            "grok",
+            "ezer",
             "mcp",
             "add",
             "github",
@@ -1171,7 +1171,7 @@ mod tests {
 
         // Without --command the stray pair used to be silently written as the command; resolve_add must reject it with migration guidance
         let add = parse_add(&[
-            "grok", "mcp", "add", "pg", "--env", "A=1", "B=2", "--", "npx", "-y", "server",
+            "ezer", "mcp", "add", "pg", "--env", "A=1", "B=2", "--", "npx", "-y", "server",
         ]);
         let err = resolve_add(&add).expect_err("env-shaped command must fail");
         assert!(err.to_string().contains("-e A=1 -e B=2"), "got: {err}");
@@ -1181,7 +1181,7 @@ mod tests {
     fn add_legacy_url_and_type_misuse_is_rejected() {
         // --url with an explicit stdio transport used to silently store the URL as a stdio command
         let add = parse_add(&[
-            "grok",
+            "ezer",
             "mcp",
             "add",
             "foo",
@@ -1195,7 +1195,7 @@ mod tests {
 
         // --type without --url used to be silently ignored.
         let add = parse_add(&[
-            "grok",
+            "ezer",
             "mcp",
             "add",
             "bar",
@@ -1209,7 +1209,7 @@ mod tests {
 
     #[test]
     fn add_validates_name_env_and_headers() {
-        let add = parse_add(&["grok", "mcp", "add", "fs", "-e", "NOT_A_PAIR", "--", "npx"]);
+        let add = parse_add(&["ezer", "mcp", "add", "fs", "-e", "NOT_A_PAIR", "--", "npx"]);
         let err = resolve_add(&add).expect_err("malformed env must fail");
         assert!(
             err.to_string()
@@ -1218,7 +1218,7 @@ mod tests {
         );
 
         let add = parse_add(&[
-            "grok",
+            "ezer",
             "mcp",
             "add",
             "--transport",
@@ -1234,19 +1234,19 @@ mod tests {
             "got: {err}"
         );
 
-        let add = parse_add(&["grok", "mcp", "add", "bad name!", "--", "npx"]);
+        let add = parse_add(&["ezer", "mcp", "add", "bad name!", "--", "npx"]);
         let err = resolve_add(&add).expect_err("invalid name must fail");
         assert!(err.to_string().contains("Invalid name"), "got: {err}");
     }
 
     #[test]
     fn add_rejects_mismatched_options_per_transport() {
-        let add = parse_add(&["grok", "mcp", "add", "fs", "-H", "X: y", "--", "npx"]);
+        let add = parse_add(&["ezer", "mcp", "add", "fs", "-H", "X: y", "--", "npx"]);
         let err = resolve_add(&add).expect_err("--header is remote-only");
         assert!(err.to_string().contains("--header"), "got: {err}");
 
         let add = parse_add(&[
-            "grok",
+            "ezer",
             "mcp",
             "add",
             "--transport",
@@ -1260,7 +1260,7 @@ mod tests {
         assert!(err.to_string().contains("--env"), "got: {err}");
 
         let add = parse_add(&[
-            "grok",
+            "ezer",
             "mcp",
             "add",
             "--transport",
@@ -1279,21 +1279,21 @@ mod tests {
 
     #[test]
     fn add_requires_a_source_for_each_transport() {
-        let add = parse_add(&["grok", "mcp", "add", "fs"]);
+        let add = parse_add(&["ezer", "mcp", "add", "fs"]);
         let err = resolve_add(&add).expect_err("stdio without a command must fail");
         assert!(
             err.to_string().contains("command is required"),
             "got: {err}"
         );
 
-        let add = parse_add(&["grok", "mcp", "add", "--transport", "http", "api"]);
+        let add = parse_add(&["ezer", "mcp", "add", "--transport", "http", "api"]);
         let err = resolve_add(&add).expect_err("http without a URL must fail");
         assert!(err.to_string().contains("URL is required"), "got: {err}");
     }
 
     #[test]
     fn remove_accepts_optional_scope() {
-        let args = PagerArgs::try_parse_from(["grok", "mcp", "remove", "fs", "-s", "project"])
+        let args = PagerArgs::try_parse_from(["ezer", "mcp", "remove", "fs", "-s", "project"])
             .expect("remove with scope parses");
         match args.command {
             Some(Command::Mcp(McpArgs {
@@ -1328,11 +1328,11 @@ mod tests {
         );
 
         let defined = tempfile::tempdir().unwrap();
-        std::fs::create_dir_all(defined.path().join(".grok")).unwrap();
+        std::fs::create_dir_all(defined.path().join(".ezer")).unwrap();
         std::fs::write(
             defined
                 .path()
-                .join(".grok")
+                .join(".ezer")
                 .join(xai_grok_config::USER_CONFIG_FILENAME),
             format!(
                 r#"
@@ -1369,7 +1369,7 @@ url = "https://mcp.example.test/sse"
 
     #[test]
     fn enable_and_disable_parse_name() {
-        let args = PagerArgs::try_parse_from(["grok", "mcp", "enable", "user-grafana"])
+        let args = PagerArgs::try_parse_from(["ezer", "mcp", "enable", "user-grafana"])
             .expect("enable should parse");
         match args.command {
             Some(Command::Mcp(McpArgs {
@@ -1378,7 +1378,7 @@ url = "https://mcp.example.test/sse"
             other => panic!("expected mcp enable, got {other:?}"),
         }
 
-        let args = PagerArgs::try_parse_from(["grok", "mcp", "disable", "user-slack"])
+        let args = PagerArgs::try_parse_from(["ezer", "mcp", "disable", "user-slack"])
             .expect("disable should parse");
         match args.command {
             Some(Command::Mcp(McpArgs {
@@ -1390,11 +1390,11 @@ url = "https://mcp.example.test/sse"
 
     #[test]
     fn enable_disable_require_name() {
-        let err = PagerArgs::try_parse_from(["grok", "mcp", "enable"])
+        let err = PagerArgs::try_parse_from(["ezer", "mcp", "enable"])
             .expect_err("enable without name must fail");
         assert_eq!(err.kind(), clap::error::ErrorKind::MissingRequiredArgument);
 
-        let err = PagerArgs::try_parse_from(["grok", "mcp", "disable"])
+        let err = PagerArgs::try_parse_from(["ezer", "mcp", "disable"])
             .expect_err("disable without name must fail");
         assert_eq!(err.kind(), clap::error::ErrorKind::MissingRequiredArgument);
     }
@@ -1402,7 +1402,7 @@ url = "https://mcp.example.test/sse"
     #[test]
     fn select_remove_site_covers_scope_presence_matrix() {
         let user = xai_grok_shell::util::config::user_config_path();
-        let project = PathBuf::from("/repo/.grok/config.toml");
+        let project = PathBuf::from("/repo/.ezer/config.toml");
 
         // No scope: a single hit resolves, both scopes is ambiguous, neither is NotFound
         assert_eq!(
@@ -1446,7 +1446,7 @@ url = "https://mcp.example.test/sse"
     #[test]
     fn surviving_definition_prefers_project_then_user() {
         let user = xai_grok_shell::util::config::user_config_path();
-        let project = PathBuf::from("/repo/.grok/config.toml");
+        let project = PathBuf::from("/repo/.ezer/config.toml");
 
         // The mirror of the remove note: a user-scope delete with a project survivor (and vice versa) must still report the remaining site
         assert_eq!(

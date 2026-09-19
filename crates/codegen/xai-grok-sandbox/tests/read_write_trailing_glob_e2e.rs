@@ -51,7 +51,7 @@ fn trailing_glob_read_write_grants_parent_directory() {
     let root = xai_dirs::home_dir()
         .expect("home dir required: the control probe relies on HOME-relative paths")
         .join(".cache")
-        .join("grok-starstar-e2e")
+        .join("ezer-starstar-e2e")
         .join(format!(
             "run-{}-{}",
             std::process::id(),
@@ -63,7 +63,7 @@ fn trailing_glob_read_write_grants_parent_directory() {
     let _cleanup = CleanupGuard(root.clone());
     let workspace = root.join("ws");
     let home = root.join("home");
-    let grok_home = root.join("grok-home");
+    let grok_home = root.join("ezer-home");
     // Under the fixture HOME, which no base grant covers: only the explicit read_write entry can make this tree writable
     let cache = home.join("cargo-cache");
     for dir in [&workspace, &grok_home, &cache.join("registry-a1b2")] {

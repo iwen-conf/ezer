@@ -230,9 +230,9 @@ pub(crate) fn merge_and_filter(
 /// Alias for backward compatibility.
 pub type NoopSessionContextFactory = WorkspaceSessionContextFactory;
 /// Whether per-session `tool_state.json` persistence and per-turn upload are enabled.
-/// Only `GROK_WORKSPACE_TOOL_STATE_ENABLED=true` enables it; any other value keeps legacy behavior.
+/// Only `EZER_WORKSPACE_TOOL_STATE_ENABLED=true` enables it; any other value keeps legacy behavior.
 pub fn tool_state_enabled() -> bool {
-    std::env::var("GROK_WORKSPACE_TOOL_STATE_ENABLED").as_deref() == Ok("true")
+    std::env::var("EZER_WORKSPACE_TOOL_STATE_ENABLED").as_deref() == Ok("true")
 }
 /// Sanitize `session_id` into one path segment. Replacements append a digest of the original id so distinct ids cannot collide into one directory.
 /// A collision would cross-contaminate persistence and cleanup. Already-safe ids map to themselves.
@@ -266,7 +266,7 @@ fn ensure_session_dir(root: &std::path::Path, session_id: &str) -> (PathBuf, std
     let created = std::fs::create_dir_all(&dir);
     (dir, created)
 }
-/// Serializes tests (across modules) that mutate the process-global `GROK_WORKSPACE_TOOL_STATE_ENABLED`.
+/// Serializes tests (across modules) that mutate the process-global `EZER_WORKSPACE_TOOL_STATE_ENABLED`.
 /// Aliased to the crate-wide [`crate::ENV_TEST_LOCK`] so ALL env-mutating tests share ONE lock.
 /// The hazard is the global `environ` array, not the variable's value.
 #[cfg(test)]
@@ -280,7 +280,7 @@ static REGISTRY_TOOL_IDS: std::sync::LazyLock<Arc<std::collections::HashSet<Stri
 pub struct WorkspaceSessionContextFactory {
     auth: Option<xai_computer_hub_sdk::SharedAuthProvider>,
     api_base_url: Option<String>,
-    /// Resolved `$GROK_WORKSPACE_HOME` when tool-state persistence is enabled; `None` disables it.
+    /// Resolved `$EZER_WORKSPACE_HOME` when tool-state persistence is enabled; `None` disables it.
     /// Resolved once by the caller so the factory performs no per-build env reads.
     tool_state_home: Option<PathBuf>,
     /// The ids a pinned bind may name and this factory will serve.
@@ -324,7 +324,7 @@ impl WorkspaceSessionContextFactory {
             ..WorkspaceSessionContextFactory::new()
         }
     }
-    /// Enable session-keyed tool-state persistence rooted at `home` (`$GROK_WORKSPACE_HOME`).
+    /// Enable session-keyed tool-state persistence rooted at `home` (`$EZER_WORKSPACE_HOME`).
     /// Callers should only invoke this when [`tool_state_enabled`] is `true`.
     pub fn with_tool_state_home(mut self, home: PathBuf) -> Self {
         self.tool_state_home = Some(home);
@@ -479,10 +479,10 @@ fn build_proxy_headers(base_url: &str) -> indexmap::IndexMap<String, String> {
         "user-agent".to_string(),
         format!("xai-grok-workspace/{version}"),
     );
-    headers.insert("x-grok-client-version".to_string(), version.to_string());
+    headers.insert("x-ezer-client-version".to_string(), version.to_string());
     headers.insert(
-        "x-grok-client-identifier".to_string(),
-        std::env::var("GROK_CLIENT_NAME").unwrap_or_else(|_| "grok-shell".to_string()),
+        "x-ezer-client-identifier".to_string(),
+        std::env::var("EZER_CLIENT_NAME").unwrap_or_else(|_| "ezer-shell".to_string()),
     );
     if base_url.contains("cli-chat-proxy") || base_url.contains("chat-proxy") {
         headers.insert("X-XAI-Token-Auth".to_string(), "xai-grok-cli".to_string());
@@ -493,24 +493,25 @@ fn build_proxy_headers(base_url: &str) -> indexmap::IndexMap<String, String> {
     }
     headers
 }
-/// Enabled with default params unless `GROK_DISABLE_WEB_FETCH=1` is set.
+/// Enabled with default params unless `EZER_DISABLE_WEB_FETCH=1` is set.
 fn build_web_fetch_config() -> xai_grok_tools::implementations::grok_build::web_fetch::WebFetchConfig
 {
     use xai_grok_tools::implementations::grok_build::web_fetch::{WebFetchConfig, WebFetchParams};
-    if std::env::var("GROK_DISABLE_WEB_FETCH").is_ok_and(|v| v == "1" || v == "true") {
+    if std::env::var("EZER_DISABLE_WEB_FETCH").is_ok_and(|v| v == "1" || v == "true") {
         return WebFetchConfig::Disabled;
     }
     let mut params = WebFetchParams::default();
-    if let Ok(proxy) = std::env::var("GROK_WEB_FETCH_PROXY") {
+    if let Ok(proxy) = std::env::var("EZER_WEB_FETCH_PROXY") {
         params.proxy_endpoint = Some(proxy);
     }
-    if xai_grok_config::env_bool("GROK_WEB_FETCH_ALLOW_LOCAL") == Some(true) {
+    if xai_grok_config::env_bool("EZER_WEB_FETCH_ALLOW_LOCAL") == Some(true) {
         params.allow_local = Some(true);
     }
     WebFetchConfig::Enabled { params }
 }
 fn default_web_search_model() -> String {
-    std::env::var("GROK_WEB_SEARCH_MODEL").unwrap_or_else(|_| "grok-4.5".to_string())
+    std::env::var("EZER_WEB_SEARCH_MODEL")
+        .unwrap_or_else(|_| xai_grok_config::DEFAULT_GATEWAY_MODEL_KEY.to_string())
 }
 #[cfg(any(test, feature = "test-support"))]
 pub mod test_support {
@@ -542,7 +543,7 @@ pub mod test_support {
                 tool_state: true,
             }
         }
-        /// Matches production, where `GROK_WORKSPACE_TOOL_STATE_ENABLED` is unset and the real factory returns an empty path.
+        /// Matches production, where `EZER_WORKSPACE_TOOL_STATE_ENABLED` is unset and the real factory returns an empty path.
         pub fn without_tool_state() -> Self {
             Self {
                 tool_state: false,
@@ -615,10 +616,10 @@ pub mod test_support {
     pub fn baseline_config() -> ToolServerConfig {
         ToolServerConfig {
             tools: vec![
-                tc("GrokBuild:read_file", Some(ToolKind::Read)),
-                tc("GrokBuild:search_replace", Some(ToolKind::Edit)),
-                tc("GrokBuild:grep", Some(ToolKind::Search)),
-                tc("GrokBuild:list_dir", Some(ToolKind::ListDir)),
+                tc("Ezer:read_file", Some(ToolKind::Read)),
+                tc("Ezer:search_replace", Some(ToolKind::Edit)),
+                tc("Ezer:grep", Some(ToolKind::Search)),
+                tc("Ezer:list_dir", Some(ToolKind::ListDir)),
             ],
             behavior_preset: None,
         }
@@ -673,12 +674,12 @@ mod tests {
         let factory = factory_for_test();
         let baseline = ToolServerConfig {
             tools: vec![test_support::tc(
-                "GrokBuild:read_file",
+                "Ezer:read_file",
                 Some(ToolKind::Read),
             )],
             behavior_preset: None,
         };
-        let mut mcp_dup = test_support::tc("GrokBuild:read_file", Some(ToolKind::Read));
+        let mut mcp_dup = test_support::tc("Ezer:read_file", Some(ToolKind::Read));
         mcp_dup.name_override = Some("mcp_read".into());
         let snapshot = vec![mcp_dup];
         let (_eff, ts, _backend) = resolve_session_toolset(
@@ -710,15 +711,15 @@ mod tests {
     #[test]
     fn backfill_tool_kinds_fills_known_kindless_ids_only() {
         let kinds = HashMap::from([
-            ("GrokBuild:search_replace".to_owned(), ToolKind::Edit),
-            ("GrokBuild:read_file".to_owned(), ToolKind::Read),
+            ("Ezer:search_replace".to_owned(), ToolKind::Edit),
+            ("Ezer:read_file".to_owned(), ToolKind::Read),
         ]);
         let config = ToolServerConfig {
             tools: vec![
-                test_support::tc("GrokBuild:search_replace", None),
+                test_support::tc("Ezer:search_replace", None),
                 test_support::tc("adhoc.opaque", None),
                 // Pre-set kinds must never be overwritten by the registry.
-                test_support::tc("GrokBuild:read_file", Some(ToolKind::Search)),
+                test_support::tc("Ezer:read_file", Some(ToolKind::Search)),
             ],
             behavior_preset: Some("current".to_owned()),
         };
@@ -731,14 +732,14 @@ mod tests {
                 .expect("tool present")
                 .kind
         };
-        assert_eq!(kind_of("GrokBuild:search_replace"), Some(ToolKind::Edit));
+        assert_eq!(kind_of("Ezer:search_replace"), Some(ToolKind::Edit));
         assert_eq!(
             kind_of("adhoc.opaque"),
             None,
             "ids unknown to the registry stay kind-less"
         );
         assert_eq!(
-            kind_of("GrokBuild:read_file"),
+            kind_of("Ezer:read_file"),
             Some(ToolKind::Search),
             "an explicit kind wins over the registry's"
         );
@@ -752,11 +753,11 @@ mod tests {
         let factory = factory_for_test();
         let baseline = ToolServerConfig {
             tools: vec![
-                test_support::tc("GrokBuild:read_file", None),
-                test_support::tc("GrokBuild:grep", None),
-                test_support::tc("GrokBuild:list_dir", None),
-                test_support::tc("GrokBuild:search_replace", None),
-                test_support::tc("GrokBuild:run_terminal_cmd", None),
+                test_support::tc("Ezer:read_file", None),
+                test_support::tc("Ezer:grep", None),
+                test_support::tc("Ezer:list_dir", None),
+                test_support::tc("Ezer:search_replace", None),
+                test_support::tc("Ezer:run_terminal_cmd", None),
             ],
             behavior_preset: None,
         };
@@ -798,7 +799,7 @@ mod tests {
     fn resolve_session_toolset_mcp_edit_dropped_under_readonly() {
         let baseline = ToolServerConfig {
             tools: vec![test_support::tc(
-                "GrokBuild:read_file",
+                "Ezer:read_file",
                 Some(ToolKind::Read),
             )],
             behavior_preset: None,
@@ -818,7 +819,7 @@ mod tests {
         let factory = factory_for_test();
         let baseline = ToolServerConfig {
             tools: vec![
-                test_support::tc("GrokBuild:read_file", Some(ToolKind::Read)),
+                test_support::tc("Ezer:read_file", Some(ToolKind::Read)),
                 test_support::tc("baseline.opaque", None),
             ],
             behavior_preset: None,
@@ -841,7 +842,7 @@ mod tests {
             "MCP kind: None MUST be dropped under ReadOnly: {kept_ids:?}"
         );
         assert!(
-            kept_ids.contains(&"GrokBuild:read_file"),
+            kept_ids.contains(&"Ezer:read_file"),
             "baseline Read kind must survive ReadOnly: {kept_ids:?}"
         );
         let _ = factory;
@@ -903,7 +904,7 @@ mod tests {
     fn hub_tool_dropped_under_readonly_because_kind_none() {
         let baseline = ToolServerConfig {
             tools: vec![test_support::tc(
-                "GrokBuild:read_file",
+                "Ezer:read_file",
                 Some(ToolKind::Read),
             )],
             behavior_preset: None,
@@ -957,7 +958,7 @@ mod tests {
     fn hub_tool_name_collision_with_baseline_skipped() {
         let baseline = ToolServerConfig {
             tools: vec![test_support::tc(
-                "GrokBuild:read_file",
+                "Ezer:read_file",
                 Some(ToolKind::Read),
             )],
             behavior_preset: None,
@@ -985,7 +986,7 @@ mod tests {
         let _guard = super::TOOL_STATE_ENV_LOCK
             .lock()
             .unwrap_or_else(|e| e.into_inner());
-        let var = "GROK_WORKSPACE_TOOL_STATE_ENABLED";
+        let var = "EZER_WORKSPACE_TOOL_STATE_ENABLED";
         unsafe { std::env::remove_var(var) };
         assert!(!tool_state_enabled(), "unset → disabled");
         unsafe { std::env::set_var(var, "false") };

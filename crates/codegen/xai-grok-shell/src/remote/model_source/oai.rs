@@ -58,7 +58,7 @@ impl ModelSource for OaiModelSource {
                     .header("Authorization", format!("Bearer {}", &auth.key))
                     .header("X-XAI-Token-Auth", "xai-grok-cli")
                     .header("x-userid", &auth.user_id)
-                    .header("x-grok-client-version", xai_grok_version::VERSION)
+                    .header("x-ezer-client-version", xai_grok_version::VERSION)
                     .header(
                         crate::http::CLIENT_MODE_HEADER,
                         crate::http::process_client_mode(),
@@ -139,9 +139,9 @@ mod tests {
         use crate::agent::config::EndpointsConfig;
         use crate::agent::remote_config::ModelFetchAuth;
         for k in [
-            "GROK_CLI_CHAT_PROXY_BASE_URL",
-            "GROK_XAI_API_BASE_URL",
-            "GROK_MODELS_LIST_URL",
+            "EZER_CLI_CHAT_PROXY_BASE_URL",
+            "EZER_XAI_API_BASE_URL",
+            "EZER_MODELS_LIST_URL",
         ] {
             unsafe { std::env::remove_var(k) };
         }

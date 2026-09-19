@@ -50,9 +50,9 @@ pub(crate) enum WatchStrategy {
     PerDir,
 }
 
-/// Per-dir on Linux and fan-out elsewhere, overridden by `GROK_FSNOTIFY_PER_DIR`.
+/// Per-dir on Linux and fan-out elsewhere, overridden by `EZER_FSNOTIFY_PER_DIR`.
 pub(crate) fn watch_strategy() -> WatchStrategy {
-    match std::env::var("GROK_FSNOTIFY_PER_DIR").ok().as_deref() {
+    match std::env::var("EZER_FSNOTIFY_PER_DIR").ok().as_deref() {
         Some("1") | Some("true") => WatchStrategy::PerDir,
         Some("0") | Some("false") => WatchStrategy::Fanout,
         _ if cfg!(target_os = "linux") => WatchStrategy::PerDir,
@@ -60,11 +60,11 @@ pub(crate) fn watch_strategy() -> WatchStrategy {
     }
 }
 
-/// Per-dir mode's total watch budget (`GROK_FSNOTIFY_MAX_WATCHES` overrides).
+/// Per-dir mode's total watch budget (`EZER_FSNOTIFY_MAX_WATCHES` overrides).
 const DEFAULT_MAX_WATCHES: usize = 49_152;
 
 pub(crate) fn max_watch_budget() -> usize {
-    std::env::var("GROK_FSNOTIFY_MAX_WATCHES")
+    std::env::var("EZER_FSNOTIFY_MAX_WATCHES")
         .ok()
         .and_then(|v| v.parse::<usize>().ok())
         .filter(|&n| n > 0)

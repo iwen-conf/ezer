@@ -1,4 +1,4 @@
-//! [`GrokStdioClient`] drives `grok agent stdio`: it owns the child, the [`AgentConnection`] over its pipes,
+//! [`GrokStdioClient`] drives `ezer agent stdio`: it owns the child, the [`AgentConnection`] over its pipes,
 //! and runs every request under a scaled budget; a timeout, or a failed setup request or cancel, panics with
 //! the child's stderr.
 

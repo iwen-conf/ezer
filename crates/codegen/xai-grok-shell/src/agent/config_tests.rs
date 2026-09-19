@@ -535,7 +535,7 @@ fn finalize_image_describe_sampler_some_stamps_session_fields() {
     assert_eq!(cfg.max_retries, Some(7));
 }
 #[test]
-fn resolve_aux_model_honors_grok_build_override() {
+fn resolve_aux_model_honors_ezer_build_override() {
     let endpoints = EndpointsConfig::default();
     let mut catalog = IndexMap::new();
     catalog.insert(
@@ -2317,7 +2317,7 @@ fn parses_model_with_agent_type() {
     assert_eq!(model.info.agent_type, "codex");
 }
 #[test]
-fn model_agent_type_defaults_to_grok_build() {
+fn model_agent_type_defaults_to_ezer_build() {
     let raw_config: toml::Value = toml::from_str(
         r#"
             [model.my-model]
@@ -2736,7 +2736,7 @@ fn invalid_glob_is_rejected_by_validation() {
     let raw: toml::Value = toml::from_str(
         r#"
             [models]
-            allowed_models = ["grok["]
+            allowed_models = ["ezer["]
             "#,
     )
     .unwrap();
@@ -2804,7 +2804,7 @@ fn inference_idle_timeout_secs_absent_defaults_to_none() {
     let raw_config: toml::Value = toml::from_str(
         r#"
             [model.default-model]
-            model = "grok-fast"
+            model = "ezer-fast"
             base_url = "https://api.x.ai/v1"
             context_window = 200000
             "#,
@@ -4004,8 +4004,8 @@ fn non_boolean_feature_value_fails_the_load() {
 #[test]
 #[serial]
 fn resolve_title_refresh_defaults_to_turn_summary_but_decouples() {
-    unsafe { std::env::remove_var("GROK_TITLE_REFRESH") };
-    unsafe { std::env::remove_var("GROK_TURN_SUMMARY") };
+    unsafe { std::env::remove_var("EZER_TITLE_REFRESH") };
+    unsafe { std::env::remove_var("EZER_TURN_SUMMARY") };
     let r = Config::default().resolve_title_refresh();
     assert!(r.value, "title_refresh defaults to turn_summary (on)");
     let ts_off = Config {
@@ -4032,19 +4032,19 @@ fn resolve_title_refresh_defaults_to_turn_summary_but_decouples() {
         "title_refresh config overrides the turn_summary default"
     );
     assert_eq!(r.source, ConfigSource::Config);
-    unsafe { std::env::set_var("GROK_TITLE_REFRESH", "0") };
+    unsafe { std::env::set_var("EZER_TITLE_REFRESH", "0") };
     let r = decoupled.resolve_title_refresh();
-    assert!(!r.value, "GROK_TITLE_REFRESH env wins");
+    assert!(!r.value, "EZER_TITLE_REFRESH env wins");
     assert_eq!(r.source, ConfigSource::Env);
-    unsafe { std::env::remove_var("GROK_TITLE_REFRESH") };
+    unsafe { std::env::remove_var("EZER_TITLE_REFRESH") };
 }
 /// A `turn_summary` pin lands in the title's default slot, so it moves the title with it.
-/// Only the default slot, so `GROK_TITLE_REFRESH` still outranks it and a user can turn the title back on.
+/// Only the default slot, so `EZER_TITLE_REFRESH` still outranks it and a user can turn the title back on.
 /// Pinning `title_refresh` is what closes that.
 #[test]
 #[serial]
 fn a_turn_summary_pin_moves_the_title_default_and_the_environment_lifts_it() {
-    let _env = EnvGuard::set("GROK_TURN_SUMMARY", "1");
+    let _env = EnvGuard::set("EZER_TURN_SUMMARY", "1");
     let mut cfg = Config::default();
     cfg.requirements.pin_feature(
         Feature::TurnSummary,
@@ -4052,13 +4052,13 @@ fn a_turn_summary_pin_moves_the_title_default_and_the_environment_lifts_it() {
         crate::config::RequirementSource::Unknown,
     );
     {
-        let _title = EnvGuard::unset("GROK_TITLE_REFRESH");
+        let _title = EnvGuard::unset("EZER_TITLE_REFRESH");
         assert!(
             !cfg.resolve_title_refresh().value,
-            "the pin outranks GROK_TURN_SUMMARY, and the title default follows the pin"
+            "the pin outranks EZER_TURN_SUMMARY, and the title default follows the pin"
         );
     }
-    let _title = EnvGuard::set("GROK_TITLE_REFRESH", "1");
+    let _title = EnvGuard::set("EZER_TITLE_REFRESH", "1");
     let r = cfg.resolve_title_refresh();
     assert!(r.value, "the environment outranks a derived default");
     assert_eq!(r.source, ConfigSource::Env);
@@ -4068,13 +4068,13 @@ fn a_turn_summary_pin_moves_the_title_default_and_the_environment_lifts_it() {
 #[test]
 #[serial]
 fn a_title_refresh_pin_outranks_the_environment() {
-    let _env = EnvGuard::set("GROK_TITLE_REFRESH", "1");
+    let _env = EnvGuard::set("EZER_TITLE_REFRESH", "1");
     let mut cfg = Config::default();
     cfg.requirements
         .title_refresh
         .pin(false, crate::config::RequirementSource::Unknown);
     let r = cfg.resolve_title_refresh();
-    assert!(!r.value, "the pin lost to GROK_TITLE_REFRESH");
+    assert!(!r.value, "the pin lost to EZER_TITLE_REFRESH");
     assert_eq!(r.source, ConfigSource::Requirement);
 }
 /// Gate precedence: env > `[doom_loop_recovery]` > remote settings > default(ON).
@@ -4084,7 +4084,7 @@ fn a_title_refresh_pin_outranks_the_environment() {
 #[serial]
 fn resolve_doom_loop_recovery_precedence() {
     use crate::util::config::DoomLoopRecoverySettings;
-    unsafe { std::env::remove_var("GROK_DOOM_LOOP_RECOVERY") };
+    unsafe { std::env::remove_var("EZER_DOOM_LOOP_RECOVERY") };
     let default_cfg = Config::default();
     let p = default_cfg
         .resolve_doom_loop_recovery()
@@ -4117,12 +4117,12 @@ fn resolve_doom_loop_recovery_precedence() {
         remote_off.resolve_doom_loop_recovery().is_none(),
         "remote settings kill switch"
     );
-    unsafe { std::env::set_var("GROK_DOOM_LOOP_RECOVERY", "0") };
+    unsafe { std::env::set_var("EZER_DOOM_LOOP_RECOVERY", "0") };
     assert!(
         default_cfg.resolve_doom_loop_recovery().is_none(),
         "env kill switch"
     );
-    unsafe { std::env::remove_var("GROK_DOOM_LOOP_RECOVERY") };
+    unsafe { std::env::remove_var("EZER_DOOM_LOOP_RECOVERY") };
     let remote_on = Config {
         remote_settings: Some(crate::util::config::RemoteSettings {
             doom_loop_recovery: Some(DoomLoopRecoverySettings {
@@ -4178,18 +4178,18 @@ fn resolve_doom_loop_recovery_precedence() {
         .expect("config on beats remote kill-switch");
     assert_eq!(p.max_threshold, 4);
     assert_eq!(p.max_retries, 3);
-    unsafe { std::env::set_var("GROK_DOOM_LOOP_RECOVERY", "0") };
+    unsafe { std::env::set_var("EZER_DOOM_LOOP_RECOVERY", "0") };
     assert!(
         config_over_remote.resolve_doom_loop_recovery().is_none(),
         "env wins over config + remote"
     );
-    unsafe { std::env::remove_var("GROK_DOOM_LOOP_RECOVERY") };
+    unsafe { std::env::remove_var("EZER_DOOM_LOOP_RECOVERY") };
 }
 /// The `[doom_loop_recovery]` TOML section deserializes through the standard config path (no bespoke parser).
 #[test]
 #[serial]
 fn doom_loop_recovery_section_parses_from_toml() {
-    unsafe { std::env::remove_var("GROK_DOOM_LOOP_RECOVERY") };
+    unsafe { std::env::remove_var("EZER_DOOM_LOOP_RECOVERY") };
     let raw: toml::Value = toml::from_str(
         r#"
             [doom_loop_recovery]
@@ -5271,15 +5271,15 @@ fn goal_model_pins_parse_from_toml() {
     let toml_str = r#"
 [goal]
 enabled = true
-planner_model = { model = "grok-build", agent_type = "grok-build-plan" }
+planner_model = { model = "ezer-build", agent_type = "ezer-build-plan" }
 
 [goal.strategist_model]
 model = "test-model-fast"
 agent_type = "cursor"
 
 [[goal.skeptic_models]]
-model = "grok-build"
-agent_type = "grok-build-plan"
+model = "ezer-build"
+agent_type = "ezer-build-plan"
 
 [[goal.skeptic_models]]
 model = "test-model-fast"
@@ -5309,7 +5309,7 @@ fn goal_model_pin_malformed_is_dropped_not_fatal() {
 [goal]
 enabled = true
 classifier_max_runs = 6
-planner_model = { agent_type = "grok-build-plan" }
+planner_model = { agent_type = "ezer-build-plan" }
 "#;
     let raw: toml::Value = toml::from_str(toml_str).unwrap();
     let cfg = Config::new_from_toml_cfg(&raw)
@@ -5324,8 +5324,8 @@ fn goal_skeptic_models_drop_malformed_entry_keep_rest() {
 enabled = true
 
 [[goal.skeptic_models]]
-model = "grok-build"
-agent_type = "grok-build-plan"
+model = "ezer-build"
+agent_type = "ezer-build-plan"
 
 [[goal.skeptic_models]]
 agent_type = "cursor"
@@ -5360,12 +5360,12 @@ classifier_enabled = true
 planner_enabled = true
 verifier_count = 3
 classifier_max_runs = 6
-planner_model = { model = "grok-build", agent_type = "grok-build-plan" }
+planner_model = { model = "ezer-build", agent_type = "ezer-build-plan" }
 strategist_model = { model = "test-model-fast", agent_type = "cursor" }
 
 [[goal.skeptic_models]]
-model = "grok-build"
-agent_type = "grok-build-plan"
+model = "ezer-build"
+agent_type = "ezer-build-plan"
 
 [[goal.skeptic_models]]
 model = "test-model-fast"
@@ -5374,7 +5374,7 @@ agent_type = "cursor"
     )
     .unwrap();
     let cfg = Config::new_from_toml_cfg(&raw).expect("[goal] config must parse");
-    let grok_build = crate::util::config::GoalRoleModel {
+    let ezer_build = crate::util::config::GoalRoleModel {
         model: "grok-build".into(),
         agent_type: "grok-build-plan".into(),
     };
@@ -5393,7 +5393,7 @@ agent_type = "cursor"
     let planner = cfg.resolve_goal_planner_model(use_current);
     assert_eq!(
         planner.value,
-        GoalRoleModelChoice::Explicit(grok_build.clone())
+        GoalRoleModelChoice::Explicit(ezer_build.clone())
     );
     assert_eq!(planner.source, ConfigSource::Config);
     assert_eq!(
@@ -5403,7 +5403,7 @@ agent_type = "cursor"
     assert_eq!(
         cfg.resolve_goal_skeptic_models(use_current).value,
         vec![
-            GoalRoleModelChoice::Explicit(grok_build),
+            GoalRoleModelChoice::Explicit(ezer_build),
             GoalRoleModelChoice::Explicit(composer),
         ]
     );
@@ -5592,7 +5592,7 @@ fn config_accepts_all_known_sections() {
             name = ["os_user"]
             email = ["git_email", "team@example.com"]
             email_domain = "example.com"
-            command = "/opt/bin/grok-identity"
+            command = "/opt/bin/ezer-identity"
             [repo_changes_dedup]
             enabled = false
             [relay]
@@ -6604,7 +6604,7 @@ fn external_otel_pin_prompts_true_omitted_assistant_stays_off() {
         "omitted CONTENT sibling must default off across the requirements boundary"
     );
 }
-/// Regression: an org enable via `[telemetry].otel_enabled` (managed config / requirements — no `GROK_EXTERNAL_OTEL` env var) must flip the master switch the *internal* pipeline keys off, so legacy `OTEL_EXPORTER_OTLP_*` repointing shuts off in lockstep with the external stream activating. A desync would point the internally-authed firehose at the customer collector while `internal_pipeline_consumed_otel_vars` blocks the external stream.
+/// Regression: an org enable via `[telemetry].otel_enabled` (managed config / requirements — no `EZER_EXTERNAL_OTEL` env var) must flip the master switch the *internal* pipeline keys off, so legacy `OTEL_EXPORTER_OTLP_*` repointing shuts off in lockstep with the external stream activating. A desync would point the internally-authed firehose at the customer collector while `internal_pipeline_consumed_otel_vars` blocks the external stream.
 #[test]
 fn external_otel_master_switch_resolves_from_all_layers() {
     let enabled_table: toml::Value = toml::from_str("[telemetry]\notel_enabled = true").unwrap();
@@ -7266,7 +7266,7 @@ fn version_overrides_apply_into_typed_config() {
     let mut value: toml::Value = toml::from_str(
         r#"
 [models]
-default = "grok-build"
+default = "ezer-build"
 
 [[version_overrides]]
 minimum_version = "1.8.0"
@@ -7280,8 +7280,8 @@ default = "grok-4.5"
     let cfg = Config::new_from_toml_cfg(&value).unwrap();
     assert_eq!(cfg.models.default.as_deref(), Some("grok-4.5"));
 }
-/// Reproduce the enterprise managed config bug: [model.grok-build] sets context_window=500k for model="grok-4.5". [models].default="grok-4.5" still resolves to the bare prefetched entry (256k).
-/// Layer 3 only overrides key "grok-build", not key "grok-4.5". After the Layer 4 slug propagation fix, both keys should have 500k.
+/// Reproduce the enterprise managed config bug: [model.ezer-build] sets context_window=500k for model="grok-4.5". [models].default="grok-4.5" still resolves to the bare prefetched entry (256k).
+/// Layer 3 only overrides key "ezer-build", not key "grok-4.5". After the Layer 4 slug propagation fix, both keys should have 500k.
 #[test]
 fn slug_propagation_enterprise_managed_config_key_mismatch() {
     let default_cw = DEFAULT_CONTEXT_WINDOW;
@@ -7334,7 +7334,7 @@ fn slug_propagation_inherits_api_backend_but_not_agent_type() {
             context_window = 500000
             base_url = "https://test.example.com/v1"
             api_backend = "responses"
-            agent_type = "grok-build"
+            agent_type = "ezer-build"
             "#,
     )
     .unwrap();

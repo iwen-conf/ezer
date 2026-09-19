@@ -10,7 +10,7 @@ const DEFAULT_TIMEOUT: Duration = Duration::from_secs(30);
 const GROK_CODE_WEB_URL: &str = "https://grok.com";
 pub fn share_url(permission_id: &str) -> String {
     let web_url =
-        std::env::var("GROK_CODE_WEB_URL").unwrap_or_else(|_| GROK_CODE_WEB_URL.to_string());
+        std::env::var("EZER_CODE_WEB_URL").unwrap_or_else(|_| GROK_CODE_WEB_URL.to_string());
     format!("{}/build/share/{}", web_url, permission_id)
 }
 fn add_cli_chat_proxy_headers_blocking(
@@ -23,14 +23,14 @@ fn add_cli_chat_proxy_headers_blocking(
         .header("Authorization", format!("Bearer {}", &auth.key))
         .header("X-XAI-Token-Auth", GrokComConfig::default().token_header)
         .header("x-userid", &auth.user_id)
-        .header("x-grok-client-version", xai_grok_version::VERSION);
+        .header("x-ezer-client-version", xai_grok_version::VERSION);
     if let Some(email) = &auth.email {
         builder = builder.header("x-email", email);
     }
     let _ = (alpha_test_key, url);
     builder
         .header(
-            "x-grok-client-identifier",
+            "x-ezer-client-identifier",
             crate::http::process_client_identifier(),
         )
         .header(
@@ -62,7 +62,7 @@ async fn add_bundle_fetch_headers(
     credentials.alpha_test_key = alpha_test_key.map(str::to_owned);
     let mut builder = credentials
         .apply(builder, url)
-        .header("x-grok-client-version", xai_grok_version::VERSION);
+        .header("x-ezer-client-version", xai_grok_version::VERSION);
     if deployment_key.is_none()
         && let Some(auth) = &resolved_auth
     {
@@ -73,7 +73,7 @@ async fn add_bundle_fetch_headers(
     }
     builder = builder
         .header(
-            "x-grok-client-identifier",
+            "x-ezer-client-identifier",
             crate::http::process_client_identifier(),
         )
         .header(
@@ -164,7 +164,7 @@ async fn fetch_bundle_inner(
     let mut request = client
         .get(&archive_url)
         .timeout(std::time::Duration::from_secs(30))
-        .header("x-grok-client-version", xai_grok_version::VERSION)
+        .header("x-ezer-client-version", xai_grok_version::VERSION)
         .header(
             crate::http::CLIENT_MODE_HEADER,
             crate::http::process_client_mode(),
@@ -299,7 +299,7 @@ impl BackendClient {
         Self {
             client: reqwest_middleware::ClientBuilder::new(reqwest_client.clone()).build(),
             reqwest_client,
-            base_url: std::env::var("GROK_CODE_BACKEND_URL")
+            base_url: std::env::var("EZER_CODE_BACKEND_URL")
                 .unwrap_or_else(|_| GROK_CODE_BACKEND_URL.to_string()),
             auth_manager: None,
         }
@@ -395,14 +395,14 @@ impl BackendClient {
             headers.insert("x-email", v);
         }
         if let Ok(v) = HeaderValue::from_str(&crate::http::process_client_identifier()) {
-            headers.insert("x-grok-client-identifier", v);
+            headers.insert("x-ezer-client-identifier", v);
         }
         headers.insert(
             crate::http::CLIENT_MODE_HEADER,
             HeaderValue::from_static(crate::http::process_client_mode()),
         );
         headers.insert(
-            "x-grok-client-version",
+            "x-ezer-client-version",
             HeaderValue::from_static(xai_grok_version::VERSION),
         );
         Ok(headers)

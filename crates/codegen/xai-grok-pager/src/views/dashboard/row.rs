@@ -990,7 +990,7 @@ mod tests {
         summary: Option<&str>,
     ) -> xai_grok_dashboard_store::Member {
         let mut member = crate::app::workspace_test_fixtures::member(session_id, title);
-        member.model = Some("grok-test".to_owned());
+        member.model = Some("ezer-test".to_owned());
         member.last_turn_summary = summary.map(str::to_owned);
         member.last_change_unix_ms = 1_725_000_000_000;
         member
@@ -1130,7 +1130,7 @@ mod tests {
     fn workspace_rows_hide_empty_startup_members_like_v1() {
         let mut stale = workspace_member("empty", "", None);
         stale.title = None;
-        assert_eq!(stale.model.as_deref(), Some("grok-test"));
+        assert_eq!(stale.model.as_deref(), Some("ezer-test"));
         let snapshot = workspace_snapshot(vec![stale]);
         let rows = workspace_rows(&IndexMap::new(), &snapshot);
         assert!(
@@ -1179,7 +1179,7 @@ mod tests {
                 session_id: "second".to_owned()
             }
         );
-        assert_eq!(nth(&rows, 1).secondary_line.as_deref(), Some("grok-test"));
+        assert_eq!(nth(&rows, 1).secondary_line.as_deref(), Some("ezer-test"));
         assert!(nth(&rows, 1).badges.contains(&RowBadge::Worktree));
     }
     fn make_subagent(child_id: &str, finished: bool, status: Option<&str>) -> SubagentInfo {
@@ -2049,7 +2049,7 @@ mod tests {
     #[test]
     fn subtitle_worktree_shows_label_branch_and_marker() {
         let mut agent = make_idle_agent_with_model(None);
-        agent.session.cwd = PathBuf::from("/home/me/.grok/worktrees/x/location-picker");
+        agent.session.cwd = PathBuf::from("/home/me/.ezer/worktrees/x/location-picker");
         agent.is_worktree = true;
         agent.worktree_label = Some("location-picker".to_string());
         agent.current_branch = Some("kevin/feature".to_string());

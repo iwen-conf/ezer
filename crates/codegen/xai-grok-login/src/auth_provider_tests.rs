@@ -315,7 +315,7 @@ async fn provider_refresh_sets_expired_env() {
     let provider = AuthProviderRef::new(
         "test-expired-env".to_owned(),
         AuthProviderConfig {
-            command: "printf 'tok-%s' \"${GROK_AUTH_EXPIRED:-0}\"".to_owned(),
+            command: "printf 'tok-%s' \"${EZER_AUTH_EXPIRED:-0}\"".to_owned(),
             args: None,
             token_ttl_secs: Some(3600),
             timeout_secs: None,
@@ -325,13 +325,13 @@ async fn provider_refresh_sets_expired_env() {
     assert_eq!(
         provider.ensure_fresh_token(None).await.rotated().as_deref(),
         Some("tok-0"),
-        "first mint runs without GROK_AUTH_EXPIRED"
+        "first mint runs without EZER_AUTH_EXPIRED"
     );
     test_expire_provider_token("test-expired-env");
     assert_eq!(
         provider.ensure_fresh_token(None).await.rotated().as_deref(),
         Some("tok-1"),
-        "re-mints run with GROK_AUTH_EXPIRED=1"
+        "re-mints run with EZER_AUTH_EXPIRED=1"
     );
 }
 
@@ -602,7 +602,7 @@ async fn mint_error_messages_distinguish_failure_modes() {
     assert!(err.to_string().contains("no output"), "got: {err}");
 }
 
-/// On an in-session re-mint, the prior credential is handed back to the command via `GROK_AUTH_PROVIDER_*`.
+/// On an in-session re-mint, the prior credential is handed back to the command via `EZER_AUTH_PROVIDER_*`.
 /// A command holding a refresh grant can then refresh instead of re-authenticating.
 /// Nothing is written to disk.
 #[tokio::test]
@@ -610,7 +610,7 @@ async fn re_mint_hands_the_prior_token_back_to_the_command() {
     let provider = AuthProviderRef::new(
         "test-handback".to_owned(),
         AuthProviderConfig {
-            command: "printf 'seen-%s' \"${GROK_AUTH_PROVIDER_ACCESS_TOKEN:-none}\"".to_owned(),
+            command: "printf 'seen-%s' \"${EZER_AUTH_PROVIDER_ACCESS_TOKEN:-none}\"".to_owned(),
             args: None,
             token_ttl_secs: Some(3600),
             timeout_secs: None,
@@ -740,15 +740,15 @@ async fn provider_output_over_cap_fails_closed() {
 #[tokio::test]
 async fn provider_helper_env_scrubs_first_party_credentials() {
     const EXPECTED: &[&str] = &[
-        "GROK_AUTH",
-        "GROK_AUTH_PATH",
+        "EZER_AUTH",
+        "EZER_AUTH_PATH",
         "XAI_API_KEY",
-        "GROK_DEPLOYMENT_KEY",
-        "GROK_CODE_XAI_API_KEY",
-        "GROK_EXTRA_AUTH_KEY",
-        "GROK_TRACE_UPLOAD_CREDENTIALS_FILE",
+        "EZER_DEPLOYMENT_KEY",
+        "EZER_CODE_XAI_API_KEY",
+        "EZER_EXTRA_AUTH_KEY",
+        "EZER_TRACE_UPLOAD_CREDENTIALS_FILE",
         "OTEL_EXPORTER_OTLP_HEADERS",
-        "GROK_INTERNAL_OTLP_HEADERS",
+        "EZER_INTERNAL_OTLP_HEADERS",
     ];
     assert_eq!(
         xai_grok_env::FIRST_PARTY_CREDENTIAL_ENV_VARS,

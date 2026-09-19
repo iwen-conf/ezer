@@ -50,7 +50,7 @@ enum WorktreeCommand {
         #[arg(long)]
         max_age: Option<String>,
         /// Skip the live-process and protected-path guards.
-        /// This does not override the safety check; use `grok worktree rm` for that.
+        /// This does not override the safety check; use `ezer worktree rm` for that.
         #[arg(short, long)]
         force: bool,
     },
@@ -381,7 +381,7 @@ mod tests {
     }
     #[test]
     fn ext_envelope_unwraps_success_result() {
-        let json = r#"{"result": {"path": "/home/user/.grok/worktrees.db"}, "error": null}"#;
+        let json = r#"{"result": {"path": "/home/user/.ezer/worktrees.db"}, "error": null}"#;
         #[derive(serde::Deserialize)]
         struct PathResp {
             path: String,

@@ -289,7 +289,7 @@ pub(crate) fn repair_worktree_identity(
     result
 }
 
-/// Read-site repair for a `summary` that is untagged, or kinded but still missing `worktree_label`, when its cwd is inside a grok-managed worktree.
+/// Read-site repair for a `summary` that is untagged, or kinded but still missing `worktree_label`, when its cwd is inside a ezer-managed worktree.
 /// Stamps the missing identity on disk via [`repair_worktree_identity`] and replaces `summary` with the lock-fresh on-disk state.
 /// Memory then mirrors disk whichever way the repair went.
 pub(crate) fn repair_untagged_worktree_summary(

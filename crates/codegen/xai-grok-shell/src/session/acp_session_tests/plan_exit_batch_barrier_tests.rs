@@ -54,9 +54,9 @@ async fn seeded_active_plan_actor_with_edit_tools() -> (
         tokio::sync::mpsc::unbounded_channel::<PersistenceMsg>();
     let actor = create_test_actor(0, 256_000, 85, gateway_tx, persistence_tx).await;
     *actor.agent.borrow_mut() = test_agent_with_tools(vec![
-        ToolConfig::from_id("GrokBuild:read_file"),
+        ToolConfig::from_id("Ezer:read_file"),
         ToolConfig {
-            id: "GrokBuild:search_replace".into(),
+            id: "Ezer:search_replace".into(),
             params: Some(
                 serde_json::from_value(serde_json::json!({
                     "skip_read_before_edit": true
@@ -213,7 +213,7 @@ async fn mixed_permission_cancel_skips_exit_reverse_request() {
             // Disable background bash so finalize does not require the get_task_output / kill_task companion tools
             *actor.agent.borrow_mut() = test_agent_with_tools(vec![
                 ToolConfig {
-                    id: "GrokBuild:run_terminal_cmd".into(),
+                    id: "Ezer:run_terminal_cmd".into(),
                     params: Some(
                         serde_json::from_value(serde_json::json!({
                             "enabled_background": false

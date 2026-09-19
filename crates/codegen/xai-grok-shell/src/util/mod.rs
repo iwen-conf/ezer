@@ -89,10 +89,10 @@ mod is_user_instruction_path_tests {
     #[test]
     fn workspace_descendants_under_grok_home_stay_project_scoped() {
         assert!(!is_user_instruction_path(
-            Path::new("/custom/grok/worktrees/repo/src/AGENTS.md"),
-            Path::new("/custom/grok"),
+            Path::new("/custom/ezer/worktrees/repo/src/AGENTS.md"),
+            Path::new("/custom/ezer"),
             &[],
-            &[Path::new("/custom/grok/worktrees/repo")],
+            &[Path::new("/custom/ezer/worktrees/repo")],
         ));
     }
 }

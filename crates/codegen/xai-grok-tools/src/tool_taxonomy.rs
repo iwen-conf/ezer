@@ -304,9 +304,9 @@ mod tests {
         use strum::IntoEnumIterator;
         fn wire_and_pascal(ns: ToolNamespace) -> (&'static str, &'static str) {
             match ns {
-                ToolNamespace::GrokBuild => ("grok_build", "GrokBuild"),
-                ToolNamespace::GrokBuildConcise => ("grok_build_concise", "GrokBuildConcise"),
-                ToolNamespace::GrokBuildHashline => ("grok_build_hashline", "GrokBuildHashline"),
+                ToolNamespace::GrokBuild => ("ezer_build", "Ezer"),
+                ToolNamespace::GrokBuildConcise => ("ezer_concise", "EzerConcise"),
+                ToolNamespace::GrokBuildHashline => ("ezer_hashline", "EzerHashline"),
                 ToolNamespace::Codex => ("codex", "Codex"),
                 ToolNamespace::OpenCode => ("opencode", "OpenCode"),
                 ToolNamespace::MCP => ("mcp", "MCP"),
@@ -363,7 +363,7 @@ mod tests {
         assert_eq!(t.get("kind").and_then(|v| v.as_str()), Some("read"));
         assert_eq!(
             t.get("namespace").and_then(|v| v.as_str()),
-            Some("grok_build")
+            Some("ezer_build")
         );
         assert_eq!(t.get("label").and_then(|v| v.as_str()), Some("Read"));
         assert_eq!(t.get("read_only"), Some(&serde_json::json!(true)));

@@ -18,14 +18,14 @@ pub enum ConfigUpdate {
     Auth(Box<GrokAuth>),
     /// Auth scope was removed (user logged out).
     AuthCleared,
-    /// A **broadcast** MCP reload; it applies to every active session regardless of cwd. Fires for two cases: The global `[mcp_servers]` table in `~/.grok/config.toml` changed. The user's home-level `~/.claude.json` changed.
+    /// A **broadcast** MCP reload; it applies to every active session regardless of cwd. Fires for two cases: The global `[mcp_servers]` table in `~/.ezer/config.toml` changed. The user's home-level `~/.claude.json` changed.
     /// `load_claude_json_mcp_servers_as_configs` reads this file for every session, so the reload cannot be narrowed by cwd.
-    /// Project-scoped changes emit [`Self::ProjectMcpServersChanged`] instead so the reload can be narrowed to matching cwds. Those are `<cwd>/.grok/config.toml`, `<cwd>/.mcp.json`, and the project-level `<cwd>/.claude.json`.
+    /// Project-scoped changes emit [`Self::ProjectMcpServersChanged`] instead so the reload can be narrowed to matching cwds. Those are `<cwd>/.ezer/config.toml`, `<cwd>/.mcp.json`, and the project-level `<cwd>/.claude.json`.
     McpServersChanged,
-    /// A **project-scoped** MCP config file changed (`<cwd>/.grok/config.toml`, `<cwd>/.mcp.json`, or `<cwd>/.claude.json`). The agent should reload MCP only for sessions whose cwd matches `cwd` (or sits beneath it).
+    /// A **project-scoped** MCP config file changed (`<cwd>/.ezer/config.toml`, `<cwd>/.mcp.json`, or `<cwd>/.claude.json`). The agent should reload MCP only for sessions whose cwd matches `cwd` (or sits beneath it).
     /// Strictly additive to [`Self::McpServersChanged`]: the unit variant continues to fire for global-config edits. The two cases are split so per-project reloads don't thrash unrelated sessions.
     ProjectMcpServersChanged {
-        /// The project root whose `.grok/`, `.mcp.json`, or `.claude.json` file was edited.
+        /// The project root whose `.ezer/`, `.mcp.json`, or `.claude.json` file was edited.
         /// Sessions whose cwd equals this path, or is a descendant of it, are the reload targets.
         cwd: PathBuf,
     },
@@ -39,7 +39,7 @@ pub enum ConfigUpdate {
     /// The `[model.*]` entries in config.toml changed.
     /// The agent should re-resolve its model list (BYOK models added/removed, default or surprise changed).
     ModelsChanged,
-    /// `~/.grok/models_cache.json` was rewritten on disk (possibly by another grok process sharing the home dir). The agent should consult the cache via `ModelsManager::reload_from_disk_cache`.
+    /// `~/.ezer/models_cache.json` was rewritten on disk (possibly by another ezer process sharing the home dir). The agent should consult the cache via `ModelsManager::reload_from_disk_cache`.
     /// That method content-dedupes self-writes (`persist` / `renew_ttl`) before applying.
     /// The variant carries no payload: validation (TTL, version, auth method) requires `ModelsManager` state the reloader doesn't have.
     ModelsCacheChanged,
@@ -407,7 +407,7 @@ fn collect_project_cwds(batch: &[ConfigChangeEvent]) -> Vec<PathBuf> {
 }
 
 /// Content hash of the cwd-dependent MCP config files a `ProjectMcpServersChanged { cwd }` reload re-reads.
-/// It walks ancestors up to the git root as the loaders do: `find_project_configs` for `.grok/config.toml`, `find_mcp_json_files` for `.mcp.json`.
+/// It walks ancestors up to the git root as the loaders do: `find_project_configs` for `.ezer/config.toml`, `find_mcp_json_files` for `.mcp.json`.
 /// That keeps the hash from drifting from the set the merge actually reads; `<cwd>/.claude.json` (watched at the project root) is hashed too. Returns `None` on a non-`NotFound` read error so the caller dispatches rather than risk suppressing a real edit.
 fn hash_project_mcp_config(cwd: &Path) -> Option<u64> {
     let mut paths = crate::config::find_project_configs(cwd);
@@ -438,7 +438,7 @@ pub(crate) fn hash_auth_key(key: &str) -> u64 {
     hasher.finish()
 }
 
-/// Extract the `[skills]` table from an effective config. Consumers: the reload dispatch above (change detection into `ConfigUpdate::Skills`) and `grok inspect` (via the `crate::config` re-export).
+/// Extract the `[skills]` table from an effective config. Consumers: the reload dispatch above (change detection into `ConfigUpdate::Skills`) and `ezer inspect` (via the `crate::config` re-export).
 /// Both therefore honor the same paths/ignore/disabled as a live session. Session spawn parses the same table separately through the typed `Config.skills` (agent/config.rs).
 /// Keep these in sync rather than adding a fourth parse path.
 pub(crate) fn parse_skills_config(
@@ -749,7 +749,7 @@ mod tests {
         assert_ne!(created, changed, "editing content changes the hash");
     }
 
-    /// The hash must reflect ancestor `.grok/config.toml` and `.mcp.json` under `cwd`; otherwise an ancestor edit would be wrongly suppressed.
+    /// The hash must reflect ancestor `.ezer/config.toml` and `.mcp.json` under `cwd`; otherwise an ancestor edit would be wrongly suppressed.
     #[test]
     fn hash_project_mcp_config_covers_ancestors() {
         let tmp = tempfile::TempDir::new().unwrap();
@@ -791,7 +791,7 @@ mod tests {
         let config: toml::Value = toml::from_str(
             r#"
 [skills]
-paths = ["/home/user/.grok/skills"]
+paths = ["/home/user/.ezer/skills"]
 ignore = ["/tmp"]
 "#,
         )
@@ -879,8 +879,8 @@ base_url = "https://api.example.com/v1"
 
     #[test]
     fn models_changed_detects_default_change() {
-        let a: toml::Value = toml::from_str("[models]\ndefault = \"grok-code-fast-1\"").unwrap();
-        let b: toml::Value = toml::from_str("[models]\ndefault = \"grok-code-slow-1\"").unwrap();
+        let a: toml::Value = toml::from_str("[models]\ndefault = \"ezer-code-fast-1\"").unwrap();
+        let b: toml::Value = toml::from_str("[models]\ndefault = \"ezer-code-slow-1\"").unwrap();
         assert_ne!(a.get("models"), b.get("models"));
     }
 
@@ -931,7 +931,7 @@ command = "/bin/test"
         let batch = vec![
             ConfigChangeEvent::HomeClaudeJsonChanged,
             ConfigChangeEvent::ProjectConfigChanged {
-                path: PathBuf::from("/repo/x/.grok/config.toml"),
+                path: PathBuf::from("/repo/x/.ezer/config.toml"),
             },
         ];
         let cwds = collect_project_cwds(&batch);
@@ -940,19 +940,19 @@ command = "/bin/test"
         assert_eq!(cwds, vec![PathBuf::from("/repo/x")]);
     }
 
-    /// `collect_project_cwds` extracts `<cwd>` from `ProjectConfigChanged` (`<cwd>/.grok/config.toml`) and `McpConfigChanged` (`<cwd>/.mcp.json`).
+    /// `collect_project_cwds` extracts `<cwd>` from `ProjectConfigChanged` (`<cwd>/.ezer/config.toml`) and `McpConfigChanged` (`<cwd>/.mcp.json`).
     /// It de-duplicates while preserving order.
     #[test]
     fn collect_project_cwds_dedupes_and_extracts() {
         let batch = vec![
             ConfigChangeEvent::ProjectConfigChanged {
-                path: PathBuf::from("/repo/a/.grok/config.toml"),
+                path: PathBuf::from("/repo/a/.ezer/config.toml"),
             },
             ConfigChangeEvent::McpConfigChanged {
                 path: PathBuf::from("/repo/a/.mcp.json"),
             },
             ConfigChangeEvent::ProjectConfigChanged {
-                path: PathBuf::from("/repo/b/.grok/config.toml"),
+                path: PathBuf::from("/repo/b/.ezer/config.toml"),
             },
         ];
         let cwds = collect_project_cwds(&batch);

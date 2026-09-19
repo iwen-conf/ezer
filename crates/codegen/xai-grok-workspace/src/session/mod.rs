@@ -630,18 +630,18 @@ pub struct WorkspaceShared {
     pub(crate) lsp: Option<std::sync::Arc<dyn xai_grok_tools::implementations::lsp::LspBackend>>,
     pub(crate) codebase_indexes:
         std::sync::Arc<parking_lot::Mutex<crate::file_system::CodebaseIndexManager>>,
-    /// Finalize the FS rewind checkpoint on non-`Completed` turn-end outcomes (from `GROK_WORKSPACE_REWIND_ALL_OUTCOMES`, default off).
+    /// Finalize the FS rewind checkpoint on non-`Completed` turn-end outcomes (from `EZER_WORKSPACE_REWIND_ALL_OUTCOMES`, default off).
     pub(crate) workspace_rewind_all_outcomes: bool,
-    /// Resolved `$GROK_WORKSPACE_HOME`, the workspace-owned on-disk state root (`<grok_home>/workspace` by default).
+    /// Resolved `$EZER_WORKSPACE_HOME`, the workspace-owned on-disk state root (`<grok_home>/workspace` by default).
     /// The upload queue spills here.
     pub(crate) workspace_home: std::path::PathBuf,
     pub(crate) upload_queue: Option<std::sync::Arc<xai_file_utils::queue::UploadQueue>>,
     /// Whether collection is disabled (opt-out, or the fail-closed default).
     pub(crate) data_collection_disabled: bool,
-    /// Whether per-session `events.jsonl` recording is enabled (`GROK_WORKSPACE_EVENTS_ENABLED=true`).
+    /// Whether per-session `events.jsonl` recording is enabled (`EZER_WORKSPACE_EVENTS_ENABLED=true`).
     /// When `false`, [`session_event_writer`](Self::session_event_writer) returns a noop and never creates a session directory or `events.jsonl`.
     pub(crate) events_enabled: bool,
-    /// Whether per-session `workspace_tool_definitions.json` emission is enabled (`GROK_WORKSPACE_TOOL_DEFS_ENABLED=true`).
+    /// Whether per-session `workspace_tool_definitions.json` emission is enabled (`EZER_WORKSPACE_TOOL_DEFS_ENABLED=true`).
     pub(crate) tool_defs_enabled: bool,
     /// Maps `session_id` to the last `ToolsChanged` re-emit `Instant`, debouncing re-emits per session.
     /// The initial bind emission does not consult this map.
@@ -673,7 +673,7 @@ impl WorkspaceShared {
     pub fn root_cwd(&self) -> &std::path::Path {
         &self.root_cwd
     }
-    /// Resolved `$GROK_WORKSPACE_HOME`, the workspace-owned on-disk state root.
+    /// Resolved `$EZER_WORKSPACE_HOME`, the workspace-owned on-disk state root.
     pub fn workspace_home(&self) -> &std::path::Path {
         &self.workspace_home
     }
@@ -998,7 +998,7 @@ mod tests {
             "flag-off must not create the session dir or events.jsonl"
         );
     }
-    /// Session-derived content outside ~/.grok/sessions: same owner-only rule,
+    /// Session-derived content outside ~/.ezer/sessions: same owner-only rule,
     /// including healing a loose pre-existing root from older builds.
     #[cfg(unix)]
     #[test]

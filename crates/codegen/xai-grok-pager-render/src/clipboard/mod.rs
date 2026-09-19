@@ -18,7 +18,7 @@ use crate::terminal::{MultiplexerKind, TerminalContext};
 
 /// Env var overriding where the copy backup file is written (supports `~`).
 /// Documented in `xai-grok-pager/docs/internal/22-environment-variables.md`.
-pub const GROK_COPY_FILE_ENV: &str = "GROK_COPY_FILE";
+pub const EZER_COPY_FILE_ENV: &str = "EZER_COPY_FILE";
 
 /// Cached result of the remote-session check (env vars don't change at runtime).
 fn is_remote() -> bool {
@@ -32,20 +32,20 @@ fn is_container_no_display() -> bool {
     *CONTAINER.get_or_init(xai_grok_shared::clipboard::is_containerized_without_display)
 }
 
-/// `grok wrap` intercepts OSC 52 onto the local clipboard and advertises it. Over SSH only `TERM` propagates, so brands look incapable.
-/// `LC_GROK_OSC52_SINK` survives default OpenSSH `SendEnv`/`AcceptEnv` of `LC_*`.
+/// `ezer wrap` intercepts OSC 52 onto the local clipboard and advertises it. Over SSH only `TERM` propagates, so brands look incapable.
+/// `LC_EZER_OSC52_SINK` survives default OpenSSH `SendEnv`/`AcceptEnv` of `LC_*`.
 pub fn osc52_sink_active() -> bool {
     static SINK: OnceLock<bool> = OnceLock::new();
     *SINK.get_or_init(|| {
-        std::env::var_os("GROK_OSC52_SINK").is_some()
-            || std::env::var_os("LC_GROK_OSC52_SINK").is_some()
+        std::env::var_os("EZER_OSC52_SINK").is_some()
+            || std::env::var_os("LC_EZER_OSC52_SINK").is_some()
     })
 }
 
-/// `GROK_CLIPBOARD_NO_OSC52` forces OSC 52 off everywhere, including Linux always-emit and the wrap sink. For hosts that paint OSC 52 as garbage.
+/// `EZER_CLIPBOARD_NO_OSC52` forces OSC 52 off everywhere, including Linux always-emit and the wrap sink. For hosts that paint OSC 52 as garbage.
 pub fn osc52_disabled() -> bool {
     static DISABLED: OnceLock<bool> = OnceLock::new();
-    *DISABLED.get_or_init(|| std::env::var_os("GROK_CLIPBOARD_NO_OSC52").is_some())
+    *DISABLED.get_or_init(|| std::env::var_os("EZER_CLIPBOARD_NO_OSC52").is_some())
 }
 
 /// Cached clipboard route resolved at first use from the terminal context.
@@ -108,7 +108,7 @@ impl std::fmt::Display for ClipboardRoute {
     }
 }
 
-/// `osc52` reads cached ambient markers. Tmux is normally true regardless of SSH; `GROK_CLIPBOARD_NO_OSC52` forces it off everywhere.
+/// `osc52` reads cached ambient markers. Tmux is normally true regardless of SSH; `EZER_CLIPBOARD_NO_OSC52` forces it off everywhere.
 pub fn resolve_clipboard_route(ctx: &TerminalContext) -> ClipboardRoute {
     resolve_clipboard_route_with(
         ctx,
@@ -330,7 +330,7 @@ impl ClipboardFeedback {
             Self::CopiedOscContainer => "Copied via OSC 52 from the container.",
             Self::CopiedOscRemote => "Copied via OSC 52.",
             Self::UnverifiedOscRemote | Self::UnverifiedOscContainer => {
-                "Copy sent. If paste fails, use grok wrap or /minimal."
+                "Copy sent. If paste fails, use ezer wrap or /minimal."
             }
             Self::VsCodeSshNonAscii => {
                 "Copied. VS Code over SSH may garble non-ASCII; use /minimal if needed."
@@ -394,7 +394,7 @@ fn decision_for_legs(legs: &ClipboardWriteLegs, text: &str) -> ClipboardFeedback
     trust::resolve_copy_decision(legs, text, clipboard_environment(legs))
 }
 
-/// Write text and return a toast; emits `grok-shell-clipboard_copy` when enabled.
+/// Write text and return a toast; emits `ezer-shell-clipboard_copy` when enabled.
 pub fn copy_text(text: &str) -> CopyResult {
     let started = std::time::Instant::now();
     let route = clipboard_route();
@@ -467,9 +467,9 @@ impl CopyDelivery {
     }
 }
 
-/// [`GROK_COPY_FILE_ENV`] or `~/.grok/last-copy.txt`. `None` skips the file rather than writing a world-visible temp path.
+/// [`EZER_COPY_FILE_ENV`] or `~/.ezer/last-copy.txt`. `None` skips the file rather than writing a world-visible temp path.
 pub fn default_copy_fallback_path() -> Option<std::path::PathBuf> {
-    if let Ok(raw) = std::env::var(GROK_COPY_FILE_ENV) {
+    if let Ok(raw) = std::env::var(EZER_COPY_FILE_ENV) {
         let trimmed = raw.trim();
         if !trimmed.is_empty() {
             return Some(std::path::PathBuf::from(
@@ -480,7 +480,7 @@ pub fn default_copy_fallback_path() -> Option<std::path::PathBuf> {
     xai_grok_config::user_grok_home().map(|grok_home| grok_home.join("last-copy.txt"))
 }
 
-/// Abbreviate via [`crate::util::abbreviate_path`] so toasts stay short (`~/.grok` or `~`).
+/// Abbreviate via [`crate::util::abbreviate_path`] so toasts stay short (`~/.ezer` or `~`).
 pub fn display_copy_path(path: &std::path::Path) -> String {
     crate::util::abbreviate_path(&path.to_string_lossy()).into_owned()
 }
@@ -524,7 +524,7 @@ pub fn write_copy_fallback(text: &str) -> std::io::Result<std::path::PathBuf> {
     let Some(path) = default_copy_fallback_path() else {
         return Err(std::io::Error::new(
             std::io::ErrorKind::NotFound,
-            "no home directory resolves; set GROK_COPY_FILE to enable the copy backup file",
+            "no home directory resolves; set EZER_COPY_FILE to enable the copy backup file",
         ));
     };
     #[cfg(unix)]
@@ -2017,7 +2017,7 @@ mod tests {
         );
         assert!(
             on.osc52,
-            "grok wrap sink must emit OSC 52 so the local PTY can intercept it"
+            "ezer wrap sink must emit OSC 52 so the local PTY can intercept it"
         );
         let killed = resolve_clipboard_route_with(
             &plain_terminal_ctx(),
@@ -2028,7 +2028,7 @@ mod tests {
         );
         assert!(
             !killed.osc52,
-            "GROK_CLIPBOARD_NO_OSC52 still wins over the wrap sink"
+            "EZER_CLIPBOARD_NO_OSC52 still wins over the wrap sink"
         );
     }
 
@@ -2266,14 +2266,14 @@ mod tests {
             (
                 ClipboardFeedback::UnverifiedOscRemote,
                 ClipboardDelivery::Unverified,
-                "Copy sent. If paste fails, use grok wrap or /minimal.",
+                "Copy sent. If paste fails, use ezer wrap or /minimal.",
                 "unverified_osc_remote",
                 120,
             ),
             (
                 ClipboardFeedback::UnverifiedOscContainer,
                 ClipboardDelivery::Unverified,
-                "Copy sent. If paste fails, use grok wrap or /minimal.",
+                "Copy sent. If paste fails, use ezer wrap or /minimal.",
                 "unverified_osc_container",
                 120,
             ),
@@ -2328,7 +2328,7 @@ mod tests {
     }
 
     /// Copied text can be sensitive and the fallback path is predictable, so the file must be owner-only (`0600`).
-    /// That includes a pre-existing `0644` file left by an older grok.
+    /// That includes a pre-existing `0644` file left by an older ezer.
     #[cfg(unix)]
     #[test]
     fn copy_file_is_owner_only_0600() {
@@ -2368,11 +2368,11 @@ mod tests {
         let custom = dir.path().join("custom-copy.txt");
         // SAFETY: test-only env mutation; serialized on the grok_copy_file key.
         unsafe {
-            std::env::set_var(GROK_COPY_FILE_ENV, &custom);
+            std::env::set_var(EZER_COPY_FILE_ENV, &custom);
         }
         let resolved = default_copy_fallback_path();
         unsafe {
-            std::env::remove_var(GROK_COPY_FILE_ENV);
+            std::env::remove_var(EZER_COPY_FILE_ENV);
         }
         assert_eq!(resolved, Some(custom));
     }
@@ -2383,23 +2383,23 @@ mod tests {
         let dir = tempfile::tempdir().expect("tempdir");
         let custom = dir.path().join("last.txt");
         unsafe {
-            std::env::set_var(GROK_COPY_FILE_ENV, &custom);
+            std::env::set_var(EZER_COPY_FILE_ENV, &custom);
         }
         let written = write_copy_fallback("payload").expect("fallback write");
         unsafe {
-            std::env::remove_var(GROK_COPY_FILE_ENV);
+            std::env::remove_var(EZER_COPY_FILE_ENV);
         }
         assert_eq!(written, custom);
         assert_eq!(std::fs::read_to_string(&custom).expect("read"), "payload");
     }
 
-    /// Without `GROK_COPY_FILE`, the default is `~/.grok/last-copy.txt`
-    /// (grok home) — short and toast-friendly, unlike macOS's temp dir.
+    /// Without `EZER_COPY_FILE`, the default is `~/.ezer/last-copy.txt`
+    /// (ezer home) — short and toast-friendly, unlike macOS's temp dir.
     #[test]
     #[serial_test::serial(grok_copy_file)]
     fn default_copy_fallback_path_is_grok_home() {
         unsafe {
-            std::env::remove_var(GROK_COPY_FILE_ENV);
+            std::env::remove_var(EZER_COPY_FILE_ENV);
         }
         let path = default_copy_fallback_path();
         // Test envs always resolve a home (or set GROK_HOME).
@@ -2410,15 +2410,15 @@ mod tests {
     }
 
     /// Toast paths collapse the home prefix to `~`.
-    /// Grok-home paths go through the shared `abbreviate_path` convention.
+    /// ezer-home paths go through the shared `abbreviate_path` convention.
     /// The `GROK_HOME`-override integration test in `xai-grok-pager` covers that further.
     #[test]
     fn display_copy_path_abbreviates_home() {
         if std::env::var_os("GROK_HOME").is_none() {
             let home = xai_dirs::home_dir().expect("home resolves in tests");
             assert_eq!(
-                display_copy_path(&home.join(".grok").join("last-copy.txt")),
-                "~/.grok/last-copy.txt"
+                display_copy_path(&home.join(".ezer").join("last-copy.txt")),
+                "~/.ezer/last-copy.txt"
             );
         }
         // Non-home paths pass through untouched, including multi-byte UTF-8 components (must never slice at a non-char boundary)

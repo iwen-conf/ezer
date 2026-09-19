@@ -15,18 +15,18 @@ pub const EZER_API_KEY_ENV_VAR: &str = "EZER_API_KEY";
 
 /// Legacy env var name.
 /// Checked as a fallback when `XAI_API_KEY` is not set, so existing deployments that use the old name keep working.
-pub const LEGACY_XAI_API_KEY_ENV_VAR: &str = "GROK_CODE_XAI_API_KEY";
+pub const LEGACY_XAI_API_KEY_ENV_VAR: &str = "EZER_CODE_XAI_API_KEY";
 
 /// Read the API key from the environment.
 ///
-/// Checks `EZER_API_KEY`, then `XAI_API_KEY`, then `GROK_CODE_XAI_API_KEY`.
+/// Checks `EZER_API_KEY`, then `XAI_API_KEY`, then `EZER_CODE_XAI_API_KEY`.
 pub fn read_xai_api_key_env() -> Result<String, std::env::VarError> {
     std::env::var(EZER_API_KEY_ENV_VAR)
         .or_else(|_| std::env::var(XAI_API_KEY_ENV_VAR))
         .or_else(|_| std::env::var(LEGACY_XAI_API_KEY_ENV_VAR))
 }
 
-/// Returns `true` if `EZER_API_KEY`, `XAI_API_KEY`, or `GROK_CODE_XAI_API_KEY` is set.
+/// Returns `true` if `EZER_API_KEY`, `XAI_API_KEY`, or `EZER_CODE_XAI_API_KEY` is set.
 pub fn has_xai_api_key_env() -> bool {
     read_xai_api_key_env().is_ok()
 }

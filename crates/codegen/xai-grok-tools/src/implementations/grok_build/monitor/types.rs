@@ -118,7 +118,7 @@ pub struct MonitorEventNotification {
     pub task_id: String,
     pub event_text: String,
     /// Session that owns the monitor which produced this event. In leader mode every session shares one [`MonitorEventBuffer`], so the drain sites
-    /// filter on this to avoid surfacing one session's monitor events inside another session's turn. `None` for legacy / non-grok-build backends,
+    /// filter on this to avoid surfacing one session's monitor events inside another session's turn. `None` for legacy / non-ezer-build backends,
     /// which any session drains for backwards compatibility.
     pub owner_session_id: Option<String>,
 }
@@ -140,7 +140,7 @@ impl MonitorEventNotification {
 /// via [`drain_owned`]. [`EventQueue`]: xai_interjection_core::EventQueue
 pub type MonitorEventBuffer = xai_interjection_core::EventQueue<MonitorEventNotification>;
 
-crate::register_resource!("grok_build", "MonitorEventBuffer", MonitorEventBuffer);
+crate::register_resource!("ezer_build", "MonitorEventBuffer", MonitorEventBuffer);
 
 /// Drain only `my_owner`'s events (the buffer is shared across sessions in
 /// leader mode); owner-less legacy events drain anywhere.

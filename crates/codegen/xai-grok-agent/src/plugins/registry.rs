@@ -75,7 +75,7 @@ pub struct LoadedPlugin {
 }
 
 impl LoadedPlugin {
-    /// Data directory for this plugin: `~/.grok/plugin-data/<plugin_id>/`.
+    /// Data directory for this plugin: `~/.ezer/plugin-data/<plugin_id>/`.
     pub fn data_dir(&self) -> PathBuf {
         xai_grok_config::grok_home()
             .join("plugin-data")

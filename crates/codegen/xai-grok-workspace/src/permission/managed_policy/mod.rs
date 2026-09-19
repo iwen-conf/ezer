@@ -106,7 +106,7 @@ fn managed_toml_policy_layers(
 }
 
 /// Pure form of [`load_managed_settings`] over pre-loaded sources.
-/// Native TOML layers apply trust-descending; the advisory Claude file applies last so it never claims a name ahead of an admin grok layer.
+/// Native TOML layers apply trust-descending; the advisory Claude file applies last so it never claims a name ahead of an admin ezer layer.
 fn resolve_managed_settings(
     claude: Option<(serde_json::Value, PathBuf)>,
     mut toml_layers: Vec<PolicyLayer>,

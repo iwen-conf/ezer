@@ -131,7 +131,7 @@ pub(crate) struct SessionMemory {
     /// Storage layout resolved at spawn. Retained while disabled so re-enabling
     /// restores the pinned mode and any configured root override.
     pub configured_storage: Option<crate::session::memory::MemoryStorage>,
-    /// `--no-memory` / `GROK_MEMORY=0`: memory stays off for the whole process.
+    /// `--no-memory` / `EZER_MEMORY=0`: memory stays off for the whole process.
     pub process_disabled: bool,
     /// The effective TOML started this session with `[memory] enabled = false`.
     /// The `/memory` toggle can still enable memory for the session.

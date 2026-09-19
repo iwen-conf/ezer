@@ -1,6 +1,6 @@
 //! Mock `POST /v1/events`: records every product-telemetry batch the shell posts and answers 200.
 //!
-//! The telemetry client POSTs `GROK_TELEMETRY_EVENTS_URL` verbatim, so a test points that env at
+//! The telemetry client POSTs `EZER_TELEMETRY_EVENTS_URL` verbatim, so a test points that env at
 //! `{url()}/events`. Events are flattened out of each batch so a test asserts on one `event_name` at a time.
 
 use std::sync::Mutex;

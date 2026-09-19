@@ -1,10 +1,10 @@
 //! AGENTS.md / Claude.md / rules directory discovery and loading.
 //!
-//! Searches from cwd to repo root, plus `~/.grok/`. Also discovers
-//! `*.md` files in rules directories: vendor-prefixed `.grok/rules/`,
+//! Searches from cwd to repo root, plus `~/.ezer/`. Also discovers
+//! `*.md` files in rules directories: vendor-prefixed `.ezer/rules/`,
 //! `.claude/rules/`, and `.cursor/rules/` in project directories, a
 //! plain `rules/` directly under the vendor-qualified home-scope roots
-//! (`~/.grok/rules/`, `~/.claude/rules/`, `~/.cursor/rules/`), and any
+//! (`~/.ezer/rules/`, `~/.claude/rules/`, `~/.cursor/rules/`), and any
 //! user-configured `[paths] extra_rule_dirs` (scanned as home-scope rules).
 
 use std::path::{Path, PathBuf};
@@ -28,7 +28,7 @@ pub struct AgentConfigFile {
 }
 
 /// Where a discovery root (and every file found under it) comes from; decides folder-trust gating, whether the
-/// repo's gitignore applies, and how the prompt and `grok inspect` scope the file.
+/// repo's gitignore applies, and how the prompt and `ezer inspect` scope the file.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum InstructionSource {
@@ -165,7 +165,7 @@ fn add_discovered_candidate(
     });
 }
 
-/// Read Agents.md from ~/.grok/, git repo root, and session cwd.
+/// Read Agents.md from ~/.ezer/, git repo root, and session cwd.
 /// `compat` gates which vendor directories are scanned. `CompatConfig::default()` preserves all-vendors behavior.
 /// `project_trusted` omits project-scope files when false.
 /// Each `[paths] extra_rule_dirs` entry is scanned for direct `*.md` rules at home scope, after the built-in home
@@ -371,7 +371,7 @@ pub fn format_agents_md_section(configs: &[AgentConfigFile]) -> Option<String> {
 pub const LEGACY_AGENTS_MD_REMINDER_PREFIX: &str =
     "\n\n<system-reminder>\nAs you answer the user's questions, you can use the following context";
 
-/// Open/close `system-reminder` (Grok) or `system_reminder` (Cursor/IDE), case-insensitive.
+/// Open/close `system-reminder` (ezer) or `system_reminder` (Cursor/IDE), case-insensitive.
 /// Shared with unit tests so CI fails if the pattern is ever invalid or too narrow.
 const SYSTEM_REMINDER_TAG_PATTERN: &str = r"(?i)<(\s*/?\s*system[-_]reminder)";
 
@@ -698,31 +698,31 @@ mod tests {
     #[tokio::test]
     async fn home_and_project_rules_have_stable_order_without_doubled_paths() {
         let tmp = tempfile::tempdir().unwrap();
-        let grok_home = tmp.path().join("custom-grok-home");
+        let grok_home = tmp.path().join("custom-ezer-home");
         let home = tmp.path().join("home");
         let repo = tmp.path().join("repo");
         fs::create_dir_all(grok_home.join("rules")).unwrap();
         fs::create_dir_all(home.join(".claude/rules")).unwrap();
         fs::create_dir_all(home.join(".cursor/rules")).unwrap();
-        fs::create_dir_all(repo.join(".grok/rules")).unwrap();
+        fs::create_dir_all(repo.join(".ezer/rules")).unwrap();
         fs::create_dir_all(repo.join(".claude/rules")).unwrap();
         fs::create_dir_all(repo.join(".cursor/rules")).unwrap();
         init_git_repo(&repo);
 
         for (path, content) in [
-            (grok_home.join("rules/b.md"), "grok-b"),
-            (grok_home.join("rules/a.md"), "grok-a"),
+            (grok_home.join("rules/b.md"), "ezer-b"),
+            (grok_home.join("rules/a.md"), "ezer-a"),
             (home.join(".claude/rules/a.md"), "claude-a"),
             (home.join(".cursor/rules/a.md"), "cursor-a"),
             (repo.join("AGENTS.md"), "repo-named"),
-            (repo.join(".grok/rules/a.md"), "repo-grok"),
+            (repo.join(".ezer/rules/a.md"), "repo-ezer"),
             (repo.join(".claude/rules/a.md"), "repo-claude"),
             (repo.join(".cursor/rules/a.md"), "repo-cursor"),
         ] {
             fs::write(path, content).unwrap();
         }
         for path in [
-            grok_home.join(".grok/rules/doubled.md"),
+            grok_home.join(".ezer/rules/doubled.md"),
             home.join(".claude/.claude/rules/doubled.md"),
             home.join(".cursor/.cursor/rules/doubled.md"),
         ] {
@@ -747,12 +747,12 @@ mod tests {
         assert_eq!(
             contents,
             vec![
-                "grok-a",
-                "grok-b",
+                "ezer-a",
+                "ezer-b",
                 "claude-a",
                 "cursor-a",
                 "repo-named",
-                "repo-grok",
+                "repo-ezer",
                 "repo-claude",
                 "repo-cursor",
             ]
@@ -767,7 +767,7 @@ mod tests {
     #[tokio::test]
     async fn vendor_home_agents_and_rules_cells_are_independent() {
         let tmp = tempfile::tempdir().unwrap();
-        let grok_home = tmp.path().join("grok-home");
+        let grok_home = tmp.path().join("ezer-home");
         let home = tmp.path().join("home");
         let cwd = tmp.path().join("project");
         fs::create_dir_all(&grok_home).unwrap();
@@ -838,12 +838,12 @@ mod tests {
         let repo = tmp.path().join("repo");
         let nested = repo.join("nested");
         fs::create_dir_all(nested.join("rules")).unwrap();
-        fs::create_dir_all(nested.join(".grok/rules")).unwrap();
+        fs::create_dir_all(nested.join(".ezer/rules")).unwrap();
         init_git_repo(&repo);
         fs::write(nested.join("rules/home.md"), "nested-home-rule").unwrap();
         fs::write(repo.join("AGENTS.md"), "repo-named").unwrap();
         fs::write(nested.join("AGENTS.md"), "nested-named").unwrap();
-        fs::write(nested.join(".grok/rules/project.md"), "nested-project-rule").unwrap();
+        fs::write(nested.join(".ezer/rules/project.md"), "nested-project-rule").unwrap();
 
         let configs = read_agents_config_with_roots(
             nested.to_str().unwrap(),
@@ -874,14 +874,14 @@ mod tests {
         let tmp = tempfile::tempdir().unwrap();
         let repo = tmp.path().join("repo");
         fs::create_dir_all(repo.join("rules")).unwrap();
-        fs::create_dir_all(repo.join(".grok/rules")).unwrap();
+        fs::create_dir_all(repo.join(".ezer/rules")).unwrap();
         fs::create_dir_all(repo.join(".claude/rules")).unwrap();
         init_git_repo(&repo);
         fs::write(repo.join("rules/home.md"), "home-rule").unwrap();
-        fs::write(repo.join(".grok/rules/project.md"), "project-grok-rule").unwrap();
+        fs::write(repo.join(".ezer/rules/project.md"), "project-ezer-rule").unwrap();
         fs::write(repo.join(".claude/rules/project.md"), "project-claude-rule").unwrap();
-        fs::create_dir_all(repo.join(".grok/.grok/rules")).unwrap();
-        fs::write(repo.join(".grok/.grok/rules/doubled.md"), "doubled").unwrap();
+        fs::create_dir_all(repo.join(".ezer/.ezer/rules")).unwrap();
+        fs::write(repo.join(".ezer/.ezer/rules/doubled.md"), "doubled").unwrap();
 
         let configs = read_agents_config_with_roots(
             repo.to_str().unwrap(),
@@ -893,7 +893,7 @@ mod tests {
             /*project_trusted*/ true,
         )
         .await;
-        for expected in ["home-rule", "project-grok-rule", "project-claude-rule"] {
+        for expected in ["home-rule", "project-ezer-rule", "project-claude-rule"] {
             assert_eq!(
                 configs
                     .iter()
@@ -909,7 +909,7 @@ mod tests {
     #[tokio::test]
     async fn vendor_home_repo_overlap_keeps_project_named_role() {
         let tmp = tempfile::tempdir().unwrap();
-        let grok_home = tmp.path().join("grok-home");
+        let grok_home = tmp.path().join("ezer-home");
         let home = tmp.path().join("home");
         let repo = home.join(".claude");
         fs::create_dir_all(&grok_home).unwrap();
@@ -980,17 +980,17 @@ mod tests {
     #[tokio::test]
     async fn extra_rule_dirs_load_as_home_rules_after_builtin_roots() {
         let tmp = tempfile::tempdir().unwrap();
-        let grok_home = tmp.path().join("grok-home");
+        let grok_home = tmp.path().join("ezer-home");
         let home = tmp.path().join("home");
         let extra = home.join("team-rules");
         let repo = tmp.path().join("repo");
         fs::create_dir_all(grok_home.join("rules")).unwrap();
         fs::create_dir_all(home.join(".claude/rules")).unwrap();
         fs::create_dir_all(extra.join("nested")).unwrap();
-        fs::create_dir_all(repo.join(".grok/rules")).unwrap();
+        fs::create_dir_all(repo.join(".ezer/rules")).unwrap();
         init_git_repo(&repo);
         for (path, content) in [
-            (grok_home.join("rules/a.md"), "grok-home-rule"),
+            (grok_home.join("rules/a.md"), "ezer-home-rule"),
             (home.join(".claude/rules/v.md"), "claude-home-rule"),
             (extra.join("b.md"), "extra-b"),
             (extra.join("a.md"), "---\nname: x\n---\nextra-a"),
@@ -998,7 +998,7 @@ mod tests {
             (extra.join("nested/deep.md"), "not-scanned-recursively"),
             (extra.join("AGENTS.md"), "extra-named"),
             (repo.join("AGENTS.md"), "repo-named"),
-            (repo.join(".grok/rules/p.md"), "project-rule"),
+            (repo.join(".ezer/rules/p.md"), "project-rule"),
         ] {
             fs::write(path, content).unwrap();
         }
@@ -1030,7 +1030,7 @@ mod tests {
         // any other rule; `AGENTS.md` inside an extra dir is just another `*.md` rule; only direct children are read.
         assert_eq!(
             vec![
-                "grok-home-rule",
+                "ezer-home-rule",
                 "claude-home-rule",
                 "extra-named",
                 "extra-a",
@@ -1048,15 +1048,15 @@ mod tests {
     #[tokio::test]
     async fn extra_rule_dir_inside_untrusted_repo_still_loads_and_ignores_gitignore() {
         let tmp = tempfile::tempdir().unwrap();
-        let grok_home = tmp.path().join("grok-home");
+        let grok_home = tmp.path().join("ezer-home");
         let repo = tmp.path().join("repo");
         let extra = repo.join("vendor-rules");
         fs::create_dir_all(&grok_home).unwrap();
-        fs::create_dir_all(repo.join(".grok/rules")).unwrap();
+        fs::create_dir_all(repo.join(".ezer/rules")).unwrap();
         fs::create_dir_all(&extra).unwrap();
         init_git_repo(&repo);
         fs::write(repo.join(".gitignore"), "vendor-rules/\n").unwrap();
-        fs::write(repo.join(".grok/rules/p.md"), "project-rule").unwrap();
+        fs::write(repo.join(".ezer/rules/p.md"), "project-rule").unwrap();
         fs::write(extra.join("r.md"), "configured-rule").unwrap();
 
         // Untrusted: project roots are dropped, but a user-listed dir under the repo is a user surface and stays.
@@ -1081,15 +1081,15 @@ mod tests {
     #[tokio::test]
     async fn extra_rule_dir_that_is_also_a_project_rules_dir_stays_configured() {
         let tmp = tempfile::tempdir().unwrap();
-        let grok_home = tmp.path().join("grok-home");
+        let grok_home = tmp.path().join("ezer-home");
         let repo = tmp.path().join("repo");
         let shared = repo.join(".claude/rules");
         fs::create_dir_all(&grok_home).unwrap();
         fs::create_dir_all(&shared).unwrap();
-        fs::create_dir_all(repo.join(".grok/rules")).unwrap();
+        fs::create_dir_all(repo.join(".ezer/rules")).unwrap();
         init_git_repo(&repo);
         fs::write(shared.join("team.md"), "shared-rule").unwrap();
-        fs::write(repo.join(".grok/rules/p.md"), "project-rule").unwrap();
+        fs::write(repo.join(".ezer/rules/p.md"), "project-rule").unwrap();
         fs::write(repo.join("AGENTS.md"), "repo-named").unwrap();
 
         let configs = read_agents_config_with_roots(
@@ -1115,7 +1115,7 @@ mod tests {
     #[tokio::test]
     async fn listed_vendor_rules_dir_is_configured_with_compat_on_or_off() {
         let tmp = tempfile::tempdir().unwrap();
-        let grok_home = tmp.path().join("grok-home");
+        let grok_home = tmp.path().join("ezer-home");
         let home = tmp.path().join("home");
         let cwd = tmp.path().join("project");
         fs::create_dir_all(&grok_home).unwrap();
@@ -1162,13 +1162,13 @@ mod tests {
     #[tokio::test]
     async fn rule_frontmatter_is_stripped_but_named_frontmatter_is_preserved() {
         let tmp = tempfile::tempdir().unwrap();
-        let grok_home = tmp.path().join("custom-grok-home");
+        let grok_home = tmp.path().join("custom-ezer-home");
         let home = tmp.path().join("home");
         let repo = tmp.path().join("repo");
         fs::create_dir_all(grok_home.join("rules")).unwrap();
         fs::create_dir_all(home.join(".claude/rules")).unwrap();
         fs::create_dir_all(home.join(".cursor/rules")).unwrap();
-        fs::create_dir_all(repo.join(".grok/rules")).unwrap();
+        fs::create_dir_all(repo.join(".ezer/rules")).unwrap();
         fs::create_dir_all(repo.join(".claude/rules")).unwrap();
         fs::create_dir_all(repo.join(".cursor/rules")).unwrap();
         init_git_repo(&repo);
@@ -1178,7 +1178,7 @@ mod tests {
             (grok_home.join("rules/global.md"), "custom-home-body"),
             (home.join(".claude/rules/global.md"), "claude-body"),
             (home.join(".cursor/rules/global.md"), "cursor-body"),
-            (repo.join(".grok/rules/project.md"), "grok-project-body"),
+            (repo.join(".ezer/rules/project.md"), "ezer-project-body"),
             (repo.join(".claude/rules/project.md"), "claude-project-body"),
             (repo.join(".cursor/rules/project.md"), "cursor-project-body"),
         ] {
@@ -1200,7 +1200,7 @@ mod tests {
             "custom-home-body",
             "claude-body",
             "cursor-body",
-            "grok-project-body",
+            "ezer-project-body",
             "claude-project-body",
             "cursor-project-body",
         ] {

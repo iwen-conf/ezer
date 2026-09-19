@@ -143,7 +143,7 @@ struct ClientState {
     tx: AsyncSender<ClientOutbound>,
     mode: ClientMode,
     capabilities: ClientCapabilities,
-    /// The client type string from IPC registration (e.g., "grok-tui", "grok-code-extension").
+    /// The client type string from IPC registration (e.g., "ezer-tui", "ezer-code-extension").
     /// Injected into `initialize` requests as `clientIdentifier` so the agent knows the real client type when several clients share one leader.
     client_type: String,
     /// Set to `true` once the client's `initialize` request has been seen and had `clientIdentifier` injected.
@@ -1046,7 +1046,7 @@ fn workspace_server_id() -> String {
         .collect();
     let name = sanitized.trim_matches('-');
     if name.is_empty() {
-        "grok-workspace".to_string()
+        "ezer-workspace".to_string()
     } else {
         name.to_string()
     }
@@ -1138,7 +1138,7 @@ async fn handle_workspace_start(
     let server_id = workspace_server_id();
     let device_id = xai_grok_telemetry::id::agent_id_async().await;
     let metadata = serde_json::json!({
-        "source": "grok-workspace",
+        "source": "ezer-workspace",
         "hostname": gethostname::gethostname().to_string_lossy(),
         "cwd": cwd_path.display().to_string(),
         "device_id": device_id,
@@ -1146,7 +1146,7 @@ async fn handle_workspace_start(
         "platform": std::env::consts::OS,
     });
     let upload_queue_enabled =
-        std::env::var("GROK_WORKSPACE_UPLOAD_QUEUE_ENABLED").as_deref() != Ok("false");
+        std::env::var("EZER_WORKSPACE_UPLOAD_QUEUE_ENABLED").as_deref() != Ok("false");
     crate::agent::folder_trust::resolve_and_record(&cwd_path, None, false);
     let project_lsp_trusted = crate::agent::folder_trust::project_scope_allowed(&cwd_path);
     let handle = xai_grok_workspace::connect_local_workspace(
@@ -1493,7 +1493,7 @@ fn make_version_mismatch_notification(
                 "leaderVersion": leader_version,
                 "message": format!(
                     "Client version {client_version} differs from leader version \
-                     {leader_version}. Restart the grok binary to use the same version."
+                     {leader_version}. Restart the ezer binary to use the same version."
                 )
             }
         })

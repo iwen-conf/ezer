@@ -87,7 +87,7 @@ pub(crate) fn wipe_substantial_draft(harness: &mut PtyHarness) {
 }
 
 /// Contextual-hints opt-in. The feature ships default-OFF.
-pub(crate) const CONTEXTUAL_HINTS_ENV: &[(&str, &str)] = &[("GROK_CONTEXTUAL_HINTS", "1")];
+pub(crate) const CONTEXTUAL_HINTS_ENV: &[(&str, &str)] = &[("EZER_CONTEXTUAL_HINTS", "1")];
 
 /// Collect short OSC 8 payloads for assertion failure messages.
 pub(crate) fn osc8_snippets(raw: &str) -> String {
@@ -145,7 +145,7 @@ pub(crate) fn tall_response(sentinel: &str, rows: usize) -> String {
 // `seed_fake_oauth` / `oauth_credential_ops` live in `xai_grok_pager_pty_harness::flows` (re-exported above)
 
 /// The harness's default `XAI_API_KEY` (ApiKey/BYOK mode, no auth.json entry) would never fetch
-/// `/v1/settings`. Spawns WITHOUT `GROK_ANNOUNCEMENTS_OVERRIDE` (the env override beats pushed
+/// `/v1/settings`. Spawns WITHOUT `EZER_ANNOUNCEMENTS_OVERRIDE` (the env override beats pushed
 /// lists in the pager and would mask updates).
 pub(crate) fn spawn_polling_session(content: &ContentController, oauth_user: &str) -> PtyHarness {
     spawn_polling_session_with_env(content, oauth_user, &[])
@@ -159,7 +159,7 @@ pub(crate) fn spawn_polling_session_with_env(
 ) -> PtyHarness {
     seed_fake_oauth(content, oauth_user);
     let mut overrides = Vec::from(oauth_credential_ops());
-    overrides.push(EnvOp::set("GROK_ANNOUNCEMENTS_REFRESH_INTERVAL_SECS", "1"));
+    overrides.push(EnvOp::set("EZER_ANNOUNCEMENTS_REFRESH_INTERVAL_SECS", "1"));
     overrides.extend(extra_env.iter().map(|(key, value)| EnvOp::set(key, value)));
 
     let binary = pager_binary().expect("resolve pager binary");
@@ -190,7 +190,7 @@ pub(crate) fn spawn_polling_session_with_env(
 
 /// Start the mock server with two models that have different agent types.
 /// Returns a `ContentController` configured for agent-type-mismatch testing.
-/// The default model is `"default-model"` (no agent type, so it uses the `grok-build` harness).
+/// The default model is `"default-model"` (no agent type, so it uses the `ezer-build` harness).
 pub(crate) async fn start_dual_agent_type_content() -> ContentController {
     ContentController::start_with_models(vec![
         MockModel::new("default-model"),
@@ -215,15 +215,15 @@ pub(crate) fn git_repo_with_mcp_json() -> tempfile::TempDir {
 }
 
 /// Explicit overrides for a folder-trust run.
-/// A self-built grok auto-trusts, so `GROK_TEST_VERSION` simulates a release; the gate is pinned both ways.
+/// A self-built ezer auto-trusts, so `EZER_TEST_VERSION` simulates a release; the gate is pinned both ways.
 pub(crate) fn trust_env(feature_on: bool) -> [(&'static str, &'static str); 2] {
     [
-        ("GROK_TEST_VERSION", "0.0.0-sim"),
-        ("GROK_FOLDER_TRUST", if feature_on { "1" } else { "0" }),
+        ("EZER_TEST_VERSION", "0.0.0-sim"),
+        ("EZER_FOLDER_TRUST", if feature_on { "1" } else { "0" }),
     ]
 }
 
-/// Filename of the folder-trust store under `$HOME/.grok`. Mirrors
+/// Filename of the folder-trust store under `$HOME/.ezer`. Mirrors
 /// `xai_grok_workspace::trust::TRUST_FILE_NAME`; the harness does not link the workspace crate.
 pub(crate) const TRUST_FILE_NAME: &str = "trusted_folders.toml";
 
@@ -252,7 +252,7 @@ pub(crate) fn store_trusts(store_path: &Path, query: &Path) -> bool {
 
 /// Whether the isolated trust store has recorded a grant covering `repo` (a repo root, so its own workspace key).
 pub(crate) fn folder_is_trusted(content: &ContentController, repo: &Path) -> bool {
-    store_trusts(&content.home().join(".grok").join(TRUST_FILE_NAME), repo)
+    store_trusts(&content.home().join(".ezer").join(TRUST_FILE_NAME), repo)
 }
 
 // Leader mode e2e. The leader cluster cases moved to the dedicated `tests/leader_pty_e2e` target.
@@ -281,7 +281,7 @@ pub(crate) fn seed_mcp_server_config(content: &ContentController) {
     #[cfg(windows)]
     let command = "cmd.exe";
 
-    let grok_home = content.home().join(".grok");
+    let grok_home = content.home().join(".ezer");
     std::fs::create_dir_all(&grok_home).expect("create fake GROK_HOME");
     let config = format!(
         "[mcp_servers.{MCP_TEST_SERVER}]\ncommand = \"{command}\"\nargs = []\nstartup_timeout_sec = 2\n"
@@ -289,14 +289,14 @@ pub(crate) fn seed_mcp_server_config(content: &ContentController) {
     std::fs::write(grok_home.join("config.toml"), config).expect("write config.toml");
 }
 
-/// Write one hooks spec file under the sandbox's `~/.grok/hooks/` (`spec` is the file's JSON body).
+/// Write one hooks spec file under the sandbox's `~/.ezer/hooks/` (`spec` is the file's JSON body).
 pub(crate) fn seed_hook_spec(
     content: &ContentController,
     file_name: &str,
     spec: &serde_json::Value,
 ) {
-    let hooks_dir = content.home().join(".grok").join("hooks");
-    std::fs::create_dir_all(&hooks_dir).expect("create ~/.grok/hooks");
+    let hooks_dir = content.home().join(".ezer").join("hooks");
+    std::fs::create_dir_all(&hooks_dir).expect("create ~/.ezer/hooks");
     std::fs::write(
         hooks_dir.join(file_name),
         serde_json::to_vec_pretty(spec).expect("serialize hook spec"),
@@ -425,18 +425,18 @@ pub(crate) const MOUSE_OFF_STICKY: &str =
 pub(crate) const MOUSE_OFF_HINT_PROMPT: &str =
     "/toggle-mouse-reporting to enable mouse reporting and restore TUI features";
 
-/// Seed `~/.grok/config.toml` with a `[ui]` section body (e.g. `"vim_mode = true"`).
-/// Same `{GROK_HOME|HOME}/.grok/config.toml` location `seed_mouse_reporting_toggle_config` uses; call before spawning the pager.
+/// Seed `~/.ezer/config.toml` with a `[ui]` section body (e.g. `"vim_mode = true"`).
+/// Same `{GROK_HOME|HOME}/.ezer/config.toml` location `seed_mouse_reporting_toggle_config` uses; call before spawning the pager.
 pub(crate) fn seed_ui_config(content: &ContentController, ui_body: &str) {
-    let grok_home = content.home().join(".grok");
-    std::fs::create_dir_all(&grok_home).expect("create .grok");
+    let grok_home = content.home().join(".ezer");
+    std::fs::create_dir_all(&grok_home).expect("create .ezer");
     let config = format!("[ui]\n{ui_body}\n");
     std::fs::write(grok_home.join("config.toml"), config).expect("write config.toml");
 }
 
 pub(crate) fn seed_mouse_reporting_toggle_config(content: &ContentController, enabled: bool) {
-    let grok_home = content.home().join(".grok");
-    std::fs::create_dir_all(&grok_home).expect("create .grok");
+    let grok_home = content.home().join(".ezer");
+    std::fs::create_dir_all(&grok_home).expect("create .ezer");
     // Minimal opt-in only; matches load_config's `{GROK_HOME|HOME}/.grok/config.toml`
     let config = if enabled {
         "[ui]\nmouse_reporting_toggle = true\n"
@@ -449,8 +449,8 @@ pub(crate) fn seed_mouse_reporting_toggle_config(content: &ContentController, en
 
 /// Seed `[ui] keep_text_selection = "hold"` under the content controller's home.
 pub(crate) fn seed_keep_text_selection_config(content: &ContentController) {
-    let grok_home = content.home().join(".grok");
-    std::fs::create_dir_all(&grok_home).expect("create .grok");
+    let grok_home = content.home().join(".ezer");
+    std::fs::create_dir_all(&grok_home).expect("create .ezer");
     std::fs::write(
         grok_home.join("config.toml"),
         "[ui]\nkeep_text_selection = \"hold\"\n",
@@ -467,7 +467,7 @@ pub(crate) fn spawn_mouse_toggle_pager(content: &ContentController) -> PtyHarnes
         DEFAULT_COLS,
         content,
         &[],
-        &[EnvOp::set("GROK_MOUSE_REPORTING_TOGGLE", "true")],
+        &[EnvOp::set("EZER_MOUSE_REPORTING_TOGGLE", "true")],
     )
     .expect("spawn pager")
 }
@@ -484,7 +484,7 @@ pub(crate) fn inject_keys_paced(harness: &mut PtyHarness, keys: &[u8]) {
 
 /// Widens the pager's idle-Esc double-press window (bounded by `esc_double_press_ttl` in `app_view.rs`).
 /// On a loaded shard, the render round-trip between the two presses must not expire the pending first press.
-pub(crate) const ESC_DOUBLE_PRESS_ENV: &str = "GROK_ESC_DOUBLE_PRESS_MS";
+pub(crate) const ESC_DOUBLE_PRESS_ENV: &str = "EZER_ESC_DOUBLE_PRESS_MS";
 
 /// Spawn the pager with [`ESC_DOUBLE_PRESS_ENV`] set to the 60s cap
 /// (`xai_grok_pager::app::app_view::ESC_DOUBLE_PRESS_TEST_MS`; the pager clamps larger values to it).
@@ -969,7 +969,7 @@ pub(crate) fn enter_session(harness: &mut PtyHarness, content: &ContentControlle
 /// Locate `<grok_home>/sessions/<encoded cwd>/<session id>/`, where the shell keeps the session's `plan.md`.
 /// Polls: the first turn creates it asynchronously.
 pub(crate) fn session_dir(content: &ContentController, harness: &mut PtyHarness) -> PathBuf {
-    let sessions = content.home().join(".grok").join("sessions");
+    let sessions = content.home().join(".ezer").join("sessions");
     for _ in 0..100 {
         if let Ok(outer) = std::fs::read_dir(&sessions) {
             for cwd_dir in outer.flatten() {
@@ -1012,7 +1012,7 @@ pub(crate) fn enable_feedback_posting(
 ) -> Vec<EnvOp<'static>> {
     seed_fake_oauth(content, user);
     let mut ops = Vec::from(oauth_credential_ops());
-    ops.push(EnvOp::set("GROK_FEEDBACK_ENABLED", "true"));
+    ops.push(EnvOp::set("EZER_FEEDBACK_ENABLED", "true"));
     ops
 }
 
@@ -1179,7 +1179,7 @@ pub(crate) fn spawn_minimal_in_dir(
     spawn_minimal_env_ops(content, rows, cols, extra_args, &[], Some(cwd))
 }
 
-/// The one minimal spawn: [`MINIMAL_ARGS`] plus `extra_args`, sandbox env overrides (e.g. `GROK_FEEDBACK_ENABLED`
+/// The one minimal spawn: [`MINIMAL_ARGS`] plus `extra_args`, sandbox env overrides (e.g. `EZER_FEEDBACK_ENABLED`
 /// for the shell gates the sandbox baseline closes), and an optional project dir.
 pub(crate) fn spawn_minimal_env_ops(
     content: &ContentController,
@@ -1307,7 +1307,7 @@ pub(crate) fn wait_for_exit_status(
 
 // ── grok wrap e2e ───────────────────────────────────────────────────────
 
-/// `grok wrap` run budget.
+/// `ezer wrap` run budget.
 /// Same contention math as the requirements-version test.
 /// The child's cold exec of the huge debug binary can land its first write well past 30s under the parallel pty_e2e suite.
 #[cfg(unix)]
@@ -1316,7 +1316,7 @@ pub(crate) const WRAP_TIMEOUT: Duration = Duration::from_secs(120);
 #[cfg(unix)]
 const WRAP_DRAIN_TIMEOUT: Duration = Duration::from_secs(10);
 
-/// Run `grok wrap <wrap_args...>` to completion inside a PTY with an isolated `GROK_HOME`.
+/// Run `ezer wrap <wrap_args...>` to completion inside a PTY with an isolated `GROK_HOME`.
 /// Returns the exit code (`None` only while still running at [`WRAP_TIMEOUT`]) and everything the wrap PTY emitted.
 /// `extra_env` is where tests pin `SHELL`; wrap needs no mock content (it dispatches in `main` before auth/network/sandbox).
 #[cfg(unix)]
@@ -1343,7 +1343,7 @@ pub(crate) fn run_wrap_driving(
 
     let mut harness =
         PtyHarness::new_inherited_env(&binary, DEFAULT_ROWS, DEFAULT_COLS, &args, &env, None)
-            .expect("spawn grok wrap");
+            .expect("spawn ezer wrap");
 
     drive(&mut harness);
 
@@ -1353,13 +1353,13 @@ pub(crate) fn run_wrap_driving(
             Some(code)
         }
         Ok(PtyExitPoll::Running) => {
-            harness.quit().expect("kill grok wrap after timeout");
+            harness.quit().expect("kill ezer wrap after timeout");
             None
         }
         Ok(PtyExitPoll::PendingStatus) => {
-            panic!("grok wrap exited but portable status remained unavailable for {WRAP_TIMEOUT:?}")
+            panic!("ezer wrap exited but portable status remained unavailable for {WRAP_TIMEOUT:?}")
         }
-        Err(error) => panic!("poll grok wrap exit: {error:#}"),
+        Err(error) => panic!("poll ezer wrap exit: {error:#}"),
     };
 
     let raw = String::from_utf8_lossy(harness.raw_output()).into_owned();
@@ -1367,7 +1367,7 @@ pub(crate) fn run_wrap_driving(
 }
 
 /// Write an executable fake `$SHELL` that prints each argv element on its own `ARG:`-prefixed line and exits 0.
-/// Tests can then assert the exact argv `grok wrap` hands to the user's shell without depending on any real shell's rc files or alias state.
+/// Tests can then assert the exact argv `ezer wrap` hands to the user's shell without depending on any real shell's rc files or alias state.
 /// Keep the returned tempdir alive for the duration of the run.
 #[cfg(unix)]
 pub(crate) fn fake_argv_echo_shell() -> (tempfile::TempDir, String) {
@@ -1554,11 +1554,11 @@ pub(crate) fn extract_task_id(body: &str) -> Option<String> {
     (!id.is_empty()).then(|| id.to_string())
 }
 
-/// Dump an asciinema cast of `harness` into `$GROK_PTY_CAST_DIR/<file_name>` when the env var is set.
+/// Dump an asciinema cast of `harness` into `$EZER_PTY_CAST_DIR/<file_name>` when the env var is set.
 /// Failures are logged, never fatal: the cast is a diagnostic artifact, not part of what the test asserts.
 #[cfg(unix)]
 pub(crate) fn write_cast_if_requested(harness: &PtyHarness, file_name: &str) {
-    let Ok(dir) = std::env::var("GROK_PTY_CAST_DIR") else {
+    let Ok(dir) = std::env::var("EZER_PTY_CAST_DIR") else {
         return;
     };
     if dir.is_empty() {
@@ -1571,10 +1571,10 @@ pub(crate) fn write_cast_if_requested(harness: &PtyHarness, file_name: &str) {
     }
 }
 
-/// Dump the current screen (plain text and HTML) into `$GROK_PTY_CAST_DIR/<file_stem>.{txt,html}` when the env var is set.
+/// Dump the current screen (plain text and HTML) into `$EZER_PTY_CAST_DIR/<file_stem>.{txt,html}` when the env var is set.
 /// Failures are logged, never fatal; same opt-in as [`write_cast_if_requested`].
 pub(crate) fn write_screen_dump_if_requested(harness: &PtyHarness, file_stem: &str) {
-    let Ok(dir) = std::env::var("GROK_PTY_CAST_DIR") else {
+    let Ok(dir) = std::env::var("EZER_PTY_CAST_DIR") else {
         return;
     };
     if dir.is_empty() {

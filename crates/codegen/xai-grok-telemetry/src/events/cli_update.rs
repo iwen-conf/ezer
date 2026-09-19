@@ -48,13 +48,13 @@ impl CliUpdateInstaller {
 }
 
 /// [`CliUpdateTrigger`]'s strum string and `FromStr` are the only rendering; tests pin the round trip with the wire
-/// values. Volume caveat: one-shot `grok update` resolves telemetry from disk and env only. So `user_command`
+/// values. Volume caveat: one-shot `ezer update` resolves telemetry from disk and env only. So `user_command`
 /// under-reports relative to the in-process `leader_converge`; the triggers are not directly comparable.
 #[derive(Serialize, Clone, Copy, Debug, PartialEq, Eq, strum::AsRefStr, strum::IntoStaticStr)]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]
 pub enum CliUpdateTrigger {
-    /// A human ran `grok update` or accepted an update prompt.
+    /// A human ran `ezer update` or accepted an update prompt.
     UserCommand,
     /// TUI/stdio launch check spawned a detached update child.
     AutoBackground,
@@ -97,8 +97,8 @@ impl CliUpdateChannel {
     }
 }
 
-/// One attempt to download and activate a new `grok` binary.
-/// Analytics name: `grok-shell-cli_update`.
+/// One attempt to download and activate a new `ezer` binary.
+/// Analytics name: `ezer-shell-cli_update`.
 /// Emitted on failure too; failures carry the typed `error_kind` only (freeform strings leak home paths).
 #[derive(Serialize, Debug, Clone, PartialEq)]
 pub struct CliUpdate {

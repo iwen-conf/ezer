@@ -12,21 +12,21 @@ use std::time::Duration;
 /// 120 one-row markers overflow the 50-row PTY, so the early markers sit above the visible screen.
 const MARKER_COUNT: usize = 120;
 
-/// **Env-on e2e.** `GROK_SCROLL_DEBUG=1` must paint the HUD (panel title and config echo) and track a finalized trackpad flood.
+/// **Env-on e2e.** `EZER_SCROLL_DEBUG=1` must paint the HUD (panel title and config echo) and track a finalized trackpad flood.
 /// The HUD must not eat the scroll input itself.
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 #[ignore]
 async fn scroll_debug_hud_env_shows_hud_and_tracks_flood() {
     let (mut harness, _content, top_before) = spawn_bottom_pinned_marker_scrollback_with_env(
         MARKER_COUNT,
-        &[("GROK_SCROLL_DEBUG", "1"), ("GROK_SCROLL_MODE", "trackpad")],
+        &[("EZER_SCROLL_DEBUG", "1"), ("EZER_SCROLL_MODE", "trackpad")],
     )
     .await;
 
     // The primed screen already painted frames, so the HUD is on before any scrolling and echoes the env-forced mode
     assert!(
         harness.contains_text("scroll debug"),
-        "HUD title missing with GROK_SCROLL_DEBUG=1\nscreen:\n{}",
+        "HUD title missing with EZER_SCROLL_DEBUG=1\nscreen:\n{}",
         harness.screen_contents()
     );
     assert!(
@@ -96,7 +96,7 @@ async fn scroll_debug_hud_absent_without_env() {
 
     assert!(
         !harness.contains_text("scroll debug"),
-        "HUD must stay dark without GROK_SCROLL_DEBUG\nscreen:\n{}",
+        "HUD must stay dark without EZER_SCROLL_DEBUG\nscreen:\n{}",
         harness.screen_contents()
     );
 
@@ -115,7 +115,7 @@ async fn debug_scroll_command_toggles_hud_live() {
 
     assert!(
         !harness.contains_text("scroll debug"),
-        "HUD must start dark without GROK_SCROLL_DEBUG\nscreen:\n{}",
+        "HUD must start dark without EZER_SCROLL_DEBUG\nscreen:\n{}",
         harness.screen_contents()
     );
 

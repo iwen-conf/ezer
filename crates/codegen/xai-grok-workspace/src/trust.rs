@@ -1,6 +1,6 @@
 //! Folder-trust store ("do you trust this folder?").
 //!
-//! Persists per-folder trust decisions to `~/.grok/trusted_folders.toml`.
+//! Persists per-folder trust decisions to `~/.ezer/trusted_folders.toml`.
 //! This is the durable backing store for the VS-Code-style folder-trust gate that decides whether repo-local MCP / LSP servers may spawn.
 //! Those servers run arbitrary commands from repo-controlled config files.
 //!
@@ -16,10 +16,10 @@
 //! Other workspace keys under the path, including nested git roots, are not covered.
 //! The persisted file is written atomically with owner-only (`0600`) permissions.
 //!
-//! The store is rooted at a fresh [`xai_dirs::resolve_grok_home`], never `grok_home()` or a cwd-relative `./.grok`.
+//! The store is rooted at a fresh [`xai_dirs::resolve_grok_home`], never `grok_home()` or a cwd-relative `./.ezer`.
 //! Home is `None` when `$GROK_HOME` and the user home are unset, or when the resolved home is relative.
 //! In that no-home environment [`TrustStore::load`] yields an empty store that trusts nothing and persists nothing.
-//! So a cloned repo can never ship a `./.grok/trusted_folders.toml` that self-trusts its own checkout (fail closed).
+//! So a cloned repo can never ship a `./.ezer/trusted_folders.toml` that self-trusts its own checkout (fail closed).
 
 use std::collections::BTreeMap;
 use std::io;
@@ -29,7 +29,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use serde::{Deserialize, Serialize};
 
-/// Filename of the folder-trust store under `~/.grok/`.
+/// Filename of the folder-trust store under `~/.ezer/`.
 pub const TRUST_FILE_NAME: &str = xai_grok_config::TRUSTED_FOLDERS_FILENAME;
 
 /// A single folder's trust record.
@@ -267,7 +267,7 @@ impl TrustStore {
             tracing::warn!(
                 path = %canonical.display(),
                 trusted,
-                "folder trust: no user grok home resolved; trust decision not recorded"
+                "folder trust: no user ezer home resolved; trust decision not recorded"
             );
             return Ok(Recorded::Skipped);
         };
@@ -388,7 +388,7 @@ impl TrustStore {
 }
 
 /// Compute the trust **workspace key** for a working directory. The key is the canonicalized git repository root when `cwd` is inside a repo (trust applies to the whole repo), otherwise the canonicalized `cwd`.
-/// A grok-managed worktree first collapses onto its recorded source repo's git ROOT (via the `~/.grok/worktrees.db` registry), so every `grok -w` worktree shares one trust key regardless of creation mode (including standalone clones that git can't link back to their source) and regardless of the subdir `grok -w` was launched from (the recorded source repo may be a repo subdir).
+/// A ezer-managed worktree first collapses onto its recorded source repo's git ROOT (via the `~/.ezer/worktrees.db` registry), so every `ezer -w` worktree shares one trust key regardless of creation mode (including standalone clones that git can't link back to their source) and regardless of the subdir `ezer -w` was launched from (the recorded source repo may be a repo subdir).
 pub fn workspace_key(cwd: &Path) -> PathBuf {
     let key = git_derived_workspace_key(cwd);
     if is_unsafe_trust_root(&key) {
@@ -445,7 +445,7 @@ fn workspace_id(path: &Path) -> PathBuf {
     workspace_key(path.ancestors().find(|p| p.exists()).unwrap_or(path))
 }
 
-/// Fresh `$GROK_HOME` or `<home>/.grok`. Does not call `grok_home()` and does not create directories.
+/// Fresh `$GROK_HOME` or `<home>/.ezer`. Does not call `grok_home()` and does not create directories.
 pub(crate) fn trust_store_home() -> Option<PathBuf> {
     xai_dirs::resolve_grok_home()
 }
@@ -461,7 +461,7 @@ fn now_unix() -> Option<i64> {
         .map(|d| d.as_secs() as i64)
 }
 
-/// RAII exclusive advisory lock on a sidecar lock file, released on drop. Serializes concurrent `TrustStore` writers (multiple processes / instances sharing `~/.grok/`) across the whole read-modify-write so updates merge instead of clobbering each other.
+/// RAII exclusive advisory lock on a sidecar lock file, released on drop. Serializes concurrent `TrustStore` writers (multiple processes / instances sharing `~/.ezer/`) across the whole read-modify-write so updates merge instead of clobbering each other.
 /// The lock is advisory; only writers that take it (i.e.
 struct ExclusiveLock {
     file: std::fs::File,
@@ -512,7 +512,7 @@ pub fn migrate_legacy_hook_trust() {
     });
 }
 
-/// [`migrate_legacy_hook_trust`] with explicit paths, so the migration is testable without the process-global grok-home cache.
+/// [`migrate_legacy_hook_trust`] with explicit paths, so the migration is testable without the process-global ezer-home cache.
 /// Returns the number of grants seeded into `store`.
 fn migrate_legacy_hook_trust_in(legacy_file: &Path, store: &mut TrustStore) -> usize {
     // A read error must NOT be mistaken for "no grants": bail without renaming
@@ -767,7 +767,7 @@ mod tests {
     fn default_path_in_maps_home_and_preserves_no_home() {
         // With a resolvable home the store sits at <home>/trusted_folders.toml.
         // `/home/alice/.grok` is not absolute on Windows; use a platform-absolute path.
-        let home = std::env::temp_dir().join(".grok");
+        let home = std::env::temp_dir().join(".ezer");
         assert!(
             home.is_absolute(),
             "positive case requires a platform-absolute home"
@@ -783,11 +783,11 @@ mod tests {
         assert_eq!(TrustStore::default_path_in(None), None);
 
         assert_eq!(
-            TrustStore::default_path_in(Some(PathBuf::from(".grok"))),
+            TrustStore::default_path_in(Some(PathBuf::from(".ezer"))),
             None
         );
         assert_eq!(
-            TrustStore::default_path_in(Some(PathBuf::from("repo/.grok"))),
+            TrustStore::default_path_in(Some(PathBuf::from("repo/.ezer"))),
             None
         );
     }
@@ -1639,7 +1639,7 @@ trusted = true
     // Struct field order (see lib.rs) restores the env before the lock releases, no matter how the caller binds the fixture's return
     use crate::LockedTestEnv;
 
-    /// Point `GROK_HOME` at an isolated tempdir and register one grok-managed worktree at `<home>/worktrees/repo/<name>`.
+    /// Point `GROK_HOME` at an isolated tempdir and register one ezer-managed worktree at `<home>/worktrees/repo/<name>`.
     /// The worktree dir is a PLAIN directory (NOT a git linked worktree), so only the registry can collapse it.
     fn register_grok_worktree(
         temp: &tempfile::TempDir,
@@ -1651,7 +1651,7 @@ trusted = true
 
         // Canonicalize so macOS's `/var` (a symlink to `/private/var`) agrees between the stored record path and the canonicalized lookup query
         let root = dunce::canonicalize(temp.path()).unwrap();
-        let home = root.join("grok-home");
+        let home = root.join("ezer-home");
         let wt = home.join("worktrees").join("repo").join(name);
         std::fs::create_dir_all(&wt).unwrap();
 
@@ -1696,7 +1696,7 @@ trusted = true
         assert_eq!(
             workspace_key(&wt),
             expected,
-            "a standalone grok worktree must collapse onto its recorded source repo"
+            "a standalone ezer worktree must collapse onto its recorded source repo"
         );
         // A cwd nested below the worktree root collapses onto the same key (the registry walk ascends to the registered worktree)
         let nested = wt.join("crates").join("inner");
@@ -1744,7 +1744,7 @@ trusted = true
         let (_env, _wt) = register_grok_worktree(&temp, "wt", &source_repo, "standalone");
 
         // Under grok HOME but NOT under `<home>/worktrees`, and its own git repo.
-        let outside = root.join("grok-home").join("not-worktrees").join("proj");
+        let outside = root.join("ezer-home").join("not-worktrees").join("proj");
         std::fs::create_dir_all(&outside).unwrap();
         git2::Repository::init(&outside).unwrap();
 

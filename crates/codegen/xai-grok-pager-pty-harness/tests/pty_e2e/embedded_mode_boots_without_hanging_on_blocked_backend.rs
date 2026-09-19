@@ -23,17 +23,17 @@ async fn embedded_mode_boots_without_hanging_on_blocked_backend() {
     let base = format!("http://{addr}/v1");
 
     let home = tempfile::tempdir().expect("home");
-    let grok_home = home.path().join(".grok");
+    let grok_home = home.path().join(".ezer");
     std::fs::create_dir_all(&grok_home).unwrap();
     let env = [
         ("HOME", home.path().to_str().unwrap()),
         ("GROK_HOME", grok_home.to_str().unwrap()),
         ("XAI_API_KEY", "test-key-for-ci"),
-        ("GROK_CLI_CHAT_PROXY_BASE_URL", base.as_str()),
-        ("GROK_XAI_API_BASE_URL", base.as_str()),
-        ("GROK_TELEMETRY_ENABLED", "false"),
-        ("GROK_FEEDBACK_ENABLED", "false"),
-        ("GROK_TRACE_UPLOAD", "false"),
+        ("EZER_CLI_CHAT_PROXY_BASE_URL", base.as_str()),
+        ("EZER_XAI_API_BASE_URL", base.as_str()),
+        ("EZER_TELEMETRY_ENABLED", "false"),
+        ("EZER_FEEDBACK_ENABLED", "false"),
+        ("EZER_TRACE_UPLOAD", "false"),
     ];
 
     let binary = pager_binary().expect("resolve pager binary");

@@ -185,7 +185,7 @@ pub(crate) fn start_initial_models_load(
 ) -> Option<InitialModelsLoad> {
     let plan = models_prefetch_inputs(grok_com_config, warmed_auth)?;
     let (tx, rx) = tokio::sync::oneshot::channel();
-    spawn_prefetch_thread("grok-models-prefetch", plan, cancel, move |models| {
+    spawn_prefetch_thread("ezer-models-prefetch", plan, cancel, move |models| {
         let _ = tx.send(models);
     })?;
     Some(InitialModelsLoad(rx))
@@ -205,7 +205,7 @@ pub(crate) fn fetch_initial_models_blocking(
     let plan = models_prefetch_inputs(grok_com_config, warmed_auth)?;
     let (tx, rx) = std::sync::mpsc::channel();
     spawn_prefetch_thread(
-        "grok-models-prefetch-sync",
+        "ezer-models-prefetch-sync",
         plan,
         cancel.clone(),
         move |models| {

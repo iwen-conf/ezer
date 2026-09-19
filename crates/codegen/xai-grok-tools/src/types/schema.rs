@@ -6,7 +6,7 @@ use serde::Deserialize;
 pub struct GrokIntegerSchema;
 impl schemars::JsonSchema for GrokIntegerSchema {
     fn schema_name() -> std::borrow::Cow<'static, str> {
-        "grok_integer_schema".into()
+        "ezer_integer_schema".into()
     }
     fn json_schema(_: &mut schemars::SchemaGenerator) -> schemars::Schema {
         schemars::json_schema!({ "type": "integer" })
@@ -157,7 +157,7 @@ where
     }
 }
 /// Deserialize `Option<String>` from a JSON string, number, or boolean — scalar values are coerced to their string
-/// form. Mirrors zod's `z.coerce.string()` used by the TypeScript grok-computer tools, where models routinely send
+/// form. Mirrors zod's `z.coerce.string()` used by the TypeScript ezer-computer tools, where models routinely send
 /// numeric-looking IDs (e.g. CDP request IDs such as `62576.34`) as JSON numbers.
 pub fn deserialize_lenient_string<'de, D>(deserializer: D) -> Result<Option<String>, D::Error>
 where

@@ -405,7 +405,7 @@ mod tests {
         let output = r#"Found 1 memory result(s):
 
 ### Result 1 (score: 0.72, source: global)
-**File:** /root/.grok/memory/MEMORY.md (lines 0-10)
+**File:** /root/.ezer/memory/MEMORY.md (lines 0-10)
 ```
 ## Project Conventions
 * Always use graphite for PRs
@@ -418,7 +418,7 @@ mod tests {
         };
         assert!((r0.score - 0.72).abs() < 0.01);
         assert_eq!(r0.source, "global");
-        assert_eq!(r0.path, "/root/.grok/memory/MEMORY.md");
+        assert_eq!(r0.path, "/root/.ezer/memory/MEMORY.md");
         assert_eq!(r0.start_line, 0);
         assert_eq!(r0.end_line, 10);
         assert!(r0.snippet.contains("graphite"));
@@ -460,7 +460,7 @@ session content
 
     #[test]
     fn shorten_memory_path() {
-        // Paths under the configured grok memory root drop the root and the first directory below it
+        // Paths under the configured ezer memory root drop the root and the first directory below it
         let memory_root = xai_grok_config::grok_home().join("memory");
         let session = memory_root.join("xai-50aa78f0/sessions/2026-05-01.md");
         let top = memory_root.join("MEMORY.md");

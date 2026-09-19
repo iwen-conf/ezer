@@ -38,8 +38,8 @@ pub const MCP_MAX_OUTPUT_BYTES: usize = 20_000;
 /// truncation is byte-oriented (`truncate_str`).
 pub const ENV_MAX_MCP_OUTPUT_BYTES: &str = "MAX_MCP_OUTPUT_BYTES";
 
-/// Grok-native env override for the MCP inline output cap (bytes).
-pub const ENV_GROK_MAX_MCP_OUTPUT_BYTES: &str = "GROK_MAX_MCP_OUTPUT_BYTES";
+/// ezer-native env override for the MCP inline output cap (bytes).
+pub const ENV_GROK_MAX_MCP_OUTPUT_BYTES: &str = "EZER_MAX_MCP_OUTPUT_BYTES";
 
 /// Process-wide effective limit. `0` = host has not seeded; fall through to
 /// env / default. The shell writes the *fully resolved* stack here so free-
@@ -60,7 +60,7 @@ fn parse_positive_bytes_env(name: &str) -> Option<usize> {
     usize::try_from(n).ok().filter(|n| *n > 0)
 }
 
-/// Env tier: `GROK_MAX_MCP_OUTPUT_BYTES` then `MAX_MCP_OUTPUT_BYTES`. Grok-native wins when both
+/// Env tier: `EZER_MAX_MCP_OUTPUT_BYTES` then `MAX_MCP_OUTPUT_BYTES`. ezer-native wins when both
 /// are set. Positive integers only. Used by the shell resolver and as the standalone fallback when
 /// the host has not called [`set_mcp_max_output_bytes`].
 pub fn mcp_max_output_bytes_from_env() -> Option<usize> {

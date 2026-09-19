@@ -98,7 +98,7 @@ pub struct AskUserQuestionToolConfig {
 #[serde(default)]
 pub struct WebFetchToolConfig {
     /// When set, all HTTP requests are routed through this URL.
-    /// Resolution: TOML > `GROK_WEB_FETCH_PROXY` env > remote settings > None.
+    /// Resolution: TOML > `EZER_WEB_FETCH_PROXY` env > remote settings > None.
     pub proxy_endpoint: Option<String>,
     /// When set, it overrides the built-in default allowlist.
     /// An explicit empty list blocks all fetches.
@@ -106,7 +106,7 @@ pub struct WebFetchToolConfig {
     pub allowed_domains: Option<Vec<String>>,
     /// Allow fetches to explicit loopback hosts only (`localhost` / `127.0.0.0/8` / `::1`).
     /// Private and metadata ranges stay blocked.
-    /// Resolution: TOML > `GROK_WEB_FETCH_ALLOW_LOCAL` env > false.
+    /// Resolution: TOML > `EZER_WEB_FETCH_ALLOW_LOCAL` env > false.
     pub allow_local: Option<bool>,
 }
 
@@ -126,7 +126,7 @@ impl WebFetchToolConfig {
             .proxy_endpoint
             .as_ref()
             .cloned()
-            .or_else(|| env_string("GROK_WEB_FETCH_PROXY"))
+            .or_else(|| env_string("EZER_WEB_FETCH_PROXY"))
             .or_else(|| remote_proxy.map(|s| s.to_owned()));
 
         let allowed_domains = self
@@ -137,7 +137,7 @@ impl WebFetchToolConfig {
 
         let allow_local = self
             .allow_local
-            .or_else(|| xai_grok_config::env_bool("GROK_WEB_FETCH_ALLOW_LOCAL"));
+            .or_else(|| xai_grok_config::env_bool("EZER_WEB_FETCH_ALLOW_LOCAL"));
 
         xai_grok_tools::implementations::grok_build::web_fetch::WebFetchParams {
             proxy_endpoint,
@@ -349,7 +349,7 @@ impl FileToolset {
                 };
                 Ok(vec![
                     ToolConfig {
-                        id: "GrokBuildHashline:hashline_read".to_owned(),
+                        id: "EzerHashline:hashline_read".to_owned(),
                         params: params_map.clone(),
                         name_override: None,
                         params_name_overrides: None,
@@ -358,7 +358,7 @@ impl FileToolset {
                         kind: None,
                     },
                     ToolConfig {
-                        id: "GrokBuildHashline:hashline_edit".to_owned(),
+                        id: "EzerHashline:hashline_edit".to_owned(),
                         params: params_map.clone(),
                         name_override: None,
                         params_name_overrides: None,
@@ -367,7 +367,7 @@ impl FileToolset {
                         kind: None,
                     },
                     ToolConfig {
-                        id: "GrokBuildHashline:hashline_grep".to_owned(),
+                        id: "EzerHashline:hashline_grep".to_owned(),
                         params: params_map,
                         name_override: None,
                         params_name_overrides: None,
@@ -397,9 +397,9 @@ mod tests {
             .unwrap();
         assert_eq!(configs.len(), 3);
         let ids: Vec<&str> = configs.iter().map(|c| c.id.as_str()).collect();
-        assert!(ids.contains(&"GrokBuild:read_file"));
-        assert!(ids.contains(&"GrokBuild:search_replace"));
-        assert!(ids.contains(&"GrokBuild:grep"));
+        assert!(ids.contains(&"Ezer:read_file"));
+        assert!(ids.contains(&"Ezer:search_replace"));
+        assert!(ids.contains(&"Ezer:grep"));
     }
 
     #[test]
@@ -409,9 +409,9 @@ mod tests {
             .unwrap();
         assert_eq!(configs.len(), 3);
         let ids: Vec<&str> = configs.iter().map(|c| c.id.as_str()).collect();
-        assert!(ids.contains(&"GrokBuildHashline:hashline_read"));
-        assert!(ids.contains(&"GrokBuildHashline:hashline_edit"));
-        assert!(ids.contains(&"GrokBuildHashline:hashline_grep"));
+        assert!(ids.contains(&"EzerHashline:hashline_read"));
+        assert!(ids.contains(&"EzerHashline:hashline_edit"));
+        assert!(ids.contains(&"EzerHashline:hashline_grep"));
     }
 
     /// Plan/explore omit `search_replace` by contract ("no Write/Edit/MultiEdit"); the hashline override must not hand it back as `hashline_edit`.
@@ -430,7 +430,7 @@ mod tests {
                 !def.tool_config
                     .tools
                     .iter()
-                    .any(|t| t.id == "GrokBuild:search_replace"),
+                    .any(|t| t.id == "Ezer:search_replace"),
                 "{name}: fixture must be read-only before the override"
             );
             def.override_file_tools(file_tools.clone());
@@ -442,13 +442,13 @@ mod tests {
                 .collect();
             // The swap engages (read moves to hashline)...
             assert!(
-                ids.contains(&"GrokBuildHashline:hashline_read"),
+                ids.contains(&"EzerHashline:hashline_read"),
                 "{name}: {ids:?}"
             );
-            assert!(!ids.contains(&"GrokBuild:read_file"), "{name}: {ids:?}");
+            assert!(!ids.contains(&"Ezer:read_file"), "{name}: {ids:?}");
             // ...but never grants the edit slot.
             assert!(
-                !ids.contains(&"GrokBuildHashline:hashline_edit"),
+                !ids.contains(&"EzerHashline:hashline_edit"),
                 "{name}: override granted an edit tool to a no-edit toolset: {ids:?}"
             );
         }
@@ -650,7 +650,7 @@ mod tests {
         assert_eq!(
             max_timeout(&local.to_bash_params_json(None, None)),
             Some(PRODUCTION_MAX_TIMEOUT_SECS),
-            "production grok-build must set the 10h foreground ceiling"
+            "production ezer-build must set the 10h foreground ceiling"
         );
     }
 

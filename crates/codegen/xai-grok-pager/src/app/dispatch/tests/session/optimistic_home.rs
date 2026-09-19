@@ -671,7 +671,7 @@ fn forward_lands_in_the_welcome_composer_when_the_action_leaves_welcome_up() {
 #[serial_test::serial(GROK_CHAT_LOCAL_WORKSPACE_ACK)]
 fn leave_home_into_local_workspace_ack_keeps_the_keystroke_as_a_draft() {
     let _ack = xai_grok_test_support::EnvGuard::unset(
-        crate::app::session_startup::GROK_CHAT_LOCAL_WORKSPACE_ACK_ENV,
+        crate::app::session_startup::EZER_CHAT_LOCAL_WORKSPACE_ACK_ENV,
     );
     let home = tempfile::tempdir().unwrap();
     let _home = xai_grok_test_support::EnvGuard::set("GROK_HOME", home.path().to_str().unwrap());
@@ -850,13 +850,13 @@ fn drain_with_always_prompt_does_not_orphan_home_create() {
         !effects
             .iter()
             .any(|e| matches!(e, Effect::CreateSession { .. })),
-        "Always + grok \"prompt\" must not emit an in-cwd home CreateSession, got {effects:?}"
+        "Always + ezer \"prompt\" must not emit an in-cwd home CreateSession, got {effects:?}"
     );
     assert!(
         effects
             .iter()
             .any(|e| matches!(e, Effect::CreateWorktreeSession { .. })),
-        "Always + grok \"prompt\" must isolate, got {effects:?}"
+        "Always + ezer \"prompt\" must isolate, got {effects:?}"
     );
     assert_eq!(app.agents.len(), 1);
     assert!(app.home_session_agent.is_none());
@@ -1333,7 +1333,7 @@ fn initial_prompt_from_welcome_honors_always_worktree() {
         effects
             .iter()
             .any(|e| matches!(e, Effect::CreateWorktreeSession { .. })),
-        "grok \"prompt\" with Always must isolate, got {effects:?}"
+        "ezer \"prompt\" with Always must isolate, got {effects:?}"
     );
     assert!(matches!(app.active_view, ActiveView::Agent(_)));
 }

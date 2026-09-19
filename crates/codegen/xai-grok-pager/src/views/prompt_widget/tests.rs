@@ -404,7 +404,7 @@
         use std::path::PathBuf;
 
         let mut img = test_image();
-        img.source_path = Some(PathBuf::from("/tmp/grok-test-image.png"));
+        img.source_path = Some(PathBuf::from("/tmp/ezer-test-image.png"));
 
         let mut pw = ghostty_prompt();
         pw.insert_image(img).unwrap();
@@ -414,12 +414,12 @@
             "chip text should be path-free: {full:?}"
         );
         assert!(
-            !full.contains("/tmp/grok-test-image.png"),
+            !full.contains("/tmp/ezer-test-image.png"),
             "source path must not appear in the buffer chip: {full:?}"
         );
         assert_eq!(
             at(&pw.images, 0).source_path.as_deref(),
-            Some(std::path::Path::new("/tmp/grok-test-image.png")),
+            Some(std::path::Path::new("/tmp/ezer-test-image.png")),
             "source_path retained on the PastedImage record"
         );
 
@@ -427,7 +427,7 @@
         let selected = pw.textarea.selected_text().expect("selected text");
         assert!(selected.contains("[Image #1]"));
         assert!(
-            !selected.contains("/tmp/grok-test-image.png"),
+            !selected.contains("/tmp/ezer-test-image.png"),
             "select-all must not copy the filepath from the chip"
         );
     }
@@ -1714,7 +1714,7 @@
         let model_id = agent_client_protocol::ModelId::new(Arc::from("grok-4.5"));
         models.available.insert(
             model_id.clone(),
-            agent_client_protocol::ModelInfo::new(model_id, "Grok 4.5".to_string()),
+            agent_client_protocol::ModelInfo::new(model_id, "ezer 4.5".to_string()),
         );
 
         // Type "/model gr" and position cursor at end (in args).
@@ -1725,11 +1725,11 @@
         assert!(snap.open, "arg suggestions should be open");
         assert!(snap.args_range.is_some());
 
-        // Accepting the arg completion should replace "gr" with "Grok 4.5"
+        // Accepting the arg completion should replace "gr" with "ezer 4.5"
         pw.accept_slash_completion(&models);
         let text = pw.textarea.text().to_string();
         assert!(
-            text.contains("Grok 4.5"),
+            text.contains("ezer 4.5"),
             "arg should be replaced, got: {:?}",
             text
         );
@@ -3717,7 +3717,7 @@
                 bold: false,
             }];
             let info = PromptInfo {
-                model_name: "grok",
+                model_name: "ezer",
                 flags: &flags,
                 ..Default::default()
             };
@@ -3778,7 +3778,7 @@
             bold: false,
         }];
         let info = PromptInfo {
-            model_name: "grok",
+            model_name: "ezer",
             flags: &flags,
             ..Default::default()
         };
@@ -3802,7 +3802,7 @@
             panic!("{needle} not rendered");
         };
 
-        let caption = find("grok");
+        let caption = find("ezer");
         assert_eq!(
             caption.fg,
             Some(ratatui::style::Color::Reset),
@@ -3827,7 +3827,7 @@
                 bold: false,
             }];
             let info = PromptInfo {
-                model_name: "grok",
+                model_name: "ezer",
                 flags: &flags,
                 multiline: true,
                 ..Default::default()

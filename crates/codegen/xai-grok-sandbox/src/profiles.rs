@@ -1,5 +1,5 @@
 //! Sandbox profiles. Built-in: `workspace`, `devbox`, `read-only`, `strict`,
-//! `off`. Custom profiles via `~/.grok/sandbox.toml` or `.grok/sandbox.toml`.
+//! `off`. Custom profiles via `~/.ezer/sandbox.toml` or `.ezer/sandbox.toml`.
 //! A custom profile's `deny` list is kernel-enforced (read and write/rename) on both platforms.
 
 #[cfg(all(feature = "enforce", unix))]
@@ -111,7 +111,7 @@ impl std::str::FromStr for ProfileName {
     }
 }
 
-/// Load sandbox config from `~/.grok/sandbox.toml` and `.grok/sandbox.toml`. Project config may add new profile names
+/// Load sandbox config from `~/.ezer/sandbox.toml` and `.ezer/sandbox.toml`. Project config may add new profile names
 /// only. It cannot redefine a name already present in the global config. Last-write-wins would let a malicious workspace
 /// hollow out a user/enterprise custom profile while keeping the trusted name.
 pub fn load_sandbox_config(workspace: &Path) -> SandboxConfig {
@@ -124,7 +124,7 @@ pub fn load_sandbox_config(workspace: &Path) -> SandboxConfig {
     }
 
     // Project config: <workspace>/.grok/sandbox.toml (additive only)
-    let project_path = workspace.join(".grok").join(SANDBOX_CONFIG_FILENAME);
+    let project_path = workspace.join(".ezer").join(SANDBOX_CONFIG_FILENAME);
     if let Some(project) = load_config_file(&project_path) {
         merge_project_profiles(&mut config, project);
     }
@@ -134,7 +134,7 @@ pub fn load_sandbox_config(workspace: &Path) -> SandboxConfig {
 
 pub fn sandbox_profile_conflicts(workspace: &Path) -> Vec<String> {
     let global = load_config_file(&grok_home().join(SANDBOX_CONFIG_FILENAME)).unwrap_or_default();
-    let project = load_config_file(&workspace.join(".grok").join(SANDBOX_CONFIG_FILENAME))
+    let project = load_config_file(&workspace.join(".ezer").join(SANDBOX_CONFIG_FILENAME))
         .unwrap_or_default();
     mismatched_profile_names(&global, &project)
 }
@@ -502,7 +502,7 @@ impl ProfileName {
                 let profile_config = config.profiles.get(name).ok_or_else(|| {
                     anyhow::anyhow!(
                         "Custom sandbox profile '{name}' not found. \
-                         Define it in ~/.grok/sandbox.toml or .grok/sandbox.toml:\n\n\
+                         Define it in ~/.ezer/sandbox.toml or .ezer/sandbox.toml:\n\n\
                          [profiles.{name}]\n\
                          extends = \"workspace\"\n\
                          read_only = [\"/data\"]\n"
@@ -969,7 +969,7 @@ read_write = ["/tmp/ci-artifacts"]
             return;
         }
         let root = std::env::temp_dir().join(format!(
-            "grok-sandbox-starstar-capset-{}",
+            "ezer-sandbox-starstar-capset-{}",
             std::process::id()
         ));
         let _ = std::fs::remove_dir_all(&root);
@@ -1130,7 +1130,7 @@ read_write = ["/tmp/ci-artifacts"]
         // Directories must stay grantable
         // On Linux, File::open returns EISDIR; on macOS it often succeeds
         // Either way the probe must return true so directory devices (e.g. /dev/fd via DEVICE_DIRS) are not dropped.
-        let dir = std::env::temp_dir().join(format!("grok-sbx-test-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("ezer-sbx-test-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         match std::fs::File::open(&dir) {
             Err(e) => {

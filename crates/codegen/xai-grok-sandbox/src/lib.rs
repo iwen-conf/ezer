@@ -5,7 +5,7 @@
     unreachable_code,
     dead_code
 )]
-//! OS-level sandboxing for Grok Build via [nono](https://crates.io/crates/nono).
+//! OS-level sandboxing for ezer via [nono](https://crates.io/crates/nono).
 //!
 //! Applied once at process startup. Covers in-process `tokio::fs` calls and child processes.
 //! Network is left open at the process level (agent needs LLM API); child network is blocked per-subprocess via seccomp.
@@ -390,7 +390,7 @@ fn chmod_000(path: &Path) -> Option<()> {
     Some(())
 }
 /// Zero-permission placeholder (file or dir) under `grok_home` used by bwrap bind-over. The placeholder name is suffixed
-/// with the current PID so concurrent grok processes don't race each other's create/remove/chmod on a shared path. A lost
+/// with the current PID so concurrent ezer processes don't race each other's create/remove/chmod on a shared path. A lost
 /// race could yield `None`, silently dropping the bind and failing open.
 #[cfg(all(feature = "enforce", target_os = "linux"))]
 fn bwrap_blocked_placeholder(name: &str, want_dir: bool) -> Option<PathBuf> {
@@ -790,7 +790,7 @@ mod tests {
     fn bwrap_hook_plan_binds_ancestors_then_leaves() {
         let _g = EnvGuard::remove(BWRAP_ENV_VAR);
         let root = std::env::temp_dir().join(format!(
-            "grok-bwrap-hook-plan-{}-{}",
+            "ezer-bwrap-hook-plan-{}-{}",
             std::process::id(),
             std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
@@ -914,7 +914,7 @@ mod tests {
             "arming must not require applied=true"
         );
     }
-    /// Create a temp workspace whose `.grok/sandbox.toml` contains `toml_body`.
+    /// Create a temp workspace whose `.ezer/sandbox.toml` contains `toml_body`.
     /// Returns the workspace path (caller removes it).
     #[cfg(all(feature = "enforce", unix))]
     fn temp_workspace_with_sandbox_toml(tag: &str, toml_body: &str) -> PathBuf {
@@ -922,8 +922,8 @@ mod tests {
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap()
             .as_nanos();
-        let ws = std::env::temp_dir().join(format!("grok-{tag}-{}-{nanos}", std::process::id()));
-        let grok = ws.join(".grok");
+        let ws = std::env::temp_dir().join(format!("ezer-{tag}-{}-{nanos}", std::process::id()));
+        let grok = ws.join(".ezer");
         std::fs::create_dir_all(&grok).unwrap();
         std::fs::write(
             grok.join(xai_grok_config::SANDBOX_CONFIG_FILENAME),
@@ -1066,7 +1066,7 @@ mod tests {
     #[cfg(all(feature = "enforce", target_os = "linux"))]
     fn bwrap_reexec_uses_dir_placeholder_for_directories() {
         let _g = EnvGuard::remove(BWRAP_ENV_VAR);
-        let dir = std::env::temp_dir().join(format!("grok-deny-dir-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("ezer-deny-dir-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         let dir_str = dir.to_string_lossy().to_string();
         let result = bwrap_reexec_command(&[], &[&dir_str]);

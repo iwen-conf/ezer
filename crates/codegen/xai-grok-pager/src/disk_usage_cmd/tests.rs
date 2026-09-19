@@ -66,7 +66,7 @@ fn worktrees_report(worktrees: Vec<WorktreeUsage>, total_bytes: u64) -> DiskUsag
 fn collect_report_joins_registry_and_flags_untracked() {
     let tmp = tempfile::TempDir::new().unwrap();
     let base = dunce::canonicalize(tmp.path()).unwrap();
-    let home = base.join("grok-home");
+    let home = base.join("ezer-home");
     let tracked = home.join("worktrees/xai/wt-tracked");
     let untracked = home.join("worktrees/xai/wt-untracked");
     let external = base.join("external-repo");
@@ -169,7 +169,7 @@ fn record_registered_via_symlinked_home_joins_as_one_row() {
 #[test]
 fn duplicate_discovered_dirs_size_once() {
     let tmp = tempfile::TempDir::new().unwrap();
-    let home = dunce::canonicalize(tmp.path()).unwrap().join("grok-home");
+    let home = dunce::canonicalize(tmp.path()).unwrap().join("ezer-home");
     let wt = home.join("worktrees/xai/wt-a");
     std::fs::create_dir_all(&wt).unwrap();
     std::fs::write(wt.join("f.bin"), vec![b'x'; 4096]).unwrap();
@@ -191,7 +191,7 @@ fn duplicate_discovered_dirs_size_once() {
 fn escape_symlink_is_counted_not_sized() {
     let tmp = tempfile::TempDir::new().unwrap();
     let base = dunce::canonicalize(tmp.path()).unwrap();
-    let home = base.join("grok-home");
+    let home = base.join("ezer-home");
     std::fs::create_dir_all(home.join("worktrees/xai")).unwrap();
     let external = base.join("external");
     std::fs::create_dir_all(&external).unwrap();
@@ -211,7 +211,7 @@ fn escape_symlink_is_counted_not_sized() {
 fn top_level_symlink_costs_its_own_inode_not_the_target() {
     let tmp = tempfile::TempDir::new().unwrap();
     let base = dunce::canonicalize(tmp.path()).unwrap();
-    let home = base.join("grok-home");
+    let home = base.join("ezer-home");
     std::fs::create_dir_all(&home).unwrap();
     let external = base.join("external-huge.bin");
     std::fs::write(&external, vec![b'x'; 1 << 20]).unwrap();
@@ -241,7 +241,7 @@ fn top_level_symlink_costs_its_own_inode_not_the_target() {
 #[test]
 fn record_at_missing_path_is_omitted() {
     let tmp = tempfile::TempDir::new().unwrap();
-    let home = dunce::canonicalize(tmp.path()).unwrap().join("grok-home");
+    let home = dunce::canonicalize(tmp.path()).unwrap().join("ezer-home");
     std::fs::create_dir_all(&home).unwrap();
     let db = WorktreeDb::open(&home).unwrap();
     db.register(&make_record(
@@ -261,7 +261,7 @@ fn record_at_missing_path_is_omitted() {
 #[test]
 fn registry_absent_reports_untracked_rows() {
     let tmp = tempfile::TempDir::new().unwrap();
-    let home = dunce::canonicalize(tmp.path()).unwrap().join("grok-home");
+    let home = dunce::canonicalize(tmp.path()).unwrap().join("ezer-home");
     let wt = home.join("worktrees/xai/wt-a");
     std::fs::create_dir_all(&wt).unwrap();
     std::fs::write(wt.join("f.bin"), vec![b'x'; 4096]).unwrap();
@@ -287,7 +287,7 @@ fn registry_absent_reports_untracked_rows() {
 #[test]
 fn corrupt_registry_degrades_to_untracked_rows() {
     let tmp = tempfile::TempDir::new().unwrap();
-    let home = dunce::canonicalize(tmp.path()).unwrap().join("grok-home");
+    let home = dunce::canonicalize(tmp.path()).unwrap().join("ezer-home");
     let wt = home.join("worktrees/xai/wt-a");
     std::fs::create_dir_all(&wt).unwrap();
     std::fs::write(wt.join("f.bin"), vec![b'x'; 4096]).unwrap();
@@ -336,7 +336,7 @@ fn a_row_off_the_anchor_reports_no_size() {
 #[test]
 fn every_open_outcome_maps_to_its_state() {
     let tmp = tempfile::TempDir::new().unwrap();
-    let home = tmp.path().join("grok-home");
+    let home = tmp.path().join("ezer-home");
     let path = WorktreeDb::resolve_db_path(&home);
     let db = WorktreeDb::open(&home).unwrap();
     db.register(&make_record(
@@ -382,7 +382,7 @@ fn every_open_outcome_maps_to_its_state() {
 #[test]
 fn unopenable_registry_is_not_reported_as_corrupt() {
     let tmp = tempfile::TempDir::new().unwrap();
-    let home = dunce::canonicalize(tmp.path()).unwrap().join("grok-home");
+    let home = dunce::canonicalize(tmp.path()).unwrap().join("ezer-home");
     let wt = home.join("worktrees/xai/wt-a");
     std::fs::create_dir_all(&wt).unwrap();
     std::fs::write(wt.join("f.bin"), vec![b'x'; 4096]).unwrap();
@@ -457,7 +457,7 @@ fn sqlite_failure_kinds_map_to_states() {
 #[test]
 fn the_registry_open_lands_after_sizing() {
     let tmp = tempfile::TempDir::new().unwrap();
-    let home = dunce::canonicalize(tmp.path()).unwrap().join("grok-home");
+    let home = dunce::canonicalize(tmp.path()).unwrap().join("ezer-home");
     let db_path = WorktreeDb::resolve_db_path(&home);
     {
         let db = WorktreeDb::open(&home).unwrap();
@@ -531,7 +531,7 @@ fn worktrees_dominate_at_half_of_total() {
     ];
     for case in cases {
         let report = DiskUsageReport {
-            grok_home: "/home/user/.grok".into(),
+            grok_home: "/home/user/.ezer".into(),
             total_bytes: case.total_bytes,
             top_level_dirs: vec![DirUsage {
                 name: WORKTREES_DIR.to_owned(),
@@ -549,7 +549,7 @@ fn worktrees_dominate_at_half_of_total() {
 fn json_shape_is_frozen() {
     let report = DiskUsageReport {
         schema_version: SCHEMA_VERSION,
-        grok_home: "/home/user/.grok".into(),
+        grok_home: "/home/user/.ezer".into(),
         total_bytes: 100,
         volume_capacity_bytes: Some(1_000),
         volume_available_bytes: Some(600),
@@ -562,11 +562,11 @@ fn json_shape_is_frozen() {
         unfollowed_dir_symlinks: 0,
         worktrees_outside_managed_roots: 0,
         registry: RegistryState::Read,
-        registry_path: "/home/user/.grok/worktrees.db".into(),
+        registry_path: "/home/user/.ezer/worktrees.db".into(),
         worktrees: vec![
             WorktreeUsage {
                 last_modified_at: Some(1_700_005_000),
-                path: "/home/user/.grok/worktrees/xai/wt-1".into(),
+                path: "/home/user/.ezer/worktrees/xai/wt-1".into(),
                 ..tracked_row(
                     90,
                     TrackedRow {
@@ -581,7 +581,7 @@ fn json_shape_is_frozen() {
             WorktreeUsage {
                 kind: WorktreeKind::Pool,
                 last_modified_at: Some(1_700_002_000),
-                path: "/home/user/.grok/worktree_pool/inst/wt-2".into(),
+                path: "/home/user/.ezer/worktree_pool/inst/wt-2".into(),
                 ..untracked_row(10)
             },
         ],
@@ -590,7 +590,7 @@ fn json_shape_is_frozen() {
         serde_json::to_value(&report).unwrap(),
         serde_json::json!({
             "schema_version": 1,
-            "grok_home": "/home/user/.grok",
+            "grok_home": "/home/user/.ezer",
             "total_bytes": 100,
             "volume_capacity_bytes": 1_000,
             "volume_available_bytes": 600,
@@ -603,7 +603,7 @@ fn json_shape_is_frozen() {
             "unfollowed_dir_symlinks": 0,
             "worktrees_outside_managed_roots": 0,
             "registry": "read",
-            "registry_path": "/home/user/.grok/worktrees.db",
+            "registry_path": "/home/user/.ezer/worktrees.db",
             "worktrees": [
                 {
                     "bytes": 90,
@@ -617,7 +617,7 @@ fn json_shape_is_frozen() {
                     "label": "my-feature",
                     "repo_name": "xai",
                     "git_ref": "brian/fix",
-                    "path": "/home/user/.grok/worktrees/xai/wt-1",
+                    "path": "/home/user/.ezer/worktrees/xai/wt-1",
                 },
                 {
                     "bytes": 10,
@@ -631,7 +631,7 @@ fn json_shape_is_frozen() {
                     "label": null,
                     "repo_name": null,
                     "git_ref": null,
-                    "path": "/home/user/.grok/worktree_pool/inst/wt-2",
+                    "path": "/home/user/.ezer/worktree_pool/inst/wt-2",
                 },
             ],
         })
@@ -669,7 +669,7 @@ fn json_shape_is_frozen() {
 fn missing_home_json_is_valid_and_empty() {
     let mut out = Vec::new();
     write_report(
-        &empty_report(Path::new("/nonexistent/.grok")),
+        &empty_report(Path::new("/nonexistent/.ezer")),
         /*json*/ true,
         &mut out,
     )
@@ -884,8 +884,8 @@ fn print_report_renders_registry_notices() {
 // Bare `gc` reclaims nothing: without `--max-age` the age pass is off, and the pass only walks registry records
 #[test]
 fn reclaim_hint_names_a_sequence_that_frees_space() {
-    const AGE: &str = "run `grok worktree gc --max-age 7d --dry-run`";
-    const RM: &str = "Remove one with `grok worktree rm --dry-run <path>`";
+    const AGE: &str = "run `ezer worktree gc --max-age 7d --dry-run`";
+    const RM: &str = "Remove one with `ezer worktree rm --dry-run <path>`";
     let tracked = tracked_row(60, record("wt-1", 0));
 
     let text = render_report(&worktrees_report(vec![tracked], 100), 0);
@@ -967,7 +967,7 @@ fn clone_note_states_the_double_count_only_when_the_volume_proves_it() {
 fn symlinked_worktrees_dir_is_surfaced_not_silently_dropped() {
     let tmp = tempfile::TempDir::new().unwrap();
     let base = dunce::canonicalize(tmp.path()).unwrap();
-    let home = base.join("grok-home");
+    let home = base.join("ezer-home");
     std::fs::create_dir_all(&home).unwrap();
     let elsewhere = base.join("worktrees-on-another-disk");
     let wt = elsewhere.join("xai/wt-a");
@@ -1005,17 +1005,17 @@ fn symlinked_worktrees_dir_is_surfaced_not_silently_dropped() {
 fn symlinked_default_home_keeps_home_label() {
     let tmp = tempfile::TempDir::new().unwrap();
     let fake_home = tmp.path().join("home");
-    let real_grok = tmp.path().join("grok-on-disk");
+    let real_grok = tmp.path().join("ezer-on-disk");
     std::fs::create_dir_all(&fake_home).unwrap();
     std::fs::create_dir_all(&real_grok).unwrap();
-    std::os::unix::fs::symlink(&real_grok, fake_home.join(".grok")).unwrap();
+    std::os::unix::fs::symlink(&real_grok, fake_home.join(".ezer")).unwrap();
     let _home = crate::test_util::EnvVarGuard::set("HOME", &fake_home);
 
-    let resolved = dunce::canonicalize(&fake_home).unwrap().join(".grok");
+    let resolved = dunce::canonicalize(&fake_home).unwrap().join(".ezer");
     let canonical = dunce::canonicalize(&resolved).unwrap();
     assert_ne!(canonical, resolved, "the symlink must actually resolve");
     assert_eq!(
         crate::util::display_grok_home_prefix_for(&canonical),
-        "~/.grok"
+        "~/.ezer"
     );
 }

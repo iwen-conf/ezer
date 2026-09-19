@@ -6,7 +6,7 @@ use xai_tty_utils::{detach_std_command, pager_env};
 
 const DECOY: &str = "OTEL_EXPORTER_OTLP_ENDPOINT";
 const DECOY_VALUE: &str = "http://127.0.0.1:9";
-const PROBE_ENV: &str = "GROK_OTEL_PIN_STRIP_PROBE";
+const PROBE_ENV: &str = "EZER_OTEL_PIN_STRIP_PROBE";
 
 #[test]
 fn production_strip_removes_process_env_and_child_does_not_inherit_decoy() {

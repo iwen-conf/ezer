@@ -202,7 +202,7 @@ pub struct WorktreeBuilder {
     worktree_id: Option<String>,
     #[cfg(feature = "metadata")]
     metadata: Option<serde_json::Value>,
-    /// Grok home whose `worktrees.db` receives the record; the resolved home when `None`.
+    /// ezer home whose `worktrees.db` receives the record; the resolved home when `None`.
     #[cfg(feature = "metadata")]
     registry_home: Option<PathBuf>,
     nfs: Option<NfsWorktreeOpts>,
@@ -319,7 +319,7 @@ impl WorktreeBuilder {
     }
 
     /// Register the worktree in `<registry_home>/worktrees.db` instead of the
-    /// DB under the resolved grok home, for callers that inject their grok home.
+    /// DB under the resolved ezer home, for callers that inject their ezer home.
     #[cfg(feature = "metadata")]
     pub fn registry_home(mut self, registry_home: impl Into<PathBuf>) -> Self {
         self.registry_home = Some(registry_home.into());
@@ -1879,7 +1879,7 @@ mod tests {
 
         let report = delete_snapshot_with_delegate_fallback(
             Path::new("/mnt/btrfs/worktrees/snap-1"),
-            Path::new("/home/u/.grok/worktrees/repo/wt"),
+            Path::new("/home/u/.ezer/worktrees/repo/wt"),
             Some(&delegate),
             |_| anyhow::bail!("operation not permitted (os error 1)"),
         )
@@ -2085,7 +2085,7 @@ mod tests {
         let snapshot_path = worktrees_dir.join("wt-live");
         std::fs::create_dir(&snapshot_path).unwrap();
         let unrestored_home = tmp.path().join("unrestored-home");
-        let mount_target = unrestored_home.join(".grok/worktrees/x/wt-live");
+        let mount_target = unrestored_home.join(".ezer/worktrees/x/wt-live");
         assert!(
             !mount_target.parent().unwrap().exists(),
             "precondition: mount_target parent must be absent"
@@ -2135,7 +2135,7 @@ mod tests {
         let worktrees_dir = tmp.path().join("worktrees");
         std::fs::create_dir(&worktrees_dir).unwrap();
 
-        let mount_target = std::path::PathBuf::from("/home/user/.grok/worktrees/active-wt");
+        let mount_target = std::path::PathBuf::from("/home/user/.ezer/worktrees/active-wt");
 
         let meta = btrfs::BtrfsSnapshotMetadata {
             kind: std::borrow::Cow::Borrowed("btrfs"),

@@ -32,9 +32,9 @@ pub fn compute_ws_url_suffix(ws_url: &str) -> String {
 }
 
 /// Env var that overrides the leader socket path and, by extension, the sibling `.lock` path. Set by the `--leader-socket` flag, or exported directly.
-/// Lets a developer sandbox a leader instance away from the default `~/.grok/leader.sock` — e.g. run a local branch build's leader without colliding with an installed stable leader on the same machine.
+/// Lets a developer sandbox a leader instance away from the default `~/.ezer/leader.sock` — e.g. run a local branch build's leader without colliding with an installed stable leader on the same machine.
 /// Both the client (`connect_or_spawn`) and the leader (`run_leader`) honor it, and the spawned leader subprocess inherits it. All parties therefore bind the same path. When set, the WS-URL-derived suffix (`compute_ws_url_suffix`) is bypassed entirely.
-pub const LEADER_SOCKET_ENV: &str = "GROK_LEADER_SOCKET";
+pub const LEADER_SOCKET_ENV: &str = "EZER_LEADER_SOCKET";
 
 /// The explicit socket-path override, if [`LEADER_SOCKET_ENV`] is set and non-empty.
 fn leader_socket_override() -> Option<PathBuf> {
@@ -125,7 +125,7 @@ pub struct LeaderLock {
 }
 
 impl LeaderLock {
-    /// Create a new LeaderLock using the default paths in grok home.
+    /// Create a new LeaderLock using the default paths in ezer home.
     /// If ws_url differs from the default production URL, a hash suffix is added to the lock and socket file names to differentiate leader instances.
     pub fn new(ws_url: &str) -> Self {
         Self {
@@ -292,8 +292,8 @@ mod tests {
 
     #[test]
     fn override_socket_path_wins_over_ws_url_derivation() {
-        let root = Path::new("/home/u/.grok");
-        let override_sock = PathBuf::from("/home/u/.grok/leader-branch.sock");
+        let root = Path::new("/home/u/.ezer");
+        let override_sock = PathBuf::from("/home/u/.ezer/leader-branch.sock");
 
         // With an override, the path is taken verbatim and the WS-URL suffix is ignored (a non-default ws_url would otherwise add a hash suffix)
         assert_eq!(
@@ -303,13 +303,13 @@ mod tests {
         // The lock is the sibling `.lock`, NOT a ws-url-derived name.
         assert_eq!(
             resolve_lock_path(Some(override_sock), root, "wss://custom.example/ws"),
-            PathBuf::from("/home/u/.grok/leader-branch.lock")
+            PathBuf::from("/home/u/.ezer/leader-branch.lock")
         );
     }
 
     #[test]
     fn no_override_falls_back_to_ws_url_derivation() {
-        let root = Path::new("/home/u/.grok");
+        let root = Path::new("/home/u/.ezer");
         // The default (empty) ws_url yields bare leader.sock / leader.lock under root
         assert_eq!(
             resolve_socket_path(None, root, ""),

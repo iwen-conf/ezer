@@ -31,8 +31,8 @@ async fn parked_marker_does_not_jolt_during_live_stream_after_wheel_up() {
         CHUNK_DELAY,
         &[
             ("TERM_PROGRAM", "zed"),
-            ("GROK_SCROLL_MODE", "wheel"),
-            ("GROK_SCROLL_LINES", "1"),
+            ("EZER_SCROLL_MODE", "wheel"),
+            ("EZER_SCROLL_LINES", "1"),
         ],
     )
     .await;

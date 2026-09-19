@@ -1,6 +1,6 @@
-//! Build script for bundling ripgrep for the grok-shell crate.
+//! Build script for bundling ripgrep for the ezer-shell crate.
 //!
-//! - If `GROK_SHELL_BUNDLE_RG_PATH` is set, always bundle it
+//! - If `EZER_SHELL_BUNDLE_RG_PATH` is set, always bundle it
 //! - Otherwise, only bundle in release builds
 use std::env;
 use std::fs;
@@ -11,14 +11,14 @@ const RG_VER: &str = "15.0.0";
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Only bundle in release builds to avoid slowing down cargo check.
-    println!("cargo:rerun-if-env-changed=GROK_SHELL_BUNDLE_RG_PATH");
-    println!("cargo:rerun-if-env-changed=GROK_SHELL_RG_DOWNLOAD_BASE");
+    println!("cargo:rerun-if-env-changed=EZER_SHELL_BUNDLE_RG_PATH");
+    println!("cargo:rerun-if-env-changed=EZER_SHELL_RG_DOWNLOAD_BASE");
     // Declare our custom cfg to the compiler so cfg(bundle_rg) is recognized by lints
     println!("cargo:rustc-check-cfg=cfg(bundle_rg)");
 
     // Bundle when a path override is set or this is a release build
     // Bail before touching the filesystem so debug `cargo check` needs no environment
-    let path_override = env::var("GROK_SHELL_BUNDLE_RG_PATH").ok();
+    let path_override = env::var("EZER_SHELL_BUNDLE_RG_PATH").ok();
     let is_release = env::var("PROFILE").as_deref() == Ok("release");
     if path_override.is_none() && !is_release {
         return Ok(());
@@ -32,7 +32,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         // OUT_DIR is always set by Cargo/Bazel for build scripts.
         PathBuf::from(env::var("OUT_DIR")?)
     } else if let Ok(xai_root) = env::var("XAI_ROOT") {
-        PathBuf::from(xai_root).join("target/tmp/grok-shell-bundle-rg")
+        PathBuf::from(xai_root).join("target/tmp/ezer-shell-bundle-rg")
     } else {
         PathBuf::from(env::var("OUT_DIR")?)
     };
@@ -48,20 +48,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Expose cfg so the crate can include the bundled bytes.
     println!("cargo:rustc-cfg=bundle_rg");
-    println!("cargo:rustc-env=GROK_SHELL_RG_VER={}", RG_VER);
+    println!("cargo:rustc-env=EZER_SHELL_RG_VER={}", RG_VER);
     println!(
-        "cargo:rustc-env=GROK_SHELL_RG_GEN_DIR={}",
+        "cargo:rustc-env=EZER_SHELL_RG_GEN_DIR={}",
         gen_dir.display()
     );
 
     // If a local rg binary is provided, copy it directly and skip the target check
     if let Some(path) = path_override {
         let dest = gen_dir.join(format!("rg-{}-override.bin", RG_VER));
-        println!("cargo:rustc-env=GROK_SHELL_RG_TARGET=override");
+        println!("cargo:rustc-env=EZER_SHELL_RG_TARGET=override");
         let _ = fs::remove_file(&dest);
         fs::copy(PathBuf::from(path.clone()), &dest).map_err(|e| {
             format!(
-                "Failed copying GROK_SHELL_BUNDLE_RG_PATH: {e} from path {path} to dest {}",
+                "Failed copying EZER_SHELL_BUNDLE_RG_PATH: {e} from path {path} to dest {}",
                 dest.display()
             )
         })?;
@@ -78,20 +78,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         ("linux", "aarch64") => "aarch64-unknown-linux-gnu",
         _ => {
             return Err(format!(
-                "Unsupported target for ripgrep bundling: {os}-{arch}. Set GROK_SHELL_BUNDLE_RG_PATH to a local rg binary for offline or unsupported builds.",
+                "Unsupported target for ripgrep bundling: {os}-{arch}. Set EZER_SHELL_BUNDLE_RG_PATH to a local rg binary for offline or unsupported builds.",
                 os = target_os,
                 arch = target_arch
             ).into());
         }
     };
 
-    println!("cargo:rustc-env=GROK_SHELL_RG_TARGET={}", asset_triple);
+    println!("cargo:rustc-env=EZER_SHELL_RG_TARGET={}", asset_triple);
     let dest = gen_dir.join(format!("rg-{}-{}.bin", RG_VER, asset_triple));
     let _ = fs::remove_file(&dest);
 
     // The download base is overridable so sandboxed or offline CI can point at an internal mirror; it defaults to the public GitHub releases URL
     // Example: GROK_SHELL_RG_DOWNLOAD_BASE=http://<mirror>/github/BurntSushi/ripgrep/releases/download
-    let download_base = env::var("GROK_SHELL_RG_DOWNLOAD_BASE")
+    let download_base = env::var("EZER_SHELL_RG_DOWNLOAD_BASE")
         .unwrap_or_else(|_| "https://github.com/BurntSushi/ripgrep/releases/download".to_string());
     let url = format!(
         "{base}/{v}/ripgrep-{v}-{t}.tar.gz",
@@ -103,13 +103,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let bytes: Vec<u8> = {
         let resp = reqwest::blocking::get(&url).map_err(|e| {
             format!(
-                "Failed to download ripgrep: {}\nSet GROK_SHELL_BUNDLE_RG_PATH to a local rg for offline builds.",
+                "Failed to download ripgrep: {}\nSet EZER_SHELL_BUNDLE_RG_PATH to a local rg for offline builds.",
                 e
             )
         })?;
         if !resp.status().is_success() {
             return Err(format!(
-                "HTTP {} downloading ripgrep. Set GROK_SHELL_BUNDLE_RG_PATH for offline builds.",
+                "HTTP {} downloading ripgrep. Set EZER_SHELL_BUNDLE_RG_PATH for offline builds.",
                 resp.status()
             )
             .into());
@@ -137,7 +137,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     if !found {
         return Err(format!(
-            "Could not find 'rg' in ripgrep archive {}. Set GROK_SHELL_BUNDLE_RG_PATH for offline builds.",
+            "Could not find 'rg' in ripgrep archive {}. Set EZER_SHELL_BUNDLE_RG_PATH for offline builds.",
             url
         )
         .into());

@@ -1,14 +1,14 @@
-//! `GROK_SCROLL_LOG` enables a JSONL log of scroll-stream transitions for offline analysis of real gestures.
+//! `EZER_SCROLL_LOG` enables a JSONL log of scroll-stream transitions for offline analysis of real gestures.
 //!
 //! The pager's scroll-debug HUD (`views::scroll_debug_hud`) samples state per frame; this recorder logs every state-machine transition.
 //! It writes one line per stream start, per flush that delivers lines, and per finalize (see [`super::mouse`]).
 //! Flush attempts that deliver nothing are not logged; their spacing shows up in `ms_since_prev_flush`.
 //! Records are flat JSON objects, one per line, and the writer flushes on finalize records so `tail -f` and `jq` work mid-session.
 //!
-//! Enablement: `GROK_SCROLL_LOG=1` (or set-but-empty) logs to
-//! `~/.grok/logs/scroll-log-<timestamp>.jsonl`; any other non-`0` value is
+//! Enablement: `EZER_SCROLL_LOG=1` (or set-but-empty) logs to
+//! `~/.ezer/logs/scroll-log-<timestamp>.jsonl`; any other non-`0` value is
 //! used as the target path.
-//! Unset (or `0`, matching `GROK_SCROLL_DEBUG`) disables: [`super::mouse::MouseScrollState`] holds `None` and each emission point costs one branch.
+//! Unset (or `0`, matching `EZER_SCROLL_DEBUG`) disables: [`super::mouse::MouseScrollState`] holds `None` and each emission point costs one branch.
 //!
 //! Invariant (same contract as the HUD): pure observation; the recorder never feeds back into scroll behavior.
 //! IO failures drop the record and disable the recorder with a single `tracing::warn!` (never stderr; that is the TUI's terminal), and never panic.
@@ -130,7 +130,7 @@ enum Sink {
     Disabled,
 }
 
-/// Appends [`ScrollLogRecord`]s to the `GROK_SCROLL_LOG` file.
+/// Appends [`ScrollLogRecord`]s to the `EZER_SCROLL_LOG` file.
 /// Owned as `Option<Self>` by [`super::mouse::MouseScrollState`].
 /// Construction reads the env once; the file opens on the first record so an enabled-but-idle session creates nothing.
 #[derive(Debug)]
@@ -146,9 +146,9 @@ pub(crate) struct ScrollLogRecorder {
 }
 
 impl ScrollLogRecorder {
-    /// Build from `GROK_SCROLL_LOG` (the module docs describe the accepted values); `None` when unset or `0`.
+    /// Build from `EZER_SCROLL_LOG` (the module docs describe the accepted values); `None` when unset or `0`.
     pub(crate) fn from_env_at(base: Instant) -> Option<Self> {
-        let raw = std::env::var("GROK_SCROLL_LOG").ok()?;
+        let raw = std::env::var("EZER_SCROLL_LOG").ok()?;
         let value = raw.trim();
         if value == "0" {
             return None;
@@ -248,7 +248,7 @@ fn open_writer(path: &Path) -> std::io::Result<BufWriter<File>> {
     Ok(BufWriter::new(File::create(path)?))
 }
 
-/// `~/.grok/logs/scroll-log-<utc-ts>.jsonl` — the input-debug dump's dir
+/// `~/.ezer/logs/scroll-log-<utc-ts>.jsonl` — the input-debug dump's dir
 /// and timestamp conventions ([`crate::input_log`]).
 /// It is also the target of the `/debug log` runtime toggle ([`super::mouse::MouseScrollState`]).
 pub(crate) fn default_log_path() -> PathBuf {

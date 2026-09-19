@@ -114,7 +114,7 @@ impl Drop for BootstrappingGuard {
 
 static CLAIM_LOG: HealAwareLogCounter = HealAwareLogCounter::new(4);
 
-/// Run [`reindex_all`] at most once at a time across concurrent grok processes.
+/// Run [`reindex_all`] at most once at a time across concurrent ezer processes.
 /// A launch's first claim always reindexes, even when a completed marker exists.
 /// Waiters adopt any completed marker, stale ones included (the claimant refreshes the index either way), and give up after the bounded wait.
 pub(crate) async fn bootstrap_with_lease(

@@ -10,9 +10,8 @@
 use crate::types::output::ToolOutput;
 use crate::types::requirements::{Expr, ToolRequirement};
 use crate::types::resources::SharedResources;
-/// The toolset a tool belongs to. Serializes to snake_case (`grok_build`, `mcp`, …) for the canonical tool `_meta` wire contract. PascalCase
-/// aliases are accepted on deserialize so legacy persisted/manifest values still parse. The `Display` impl remains PascalCase for existing
-/// qualified id strings (e.g. `"GrokBuild:read_file"`); only the serde form goes on the wire.
+/// The toolset a tool belongs to. Serializes to snake_case (`ezer_build`, `mcp`, …) for the canonical tool `_meta` wire contract. The `Display`
+/// impl is PascalCase for qualified id strings (e.g. `"Ezer:read_file"`); only the serde form goes on the wire.
 #[derive(
     Debug,
     Clone,
@@ -27,11 +26,14 @@ use crate::types::resources::SharedResources;
 )]
 #[serde(rename_all = "snake_case")]
 pub enum ToolNamespace {
-    #[serde(alias = "GrokBuild")]
+    #[display("Ezer")]
+    #[serde(rename = "ezer_build")]
     GrokBuild,
-    #[serde(alias = "GrokBuildConcise")]
+    #[display("EzerConcise")]
+    #[serde(rename = "ezer_concise")]
     GrokBuildConcise,
-    #[serde(alias = "GrokBuildHashline")]
+    #[display("EzerHashline")]
+    #[serde(rename = "ezer_hashline")]
     GrokBuildHashline,
     #[serde(alias = "Codex")]
     Codex,

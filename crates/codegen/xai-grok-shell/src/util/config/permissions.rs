@@ -60,7 +60,7 @@ pub fn permission_mode_from_ui_if_set(ui: &TomlValue) -> Option<PermissionMode> 
 /// Shipped TUI default when CLI, TOML, and remote all leave the mode unset.
 pub(crate) const DEFAULT_INTERACTIVE_PERMISSION_MODE: PermissionMode = PermissionMode::Ask;
 
-pub(crate) const ENV_DEFAULT_PERMISSION_MODE: &str = "GROK_DEFAULT_PERMISSION_MODE";
+pub(crate) const ENV_DEFAULT_PERMISSION_MODE: &str = "EZER_DEFAULT_PERMISSION_MODE";
 
 /// Env override for [`DEFAULT_INTERACTIVE_PERMISSION_MODE`].
 /// `always-approve` and unknown values are ignored so bypass cannot inherit from the process environment.
@@ -346,7 +346,7 @@ mod tests {
 
     #[test]
     fn permission_mode_from_ui_if_set_none_when_no_keys() {
-        let theme: TomlValue = toml::from_str("[ui]\ntheme = \"groknight\"\n").unwrap();
+        let theme: TomlValue = toml::from_str("[ui]\ntheme = \"ezernight\"\n").unwrap();
         assert_eq!(
             permission_mode_from_ui_if_set(theme.get("ui").unwrap()),
             None,
@@ -456,7 +456,7 @@ mod tests {
                 "ask",
             ),
             // No permission keys fall back to Ask
-            ("[ui]\ntheme = \"groknight\"\n", PermissionMode::Ask, "ask"),
+            ("[ui]\ntheme = \"ezernight\"\n", PermissionMode::Ask, "ask"),
         ];
         for (toml_str, expected_mode, expected_canonical) in cases {
             let root: TomlValue = toml::from_str(toml_str).unwrap();
@@ -631,7 +631,7 @@ mod tests {
         let _g = crate::util::config::resolve::AUTO_PERMISSION_MODE_ENV_LOCK
             .lock()
             .unwrap_or_else(|p| p.into_inner());
-        unsafe { std::env::set_var("GROK_AUTO_PERMISSION_MODE", "1") };
+        unsafe { std::env::set_var("EZER_AUTO_PERMISSION_MODE", "1") };
         assert!(effective_auto_for_launch(
             false,
             Some("auto"),
@@ -654,7 +654,7 @@ mod tests {
             None,
             PermissionMode::Ask
         ));
-        unsafe { std::env::remove_var("GROK_AUTO_PERMISSION_MODE") };
+        unsafe { std::env::remove_var("EZER_AUTO_PERMISSION_MODE") };
     }
 
     /// The authoritative agent-side gate (used at the `set_auto_mode` call site).
@@ -679,14 +679,14 @@ mod tests {
         );
     }
 
-    /// With the gate forced OFF (`GROK_AUTO_PERMISSION_MODE=0`), `--permission-mode auto` or config auto is inert, so the classifier never launches.
+    /// With the gate forced OFF (`EZER_AUTO_PERMISSION_MODE=0`), `--permission-mode auto` or config auto is inert, so the classifier never launches.
     /// (Compiled-in default is ON; this pins the env kill-switch.)
     #[test]
     fn effective_auto_for_launch_inert_when_gate_off() {
         let _g = crate::util::config::resolve::AUTO_PERMISSION_MODE_ENV_LOCK
             .lock()
             .unwrap_or_else(|p| p.into_inner());
-        unsafe { std::env::set_var("GROK_AUTO_PERMISSION_MODE", "0") };
+        unsafe { std::env::set_var("EZER_AUTO_PERMISSION_MODE", "0") };
         assert!(
             !effective_auto_for_launch(false, Some("auto"), None, PermissionMode::Ask),
             "gate OFF: explicit --permission-mode auto must not activate auto"
@@ -699,7 +699,7 @@ mod tests {
             !effective_auto_for_launch(false, None, None, PermissionMode::Auto),
             "gate OFF: an Auto unset-default must be inert"
         );
-        unsafe { std::env::remove_var("GROK_AUTO_PERMISSION_MODE") };
+        unsafe { std::env::remove_var("EZER_AUTO_PERMISSION_MODE") };
     }
 
     #[test]
@@ -723,7 +723,7 @@ mod tests {
             assert_eq!(
                 default_interactive_permission_mode(),
                 expected,
-                "GROK_DEFAULT_PERMISSION_MODE={raw}"
+                "EZER_DEFAULT_PERMISSION_MODE={raw}"
             );
         }
 
@@ -735,13 +735,13 @@ mod tests {
             Some(PermissionMode::Ask),
         );
 
-        unsafe { std::env::set_var("GROK_AUTO_PERMISSION_MODE", "1") };
+        unsafe { std::env::set_var("EZER_AUTO_PERMISSION_MODE", "1") };
         unsafe { std::env::set_var(ENV_DEFAULT_PERMISSION_MODE, "auto") };
         let unset = default_interactive_permission_mode();
         assert!(!effective_auto_for_launch(false, Some("ask"), None, unset));
         assert!(!effective_auto_for_launch(true, None, None, unset));
         unsafe { std::env::remove_var(ENV_DEFAULT_PERMISSION_MODE) };
-        unsafe { std::env::remove_var("GROK_AUTO_PERMISSION_MODE") };
+        unsafe { std::env::remove_var("EZER_AUTO_PERMISSION_MODE") };
     }
 
     // Pure tests for the policy predicate itself live next to its canonical definition in `xai_grok_workspace::permission::resolution`

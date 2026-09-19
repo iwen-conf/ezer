@@ -458,7 +458,7 @@ pub(crate) enum DirectInstallError {
     Install(InstallError),
 }
 
-/// Direct install (git URL / local path) — the CLI `grok plugin install` path; registry mutated
+/// Direct install (git URL / local path) — the CLI `ezer plugin install` path; registry mutated
 /// but NOT saved: the caller owns the save, holding the registry lock across load→install→save.
 pub(crate) fn direct_install(
     source: &git_install::InstallSource,
@@ -522,7 +522,7 @@ impl std::fmt::Display for ProvenanceUpdateError {
             Self::NotConfigured { source } => write!(
                 f,
                 "marketplace source is no longer configured: {source}; \
-                 re-add it with `grok plugin marketplace add` or reinstall the plugin"
+                 re-add it with `ezer plugin marketplace add` or reinstall the plugin"
             ),
         }
     }
@@ -561,7 +561,7 @@ pub(crate) fn provenance_update_source(
 }
 
 /// The require-sha pin for remote plugin code: disk config + env, both tighten-only, read from
-/// the overlay-free layer merge so no `GROK_CONFIG` overlay can relax a disk-set `true`.
+/// the overlay-free layer merge so no `EZER_CONFIG` overlay can relax a disk-set `true`.
 pub(crate) fn marketplace_require_sha() -> bool {
     require_sha_policy(xai_grok_config::ConfigLayers::load())
 }
@@ -808,7 +808,7 @@ mod tests {
     fn provenance_spellings_of_one_source_share_one_update_cache_entry() {
         use std::collections::HashMap;
 
-        let configured = git_source("Corp", "https://github.com/grok-test-nonexistent/mp");
+        let configured = git_source("Corp", "https://github.com/ezer-test-nonexistent/mp");
         let policy = xai_grok_workspace::permission::resolution::MarketplacePolicy::default();
         let seeded_root = PathBuf::from("/seeded-by-first-repo");
         let mut cache: HashMap<String, MarketplaceSourceRoot> = HashMap::new();
@@ -822,8 +822,8 @@ mod tests {
         );
         // The second repo's provenance spells the same source differently.
         for spelling in [
-            "https://GitHub.com/grok-test-nonexistent/mp.git",
-            "https://github.com/grok-test-nonexistent/mp",
+            "https://GitHub.com/ezer-test-nonexistent/mp.git",
+            "https://github.com/ezer-test-nonexistent/mp",
         ] {
             let source = provenance_update_source(
                 std::slice::from_ref(&configured),

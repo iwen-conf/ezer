@@ -445,7 +445,7 @@ fn ui_config_round_trip_preserves_pager_fields() {
 yolo = true
 show_timestamps = false
 auto_dark_theme = "tokyonight"
-auto_light_theme = "grokday"
+auto_light_theme = "ezerday"
 "#;
     let root: TomlValue = toml::from_str(toml_str).unwrap();
     let cfg = load_config_from_toml(&root);
@@ -531,7 +531,7 @@ fn merge_section_full_save_config_simulation() {
 [ui]
 show_timestamps = true
 auto_dark_theme = "tokyonight"
-auto_light_theme = "grokday"
+auto_light_theme = "ezerday"
 
 [models]
 default = "grok-3"
@@ -558,7 +558,7 @@ auto_update = true
     );
     assert_eq!(
         ui.get("auto_light_theme").and_then(|v| v.as_str()),
-        Some("grokday")
+        Some("ezerday")
     );
     let models = table.get("models").unwrap().as_table().unwrap();
     assert_eq!(
@@ -719,12 +719,12 @@ fn merge_section_models_only_updates_set_fields_preserves_others() {
     models.insert("unmodeled_foo".into(), TomlValue::String("keep-me".into()));
     table.insert("models".into(), TomlValue::Table(models));
     let cfg = crate::agent::config::ModelsConfig {
-        default: Some("grok-new".to_string()),
+        default: Some("ezer-new".to_string()),
         ..Default::default()
     };
     merge_section(&mut table, "models", &cfg);
     let m = table.get("models").unwrap().as_table().unwrap();
-    assert_eq!(m.get("default").and_then(|v| v.as_str()), Some("grok-new"));
+    assert_eq!(m.get("default").and_then(|v| v.as_str()), Some("ezer-new"));
     assert_eq!(
         m.get("web_search").and_then(|v| v.as_str()),
         Some("old-search")
@@ -737,10 +737,10 @@ fn merge_section_models_only_updates_set_fields_preserves_others() {
 }
 #[test]
 fn persist_preferred_model_flow_roundtrips_via_load_and_new_from_toml_cfg() {
-    let original = "[models]\ndefault = \"grok-old\"\nweb_search = \"some-search\"\n";
+    let original = "[models]\ndefault = \"ezer-old\"\nweb_search = \"some-search\"\n";
     let root: TomlValue = toml::from_str(original).unwrap();
     let mut cfg = load_config_from_toml(&root);
-    cfg.models.default = Some("grok-persisted".to_string());
+    cfg.models.default = Some("ezer-persisted".to_string());
     let mut table = if let TomlValue::Table(t) = root {
         t
     } else {
@@ -749,10 +749,10 @@ fn persist_preferred_model_flow_roundtrips_via_load_and_new_from_toml_cfg() {
     merge_section(&mut table, "models", &cfg.models);
     let reloaded_root = TomlValue::Table(table);
     let reloaded = load_config_from_toml(&reloaded_root);
-    assert_eq!(reloaded.models.default.as_deref(), Some("grok-persisted"));
+    assert_eq!(reloaded.models.default.as_deref(), Some("ezer-persisted"));
     let cfg2 =
         crate::agent::config::Config::new_from_toml_cfg(&reloaded_root).expect("new_from_toml_cfg");
-    assert_eq!(cfg2.models.default.as_deref(), Some("grok-persisted"));
+    assert_eq!(cfg2.models.default.as_deref(), Some("ezer-persisted"));
 }
 #[test]
 fn merge_section_cli_show_tips_writes_under_cli_section() {
@@ -870,7 +870,7 @@ mod resolve_auto_compact {
     use std::sync::Mutex;
     const TEST_MODEL: &str = "grok-4.5";
     const OTHER_MODEL: &str = "grok-4.3";
-    /// Serialize tests that mutate `GROK_AUTO_COMPACT_THRESHOLD_PERCENT`.
+    /// Serialize tests that mutate `EZER_AUTO_COMPACT_THRESHOLD_PERCENT`.
     static ENV_LOCK: Mutex<()> = Mutex::new(());
     /// Build a `Config` populated with optional per-source values for the `TEST_MODEL`.
     /// Any `None` argument means "that source is unset".
@@ -1134,8 +1134,8 @@ fn settings_helpers_target_correct_ui_fields() {
     assert_eq!(cfg.ui.theme, Some("auto".to_string()));
     let cfg = apply(|cfg| cfg.ui.auto_dark_theme = Some("tokyonight".to_string()));
     assert_eq!(cfg.ui.auto_dark_theme, Some("tokyonight".to_string()));
-    let cfg = apply(|cfg| cfg.ui.auto_light_theme = Some("grokday".to_string()));
-    assert_eq!(cfg.ui.auto_light_theme, Some("grokday".to_string()));
+    let cfg = apply(|cfg| cfg.ui.auto_light_theme = Some("ezerday".to_string()));
+    assert_eq!(cfg.ui.auto_light_theme, Some("ezerday".to_string()));
     let cfg = apply(|cfg| cfg.ui.hunk_tracker_mode = Some("off".to_string()));
     assert_eq!(cfg.ui.hunk_tracker_mode, Some("off".to_string()));
     let cfg = apply(|cfg| cfg.ui.screen_mode = Some("minimal".to_string()));
@@ -1148,7 +1148,7 @@ fn set_theme_round_trips_through_merge() {
     let original = r#"
 [ui]
 compact_mode = true
-theme = "groknight"
+theme = "ezernight"
 auto_dark_theme = "tokyonight"
 custom_user_key = "preserve-me"
 "#;
@@ -1184,8 +1184,8 @@ fn set_auto_dark_and_light_theme_round_trip_through_merge() {
     let original = r#"
 [ui]
 theme = "auto"
-auto_dark_theme = "groknight"
-auto_light_theme = "grokday"
+auto_dark_theme = "ezernight"
+auto_light_theme = "ezerday"
 custom_unknown_key = 42
 "#;
     let root: TomlValue = toml::from_str(original).unwrap();
@@ -1314,7 +1314,7 @@ fn assert_still_symlink(path: &std::path::Path) {
             .is_symlink()
     );
 }
-/// Project `.grok/config.toml` must replace a leaf symlink, not follow it.
+/// Project `.ezer/config.toml` must replace a leaf symlink, not follow it.
 #[cfg(unix)]
 #[test]
 fn atomic_replace_string_replaces_project_config_symlink() {
@@ -1330,7 +1330,7 @@ fn atomic_replace_string_replaces_project_config_symlink() {
     assert_eq!("[mcp_servers]\n", std::fs::read_to_string(&link).unwrap());
     assert_eq!("keep\n", std::fs::read_to_string(&outside).unwrap());
 }
-/// No user grok home: persist must resolve the cwd `.grok/config.toml` as a
+/// No user ezer home: persist must resolve the cwd `.ezer/config.toml` as a
 /// slot (replace), not follow an external referent.
 #[cfg(unix)]
 #[test]

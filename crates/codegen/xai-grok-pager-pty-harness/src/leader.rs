@@ -29,8 +29,8 @@ impl LeaderCluster {
             .await
             .context("start content controller")?;
         // One shared GROK_HOME means one leader; the socket lives beneath it so every client (sharing the same env) elects/attaches to the same one
-        let grok_home = content.home().join(".grok");
-        std::fs::create_dir_all(&grok_home).context("create grok home")?;
+        let grok_home = content.home().join(".ezer");
+        std::fs::create_dir_all(&grok_home).context("create ezer home")?;
         let socket = grok_home.join("leader-e2e.sock");
         let binary = pager_binary().context("resolve pager binary")?;
         Ok(Self {
@@ -70,7 +70,7 @@ impl LeaderCluster {
 
     /// The cluster's sessions root: `GROK_HOME/sessions` (layout below is `sessions/<encoded-cwd>/<session-id>/updates.jsonl`).
     fn sessions_dir(&self) -> PathBuf {
-        self.content.home().join(".grok").join("sessions")
+        self.content.home().join(".ezer").join("sessions")
     }
 
     /// `params.update` from every session file. A vanished or torn multi-byte tail is skipped; the next call retries.

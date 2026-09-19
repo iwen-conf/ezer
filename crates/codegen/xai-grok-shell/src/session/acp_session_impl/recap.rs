@@ -601,7 +601,7 @@ impl SessionActor {
 
         let model = match model_override {
             Some(m) => m.to_owned(),
-            None => "grok-4.6".to_owned(),
+            None => crate::models::default_model().to_owned(),
         };
 
         let request = ConversationRequest {

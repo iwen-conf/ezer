@@ -6,9 +6,9 @@ use xai_tool_runtime::{ToolError, ToolErrorKind};
 const RG_BYTES: &[u8] = include_bytes!(concat!(
     env!("OUT_DIR"),
     "/bundle-rg/rg-",
-    env!("GROK_TOOLS_RG_VER"),
+    env!("EZER_TOOLS_RG_VER"),
     "-",
-    env!("GROK_TOOLS_RG_TARGET"),
+    env!("EZER_TOOLS_RG_TARGET"),
     ".bin.zst"
 ));
 
@@ -17,12 +17,12 @@ fn resolve_bundled_rg() -> Result<Option<PathBuf>, crate::util::vendor::InstallE
     crate::util::vendor::resolve(
         concat!(
             "rg-",
-            env!("GROK_TOOLS_RG_VER"),
+            env!("EZER_TOOLS_RG_VER"),
             "-",
-            env!("GROK_TOOLS_RG_TARGET")
+            env!("EZER_TOOLS_RG_TARGET")
         ),
         RG_BYTES,
-        env!("GROK_TOOLS_RG_SHA256"),
+        env!("EZER_TOOLS_RG_SHA256"),
     )
 }
 

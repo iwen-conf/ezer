@@ -2498,7 +2498,7 @@ mod tests {
     #[cfg(unix)]
     #[test]
     fn create_dir_all_durable_fresh_create_skips_the_filesystem_root() {
-        let unique = format!("grok-durable-create-{}", uuid::Uuid::now_v7());
+        let unique = format!("ezer-durable-create-{}", uuid::Uuid::now_v7());
         let top = Path::new("/").join(&unique);
         let dir = top.join("sessions").join("id");
         assert!(

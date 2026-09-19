@@ -23,7 +23,7 @@ pub(crate) fn resolve_max_retries_with_env(
 }
 
 pub fn resolve_max_retries(model_max_retries: Option<u32>) -> u32 {
-    let env_override = std::env::var("GROK_MAX_RETRIES").ok();
+    let env_override = std::env::var("EZER_MAX_RETRIES").ok();
     resolve_max_retries_with_env(env_override.as_deref(), model_max_retries)
 }
 
@@ -697,7 +697,7 @@ mod tests {
     fn classify_cloudflare_522_is_retryable() {
         let err = api_err(
             StatusCode::from_u16(522).unwrap(),
-            "Connection to Grok timed out or was interrupted. (HTTP 522).",
+            "Connection to ezer timed out or was interrupted. (HTTP 522).",
         );
         match classify_error(&err, 0, 15, RATE_LIMIT_RETRY_THRESHOLD) {
             RetryDecision::RetryWithClientRebuild { .. } => {}
@@ -714,7 +714,7 @@ mod tests {
         for should_retry in [None, Some(true)] {
             let err = SamplingError::Api {
                 status: StatusCode::from_u16(525).unwrap(),
-                message: "Secure connection to Grok failed. (HTTP 525).".into(),
+                message: "Secure connection to ezer failed. (HTTP 525).".into(),
                 model_metadata: None,
                 retry_after_secs: None,
                 should_retry,

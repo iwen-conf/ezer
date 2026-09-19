@@ -186,8 +186,8 @@ async fn run_prompt(actor: &Arc<SessionActor>, prompt_id: &str) -> PromptTurnRes
 /// cell, now injectable).
 #[test]
 fn remote_budget_wires_into_the_resolver() {
-    if xai_grok_config::env_bool("GROK_LENGTH_SALVAGE") == Some(true) {
-        panic!("ambient GROK_LENGTH_SALVAGE=1 would mask the remote tier under test");
+    if xai_grok_config::env_bool("EZER_LENGTH_SALVAGE") == Some(true) {
+        panic!("ambient EZER_LENGTH_SALVAGE=1 would mask the remote tier under test");
     }
     block_on_session(|| {
         current_thread_local(async {
@@ -235,8 +235,8 @@ fn remote_settings_length_salvage_budget_serde_cells() {
 /// This is the safety property that nothing changes for production default agents until the rollout flag lands.
 #[test]
 fn default_agent_gate_off_hard_fails_on_length() {
-    if xai_grok_config::env_bool("GROK_LENGTH_SALVAGE") == Some(true) {
-        panic!("ambient GROK_LENGTH_SALVAGE=1 would flip the gate under test");
+    if xai_grok_config::env_bool("EZER_LENGTH_SALVAGE") == Some(true) {
+        panic!("ambient EZER_LENGTH_SALVAGE=1 would flip the gate under test");
     }
     block_on_session(|| {
         current_thread_local(async {

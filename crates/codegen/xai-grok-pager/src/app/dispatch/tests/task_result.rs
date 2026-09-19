@@ -203,14 +203,14 @@ fn doctor_planning_opens_refuses_remote_and_rejects_stale_identity() {
         TaskResult::DoctorFixPlanned {
             target: target.clone(),
             result: Ok(crate::app::actions::DoctorPlanningOutcome::RunLocally(
-                "grok doctor fix ssh-wrap".to_owned(),
+                "ezer doctor fix ssh-wrap".to_owned(),
             )),
         },
         &mut app,
     );
     assert!(
         last_system_text(&app, id)
-            .contains("On your local computer, run: grok doctor fix ssh-wrap")
+            .contains("On your local computer, run: ezer doctor fix ssh-wrap")
     );
 
     app.agents
@@ -1194,7 +1194,7 @@ fn switch_model_complete_success_updates_model_and_pushes_message() {
         .available
         .insert(
             model_id.clone(),
-            acp::ModelInfo::new(model_id.clone(), "Grok 4.5".to_string()),
+            acp::ModelInfo::new(model_id.clone(), "ezer 4.5".to_string()),
         );
     app.agents
         .get_mut(&id)
@@ -1242,7 +1242,7 @@ fn switch_model_complete_skips_message_and_persist_when_unchanged() {
     let agent = app.agents.get_mut(&id).unwrap();
     agent.session.models.available.insert(
         model_id.clone(),
-        acp::ModelInfo::new(model_id.clone(), "Grok 4.5".to_string()),
+        acp::ModelInfo::new(model_id.clone(), "ezer 4.5".to_string()),
     );
     agent.session.models.current = Some(model_id.clone());
     agent.session.models.reasoning_effort = None;
@@ -1365,7 +1365,7 @@ fn switch_to_non_reasoning_model_clears_persisted_effort() {
         .available
         .insert(
             model_id.clone(),
-            acp::ModelInfo::new(model_id.clone(), "Grok Build".to_string()),
+            acp::ModelInfo::new(model_id.clone(), "ezer".to_string()),
         );
     app.agents
         .get_mut(&id)
@@ -1454,7 +1454,7 @@ fn switch_model_incompatible_agent_shows_question_modal() {
 
     let err = xai_grok_shell::agent::config::ModelSwitchIncompatibleAgentError {
         code: "MODEL_SWITCH_INCOMPATIBLE_AGENT".into(),
-        active_agent_type: "grok-build".into(),
+        active_agent_type: "ezer-build".into(),
         required_agent_type: "cursor".into(),
         model_id: "cursor-model".into(),
         suggestion: "start_new_session".into(),
@@ -1515,7 +1515,7 @@ fn incompatible_agent_rollback_restores_previous_model() {
 
     let err = xai_grok_shell::agent::config::ModelSwitchIncompatibleAgentError {
         code: "MODEL_SWITCH_INCOMPATIBLE_AGENT".into(),
-        active_agent_type: "grok-build".into(),
+        active_agent_type: "ezer-build".into(),
         required_agent_type: "cursor".into(),
         model_id: "cursor-model".into(),
         suggestion: "start_new_session".into(),
@@ -1560,7 +1560,7 @@ fn incompatible_agent_closes_active_modal() {
 
     let err = xai_grok_shell::agent::config::ModelSwitchIncompatibleAgentError {
         code: "MODEL_SWITCH_INCOMPATIBLE_AGENT".into(),
-        active_agent_type: "grok-build".into(),
+        active_agent_type: "ezer-build".into(),
         required_agent_type: "cursor".into(),
         model_id: "cursor-model".into(),
         suggestion: "start_new_session".into(),
@@ -1594,19 +1594,19 @@ fn same_agent_type_switch_no_modal() {
     // Switching between two models with the same (or no) agent type succeeds normally: no modal, no IncompatibleAgent error
     let mut app = test_app_with_agent();
     let id = AgentId(0);
-    let model_a = acp::ModelId::new(std::sync::Arc::from("grok-build-a"));
-    let model_b = acp::ModelId::new(std::sync::Arc::from("grok-build-b"));
+    let model_a = acp::ModelId::new(std::sync::Arc::from("ezer-build-a"));
+    let model_b = acp::ModelId::new(std::sync::Arc::from("ezer-build-b"));
 
     // Add both models to the catalog (no agentType, so both use grok-build)
     let agent = app.agents.get_mut(&id).unwrap();
     agent.session.models.available.insert(
         model_a.clone(),
-        acp::ModelInfo::new(model_a.clone(), "Grok Build A".to_string()),
+        acp::ModelInfo::new(model_a.clone(), "ezer A".to_string()),
     );
     agent.session.models.set_current(model_a, None);
     agent.session.models.available.insert(
         model_b.clone(),
-        acp::ModelInfo::new(model_b.clone(), "Grok Build B".to_string()),
+        acp::ModelInfo::new(model_b.clone(), "ezer B".to_string()),
     );
     agent.session.model_switch_pending = true;
 

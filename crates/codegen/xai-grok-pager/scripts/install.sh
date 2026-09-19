@@ -1,13 +1,13 @@
 #!/bin/bash
 #
-# ezer installer (fork of Grok Build). Preferred install is building from source:
+# ezer installer (fork of ezer). Preferred install is building from source:
 #   cargo build -p xai-grok-pager-bin --release
 #   # binary: target/release/ezer    home: ~/.ezer  ($EZER_HOME)
 #
 # This script still fetches published artifacts. The primary command name is `ezer`
-# (`grok` remains a compatibility symlink).
+# (`ezer` remains a compatibility symlink).
 #
-# Env: EZER_HOME, EZER_BIN_DIR, GROK_BIN_DIR, GROK_CHANNEL, GROK_PROXY_URL
+# Env: EZER_HOME, EZER_BIN_DIR, EZER_BIN_DIR, EZER_CHANNEL, EZER_PROXY_URL
 #
 # Usage:
 #   cargo build -p xai-grok-pager-bin --release
@@ -143,22 +143,22 @@ json_get() {
         | sed -e 's/\\"/"/g' -e 's/\\n/\'$'\n''/g' -e 's/\\t/\'$'\t''/g' -e 's/\\\\/\\/g'
 }
 
-# Read a token from ~/.grok/auth.json for the given scope key.
+# Read a token from ~/.ezer/auth.json for the given scope key.
 # Format: {"scope_url": {"key": "token"}, ...}
 read_grok_token() {
-    local auth_file="$HOME/.grok/auth.json"
+    local auth_file="$HOME/.ezer/auth.json"
     local scope="$1"
     [ -f "$auth_file" ] || return 1
     # Flatten to one line then extract: find the scope, then the "key" value after it
     tr -d '\n' < "$auth_file" | sed -n 's|.*"'"$scope"'"[[:space:]]*:[[:space:]]*{[^}]*"key"[[:space:]]*:[[:space:]]*"\([^"]*\)".*|\1|p' | head -1
 }
 
-# Resolve auth: GROK_DEPLOYMENT_KEY > OIDC token > legacy token
+# Resolve auth: EZER_DEPLOYMENT_KEY > OIDC token > legacy token
 OIDC_SCOPE="https://auth.x.ai::b1a00492-073a-47ea-816f-4c329264a828"
 LEGACY_SCOPE="https://accounts.x.ai/sign-in"
 AUTH_SOURCE=""
 
-if [ -n "$GROK_DEPLOYMENT_KEY" ]; then
+if [ -n "$EZER_DEPLOYMENT_KEY" ]; then
     AUTH_SOURCE="deployment key"
     echo "Auth: using deployment key." >&2
 else
@@ -166,10 +166,10 @@ else
     LEGACY_TOKEN=$(read_grok_token "$LEGACY_SCOPE" 2>/dev/null) || true
     if [ -n "$OIDC_TOKEN" ]; then
         AUTH_SOURCE="auth.json (oidc)"
-        echo "Auth: using OIDC token from ~/.grok/auth.json." >&2
+        echo "Auth: using OIDC token from ~/.ezer/auth.json." >&2
     elif [ -n "$LEGACY_TOKEN" ]; then
         AUTH_SOURCE="auth.json (legacy)"
-        echo "Auth: using legacy token from ~/.grok/auth.json." >&2
+        echo "Auth: using legacy token from ~/.ezer/auth.json." >&2
     fi
 fi
 
@@ -201,18 +201,18 @@ if [ "$os" = "macos" ] && [ "$arch" = "x86_64" ]; then
 fi
 
 BASE_URL_PRIMARY="https://x.ai/cli"
-BASE_URL_FALLBACK="https://storage.googleapis.com/grok-build-public-artifacts/cli"
+BASE_URL_FALLBACK="https://storage.googleapis.com/ezer-build-public-artifacts/cli"
 EZER_ROOT="${EZER_HOME:-$HOME/.ezer}"
-BIN_DIR="${GROK_BIN_DIR:-${EZER_BIN_DIR:-$EZER_ROOT/bin}}"
+BIN_DIR="${EZER_BIN_DIR:-${EZER_BIN_DIR:-$EZER_ROOT/bin}}"
 DOWNLOAD_DIR="$(dirname "$BIN_DIR")/downloads"
 mkdir -p "$DOWNLOAD_DIR" "$BIN_DIR"
 
 platform="${os}-${arch}"
-CHANNEL="${GROK_CHANNEL:-stable}"
+CHANNEL="${EZER_CHANNEL:-stable}"
 case "$CHANNEL" in
     stable|alpha|enterprise) ;;
     *)
-        echo "Invalid GROK_CHANNEL: '${CHANNEL}' (expected stable, alpha, or enterprise)" >&2
+        echo "Invalid EZER_CHANNEL: '${CHANNEL}' (expected stable, alpha, or enterprise)" >&2
         exit 1
         ;;
 esac
@@ -252,8 +252,8 @@ else
     echo "Installing ezer $version ($platform)..." >&2
 fi
 
-binary_path="$DOWNLOAD_DIR/grok-$platform"
-artifact_base="${BASE_URL}/grok-${version}-${platform}"
+binary_path="$DOWNLOAD_DIR/ezer-$platform"
+artifact_base="${BASE_URL}/ezer-${version}-${platform}"
 
 if [ "$os" = "windows" ]; then
     binary_path="${binary_path}.exe"
@@ -268,7 +268,7 @@ if [ "$os" = "windows" ]; then
         if ! fetch_binary "$artifact_base" "$binary_tmp"; then
             rm -f "$binary_tmp"
             if is_not_found "${artifact_base}.exe"; then
-                echo "Error: Grok is not yet available for your system ($platform)." >&2
+                echo "Error: ezer is not yet available for your system ($platform)." >&2
             else
                 echo "Error: binary download failed (${artifact_base}.exe and ${artifact_base})" >&2
             fi
@@ -278,7 +278,7 @@ if [ "$os" = "windows" ]; then
 elif ! fetch_binary "$artifact_base" "$binary_tmp"; then
     rm -f "$binary_tmp"
     if is_not_found "$artifact_base"; then
-        echo "Error: Grok is not yet available for your system ($platform)." >&2
+        echo "Error: ezer is not yet available for your system ($platform)." >&2
     else
         echo "Error: binary download failed from ${artifact_base}" >&2
     fi
@@ -289,7 +289,7 @@ if [ "$os" = "windows" ]; then
     mv -f "$binary_tmp" "$binary_path"
     # Symlinks require Developer Mode on Windows; copy instead.
     # If the exe is locked by a running process, rename it aside then retry.
-    for bin_name in ezer.exe grok.exe agent.exe; do
+    for bin_name in ezer.exe ezer.exe agent.exe; do
         rm -f "$BIN_DIR/$bin_name.old" 2>/dev/null || true  # stale backup from prior update
         if ! cp -f "$binary_path" "$BIN_DIR/$bin_name" 2>/dev/null; then
             mv -f "$BIN_DIR/$bin_name" "$BIN_DIR/$bin_name.old" 2>/dev/null || true
@@ -301,7 +301,7 @@ if [ "$os" = "windows" ]; then
             fi
         fi
     done
-    echo "  Binary installed to $BIN_DIR/ezer.exe (compat: grok.exe) and $BIN_DIR/agent.exe." >&2
+    echo "  Binary installed to $BIN_DIR/ezer.exe (compat: ezer.exe) and $BIN_DIR/agent.exe." >&2
 else
     chmod +x "$binary_tmp"
     if ! "$binary_tmp" --version </dev/null >/dev/null 2>&1; then
@@ -311,7 +311,7 @@ else
     fi
     mv -f "$binary_tmp" "$binary_path"
     # Use relative symlinks when BIN_DIR and DOWNLOAD_DIR share a parent
-    # (default layout: ~/.grok/bin and ~/.grok/downloads are siblings).
+    # (default layout: ~/.ezer/bin and ~/.ezer/downloads are siblings).
     # Relative symlinks survive Docker bind-mounts with a different $HOME.
     if [ "$(dirname "$BIN_DIR")" = "$(dirname "$DOWNLOAD_DIR")" ]; then
         link_target="../$(basename "$DOWNLOAD_DIR")/$(basename "$binary_path")"
@@ -319,9 +319,9 @@ else
         link_target="$binary_path"
     fi
     ln -sf "$link_target" "$BIN_DIR/ezer"
-    ln -sf "$link_target" "$BIN_DIR/grok"
+    ln -sf "$link_target" "$BIN_DIR/ezer"
     ln -sf "$link_target" "$BIN_DIR/agent"
-    echo "  Binary linked to $BIN_DIR/ezer (compat: grok) and $BIN_DIR/agent." >&2
+    echo "  Binary linked to $BIN_DIR/ezer (compat: ezer) and $BIN_DIR/agent." >&2
 fi
 
 # Generate shell completions (best-effort)
@@ -334,7 +334,7 @@ if mkdir -p "$HOME/.config/fish/completions" 2>/dev/null; then
     "$BIN_DIR/ezer" completions fish > "$HOME/.config/fish/completions/ezer.fish" 2>/dev/null || true
 fi
 
-# Persist installer source and channel to config (next to bin: ~/.ezer or $GROK_BIN_DIR parent)
+# Persist installer source and channel to config (next to bin: ~/.ezer or $EZER_BIN_DIR parent)
 CONFIG_FILE="$(dirname "$BIN_DIR")/config.toml"
 CLI_BLOCK="installer = \"internal\""
 case "$CHANNEL" in
@@ -356,8 +356,8 @@ else
 fi
 
 # Fetch managed_config.toml + requirements.toml from server (deployment key only).
-if [ -n "$GROK_DEPLOYMENT_KEY" ]; then
-    PROXY_URL="${GROK_PROXY_URL:-https://cli-chat-proxy.grok.com/v1}"
+if [ -n "$EZER_DEPLOYMENT_KEY" ]; then
+    PROXY_URL="${EZER_PROXY_URL:-https://cli-chat-proxy.grok.com/v1}"
     # Refuse cleartext / userinfo / empty-host proxies before attaching the key.
     proxy_authority="${PROXY_URL#*://}"
     proxy_authority="${proxy_authority%%[/?#]*}"
@@ -371,7 +371,7 @@ if [ -n "$GROK_DEPLOYMENT_KEY" ]; then
             ;;
     esac
     if [ -z "$proxy_ok" ]; then
-        echo "Error: GROK_PROXY_URL must be an https:// URL." >&2
+        echo "Error: EZER_PROXY_URL must be an https:// URL." >&2
         exit 1
     fi
     echo "  Fetching deployment config..." >&2
@@ -379,7 +379,7 @@ if [ -n "$GROK_DEPLOYMENT_KEY" ]; then
     AUTH_HEADER_FILE=$(mktemp 2>/dev/null) || AUTH_HEADER_FILE=""
     if [ -n "$AUTH_HEADER_FILE" ]; then
         chmod 600 "$AUTH_HEADER_FILE" 2>/dev/null || true
-        printf 'Authorization: Bearer %s\n' "$GROK_DEPLOYMENT_KEY" > "$AUTH_HEADER_FILE"
+        printf 'Authorization: Bearer %s\n' "$EZER_DEPLOYMENT_KEY" > "$AUTH_HEADER_FILE"
         DEPLOY_RESPONSE=$(curl -sS -f --proto '=https' \
             -H "@${AUTH_HEADER_FILE}" \
             "${PROXY_URL}/deployment/config" 2>/dev/null) || DEPLOY_RESPONSE=""
@@ -393,16 +393,16 @@ if [ -n "$GROK_DEPLOYMENT_KEY" ]; then
         MANAGED_CONFIG=$(json_get "$DEPLOY_RESPONSE" "managed_config")
         REQUIREMENTS=$(json_get "$DEPLOY_RESPONSE" "requirements")
         if [ -n "$MANAGED_CONFIG" ] && [ "$MANAGED_CONFIG" != "null" ]; then
-            printf '%s\n' "$MANAGED_CONFIG" > "$HOME/.grok/managed_config.toml"
+            printf '%s\n' "$MANAGED_CONFIG" > "$HOME/.ezer/managed_config.toml"
             echo "  Managed config applied." >&2
         else
-            rm -f "$HOME/.grok/managed_config.toml"
+            rm -f "$HOME/.ezer/managed_config.toml"
         fi
         if [ -n "$REQUIREMENTS" ] && [ "$REQUIREMENTS" != "null" ]; then
-            printf '%s\n' "$REQUIREMENTS" > "$HOME/.grok/requirements.toml"
+            printf '%s\n' "$REQUIREMENTS" > "$HOME/.ezer/requirements.toml"
             echo "  Requirements applied." >&2
         else
-            rm -f "$HOME/.grok/requirements.toml"
+            rm -f "$HOME/.ezer/requirements.toml"
         fi
     fi
 fi
@@ -426,7 +426,7 @@ if [ "$os" != "windows" ] && ! path_has_dir "$BIN_DIR"; then
     for candidate in "$HOME/.local/bin" "/usr/local/bin"; do
         if path_has_dir "$candidate" && [ -d "$candidate" ] && [ -w "$candidate" ]; then
             ln -sf "$BIN_DIR/ezer" "$candidate/ezer"
-            ln -sf "$BIN_DIR/grok" "$candidate/grok"
+            ln -sf "$BIN_DIR/ezer" "$candidate/ezer"
             ln -sf "$BIN_DIR/agent" "$candidate/agent"
             SYMLINK_CREATED="$candidate"
             echo "  Symlinked $candidate/ezer -> $BIN_DIR/ezer" >&2
@@ -470,28 +470,28 @@ if [ -n "$config_file" ]; then
 
     # Build the new installer block
     if [ "$user_shell" = "fish" ]; then
-        new_block="# >>> grok installer >>>
+        new_block="# >>> ezer installer >>>
 fish_add_path $BIN_DIR
-# <<< grok installer <<<"
+# <<< ezer installer <<<"
     elif [ "$user_shell" = "zsh" ]; then
-        new_block="# >>> grok installer >>>
+        new_block="# >>> ezer installer >>>
 export PATH=\"$BIN_DIR:\$PATH\"
 fpath=($COMP_ROOT/completions/zsh \$fpath)
 autoload -Uz compinit && compinit -C
-# <<< grok installer <<<"
+# <<< ezer installer <<<"
     else
-        new_block="# >>> grok installer >>>
+        new_block="# >>> ezer installer >>>
 export PATH=\"$BIN_DIR:\$PATH\"
 [[ -r \"$COMP_ROOT/completions/bash/ezer.bash\" ]] && source \"$COMP_ROOT/completions/bash/ezer.bash\"
-# <<< grok installer <<<"
+# <<< ezer installer <<<"
     fi
 
-    if grep -qs "grok installer" "$config_file" 2>/dev/null; then
+    if grep -qs "ezer installer" "$config_file" 2>/dev/null; then
         # Replace existing block in-place (strip old >>> to <<< lines, insert new)
         tmp="$config_file.tmp.$$"
         awk '
-            /# >>> grok installer >>>/ { skip=1; next }
-            /# <<< grok installer <<</ { skip=0; next }
+            /# >>> ezer installer >>>/ { skip=1; next }
+            /# <<< ezer installer <<</ { skip=0; next }
             !skip { print }
         ' "$config_file" > "$tmp" && mv "$tmp" "$config_file"
     else

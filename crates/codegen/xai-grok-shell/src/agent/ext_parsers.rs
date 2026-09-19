@@ -97,7 +97,7 @@ mod tests {
         let p = serde_json::json!({
             "sessionId": "s1", "id": "p7", "expectedVersion": 3
         });
-        match parse_queue_edit_command("x.ai/queue/remove", &p, Some("grok-tui".into())) {
+        match parse_queue_edit_command("x.ai/queue/remove", &p, Some("ezer-tui".into())) {
             Some(SessionCommand::RemoveQueuedPrompt {
                 id,
                 expected_version,
@@ -105,7 +105,7 @@ mod tests {
             }) => {
                 assert_eq!(id, "p7");
                 assert_eq!(expected_version, 3);
-                assert_eq!(owner.as_deref(), Some("grok-tui"));
+                assert_eq!(owner.as_deref(), Some("ezer-tui"));
             }
             _ => panic!("expected RemoveQueuedPrompt"),
         }
@@ -132,10 +132,10 @@ mod tests {
         match parse_queue_edit_command(
             "x.ai/queue/clear",
             &serde_json::json!({ "sessionId": "s1" }),
-            Some("grok-tui".into()),
+            Some("ezer-tui".into()),
         ) {
             Some(SessionCommand::ClearQueue { owner }) => {
-                assert_eq!(owner.as_deref(), Some("grok-tui"));
+                assert_eq!(owner.as_deref(), Some("ezer-tui"));
             }
             _ => panic!("expected ClearQueue"),
         }
@@ -144,7 +144,7 @@ mod tests {
         let p = serde_json::json!({
             "sessionId": "s1", "id": "p9", "newText": "replacement text"
         });
-        match parse_queue_edit_command("x.ai/queue/edit", &p, Some("grok-vscode".into())) {
+        match parse_queue_edit_command("x.ai/queue/edit", &p, Some("ezer-vscode".into())) {
             Some(SessionCommand::EditQueuedPrompt {
                 id,
                 new_text,
@@ -152,7 +152,7 @@ mod tests {
             }) => {
                 assert_eq!(id, "p9");
                 assert_eq!(new_text, "replacement text");
-                assert_eq!(editor.as_deref(), Some("grok-vscode"));
+                assert_eq!(editor.as_deref(), Some("ezer-vscode"));
             }
             _ => panic!("expected EditQueuedPrompt"),
         }
@@ -193,7 +193,7 @@ mod tests {
         let p = serde_json::json!({
             "sessionId": "s1", "id": "p10", "expectedVersion": 2
         });
-        match parse_queue_edit_command("x.ai/queue/interject", &p, Some("grok-tui".into())) {
+        match parse_queue_edit_command("x.ai/queue/interject", &p, Some("ezer-tui".into())) {
             Some(SessionCommand::InterjectQueuedPrompt {
                 id,
                 expected_version,
@@ -202,7 +202,7 @@ mod tests {
             }) => {
                 assert_eq!(id, "p10");
                 assert_eq!(expected_version, 2);
-                assert_eq!(owner.as_deref(), Some("grok-tui"));
+                assert_eq!(owner.as_deref(), Some("ezer-tui"));
                 assert_eq!(new_text, None, "newText absent → None");
             }
             _ => panic!("expected InterjectQueuedPrompt"),

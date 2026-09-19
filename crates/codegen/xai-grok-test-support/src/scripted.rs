@@ -18,7 +18,7 @@ pub(crate) type TerminalWait = Box<dyn FnOnce() -> BoxWait + Send>;
 
 /// An SSE comment the hang body flushes so the response head reaches the client, then the stream
 /// produces no chunk; a comment carries no event, so the client's idle timer runs from here.
-const HANG_OPENING_FRAME: &[u8] = b": grok-mock stream open\n\n";
+const HANG_OPENING_FRAME: &[u8] = b": ezer-mock stream open\n\n";
 
 /// One SSE event as data: optional `event:` name plus the `data:` payload.
 #[derive(Debug, Clone)]

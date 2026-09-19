@@ -15,7 +15,7 @@ pub enum ContextualTipKind {
     WordSelect,
     /// Three nearby drag-copies → tip naming /copy and /export.
     ExportCopy,
-    /// An SSH session without `grok wrap` shows a tip to wrap the ssh command locally.
+    /// An SSH session without `ezer wrap` shows a tip to wrap the ssh command locally.
     SshWrap,
 }
 

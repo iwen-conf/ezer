@@ -373,7 +373,7 @@ fn to_legacy_glyphs(s: &str) -> String {
 }
 
 /// Cached: native Windows console whose font lacks our Dingbats chrome.
-/// `GROK_FORCE_LEGACY_CONSOLE` overrides so QA can check fallbacks without ConHost.
+/// `EZER_FORCE_LEGACY_CONSOLE` overrides so QA can check fallbacks without ConHost.
 pub fn is_legacy_windows_console() -> bool {
     static CACHE: OnceLock<bool> = OnceLock::new();
     *CACHE.get_or_init(|| {
@@ -385,9 +385,9 @@ pub fn is_legacy_windows_console() -> bool {
     })
 }
 
-/// Read the `GROK_FORCE_LEGACY_CONSOLE` escape hatch from the environment.
+/// Read the `EZER_FORCE_LEGACY_CONSOLE` escape hatch from the environment.
 fn forced_legacy_console_override() -> Option<bool> {
-    parse_forced_legacy_console(std::env::var("GROK_FORCE_LEGACY_CONSOLE").ok().as_deref())
+    parse_forced_legacy_console(std::env::var("EZER_FORCE_LEGACY_CONSOLE").ok().as_deref())
 }
 
 /// Pure parse of the override value so tests don't touch the environment.

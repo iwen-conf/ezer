@@ -99,9 +99,9 @@ fn process_hooks_content(
 
     // Native `GROK_PLUGIN_*` vars plus their vendor-compat aliases.
     let plugin_env: HashMap<String, String> = HashMap::from([
-        ("GROK_PLUGIN_ROOT".to_string(), plugin_root.to_string()),
+        ("EZER_PLUGIN_ROOT".to_string(), plugin_root.to_string()),
         ("CLAUDE_PLUGIN_ROOT".to_string(), plugin_root.to_string()),
-        ("GROK_PLUGIN_DATA".to_string(), plugin_data.to_string()),
+        ("EZER_PLUGIN_DATA".to_string(), plugin_data.to_string()),
         ("CLAUDE_PLUGIN_DATA".to_string(), plugin_data.to_string()),
     ]);
 

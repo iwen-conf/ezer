@@ -135,7 +135,7 @@ pub fn sessions_cwd_dir(cwd: &str) -> PathBuf {
     sessions_cwd_dir_in(&grok_home(), cwd)
 }
 
-/// [`sessions_cwd_dir`] with an injectable grok home, the single source of truth for the `sessions/<encoded-cwd>` path shape.
+/// [`sessions_cwd_dir`] with an injectable ezer home, the single source of truth for the `sessions/<encoded-cwd>` path shape.
 pub fn sessions_cwd_dir_in(grok_home: &std::path::Path, cwd: &str) -> PathBuf {
     grok_home.join("sessions").join(encode_cwd_dirname(cwd))
 }
@@ -146,7 +146,7 @@ pub fn ensure_sessions_cwd_dir(cwd: &str) -> std::io::Result<PathBuf> {
     ensure_sessions_cwd_dir_in(&grok_home(), cwd)
 }
 
-/// [`ensure_sessions_cwd_dir`] with an injectable grok home.
+/// [`ensure_sessions_cwd_dir`] with an injectable ezer home.
 pub fn ensure_sessions_cwd_dir_in(
     grok_home: &std::path::Path,
     cwd: &str,

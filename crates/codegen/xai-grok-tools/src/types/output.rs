@@ -406,8 +406,8 @@ pub struct BashOutput {
     /// buffer (reset signal). When `None`, the consumer should use `output` as the full buffer.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub output_delta: Option<Vec<u8>>,
-    /// Set by the grok_build `run_terminal_cmd` implementation when the command was detected as a bare `echo "<msg>"` (or close variant: echo -n,
-    /// echo -e, simple printf for literal output, etc.). Telemetry / statistics on this pattern for the grok_build backend. Potential doom-loop /
+    /// Set by the ezer_build `run_terminal_cmd` implementation when the command was detected as a bare `echo "<msg>"` (or close variant: echo -n,
+    /// echo -e, simple printf for literal output, etc.). Telemetry / statistics on this pattern for the ezer_build backend. Potential doom-loop /
     /// stagnation signals (repeated trivial echoes are a common "no progress" signal). Model hints (see BareEchoHintState in the bash tool).
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub was_bare_echo: bool,
@@ -479,7 +479,7 @@ pub struct WebFetchContent {
     pub status_code: u16,
     /// Size of the content in bytes (before truncation).
     pub bytes: usize,
-    /// Internal path to the complete converted body when GrokBuild persisted overflow.
+    /// Internal path to the complete converted body when Ezer persisted overflow.
     #[serde(skip)]
     #[schemars(skip)]
     pub source_artifact: Option<WebFetchSourceArtifact>,
@@ -1198,7 +1198,7 @@ impl SearchReplaceEditsApplied {
     }
 }
 impl xai_tool_runtime::ToolOutput for SearchReplaceEditsApplied {
-    /// Same frame grok-computer's `FileEditTool` sends: an empty, successful
+    /// Same frame ezer-computer's `FileEditTool` sends: an empty, successful
     /// `code_execution_result` shell is what settles the edit card on every
     /// client, and the anchor rides along when there is one. The reducer
     /// projects the anchor ahead of the shell only where clients accept it.
@@ -2257,14 +2257,14 @@ mod tests {
             tool_calls: 3,
             turns: 1,
             duration_ms: 2000,
-            worktree_path: Some("/tmp/grok-worktree/wt-agent".into()),
+            worktree_path: Some("/tmp/ezer-worktree/wt-agent".into()),
             persona: None,
             resume_from_hint: "wt-agent".into(),
             persona_hint: None,
         });
         let rendered = output.to_prompt_format();
         assert!(
-            rendered.contains("<worktree_path>/tmp/grok-worktree/wt-agent</worktree_path>"),
+            rendered.contains("<worktree_path>/tmp/ezer-worktree/wt-agent</worktree_path>"),
             "worktree_path preserved"
         );
         assert!(

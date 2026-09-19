@@ -716,7 +716,7 @@ pub(crate) fn execute(
                             }),
                             );
                             tracing::info!(
-                            target: "grok.pager.workspace_mode",
+                            target: "ezer.pager.workspace_mode",
                             event = "session_list_fetch",
                             kind_filter = ?kinds,
                             query = ?query,
@@ -1080,7 +1080,7 @@ pub(crate) fn execute(
                         Some(auth_manager.clone()),
                         None,
                         Some(session_id.clone()),
-                        "grok-pager",
+                        "ezer",
                     );
                     Some((auth_manager, registry, storage))
                 });
@@ -5469,7 +5469,7 @@ fn format_auth_lines(is_api_key_auth: bool, api_key_env_set: bool) -> String {
             "  Auth method: API key\n"
         };
         return format!(
-            "{method}  Run `grok login` to use your SuperGrok subscription instead.\n"
+            "{method}  Run `ezer login` if you use optional xAI auth, or set EZER_API_KEY for BYOK.\n"
         );
     }
     String::from("  Auth method: OAuth\n")

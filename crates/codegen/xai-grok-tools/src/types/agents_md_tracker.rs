@@ -32,7 +32,7 @@ pub(crate) const AGENT_FILENAMES: &[&str] = &[
 /// `CompatConfig::rules_dirs()`; this constant is retained only as the all-on reference for the
 /// pinning test.
 #[cfg(test)]
-pub(crate) const RULES_DIRS: &[&str] = &[".grok/rules", ".claude/rules", ".cursor/rules"];
+pub(crate) const RULES_DIRS: &[&str] = &[".ezer/rules", ".claude/rules", ".cursor/rules"];
 
 /// Maximum number of parent directories to walk upward per call. In very deep repos, this prevents doing many stat calls on a single tool
 /// invocation. Directories beyond this depth are silently skipped — they'll be checked on future accesses closer to them. 10 levels covers deep

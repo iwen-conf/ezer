@@ -1,13 +1,13 @@
-//! `grok wrap` runs any command in a local PTY that forwards its clipboard.
+//! `ezer wrap` runs any command in a local PTY that forwards its clipboard.
 //!
-//! Generalizes the `grok ssh` wrapper: spawns an arbitrary command inside a local pseudo-terminal.
+//! Generalizes the `ezer ssh` wrapper: spawns an arbitrary command inside a local pseudo-terminal.
 //! It intercepts OSC 52 clipboard escape sequences from the command's output and writes their payload to the local system clipboard.
 //! It is useful for containerized or remote shells (`docker exec`, `kubectl exec`, ...) whose clipboard cannot otherwise reach the user.
 //! That matters most in terminals that do not handle OSC 52 themselves (for example Apple Terminal).
-//! It also stamps `LC_GROK_APPEARANCE` from the local OS theme so a remote `theme = "auto"` can resolve over SSH and tmux.
+//! It also stamps `LC_EZER_APPEARANCE` from the local OS theme so a remote `theme = "auto"` can resolve over SSH and tmux.
 //!
 //! Resolvable programs spawn directly.
-//! On Unix, a command a direct spawn cannot run (a single shell-quoted string `grok wrap "mycli ssh host"` or a shell alias) goes to `$SHELL -i -c`.
+//! On Unix, a command a direct spawn cannot run (a single shell-quoted string `ezer wrap "mycli ssh host"` or a shell alias) goes to `$SHELL -i -c`.
 //! The user's own shell then does the word-splitting and alias expansion.
 //! The exec fallback (a non-TTY session, or PTY setup failure) keeps the same route but drops `-i` to avoid job-control noise without our PTY.
 //!
@@ -17,13 +17,13 @@ use anyhow::Result;
 
 use crate::app::WrapArgs;
 
-/// Run the `grok wrap` command. Otherwise the command is executed directly (no wrapping).
+/// Run the `ezer wrap` command. Otherwise the command is executed directly (no wrapping).
 pub fn run(args: &WrapArgs) -> Result<()> {
     // `command` is `required` in clap, so it always has at least one element.
     let program = args
         .command
         .first()
-        .ok_or_else(|| anyhow::anyhow!("grok wrap: no command given"))?;
+        .ok_or_else(|| anyhow::anyhow!("ezer wrap: no command given"))?;
 
     // Unix: derive both spawn plans up front from one env snapshot so the PTY attempt and its fallback route consistently
     // The wrapped run uses `$SHELL -i` when routing through the shell (rc files load, aliases expand; safe because it runs inside our PTY)
@@ -55,7 +55,7 @@ pub fn run(args: &WrapArgs) -> Result<()> {
             Ok(code) => std::process::exit(code),
             Err(e) => {
                 // PTY setup failed; keep the chosen route without our PTY so the command still works (just without clipboard forwarding)
-                eprintln!("grok wrap: wrapped mode failed, running without PTY wrapping: {e}");
+                eprintln!("ezer wrap: wrapped mode failed, running without PTY wrapping: {e}");
                 exec_command(&fallback.program, &fallback.args)
             }
         }
@@ -64,7 +64,7 @@ pub fn run(args: &WrapArgs) -> Result<()> {
     }
 }
 
-/// The program and argv `grok wrap` will actually spawn.
+/// The program and argv `ezer wrap` will actually spawn.
 #[derive(Clone)]
 struct SpawnPlan {
     program: String,

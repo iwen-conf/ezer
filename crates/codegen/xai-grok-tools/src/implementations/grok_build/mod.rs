@@ -3,7 +3,7 @@
 //! Each sub-module here contains a tool that implements `NewTool` instead
 //! of the old `Tool` trait. During migration, old implementations live in
 //! `implementations/<tool>/` and new implementations live in
-//! `implementations/grok_build/<tool>/`.
+//! `implementations/ezer_build/<tool>/`.
 //!
 //! The [`register_all()`] function is the single entry-point for wiring up
 //! the standard toolset. It inserts shared resources (`Terminal`,

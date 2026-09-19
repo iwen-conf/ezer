@@ -158,7 +158,7 @@ pub async fn set_contextual_hint_ssh_wrap(value: bool) -> Result<()> {
 }
 
 /// Persist `[ui].theme` via `update_config`.
-/// Caller must pass the canonical theme name (`groknight`, `tokyonight`, `auto`, etc.).
+/// Caller must pass the canonical theme name (`ezernight`, `tokyonight`, `auto`, etc.).
 pub async fn set_theme(value: String) -> Result<()> {
     update_config(|cfg| cfg.ui.theme = Some(value)).await
 }

@@ -1,4 +1,4 @@
-//! Tracks open TUI sessions in `~/.grok/active_sessions.json` for crash recovery.
+//! Tracks open TUI sessions in `~/.ezer/active_sessions.json` for crash recovery.
 //! A clean exit removes the entry; a crash leaves it behind.
 //! On next launch, [`collect_crashed`] finds orphaned entries (dead PIDs).
 

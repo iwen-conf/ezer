@@ -4,8 +4,8 @@
 //!
 //! Production has three independent downloader paths that can race around a release:
 //!
-//! 1. TUI startup: `check_update_background` spawns a detached `grok update` (the Ctrl+U path adopts this child instead of spawning a second).
-//! 2. Explicit `grok update` (including the Ctrl+U fallback when there is no live child).
+//! 1. TUI startup: `check_update_background` spawns a detached `ezer update` (the Ctrl+U path adopts this child instead of spawning a second).
+//! 2. Explicit `ezer update` (including the Ctrl+U fallback when there is no live child).
 //! 3. Leader mode: the hourly checker runs `ensure_latest_on_disk` in-process.
 //!
 //! Two layers are exercised here:
@@ -36,18 +36,18 @@ use xai_grok_update::auto_update::{
 };
 use xai_grok_update::version::installed_on_disk_version;
 
-/// Assert the active `~/.grok/bin/grok` resolves to the expected versioned
+/// Assert the active `~/.ezer/bin/ezer` resolves to the expected versioned
 /// binary, actually runs, and has exactly the expected content (the content
 /// check is what catches a cross-racer temp-file corruption).
 fn assert_active_binary(home: &Path, version: &str, platform: &str, expected_content: &[u8]) {
-    let link = home.join("bin").join("grok");
-    assert!(link.is_symlink(), "grok must be a symlink");
+    let link = home.join("bin").join("ezer");
+    assert!(link.is_symlink(), "ezer must be a symlink");
     let resolved = dunce::canonicalize(&link)
-        .unwrap_or_else(|e| panic!("active grok symlink does not resolve: {e}"));
+        .unwrap_or_else(|e| panic!("active ezer symlink does not resolve: {e}"));
     assert_eq!(
         resolved.file_name().unwrap().to_string_lossy(),
-        format!("grok-{version}-{platform}"),
-        "active grok must be the expected version"
+        format!("ezer-{version}-{platform}"),
+        "active ezer must be the expected version"
     );
     assert_eq!(
         std::fs::read(&resolved).unwrap(),
@@ -63,17 +63,17 @@ fn assert_active_binary(home: &Path, version: &str, platform: &str, expected_con
         .status()
         .map(|s| s.success())
         .unwrap_or(false);
-    assert!(ran_ok, "active grok must pass the smoke-test");
+    assert!(ran_ok, "active ezer must pass the smoke-test");
 }
 
-/// Lay down what `install_internal_from_base` produces in the test GROK_HOME: `bin/grok -> ../downloads/grok-<version>-<platform>`.
+/// Lay down what `install_internal_from_base` produces in the test GROK_HOME: `bin/ezer -> ../downloads/ezer-<version>-<platform>`.
 fn fake_managed_install(version: &str) {
     let home = test_home();
     let downloads = home.join("downloads");
     let bin = home.join("bin");
     std::fs::create_dir_all(&downloads).unwrap();
     std::fs::create_dir_all(&bin).unwrap();
-    let name = format!("grok-{version}-{}", host_platform());
+    let name = format!("ezer-{version}-{}", host_platform());
     std::fs::write(downloads.join(&name), small_good_artifact()).unwrap();
     std::fs::set_permissions(
         downloads.join(&name),
@@ -82,7 +82,7 @@ fn fake_managed_install(version: &str) {
     .unwrap();
     std::os::unix::fs::symlink(
         std::path::Path::new("../downloads").join(&name),
-        bin.join("grok"),
+        bin.join("ezer"),
     )
     .unwrap();
 }
@@ -130,7 +130,7 @@ fn setup_gh_release(running_version: &str) -> FakeBinGuard {
     reset_home();
     set_test_version(running_version);
     // SAFETY: serial_test ensures no race; reset_home clears this between tests.
-    unsafe { std::env::set_var("GROK_INSTALLER", "gh-release") };
+    unsafe { std::env::set_var("EZER_INSTALLER", "gh-release") };
     FakeBinGuard::install("gh", fake_gh_serving_releases)
 }
 
@@ -235,7 +235,7 @@ fn setup_npm(running_version: &str) -> FakeBinGuard {
     reset_home();
     set_test_version(running_version);
     // SAFETY: serial_test ensures no race; reset_home clears this between tests.
-    unsafe { std::env::set_var("GROK_INSTALLER", "npm") };
+    unsafe { std::env::set_var("EZER_INSTALLER", "npm") };
     FakeBinGuard::install_npm()
 }
 
@@ -449,7 +449,7 @@ async fn concurrent_different_version_installs_do_not_corrupt_each_other() {
     for version in ["0.1.181", "0.1.182"] {
         let path = home
             .join("downloads")
-            .join(format!("grok-{version}-{platform}"));
+            .join(format!("ezer-{version}-{platform}"));
         assert_eq!(
             std::fs::read(&path).unwrap(),
             artifact,
@@ -458,12 +458,12 @@ async fn concurrent_different_version_installs_do_not_corrupt_each_other() {
     }
 
     // The active symlink points at whichever racer swapped last; it must resolve and run regardless
-    let resolved = dunce::canonicalize(home.join("bin").join("grok")).unwrap();
+    let resolved = dunce::canonicalize(home.join("bin").join("ezer")).unwrap();
     assert_eq!(std::fs::read(&resolved).unwrap(), artifact);
     let name = resolved.file_name().unwrap().to_string_lossy().to_string();
     assert!(
         !name.contains(".tmp"),
-        "active grok must never be a temp file: {name}"
+        "active ezer must never be a temp file: {name}"
     );
 
     assert!(

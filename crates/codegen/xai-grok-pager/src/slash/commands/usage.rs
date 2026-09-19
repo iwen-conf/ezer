@@ -28,7 +28,7 @@ fn auth_method_is_external_provider(method: &acp::AuthMethod) -> bool {
 }
 
 fn auth_provider_env_set() -> bool {
-    std::env::var("GROK_AUTH_PROVIDER_COMMAND")
+    std::env::var("EZER_AUTH_PROVIDER_COMMAND")
         .ok()
         .is_some_and(|s| !s.trim().is_empty())
 }

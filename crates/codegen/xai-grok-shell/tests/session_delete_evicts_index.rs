@@ -25,9 +25,9 @@ fn home() -> &'static std::path::Path {
     .path()
 }
 
-/// `start_if_enabled` is the only way to get a manager, so the test calls it with `GROK_SESSION_SEARCH` left at its default.
+/// `start_if_enabled` is the only way to get a manager, so the test calls it with `EZER_SESSION_SEARCH` left at its default.
 fn start_index() -> SearchIndexManager {
-    let _default_on = EnvGuard::unset("GROK_SESSION_SEARCH");
+    let _default_on = EnvGuard::unset("EZER_SESSION_SEARCH");
     match start_if_enabled(&xai_grok_shell::agent::config::Config::default()) {
         SearchIndex::Started(index) => index,
         SearchIndex::Off { reason } => {

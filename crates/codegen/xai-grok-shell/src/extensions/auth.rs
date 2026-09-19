@@ -185,7 +185,7 @@ fn handle_info(agent: &MvpAgent) -> ExtResult {
         email: Option<String>,
         first_name: Option<String>,
         last_name: Option<String>,
-        /// `grok-asset://` URL resolved by the Electron protocol handler, or a full `http(s)://` URL passed through unchanged.
+        /// `ezer-asset://` URL resolved by the Electron protocol handler, or a full `http(s)://` URL passed through unchanged.
         profile_image_url: Option<String>,
         team_id: Option<String>,
         team_name: Option<String>,
@@ -215,7 +215,7 @@ fn handle_info(agent: &MvpAgent) -> ExtResult {
         Some(key) if key.starts_with("http://") || key.starts_with("https://") => {
             Some(key.to_owned())
         }
-        Some(key) => Some(format!("grok-asset:///{key}")),
+        Some(key) => Some(format!("ezer-asset:///{key}")),
         None => None,
     };
     to_raw_response(&AuthInfoResponse {

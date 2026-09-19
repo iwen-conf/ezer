@@ -126,7 +126,7 @@ fn seed_credential(grok_home: &Path, expires_at: chrono::DateTime<chrono::Utc>) 
             "expires_at": expires_at.to_rfc3339(),
         }
     });
-    std::fs::create_dir_all(grok_home).expect("create grok home");
+    std::fs::create_dir_all(grok_home).expect("create ezer home");
     std::fs::write(
         grok_home.join("auth.json"),
         serde_json::to_string_pretty(&auth).expect("serialize auth.json"),
@@ -269,7 +269,7 @@ fn expired_external_credential_routes_to_the_provider_login_flow() {
         ))
         .expect("mock server");
 
-    let grok_home = TempDir::new().expect("grok home");
+    let grok_home = TempDir::new().expect("ezer home");
     let workdir = TempDir::new().expect("workdir");
     seed_credential(
         grok_home.path(),
@@ -281,23 +281,23 @@ fn expired_external_credential_routes_to_the_provider_login_flow() {
     // which never read the process environment.
     unsafe {
         std::env::set_var("GROK_HOME", grok_home.path());
-        std::env::set_var("GROK_CLI_CHAT_PROXY_BASE_URL", server.url());
-        std::env::set_var("GROK_XAI_API_BASE_URL", server.url());
-        std::env::set_var("GROK_MODELS_BASE_URL", server.url());
-        std::env::set_var("GROK_AUTH_PROVIDER_COMMAND", &provider);
-        std::env::set_var("GROK_AUTH_PROVIDER_LABEL", PROVIDER_LABEL);
+        std::env::set_var("EZER_CLI_CHAT_PROXY_BASE_URL", server.url());
+        std::env::set_var("EZER_XAI_API_BASE_URL", server.url());
+        std::env::set_var("EZER_MODELS_BASE_URL", server.url());
+        std::env::set_var("EZER_AUTH_PROVIDER_COMMAND", &provider);
+        std::env::set_var("EZER_AUTH_PROVIDER_LABEL", PROVIDER_LABEL);
         // An API key would be advertised first and mask the session-auth path.
         std::env::remove_var("XAI_API_KEY");
-        std::env::remove_var("GROK_CODE_XAI_API_KEY");
+        std::env::remove_var("EZER_CODE_XAI_API_KEY");
         // Last-resort 401 recovery can mint a credential from an endpoint named in the ambient environment
         // On a container-hosted runner that would rescue the session behind the test's back
         // Leave it nothing to mint from: the deployment under test is one where only the operator's binary can produce a credential
         for name in ambient_mint_endpoints() {
             std::env::remove_var(&name);
         }
-        std::env::set_var("GROK_TELEMETRY_ENABLED", "false");
-        std::env::set_var("GROK_FEEDBACK_ENABLED", "false");
-        std::env::set_var("GROK_TRACE_UPLOAD", "false");
+        std::env::set_var("EZER_TELEMETRY_ENABLED", "false");
+        std::env::set_var("EZER_FEEDBACK_ENABLED", "false");
+        std::env::set_var("EZER_TRACE_UPLOAD", "false");
     }
 
     let agent_rt = tokio::runtime::Builder::new_current_thread()

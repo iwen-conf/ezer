@@ -41,15 +41,15 @@ async fn run_reasoning_turn(collapse_thinking: bool) -> Turn {
     content.set_response(answer.clone());
 
     // Ingestion is gated on this toggle, and the sandbox `$HOME` has no config.
-    std::fs::create_dir_all(content.home().join(".grok")).expect("mk .grok");
+    std::fs::create_dir_all(content.home().join(".ezer")).expect("mk .ezer");
     std::fs::write(
-        content.home().join(".grok/config.toml"),
+        content.home().join(".ezer/config.toml"),
         "[ui]\nshow_thinking_blocks = true\n",
     )
     .expect("write config");
     if collapse_thinking {
         let grok_home = content.sandbox().grok_home().to_path_buf();
-        std::fs::create_dir_all(&grok_home).expect("mk grok home");
+        std::fs::create_dir_all(&grok_home).expect("mk ezer home");
         std::fs::write(
             grok_home.join("pager.toml"),
             "[terminal]\nminimal_collapse_thinking = true\n",

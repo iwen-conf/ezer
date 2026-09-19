@@ -195,7 +195,7 @@ fn load_fails_open_on_read_errors() {
     assert!(
         load_extra_root_ders(
             ENV_GROK_EXTRA_CA_BUNDLE,
-            std::path::Path::new("/nonexistent/grok-ca.pem"),
+            std::path::Path::new("/nonexistent/ezer-ca.pem"),
         )
         .is_empty()
     );

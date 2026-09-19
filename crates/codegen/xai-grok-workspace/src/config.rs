@@ -289,7 +289,7 @@ mod bind_config_tests {
     /// Presets are banned: any preset (known or not) is ignored, never resolved to a toolset, and never widened to the default in strict mode.
     #[test]
     fn presets_are_never_resolved() {
-        for preset in ["explore", "grok-computer", "bogus"] {
+        for preset in ["explore", "ezer-computer", "bogus"] {
             let cfg = WorkspaceBindConfig::from_metadata(&serde_json::json!({ "preset": preset }));
             assert!(
                 matches!(cfg.resolve(&all_known, false), ResolvedToolset::UseDefault),
@@ -469,14 +469,14 @@ mod bind_config_tests {
             "preset": "explore",
             "tools": [
                 {
-                    "id": "GrokBuild:grep",
+                    "id": "Ezer:grep",
                     "params_json": "{\"max_results\":50}",
                     "name_override": "search",
                     "params_name_overrides": {"pattern": "query"},
                     "behavior_version": "legacy-0.4.10",
                     "description_override": "Search the codebase",
                 },
-                {"id": "GrokBuild:read_file"},
+                {"id": "Ezer:read_file"},
             ],
         });
         let cfg = WorkspaceBindConfig::from_metadata(&v);
@@ -493,7 +493,7 @@ mod bind_config_tests {
         let Some(grep) = toolset.tools.first() else {
             panic!("expected grep tool: {:?}", toolset.tools);
         };
-        assert_eq!(grep.id, "GrokBuild:grep");
+        assert_eq!(grep.id, "Ezer:grep");
         assert_eq!(
             grep.params,
             serde_json::json!({"max_results": 50}).as_object().cloned()
@@ -514,7 +514,7 @@ mod bind_config_tests {
         assert_eq!(grep.kind, None);
         assert_eq!(
             toolset.tools.get(1).map(|t| t.id.as_str()),
-            Some("GrokBuild:read_file")
+            Some("Ezer:read_file")
         );
     }
     #[test]
@@ -821,7 +821,7 @@ impl BindMcpConfig {
         self
     }
     /// Mark servers (by configured name) as FIRST-PARTY app endpoints: local desktop processes addressed by agent id.
-    /// Only these receive the `X-Grok-Agent-ID` header (the bound session id) and the local-agent-endpoint transport posture (no OAuth probe, no proxy, no redirects).
+    /// Only these receive the `X-ezer-Agent-ID` header (the bound session id) and the local-agent-endpoint transport posture (no OAuth probe, no proxy, no redirects).
     /// Defaults OFF for every server — a user-configured third-party MCP server must never receive the session id or lose its OAuth/proxy path.
     pub fn with_first_party_servers(mut self, names: impl IntoIterator<Item = String>) -> Self {
         self.first_party = std::sync::Arc::new(names.into_iter().collect());
@@ -869,9 +869,9 @@ pub struct WorkspaceConfig {
     pub event_buffer_capacity: usize,
     /// Pluggable [`SessionContext`] / [`ToolRegistryBuilder`] producer.
     pub session_factory: Arc<dyn SessionContextFactory>,
-    /// Global hook sources (e.g. `~/.claude/settings.json`, `~/.grok/hooks/`).
+    /// Global hook sources (e.g. `~/.claude/settings.json`, `~/.ezer/hooks/`).
     pub hook_global_sources: Vec<HookSourceConfig>,
-    /// Project-scoped hook sources (e.g. `<project>/.grok/hooks/`).
+    /// Project-scoped hook sources (e.g. `<project>/.ezer/hooks/`).
     pub hook_project_sources: Vec<HookSourceConfig>,
     /// Extra skill paths and a path-prefix ignore list. Stored on `WorkspaceShared` for `discover_skills` calls.
     pub skills_config: crate::discovery::SkillsConfig,
@@ -888,7 +888,7 @@ pub struct WorkspaceConfig {
     pub server_metadata: Option<serde_json::Value>,
     /// Runtime-tunable timing/threshold config for the tool server.
     pub status_config: crate::status_config::StatusConfig,
-    /// Folder-trust verdict for repo-local (project-scoped) LSP servers from `<cwd>/.grok/lsp.json`.
+    /// Folder-trust verdict for repo-local (project-scoped) LSP servers from `<cwd>/.ezer/lsp.json`.
     /// `false` drops them at load, `true` keeps them.
     /// The shell caller resolves the verdict and threads it in; callers without a folder-trust decision pass `true`.
     pub project_lsp_trusted: bool,
@@ -1034,7 +1034,7 @@ impl std::fmt::Debug for AgentSessionConfig {
 pub enum HookSourceConfig {
     /// A single JSON settings file (e.g. `~/.claude/settings.json`).
     SettingsFile(PathBuf),
-    /// A directory of `*.json` hook files (e.g. `~/.grok/hooks/`).
+    /// A directory of `*.json` hook files (e.g. `~/.ezer/hooks/`).
     Directory(PathBuf),
 }
 impl HookSourceConfig {

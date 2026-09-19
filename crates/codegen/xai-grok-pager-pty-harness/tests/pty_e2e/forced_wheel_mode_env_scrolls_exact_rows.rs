@@ -17,7 +17,7 @@ const BURST_EVENTS: usize = 3;
 /// Exactly 1 row per event under the forced env (see header math).
 const EXPECTED_ROWS: usize = 3;
 
-/// The `GROK_SCROLL_MODE` and `GROK_SCROLL_LINES` overrides must reach the live config: a 3-event burst scrolls the viewport up by exactly 3 rows.
+/// The `EZER_SCROLL_MODE` and `EZER_SCROLL_LINES` overrides must reach the live config: a 3-event burst scrolls the viewport up by exactly 3 rows.
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 #[ignore]
 async fn forced_wheel_mode_env_scrolls_exact_rows() {
@@ -25,8 +25,8 @@ async fn forced_wheel_mode_env_scrolls_exact_rows() {
         MARKER_COUNT,
         &[
             ("TERM_PROGRAM", "zed"),
-            ("GROK_SCROLL_MODE", "wheel"),
-            ("GROK_SCROLL_LINES", "1"),
+            ("EZER_SCROLL_MODE", "wheel"),
+            ("EZER_SCROLL_LINES", "1"),
         ],
     )
     .await;

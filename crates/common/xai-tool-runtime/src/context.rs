@@ -178,7 +178,7 @@ pub struct WorkspaceBindMetadata {
         skip_serializing_if = "Option::is_none"
     )]
     pub capability_mode: Option<String>,
-    /// Explicit toolset in the grok-tools gRPC wire shape. Empty = unset.
+    /// Explicit toolset in the ezer-tools gRPC wire shape. Empty = unset.
     #[serde(
         default,
         deserialize_with = "ok_or_default",
@@ -328,7 +328,7 @@ mod bind_metadata_tests {
             preset: Some("explore".to_owned()),
             capability_mode: Some("read_only".to_owned()),
             tools: vec![xai_grok_tools_api::ToolConfigEntry {
-                id: "GrokBuild:grep".to_owned(),
+                id: "Ezer:grep".to_owned(),
                 ..Default::default()
             }],
             viewer_ctx: Some(super::WorkspaceViewerContext {

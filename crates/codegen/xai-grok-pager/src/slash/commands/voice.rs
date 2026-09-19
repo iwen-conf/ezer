@@ -8,7 +8,7 @@
 //!
 //! Dictation works on the agent screen (into the prompt) and on the dashboard (into the dispatch / new-agent input).
 //!
-//! **Scope.** Voice mode stays on for the rest of the process; re-open `grok` for a clean slate.
+//! **Scope.** Voice mode stays on for the rest of the process; re-open `ezer` for a clean slate.
 
 use crate::app::actions::Action;
 use crate::slash::command::{CommandExecCtx, CommandResult, SlashCommand, slash_meta};

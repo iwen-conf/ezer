@@ -91,7 +91,7 @@ pub(crate) struct ToolCallEvent {
     raw_input: Value,
     content: Value,
     locations: Value,
-    /// True for Grok's backend `web_search`; it is folded inline instead of taking the split path client tools take.
+    /// True for ezer's backend `web_search`; it is folded inline instead of taking the split path client tools take.
     backend_web_search: bool,
 }
 
@@ -261,7 +261,7 @@ fn tool_name_from(meta: Option<&proto::Meta>, title: &str, kind: Option<&str>) -
     "tool".to_string()
 }
 
-/// True iff `tc` is Grok's backend `web_search` (`_meta.backend` and `raw_input.variant == "WebSearch"`).
+/// True iff `tc` is ezer's backend `web_search` (`_meta.backend` and `raw_input.variant == "WebSearch"`).
 fn is_backend_web_search(meta: Option<&proto::Meta>, raw_input: &Value) -> bool {
     let backend = meta
         .and_then(|m| m.get("backend"))

@@ -40,7 +40,7 @@ pub enum AgentMode {
     Generic,
 }
 /// Default agent type when the server or user config doesn't specify one.
-pub const DEFAULT_AGENT_TYPE: &str = "grok-build-plan";
+pub const DEFAULT_AGENT_TYPE: &str = "ezer-build-plan";
 /// Serde default for `ModelInfo.agent_type` and `ModelEntryConfig.agent_type`.
 pub(crate) fn default_agent_type() -> String {
     DEFAULT_AGENT_TYPE.to_owned()
@@ -139,45 +139,45 @@ pub struct EndpointsConfig {
     /// Optional extra access-header value (applied only with the optional non-production feature, and only for matching first-party hosts).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub alpha_test_key: Option<String>,
-    /// Env: `GROK_MODELS_BASE_URL`. Enables custom endpoint mode.
+    /// Env: `EZER_MODELS_BASE_URL`. Enables custom endpoint mode.
     /// List URL defaults to `{models_base_url}/models`.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub models_base_url: Option<String>,
-    /// Env: `GROK_MODELS_LIST_URL`. Overrides the default `{base}/models` list URL.
+    /// Env: `EZER_MODELS_LIST_URL`. Overrides the default `{base}/models` list URL.
     #[serde(alias = "models_endpoint", skip_serializing_if = "Option::is_none")]
     pub models_list_url: Option<String>,
-    /// Env: `GROK_FEEDBACK_BASE_URL`. Where feedback submissions go.
+    /// Env: `EZER_FEEDBACK_BASE_URL`. Where feedback submissions go.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub feedback_base_url: Option<String>,
-    /// Env: `GROK_TRACE_UPLOAD_URL`. Where trace uploads go.
+    /// Env: `EZER_TRACE_UPLOAD_URL`. Where trace uploads go.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub trace_upload_url: Option<String>,
-    /// Env: `GROK_TRACE_UPLOAD_BUCKET`. Direct bucket (`gs://` or `s3://`), bypasses proxy.
+    /// Env: `EZER_TRACE_UPLOAD_BUCKET`. Direct bucket (`gs://` or `s3://`), bypasses proxy.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub trace_upload_bucket: Option<String>,
-    /// Env: `GROK_TRACE_UPLOAD_REGION`. AWS region (S3 only).
+    /// Env: `EZER_TRACE_UPLOAD_REGION`. AWS region (S3 only).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub trace_upload_region: Option<String>,
-    /// Env: `GROK_TRACE_UPLOAD_CREDENTIALS_FILE`. Path to GCS SA key or AWS credentials file.
+    /// Env: `EZER_TRACE_UPLOAD_CREDENTIALS_FILE`. Path to GCS SA key or AWS credentials file.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub trace_upload_credentials_file: Option<String>,
     /// Inline credentials (JSON/INI). Takes precedence over `credentials_file`.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub trace_upload_credentials: Option<String>,
-    /// Env: `GROK_TRACE_UPLOAD_ENDPOINT_URL`. Custom S3-compatible endpoint.
+    /// Env: `EZER_TRACE_UPLOAD_ENDPOINT_URL`. Custom S3-compatible endpoint.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub trace_upload_endpoint_url: Option<String>,
-    /// Env: `GROK_DEPLOYMENT_KEY`. Management API key for enterprise deployments.
+    /// Env: `EZER_DEPLOYMENT_KEY`. Management API key for enterprise deployments.
     /// Sent on telemetry and service requests for deployment-level attribution.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub deployment_key: Option<String>,
-    /// Env: `GROK_MANAGED_CONFIG_URL`. Override the managed config endpoint.
+    /// Env: `EZER_MANAGED_CONFIG_URL`. Override the managed config endpoint.
     /// Defaults to `{proxy_url()}/deployment/config`.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub managed_config_url: Option<String>,
     /// Env: `OTEL_EXPORTER_OTLP_ENDPOINT`. OTLP collector base; `/v1/traces` is appended.
-    /// Legacy repoint of the INTERNAL trace pipeline, deprecated in favor of `GROK_INTERNAL_OTLP_TRACES_ENDPOINT`.
-    /// Ignored by the internal pipeline when `GROK_EXTERNAL_OTEL` is set (the standard `OTEL_*` vars then route the external stream only).
+    /// Legacy repoint of the INTERNAL trace pipeline, deprecated in favor of `EZER_INTERNAL_OTLP_TRACES_ENDPOINT`.
+    /// Ignored by the internal pipeline when `EZER_EXTERNAL_OTEL` is set (the standard `OTEL_*` vars then route the external stream only).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub otel_exporter_otlp_endpoint: Option<String>,
     /// Env: `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT`.
@@ -189,18 +189,18 @@ pub struct EndpointsConfig {
     /// Same legacy/deprecation semantics as `otel_exporter_otlp_endpoint`.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub otel_exporter_otlp_headers: Option<String>,
-    /// Env: `GROK_INTERNAL_OTLP_TRACES_ENDPOINT`. Full INTERNAL traces endpoint, used verbatim.
+    /// Env: `EZER_INTERNAL_OTLP_TRACES_ENDPOINT`. Full INTERNAL traces endpoint, used verbatim.
     /// Dev/debug repoint of the internal span firehose (replaces the legacy `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` behavior).
     /// Used by local-ic-testing / internal dev flows. Wins over the legacy `OTEL_*` vars.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub grok_internal_otlp_traces_endpoint: Option<String>,
-    /// Env: `GROK_INTERNAL_OTLP_HEADERS`.
+    /// Env: `EZER_INTERNAL_OTLP_HEADERS`.
     /// `k=v,k2=v2` extra headers for the internal export (debug).
     /// Wins over the legacy `OTEL_EXPORTER_OTLP_HEADERS`.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub grok_internal_otlp_headers: Option<String>,
     /// External-OTEL master switch, captured at construction via [`external_otel_master_switch_resolved`].
-    /// That resolver applies requirement pin > `GROK_EXTERNAL_OTEL` env > `[telemetry].otel_enabled` config, managed layers included. Those are the same layers that activate the external stream.
+    /// That resolver applies requirement pin > `EZER_EXTERNAL_OTEL` env > `[telemetry].otel_enabled` config, managed layers included. Those are the same layers that activate the external stream.
     /// When set, the standard `OTEL_EXPORTER_OTLP_*` vars are reserved for the external OTEL stream. The internal trace pipeline then ignores them entirely. An admin who opts in by *any* layer never receives the internally-authed firehose. Held as a field (not re-read in the resolvers) so the resolvers stay pure and testable without env races.
     #[serde(skip)]
     pub external_otel_master_switch: bool,
@@ -228,7 +228,7 @@ fn blank_as_unset(opt: &Option<String>) -> Option<String> {
         .filter(|s| !s.trim().is_empty())
         .map(str::to_owned)
 }
-/// Parse a `k=v,k2=v2` OTLP header list (the `OTEL_EXPORTER_OTLP_HEADERS` format, shared with `GROK_INTERNAL_OTLP_HEADERS`).
+/// Parse a `k=v,k2=v2` OTLP header list (the `OTEL_EXPORTER_OTLP_HEADERS` format, shared with `EZER_INTERNAL_OTLP_HEADERS`).
 /// Split on `,`, then `split_once('=')`, trim key/value, skip blank keys, keep empty values.
 fn parse_otlp_header_list(raw: &str) -> Vec<(String, String)> {
     raw.split(',')
@@ -289,7 +289,7 @@ impl EndpointsConfig {
     pub(crate) fn resolve_trace_upload_url(&self) -> String {
         blank_as_unset(&self.trace_upload_url).unwrap_or_else(|| self.proxy_url())
     }
-    /// Managed deployment-config URL (`grok setup`): explicit `managed_config_url`, else `proxy_url` + `/deployment/config`.
+    /// Managed deployment-config URL (`ezer setup`): explicit `managed_config_url`, else `proxy_url` + `/deployment/config`.
     /// Never `xai_api_base_url`, so the deployment key reaches the proxy, not the inference host.
     pub(crate) fn resolve_managed_config_url(&self) -> String {
         blank_as_unset(&self.managed_config_url).unwrap_or_else(|| {
@@ -312,7 +312,7 @@ impl EndpointsConfig {
             tracing::warn!(
                 "Repointing the internal trace pipeline via OTEL_EXPORTER_OTLP_ENDPOINT / \
                  OTEL_EXPORTER_OTLP_TRACES_ENDPOINT is deprecated; use \
-                 GROK_INTERNAL_OTLP_TRACES_ENDPOINT instead — the standard OTEL_* vars will \
+                 EZER_INTERNAL_OTLP_TRACES_ENDPOINT instead — the standard OTEL_* vars will \
                  route the external OTEL stream only in a future release"
             );
             return legacy;
@@ -356,7 +356,7 @@ impl EndpointsConfig {
         endpoint_consumed || headers_consumed
     }
     /// Trace export enabled unless `OTEL_TRACES_EXPORTER=none`.
-    /// Deliberately still honored by the internal pipeline even with `GROK_EXTERNAL_OTEL` set: disabling internal span export is the safe direction.
+    /// Deliberately still honored by the internal pipeline even with `EZER_EXTERNAL_OTEL` set: disabling internal span export is the safe direction.
     pub(crate) fn resolve_traces_export_enabled(&self) -> bool {
         !matches!(
             self.otel_traces_exporter.as_deref().map(str::trim),
@@ -463,7 +463,7 @@ impl EndpointsConfig {
     pub fn resolve_trace_bucket_url(&self) -> Option<Resolved<String>> {
         resolve_string_flag(
             None,
-            "GROK_TELEMETRY_GCS_BUCKET",
+            "EZER_TELEMETRY_GCS_BUCKET",
             self.trace_upload_bucket.as_deref(),
             None,
         )
@@ -487,28 +487,28 @@ impl EndpointsConfig {
 impl Default for EndpointsConfig {
     fn default() -> Self {
         Self {
-            cli_chat_proxy_base_url: std::env::var("GROK_CLI_CHAT_PROXY_BASE_URL").ok(),
-            xai_api_base_url: std::env::var("GROK_XAI_API_BASE_URL")
+            cli_chat_proxy_base_url: std::env::var("EZER_CLI_CHAT_PROXY_BASE_URL").ok(),
+            xai_api_base_url: std::env::var("EZER_XAI_API_BASE_URL")
                 .unwrap_or_else(|_| XAI_API_BASE_URL_DEFAULT.to_owned()),
             alpha_test_key: None,
             models_base_url: env_string("EZER_MODELS_BASE_URL")
-                .or_else(|| env_string("GROK_MODELS_BASE_URL")),
+                .or_else(|| env_string("EZER_MODELS_BASE_URL")),
             models_list_url: env_string("EZER_MODELS_LIST_URL")
-                .or_else(|| env_string("GROK_MODELS_LIST_URL")),
-            feedback_base_url: env_string("GROK_FEEDBACK_BASE_URL"),
-            trace_upload_url: env_string("GROK_TRACE_UPLOAD_URL"),
-            trace_upload_bucket: env_string("GROK_TRACE_UPLOAD_BUCKET"),
-            trace_upload_region: env_string("GROK_TRACE_UPLOAD_REGION"),
-            trace_upload_credentials_file: env_string("GROK_TRACE_UPLOAD_CREDENTIALS_FILE"),
+                .or_else(|| env_string("EZER_MODELS_LIST_URL")),
+            feedback_base_url: env_string("EZER_FEEDBACK_BASE_URL"),
+            trace_upload_url: env_string("EZER_TRACE_UPLOAD_URL"),
+            trace_upload_bucket: env_string("EZER_TRACE_UPLOAD_BUCKET"),
+            trace_upload_region: env_string("EZER_TRACE_UPLOAD_REGION"),
+            trace_upload_credentials_file: env_string("EZER_TRACE_UPLOAD_CREDENTIALS_FILE"),
             trace_upload_credentials: None,
-            trace_upload_endpoint_url: env_string("GROK_TRACE_UPLOAD_ENDPOINT_URL"),
-            deployment_key: env_string("GROK_DEPLOYMENT_KEY"),
-            managed_config_url: env_string("GROK_MANAGED_CONFIG_URL"),
+            trace_upload_endpoint_url: env_string("EZER_TRACE_UPLOAD_ENDPOINT_URL"),
+            deployment_key: env_string("EZER_DEPLOYMENT_KEY"),
+            managed_config_url: env_string("EZER_MANAGED_CONFIG_URL"),
             otel_exporter_otlp_endpoint: env_string("OTEL_EXPORTER_OTLP_ENDPOINT"),
             otel_exporter_otlp_traces_endpoint: env_string("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT"),
             otel_exporter_otlp_headers: env_string("OTEL_EXPORTER_OTLP_HEADERS"),
-            grok_internal_otlp_traces_endpoint: env_string("GROK_INTERNAL_OTLP_TRACES_ENDPOINT"),
-            grok_internal_otlp_headers: env_string("GROK_INTERNAL_OTLP_HEADERS"),
+            grok_internal_otlp_traces_endpoint: env_string("EZER_INTERNAL_OTLP_TRACES_ENDPOINT"),
+            grok_internal_otlp_headers: env_string("EZER_INTERNAL_OTLP_HEADERS"),
             external_otel_master_switch: external_otel_master_switch_resolved(),
             otel_traces_exporter: env_string("OTEL_TRACES_EXPORTER"),
             otel_traces_export_interval: env_string("OTEL_BSP_SCHEDULE_DELAY")
@@ -848,7 +848,7 @@ pub struct PluginsConfig {
 impl PluginsConfig {
     /// Merge `enabledPlugins` from Claude settings files into this config. Reads `enabledPlugins` from `~/.claude/settings.json` only (user scope).
     /// Project-level `<git_root>/.claude/settings.json` is intentionally NOT read here. A malicious repo could pre-populate `enabledPlugins` to bypass the project-plugin auto-disable logic in `populate_plugin_lists`.
-    /// That would enable attacker-controlled hooks (e.g. a SessionStart hook running arbitrary code). Native `.grok/config.toml` entries already present take precedence: a name is only added if it isn't already in the opposite list.
+    /// That would enable attacker-controlled hooks (e.g. a SessionStart hook running arbitrary code). Native `.ezer/config.toml` entries already present take precedence: a name is only added if it isn't already in the opposite list.
     pub(crate) fn merge_claude_enabled_plugins(&mut self, _cwd: Option<&std::path::Path>) {
         if crate::claude_import::is_claude_import_marked_with_log("merge_claude_enabled_plugins") {
             return;
@@ -936,18 +936,18 @@ pub struct CliConfig {
     pub worktree_type: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub session_registry: Option<bool>,
-    /// Env `GROK_MINIMUM_VERSION`.
+    /// Env `EZER_MINIMUM_VERSION`.
     /// See [`crate::util::config::VersionPolicy`] for the version-policy knobs.
     /// (Unrelated to `version_overrides[].maximum_version`, which gates config patches.)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub minimum_version: Option<String>,
-    /// Env `GROK_MAXIMUM_VERSION`. See [`crate::util::config::VersionPolicy`].
+    /// Env `EZER_MAXIMUM_VERSION`. See [`crate::util::config::VersionPolicy`].
     #[serde(skip_serializing_if = "Option::is_none")]
     pub maximum_version: Option<String>,
-    /// Env `GROK_REQUIRED_MINIMUM_VERSION`. See [`crate::util::config::VersionPolicy`].
+    /// Env `EZER_REQUIRED_MINIMUM_VERSION`. See [`crate::util::config::VersionPolicy`].
     #[serde(skip_serializing_if = "Option::is_none")]
     pub required_minimum_version: Option<String>,
-    /// Env `GROK_REQUIRED_MAXIMUM_VERSION`. See [`crate::util::config::VersionPolicy`].
+    /// Env `EZER_REQUIRED_MAXIMUM_VERSION`. See [`crate::util::config::VersionPolicy`].
     #[serde(skip_serializing_if = "Option::is_none")]
     pub required_maximum_version: Option<String>,
     /// Group sessions by repo in the picker and CLI listings.
@@ -1051,13 +1051,13 @@ pub struct RelayConfig {
     pub enabled: Option<bool>,
 }
 /// `[hub]` section from config.toml.
-/// Optional default Computer Hub URL for **workspace provider** exposure (`grok workspace` / leader `with_default_hub_url`).
+/// Optional default Computer Hub URL for **workspace provider** exposure (`ezer workspace` / leader `with_default_hub_url`).
 /// Does **not** enable agent-side harness/client connections or alter local session behavior.
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 #[serde(default)]
 pub struct HubConfig {
     /// Hub WebSocket URL (`ws://` or `wss://`) used as the leader default for
-    /// `grok workspace start` when the CLI does not pass `--hub-url`.
+    /// `ezer workspace start` when the CLI does not pass `--hub-url`.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub url: Option<String>,
 }
@@ -1116,12 +1116,12 @@ impl SandboxSettingsConfig {
         if let Some(val) = requirement {
             return Resolved::new(val.to_owned(), ConfigSource::Requirement);
         }
-        resolve_string_flag(cli_arg, "GROK_SANDBOX", self.profile.as_deref(), None)
+        resolve_string_flag(cli_arg, "EZER_SANDBOX", self.profile.as_deref(), None)
             .unwrap_or_else(|| Resolved::new("off".to_owned(), ConfigSource::Default))
     }
     /// Resolve auto_allow_bash: requirement > env > config > default (false).
     pub(crate) fn resolve_auto_allow_bash(&self, requirement: Option<bool>) -> Resolved<bool> {
-        BoolFlag::env("GROK_SANDBOX_AUTO_ALLOW_BASH")
+        BoolFlag::env("EZER_SANDBOX_AUTO_ALLOW_BASH")
             .requirement(requirement)
             .config(self.auto_allow_bash)
             .resolve()
@@ -1298,7 +1298,7 @@ pub struct Config {
     /// Typed as `GrokComConfig` (same schema) so sub-field typos are caught.
     #[serde(default, skip_serializing)]
     pub auth: Option<GrokComConfig>,
-    /// `[desktop]` section: owned by grok-desktop (Electron app), opaque to the CLI agent.
+    /// `[desktop]` section: owned by ezer-desktop (Electron app), opaque to the CLI agent.
     #[serde(default, skip_serializing)]
     pub desktop: Option<toml::Value>,
     /// Top-level `announcements` array: consumed by `resolve_announcements`.
@@ -1323,7 +1323,7 @@ pub struct Config {
     #[serde(default, skip_serializing)]
     pub diagnostics: DiagnosticsConfig,
     /// When running in relay/headless mode, this should be set to Writeback.
-    /// Defaults to reading from GROK_STORAGE_MODE env var.
+    /// Defaults to reading from EZER_STORAGE_MODE env var.
     #[serde(skip)]
     pub storage_mode: StorageMode,
     /// CLI override for the default model ID.
@@ -1373,7 +1373,7 @@ pub struct Config {
     #[serde(skip)]
     pub cli_agent_overrides: CliAgentOverrides,
     /// Whether subagent (task tool) support is enabled.
-    /// Enabled by default; disabled only via `GROK_SUBAGENTS=0` or `[subagents] enabled = false`.
+    /// Enabled by default; disabled only via `EZER_SUBAGENTS=0` or `[subagents] enabled = false`.
     /// Not remotely gated.
     #[serde(skip)]
     pub subagents_enabled: bool,
@@ -1530,18 +1530,18 @@ pub use xai_grok_agent::config::Effort;
 pub use xai_grok_agent::config::PermissionMode;
 pub use xai_grok_shared::ui_config::{ContextualHints, UiConfig};
 /// Set in `config.toml` under `[agent]`: Priority (highest to lowest): ACP session-level `_meta.agentProfile`
-/// CLI `--agent-profile` flag `[agent]` config.toml section (this config) `GROK_AGENT` env var
-/// Default `grok-build` agent
+/// CLI `--agent-profile` flag `[agent]` config.toml section (this config) `EZER_AGENT` env var
+/// Default `ezer-build` agent
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(default)]
 pub struct AgentSelectionConfig {
     /// Name of a built-in or discovered agent definition.
     /// Looked up via `xai_grok_agent::discovery::by_name_in_cwd()`.
-    /// Examples: "grok-build", "browser-use", or a custom agent name.
+    /// Examples: "ezer-build", "browser-use", or a custom agent name.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     /// Path to an agent definition file (.md with YAML frontmatter).
-    /// Supports environment variable expansion (e.g., `$HOME/.grok/agents/my-agent.md`).
+    /// Supports environment variable expansion (e.g., `$HOME/.ezer/agents/my-agent.md`).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub definition: Option<PathBuf>,
     /// Global system-prompt identity label. Per-model override wins.
@@ -1748,7 +1748,7 @@ fn is_non_serde_config_path(path: &str) -> bool {
             .strip_prefix("features.")
             .is_some_and(|key| UNMIRRORED_BOOLEAN_FEATURES.contains(&key))
 }
-/// Parse `[auth_provider.<name>]` tables leniently: a malformed entry warns (surfaced by `grok inspect`) and is skipped.
+/// Parse `[auth_provider.<name>]` tables leniently: a malformed entry warns (surfaced by `ezer inspect`) and is skipped.
 /// Skipping fails closed for the models referencing the entry instead of failing the whole config.
 fn parse_auth_providers(
     raw_config: &toml::Value,
@@ -2313,7 +2313,7 @@ impl Config {
     }
     fn apply_env_overrides(&mut self) {
         self.telemetry.apply_env_overrides();
-        if let Some(mode) = env_telemetry_mode("GROK_TELEMETRY_ENABLED") {
+        if let Some(mode) = env_telemetry_mode("EZER_TELEMETRY_ENABLED") {
             self.features.telemetry = Some(mode);
         }
         self.grok_com_config.force_login_team_uuid = xai_grok_login::resolve_force_login_team(
@@ -2354,7 +2354,7 @@ impl Config {
         if env_bool("DISABLE_TELEMETRY") == Some(true) {
             return Resolved::new(TelemetryMode::Disabled, ConfigSource::Env);
         }
-        if let Some(mode) = env_telemetry_mode("GROK_TELEMETRY_ENABLED") {
+        if let Some(mode) = env_telemetry_mode("EZER_TELEMETRY_ENABLED") {
             return Resolved::new(mode, ConfigSource::Env);
         }
         if let Some(mode) = self.features.telemetry {
@@ -2381,7 +2381,7 @@ impl Config {
                 .as_ref()
                 .and_then(|s| s.trace_upload_enabled)
         };
-        BoolFlag::env("GROK_TELEMETRY_TRACE_UPLOAD")
+        BoolFlag::env("EZER_TELEMETRY_TRACE_UPLOAD")
             .requirement(self.requirements.trace_upload.pinned())
             .config(self.telemetry.trace_upload)
             .feature_flag(ff)
@@ -2431,8 +2431,8 @@ impl Config {
             "telemetry_source": telemetry.source.to_string(),
             "in_requirement_pin": req.pinned(),
             "in_requirement_src": req.source().map(|s| s.to_string()),
-            "in_env_trace_upload": std::env::var("GROK_TELEMETRY_TRACE_UPLOAD").ok(),
-            "in_env_telemetry_enabled": std::env::var("GROK_TELEMETRY_ENABLED").ok(),
+            "in_env_trace_upload": std::env::var("EZER_TELEMETRY_TRACE_UPLOAD").ok(),
+            "in_env_telemetry_enabled": std::env::var("EZER_TELEMETRY_ENABLED").ok(),
             "in_env_disable_telemetry": std::env::var("DISABLE_TELEMETRY").ok(),
             "in_cfg_telemetry_trace_upload": self.telemetry.trace_upload,
             "in_cfg_features_telemetry": self.features.telemetry.map(|m| m.to_string()),
@@ -2443,9 +2443,9 @@ impl Config {
             "has_remote_settings": self.remote_settings.is_some(),
         })
     }
-    /// Server-side doom-loop check policy. It covers the `x-grok-doom-loop-check` header, trigger parsing, and confident-signal resampling, all applied by the sampler.
+    /// Server-side doom-loop check policy. It covers the `x-ezer-doom-loop-check` header, trigger parsing, and confident-signal resampling, all applied by the sampler.
     /// Merged PER-FIELD across the `[doom_loop_recovery]` TOML table and the remote settings `doom_loop_recovery` object. A partial remote object only overrides the fields it sets.
-    /// Gate precedence: env `GROK_DOOM_LOOP_RECOVERY` > TOML `enabled` > remote `enabled` > default ON. Each layer's `false` is an independent kill switch, and `None` IS the off state, so disabled has exactly one spelling. Tunables have no env layer (TOML > remote > default) and are clamped to their documented ranges.
+    /// Gate precedence: env `EZER_DOOM_LOOP_RECOVERY` > TOML `enabled` > remote `enabled` > default ON. Each layer's `false` is an independent kill switch, and `None` IS the off state, so disabled has exactly one spelling. Tunables have no env layer (TOML > remote > default) and are clamped to their documented ranges.
     pub(crate) fn resolve_doom_loop_recovery(
         &self,
     ) -> Option<xai_grok_sampling_types::DoomLoopRecoveryPolicy> {
@@ -2454,7 +2454,7 @@ impl Config {
             .remote_settings
             .as_ref()
             .and_then(|s| s.doom_loop_recovery.as_ref());
-        let enabled = BoolFlag::env("GROK_DOOM_LOOP_RECOVERY")
+        let enabled = BoolFlag::env("EZER_DOOM_LOOP_RECOVERY")
             .config(self.doom_loop_recovery.enabled)
             .feature_flag(remote.and_then(|s| s.enabled))
             .default(true)
@@ -2492,14 +2492,14 @@ impl Config {
                 .and_then(|s| s.worktree_auto_gc.as_ref()),
         )
     }
-    /// Gate first-run auto-registration of the official xAI marketplace source. Precedence: env `GROK_OFFICIAL_MARKETPLACE_AUTO_REGISTER` > remote settings > default off.
+    /// Gate first-run auto-registration of the official xAI marketplace source. Precedence: env `EZER_OFFICIAL_MARKETPLACE_AUTO_REGISTER` > remote settings > default off.
     /// The off default means only remote settings-targeted teams get it pre-public. No managed `.requirement` pin: `marketplace_allowlist` already gates sources.
     pub(crate) fn resolve_official_marketplace_auto_register(&self) -> Resolved<bool> {
         let ff = self
             .remote_settings
             .as_ref()
             .and_then(|s| s.official_marketplace_auto_register);
-        BoolFlag::env("GROK_OFFICIAL_MARKETPLACE_AUTO_REGISTER")
+        BoolFlag::env("EZER_OFFICIAL_MARKETPLACE_AUTO_REGISTER")
             .feature_flag(ff)
             .default(false)
             .resolve()
@@ -2531,7 +2531,7 @@ impl Config {
     /// Unset it follows `turn_summary`; set it to decouple them.
     pub(crate) fn resolve_title_refresh(&self) -> Resolved<bool> {
         let ff = self.remote_settings.as_ref().and_then(|s| s.title_refresh);
-        BoolFlag::env("GROK_TITLE_REFRESH")
+        BoolFlag::env("EZER_TITLE_REFRESH")
             .requirement(self.requirements.title_refresh.pinned())
             .config(self.features.title_refresh)
             .feature_flag(ff)
@@ -2553,7 +2553,7 @@ impl Config {
         {
             return Resolved::new(false, ConfigSource::Remote);
         }
-        BoolFlag::env("GROK_IMAGE_GEN")
+        BoolFlag::env("EZER_IMAGE_GEN")
             .config(self.features.image_gen)
             .feature_flag(
                 self.remote_settings
@@ -2577,7 +2577,7 @@ impl Config {
         {
             return Resolved::new(false, ConfigSource::Remote);
         }
-        BoolFlag::env("GROK_IMAGE_EDIT").default(true).resolve()
+        BoolFlag::env("EZER_IMAGE_EDIT").default(true).resolve()
     }
     /// `image_to_video` / `reference_to_video` (and `/imagine-video`). Default on.
     /// Registered as a pair; denylisting either tool name (or `video_gen`) disables both.
@@ -2596,7 +2596,7 @@ impl Config {
         }) {
             return Resolved::new(false, ConfigSource::Remote);
         }
-        BoolFlag::env("GROK_VIDEO_GEN")
+        BoolFlag::env("EZER_VIDEO_GEN")
             .config(self.features.video_gen)
             .feature_flag(
                 self.remote_settings
@@ -2606,12 +2606,12 @@ impl Config {
             .default(true)
             .resolve()
     }
-    /// Precedence: env `GROK_IMAGE_GEN_MODEL_OVERRIDE` > `[features] image_gen_model_override` config > remote settings `image_gen_model_override`.
-    /// `None` falls back to the default model (`grok-imagine-image-quality`).
+    /// Precedence: env `EZER_IMAGE_GEN_MODEL_OVERRIDE` > `[features] image_gen_model_override` config > remote settings `image_gen_model_override`.
+    /// `None` falls back to the default model (`ezer-imagine-image-quality`).
     pub(crate) fn resolve_image_gen_model_override(&self) -> Option<String> {
         resolve_string_flag(
             None,
-            "GROK_IMAGE_GEN_MODEL_OVERRIDE",
+            "EZER_IMAGE_GEN_MODEL_OVERRIDE",
             self.features.image_gen_model_override.as_deref(),
             self.remote_settings
                 .as_ref()
@@ -2622,7 +2622,7 @@ impl Config {
     pub(crate) fn resolve_image_edit_model_override(&self) -> Option<String> {
         resolve_string_flag(
             None,
-            "GROK_IMAGE_EDIT_MODEL_OVERRIDE",
+            "EZER_IMAGE_EDIT_MODEL_OVERRIDE",
             self.features.image_edit_model_override.as_deref(),
             self.remote_settings
                 .as_ref()
@@ -2638,13 +2638,13 @@ impl Config {
         if ff == Some(false) {
             return Resolved::new(false, ConfigSource::Remote);
         }
-        BoolFlag::env("GROK_GOAL")
+        BoolFlag::env("EZER_GOAL")
             .config(self.goal.enabled)
             .feature_flag(ff)
             .default(true)
             .resolve()
     }
-    /// Background workflows (`workflow` tool, `.grok/workflows/*.rhai`, `/deep-research`, host-owned `/goal` driver).
+    /// Background workflows (`workflow` tool, `.ezer/workflows/*.rhai`, `/deep-research`, host-owned `/goal` driver).
     /// Default ON: deployments that never receive remote settings still get workflows; `Some(false)` remote / config / env remains a kill-switch.
     pub(crate) fn resolve_workflows(&self) -> Resolved<bool> {
         let ff = self
@@ -2654,7 +2654,7 @@ impl Config {
         if ff == Some(false) {
             return Resolved::new(false, ConfigSource::Remote);
         }
-        BoolFlag::env("GROK_WORKFLOWS")
+        BoolFlag::env("EZER_WORKFLOWS")
             .config(self.workflows.enabled)
             .feature_flag(ff)
             .default(true)
@@ -2664,7 +2664,7 @@ impl Config {
     /// `goal_enabled` is the session's already-resolved master switch (the same value the actor stores).
     /// It is passed in so a sub-role default can never disagree with whether `/goal` is on.
     pub(crate) fn resolve_goal_classifier_enabled(&self, goal_enabled: bool) -> Resolved<bool> {
-        BoolFlag::env("GROK_GOAL_CLASSIFIER")
+        BoolFlag::env("EZER_GOAL_CLASSIFIER")
             .config(self.goal.classifier_enabled)
             .feature_flag(
                 self.remote_settings
@@ -2675,7 +2675,7 @@ impl Config {
             .resolve()
     }
     pub(crate) fn resolve_goal_planner_enabled(&self, goal_enabled: bool) -> Resolved<bool> {
-        BoolFlag::env("GROK_GOAL_PLANNER")
+        BoolFlag::env("EZER_GOAL_PLANNER")
             .config(self.goal.planner_enabled)
             .feature_flag(
                 self.remote_settings
@@ -2686,7 +2686,7 @@ impl Config {
             .resolve()
     }
     pub(crate) fn resolve_goal_summary_enabled(&self, goal_enabled: bool) -> Resolved<bool> {
-        BoolFlag::env("GROK_GOAL_SUMMARY")
+        BoolFlag::env("EZER_GOAL_SUMMARY")
             .config(self.goal.summary_enabled)
             .feature_flag(
                 self.remote_settings
@@ -2724,7 +2724,7 @@ impl Config {
             GOAL_VERIFIER_SKEPTIC_COUNT, GOAL_VERIFIER_SKEPTIC_MAX, GOAL_VERIFIER_SKEPTIC_MIN,
         };
         Self::resolve_goal_u32(
-            "GROK_GOAL_VERIFIER_N",
+            "EZER_GOAL_VERIFIER_N",
             self.goal.verifier_count,
             self.remote_settings
                 .as_ref()
@@ -2739,7 +2739,7 @@ impl Config {
             GOAL_CLASSIFIER_MAX_RUNS_DEFAULT, GOAL_CLASSIFIER_MAX_RUNS_MIN,
         };
         Self::resolve_goal_u32(
-            "GROK_GOAL_CLASSIFIER_MAX",
+            "EZER_GOAL_CLASSIFIER_MAX",
             self.goal.classifier_max_runs,
             self.remote_settings
                 .as_ref()
@@ -2752,7 +2752,7 @@ impl Config {
     /// Default tracks the resolved classifier cap (`max(1, cap / 2)`); floored at 1 so it can never silently disable.
     pub(crate) fn resolve_goal_strategist_every(&self, classifier_max_runs: u32) -> Resolved<u32> {
         Self::resolve_goal_u32(
-            "GROK_GOAL_STRATEGIST_EVERY",
+            "EZER_GOAL_STRATEGIST_EVERY",
             self.goal.strategist_every,
             self.remote_settings
                 .as_ref()
@@ -2764,7 +2764,7 @@ impl Config {
     /// Re-verify escalation threshold; floored at 1. No remote layer.
     pub(crate) fn resolve_goal_reverify_after(&self) -> Resolved<u32> {
         Self::resolve_goal_u32(
-            "GROK_GOAL_REVERIFY_AFTER",
+            "EZER_GOAL_REVERIFY_AFTER",
             self.goal.reverify_after,
             None,
             crate::session::acp_session::GOAL_REVERIFY_AFTER_DEFAULT,
@@ -2773,7 +2773,7 @@ impl Config {
     }
     /// When `true`, every `/goal` role inherits the current model regardless of configured pairs.
     pub(crate) fn resolve_goal_use_current_model_only(&self) -> Resolved<bool> {
-        BoolFlag::env("GROK_GOAL_USE_CURRENT_MODEL_ONLY")
+        BoolFlag::env("EZER_GOAL_USE_CURRENT_MODEL_ONLY")
             .config(self.goal.use_current_model_only)
             .default(false)
             .resolve()
@@ -2856,11 +2856,11 @@ impl Config {
             _ => Resolved::new(Vec::new(), ConfigSource::Default),
         }
     }
-    /// Resolve the mode: env `GROK_COMPACTION_MODE` > config > remote settings > default, with unrecognized values falling through.
+    /// Resolve the mode: env `EZER_COMPACTION_MODE` > config > remote settings > default, with unrecognized values falling through.
     /// For `Segments`, attach the separately-resolved detail level.
     pub(crate) fn resolve_compaction_mode(&self) -> xai_chat_state::CompactionMode {
         resolve_compaction_mode_from(
-            env_string("GROK_COMPACTION_MODE").as_deref(),
+            env_string("EZER_COMPACTION_MODE").as_deref(),
             self.features.compaction_mode.as_deref(),
             self.remote_settings
                 .as_ref()
@@ -2879,28 +2879,28 @@ impl Config {
                 .and_then(|r| r.compaction_tool_choice.as_deref()),
         )
     }
-    /// Precedence: env `GROK_COMPACTION_DETAIL` > config `features.compaction_detail` > remote `compaction_detail` > default (`verbose`).
+    /// Precedence: env `EZER_COMPACTION_DETAIL` > config `features.compaction_detail` > remote `compaction_detail` > default (`verbose`).
     /// Drives the `segments` verbatim detail level.
     fn resolve_compaction_detail(&self) -> xai_chat_state::CompactionDetail {
         resolve_compaction_detail_from(
-            env_string("GROK_COMPACTION_DETAIL").as_deref(),
+            env_string("EZER_COMPACTION_DETAIL").as_deref(),
             self.features.compaction_detail.as_deref(),
             self.remote_settings
                 .as_ref()
                 .and_then(|r| r.compaction_detail.as_deref()),
         )
     }
-    /// Resolve whether to use grok's default OAuth2 (xAI auth.x.ai).
+    /// Resolve whether to use ezer's default OAuth2 (xAI auth.x.ai).
     /// Enterprise OIDC (`oidc` in config.toml) always wins; this only gates the default xAI OAuth2 fallback when no enterprise OIDC is configured.
-    /// Priority: `--oauth` > GROK_OAUTH_ENABLED env > default (true, meaning OAuth).
+    /// Priority: `--oauth` > EZER_OAUTH_ENABLED env > default (true, meaning OAuth).
     pub(crate) fn resolve_grok_oauth(&self, cli_oidc: Option<bool>) -> Resolved<bool> {
-        BoolFlag::env("GROK_OAUTH_ENABLED")
+        BoolFlag::env("EZER_OAUTH_ENABLED")
             .cli(cli_oidc)
             .default(true)
             .resolve()
     }
 }
-/// Canonical resolver for `mcp.liveness_watchers`. Stacks the full 7-step `BoolFlag` precedence: `requirement > cli > env (GROK_MCP_LIVENESS_WATCHERS) > config > managed > feature_flag > default (true)`.
+/// Canonical resolver for `mcp.liveness_watchers`. Stacks the full 7-step `BoolFlag` precedence: `requirement > cli > env (EZER_MCP_LIVENESS_WATCHERS) > config > managed > feature_flag > default (true)`.
 /// `util::config::resolve_mcp_liveness_watchers` delegates here so the precedence is single-sourced.
 /// The default is `true`, turning the watcher and dispatcher on by default; the flag exists primarily as a kill switch during the rollout.
 pub(crate) fn resolve_mcp_liveness_watchers(
@@ -2910,7 +2910,7 @@ pub(crate) fn resolve_mcp_liveness_watchers(
     managed: Option<bool>,
     feature_flag: Option<bool>,
 ) -> Resolved<bool> {
-    BoolFlag::env("GROK_MCP_LIVENESS_WATCHERS")
+    BoolFlag::env("EZER_MCP_LIVENESS_WATCHERS")
         .requirement(requirement)
         .cli(cli)
         .config(config)
@@ -2919,9 +2919,9 @@ pub(crate) fn resolve_mcp_liveness_watchers(
         .default(true)
         .resolve()
 }
-/// Canonical resolver for `mcp.auto_restart`. Stacks the full 7-step `BoolFlag` precedence: `requirement > cli > env (GROK_MCP_AUTO_RESTART) > config > managed > feature_flag > default (true)`.
+/// Canonical resolver for `mcp.auto_restart`. Stacks the full 7-step `BoolFlag` precedence: `requirement > cli > env (EZER_MCP_AUTO_RESTART) > config > managed > feature_flag > default (true)`.
 /// Mirrors [`resolve_mcp_liveness_watchers`]. `util::config::resolve_mcp_auto_restart` delegates here so the precedence is single-sourced.
-/// Recovery is on by default; opt out via `GROK_MCP_AUTO_RESTART=false`, `[features] mcp_auto_restart`, or `requirements.toml`.
+/// Recovery is on by default; opt out via `EZER_MCP_AUTO_RESTART=false`, `[features] mcp_auto_restart`, or `requirements.toml`.
 pub(crate) fn resolve_mcp_auto_restart(
     requirement: Option<bool>,
     cli: Option<bool>,
@@ -2929,7 +2929,7 @@ pub(crate) fn resolve_mcp_auto_restart(
     managed: Option<bool>,
     feature_flag: Option<bool>,
 ) -> Resolved<bool> {
-    BoolFlag::env("GROK_MCP_AUTO_RESTART")
+    BoolFlag::env("EZER_MCP_AUTO_RESTART")
         .requirement(requirement)
         .cli(cli)
         .config(config)
@@ -2939,7 +2939,7 @@ pub(crate) fn resolve_mcp_auto_restart(
         .resolve()
 }
 /// Kill switch for the transient turn-resubmit arm.
-/// Standard `BoolFlag` precedence; env `GROK_TURN_TRANSIENT_RETRY`; default on.
+/// Standard `BoolFlag` precedence; env `EZER_TURN_TRANSIENT_RETRY`; default on.
 pub(crate) fn resolve_turn_transient_retry(
     requirement: Option<bool>,
     cli: Option<bool>,
@@ -2947,7 +2947,7 @@ pub(crate) fn resolve_turn_transient_retry(
     managed: Option<bool>,
     feature_flag: Option<bool>,
 ) -> Resolved<bool> {
-    BoolFlag::env("GROK_TURN_TRANSIENT_RETRY")
+    BoolFlag::env("EZER_TURN_TRANSIENT_RETRY")
         .requirement(requirement)
         .cli(cli)
         .config(config)
@@ -2957,7 +2957,7 @@ pub(crate) fn resolve_turn_transient_retry(
         .resolve()
 }
 /// Canonical resolver for `mcp.push_server_status`.
-/// Stacks the same 7-step `BoolFlag` precedence as [`resolve_mcp_liveness_watchers`]: `requirement > cli > env (GROK_MCP_PUSH_SERVER_STATUS) > config > managed > feature_flag > default (true)`.
+/// Stacks the same 7-step `BoolFlag` precedence as [`resolve_mcp_liveness_watchers`]: `requirement > cli > env (EZER_MCP_PUSH_SERVER_STATUS) > config > managed > feature_flag > default (true)`.
 /// `util::config::resolve_mcp_push_server_status` delegates here so the precedence is single-sourced. The default is `true`: the pager's subscription to `x.ai/mcp/server_status` is wired on by default. The flag exists primarily as a kill switch.
 pub fn resolve_mcp_push_server_status(
     requirement: Option<bool>,
@@ -2966,7 +2966,7 @@ pub fn resolve_mcp_push_server_status(
     managed: Option<bool>,
     feature_flag: Option<bool>,
 ) -> Resolved<bool> {
-    BoolFlag::env("GROK_MCP_PUSH_SERVER_STATUS")
+    BoolFlag::env("EZER_MCP_PUSH_SERVER_STATUS")
         .requirement(requirement)
         .cli(cli)
         .config(config)
@@ -2976,7 +2976,7 @@ pub fn resolve_mcp_push_server_status(
         .resolve()
 }
 /// Canonical resolver for `mcp.recursive_config_watch`.
-/// Stacks the same 7-step `BoolFlag` precedence as [`resolve_mcp_liveness_watchers`]: `requirement > cli > env (GROK_MCP_RECURSIVE_CONFIG_WATCH) > config > managed > feature_flag > default (true)`.
+/// Stacks the same 7-step `BoolFlag` precedence as [`resolve_mcp_liveness_watchers`]: `requirement > cli > env (EZER_MCP_RECURSIVE_CONFIG_WATCH) > config > managed > feature_flag > default (true)`.
 /// `util::config::resolve_mcp_recursive_config_watch` delegates here so the precedence is single-sourced. The default is `true`. It turns the two narrow non-recursive cwd watches on by default. The leader then falls back to the prior behavior: no cwd watches, and user-triggered refresh is the only project-config reload path.
 pub(crate) fn resolve_mcp_recursive_config_watch(
     requirement: Option<bool>,
@@ -2985,7 +2985,7 @@ pub(crate) fn resolve_mcp_recursive_config_watch(
     managed: Option<bool>,
     feature_flag: Option<bool>,
 ) -> Resolved<bool> {
-    BoolFlag::env("GROK_MCP_RECURSIVE_CONFIG_WATCH")
+    BoolFlag::env("EZER_MCP_RECURSIVE_CONFIG_WATCH")
         .requirement(requirement)
         .cli(cli)
         .config(config)
@@ -3089,7 +3089,7 @@ pub(crate) fn is_telemetry_explicitly_disabled_sync() -> bool {
 pub fn is_error_reporting_disabled_sync() -> bool {
     !SyncBoolFlag::new(error_reporting_enabled_from_toml)
         .disable_env("DISABLE_ERROR_REPORTING")
-        .enable_env(|| env_bool("GROK_ERROR_REPORTING"))
+        .enable_env(|| env_bool("EZER_ERROR_REPORTING"))
         .inherit(|| !is_telemetry_disabled_sync())
         .resolve()
 }
@@ -3112,11 +3112,11 @@ fn error_reporting_enabled_from_toml(root: &toml::Value) -> Option<bool> {
         .get("error_reporting")?
         .as_bool()
 }
-/// `GROK_TELEMETRY_ENABLED` resolved through `TelemetryMode::parse` so the extended string forms (e.g. `"session_metrics"`) are accepted.
+/// `EZER_TELEMETRY_ENABLED` resolved through `TelemetryMode::parse` so the extended string forms (e.g. `"session_metrics"`) are accepted.
 fn grok_telemetry_env_enabled() -> Option<bool> {
-    env_telemetry_mode("GROK_TELEMETRY_ENABLED").map(|m| !m.is_disabled())
+    env_telemetry_mode("EZER_TELEMETRY_ENABLED").map(|m| !m.is_disabled())
 }
-/// Load `~/.grok/requirements.toml` standalone so the admin pin can beat
+/// Load `~/.ezer/requirements.toml` standalone so the admin pin can beat
 /// env vars.
 /// The merged config layer can't express that: last-merge-wins loses provenance.
 pub(crate) fn read_requirements_toml() -> Option<toml::Value> {
@@ -3124,13 +3124,13 @@ pub(crate) fn read_requirements_toml() -> Option<toml::Value> {
     let content = std::fs::read_to_string(&path).ok()?;
     toml::from_str(&content).ok()
 }
-/// Resolve the external-OTEL master switch exactly the way the external stream's activation does. **Requirement pin > `GROK_EXTERNAL_OTEL` env > `[telemetry].otel_enabled` config layer (managed config included) > off**.
+/// Resolve the external-OTEL master switch exactly the way the external stream's activation does. **Requirement pin > `EZER_EXTERNAL_OTEL` env > `[telemetry].otel_enabled` config layer (managed config included) > off**.
 /// The internal trace pipeline keys its "ignore `OTEL_EXPORTER_OTLP_*`" behavior off this value ([`EndpointsConfig::external_otel_master_switch`]).
 /// So an org enable distributed via managed config / requirements (no env var) flips **both** sides together. A desync here would leave the internally-authed firehose honoring legacy `OTEL_*` repointing.
 pub(crate) fn external_otel_master_switch_resolved() -> bool {
     external_otel_master_switch_from(
         xai_grok_config::load_merged_requirements().as_ref(),
-        env_bool("GROK_EXTERNAL_OTEL"),
+        env_bool("EZER_EXTERNAL_OTEL"),
         crate::config::load_effective_config().ok().as_ref(),
     )
 }
@@ -3205,7 +3205,7 @@ fn telemetry_otel_file_config(
 }
 /// Resolve the external OTEL stream configuration at process startup. Env and local config only: remote settings are not yet available when tracing init runs.
 /// Layering follows `resolve_telemetry_mode`: **requirement > env > config > remote > default**. The `[telemetry]` `otel_*` keys from the effective config sit under the env vars.
-/// That config already includes managed-config layers distributed by `grok setup`. Requirements pins are applied on top, and the remote layer is restrictive-only and asynchronous ([`apply_external_otel_remote_policy`]).
+/// That config already includes managed-config layers distributed by `ezer setup`. Requirements pins are applied on top, and the remote layer is restrictive-only and asynchronous ([`apply_external_otel_remote_policy`]).
 pub fn resolve_external_otel_config(
     client: xai_grok_telemetry::external::config::ExternalClientInfo,
 ) -> Option<xai_grok_telemetry::external::ExternalOtelConfig> {
@@ -3742,7 +3742,7 @@ pub struct ModelEntryConfig {
     #[serde(default, skip_serializing_if = "is_false")]
     pub use_concise: bool,
     /// The type of system prompt to use for this model.
-    /// e.g. "grok-build", "codex".
+    /// e.g. "ezer-build", "codex".
     #[serde(default = "default_agent_type")]
     pub agent_type: String,
     /// Maximum seconds to wait between SSE chunks during inference streaming. When no chunk is received within this duration, the request fails with a non-retryable `IdleTimeout` error.
@@ -3751,7 +3751,7 @@ pub struct ModelEntryConfig {
     pub inference_idle_timeout_secs: Option<u64>,
     /// Maximum number of retries for transient API errors (429, 500, 502, etc.)
     /// during a single inference request. Default: 5.
-    /// Can also be set via the `GROK_MAX_RETRIES` environment variable.
+    /// Can also be set via the `EZER_MAX_RETRIES` environment variable.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub max_retries: Option<u32>,
     /// Total-attempt ceiling for rate-limited requests.
@@ -4073,7 +4073,7 @@ pub struct ModelInfo {
     pub system_prompt_label: Option<String>,
     /// When true, this model uses concise mode (compact system prompt, concise tool output, concise user message prefix, reduced toolset).
     pub use_concise: bool,
-    /// Always has a value; defaults to `"grok-build-plan"` when the server or user config doesn't specify one.
+    /// Always has a value; defaults to `"ezer-build-plan"` when the server or user config doesn't specify one.
     #[serde(default = "default_agent_type")]
     pub agent_type: String,
     /// Per-chunk idle timeout for inference streaming (see `ModelEntryConfig`).
@@ -4501,7 +4501,7 @@ pub struct Features {
     /// Default: true (index any git repo). Patterns can explicitly match non-git directories.
     #[serde(default)]
     pub codebase_indexing: CodebaseIndexingSetting,
-    /// Show a blocking warning when Grok starts outside a Git repository. Default: false. Used as the local fallback when the `non_git_warning` remote settings flag in `grok_build_settings` is absent.
+    /// Show a blocking warning when ezer starts outside a Git repository. Default: false. Used as the local fallback when the `non_git_warning` remote settings flag in `ezer_build_settings` is absent.
     /// When the remote flag is present it takes precedence: `Some(false)` from remote settings overrides `true` here.
     #[serde(default)]
     pub non_git_warning: bool,
@@ -4519,18 +4519,18 @@ pub struct Features {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub video_gen: Option<bool>,
     /// `image_gen` Imagine model override.
-    /// `None`/empty defers to remote settings (`image_gen_model_override`) / env / default (`grok-imagine-image-quality`).
+    /// `None`/empty defers to remote settings (`image_gen_model_override`) / env / default (`ezer-imagine-image-quality`).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub image_gen_model_override: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub image_edit_model_override: Option<String>,
     /// `summary` | `transcript` | `segments` (default).
-    /// `None` defers to CLI / env (`GROK_COMPACTION_MODE`).
+    /// `None` defers to CLI / env (`EZER_COMPACTION_MODE`).
     /// Parsed via `CompactionMode::parse`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub compaction_mode: Option<String>,
     /// `none` | `minimal` | `balanced` | `verbose` (default).
-    /// `None` defers to env (`GROK_COMPACTION_DETAIL`).
+    /// `None` defers to env (`EZER_COMPACTION_DETAIL`).
     /// The `segments` verbatim detail level.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub compaction_detail: Option<String>,
@@ -4552,10 +4552,10 @@ pub struct Features {
     pub turn_transient_retry: Option<bool>,
     /// Pager-side subscription to the `x.ai/mcp/server_status` push. Not read through this struct. The pager-side gate (`acp_handler::push_server_status_enabled`) uses an **env-only** OnceLock cache.
     /// The `[features]` key itself is honoured out-of-band, re-read from raw TOML in `util::config::resolve::mcp`. This field is declared so `serde_ignored` does not report the key as unrecognized.
-    /// Practical consequence: setting `[features] mcp_push_server_status = false` in `~/.grok/config.toml` will NOT disable the pager's subscription on a freshly-launched process. To disable the pager subscription, set `GROK_MCP_PUSH_SERVER_STATUS=0` in the env before launch.
+    /// Practical consequence: setting `[features] mcp_push_server_status = false` in `~/.ezer/config.toml` will NOT disable the pager's subscription on a freshly-launched process. To disable the pager subscription, set `EZER_MCP_PUSH_SERVER_STATUS=0` in the env before launch.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub mcp_push_server_status: Option<bool>,
-    /// Whether the leader's `ConfigFileWatcher` adds the two narrow non-recursive watches for `<cwd>/` and `<cwd>/.grok/`. The only way to pick up a project-config edit is then the user-triggered refresh button.
+    /// Whether the leader's `ConfigFileWatcher` adds the two narrow non-recursive watches for `<cwd>/` and `<cwd>/.ezer/`. The only way to pick up a project-config edit is then the user-triggered refresh button.
     /// The watches are **always non-recursive**; the name follows the convention for the rollout-gate flag. The name is a documented misnomer: it gates the existence of the **cwd** watches, NOT their recursion mode.
     /// Not read through this struct: the live resolver re-reads the `[features]` key out-of-band from raw TOML in `util::config::resolve::mcp`. Declared so `serde_ignored` does not report it as an unrecognized key.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -4930,10 +4930,11 @@ pub(crate) fn resolve_aux_model_sampling_config(
     None
 }
 
-/// Compiled xAI catalog slugs (`grok-4.6`, …) 402 on free BYOK gateways.
+/// Compiled xAI catalog slugs (`grok-*`) 402 on free BYOK gateways.
 /// Session title / image-describe / similar aux calls should use the active model instead.
 pub(crate) fn is_compiled_xai_catalog_slug(model: &str) -> bool {
-    model.starts_with("grok-")
+    let slug = model.rsplit('.').next().unwrap_or(model);
+    slug.starts_with("grok-")
 }
 
 /// Prefer the active session sampler when an aux resolve would send a compiled
@@ -4977,7 +4978,7 @@ pub(crate) fn stamp_session_local_sampler_fields(
 }
 /// Finalize the image-describe model and sampler config for user attachments. Shared so the aux resolve happy path and the `None` fallback cannot diverge between those entry points.
 /// On aux resolve `Some`, stamp session-local fields onto the helper config. On `None`, fall back to the active session model and full config.
-/// That avoids forcing `image_description_model` onto the agent endpoint, which 404s on BYOK / non-proxy routes for internal slugs like `grok-build`.
+/// That avoids forcing `image_description_model` onto the agent endpoint, which 404s on BYOK / non-proxy routes for internal slugs like `ezer-build`.
 pub(crate) fn finalize_image_describe_sampler_config(
     resolved_aux: Option<SamplerConfig>,
     active_session_config: &SamplerConfig,

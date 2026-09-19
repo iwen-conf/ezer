@@ -276,12 +276,12 @@ impl AuthManager {
                 "grok_home": grok_home.display().to_string(),
                 "HOME": std::env::var("HOME").unwrap_or_else(|_| "(unset)".into()),
                 "GROK_HOME": std::env::var("GROK_HOME").unwrap_or_else(|_| "(unset)".into()),
-                "GROK_AUTH_PATH": std::env::var("GROK_AUTH_PATH").unwrap_or_else(|_| "(unset)".into()),
-                "GROK_AUTH": std::env::var("GROK_AUTH").map(|_| "(set)".to_string()).unwrap_or_else(|_| "(unset)".into()),
+                "EZER_AUTH_PATH": std::env::var("EZER_AUTH_PATH").unwrap_or_else(|_| "(unset)".into()),
+                "EZER_AUTH": std::env::var("EZER_AUTH").map(|_| "(set)".to_string()).unwrap_or_else(|_| "(unset)".into()),
             })),
         );
         let path = auth_json_path(grok_home);
-        if let Ok(inline_json) = std::env::var("GROK_AUTH") {
+        if let Ok(inline_json) = std::env::var("EZER_AUTH") {
             if let Ok(auth) = serde_json::from_str::<GrokAuth>(&inline_json) {
                 return Self::assemble(
                     Some(auth),
@@ -292,7 +292,7 @@ impl AuthManager {
                     None,
                 );
             }
-            tracing::warn!("GROK_AUTH set but failed to parse as JSON, falling back to file");
+            tracing::warn!("EZER_AUTH set but failed to parse as JSON, falling back to file");
         }
         let (auth, auth_read_detail, initial_disk_state) = match read_auth_json(&path) {
             Ok(map) => {
@@ -375,7 +375,7 @@ impl AuthManager {
         let _ = write_auth_json(path, &cleaned);
         tracing::debug!("auth: removed stale WebLogin scope from auth.json");
     }
-    /// Single field-assembly point for [`Self::new`]'s two construction paths (inline `GROK_AUTH` vs. on-disk `auth.json`), which differ only in the threaded fields. One literal means a newly added field can't be silently dropped from one branch.
+    /// Single field-assembly point for [`Self::new`]'s two construction paths (inline `EZER_AUTH` vs. on-disk `auth.json`), which differ only in the threaded fields. One literal means a newly added field can't be silently dropped from one branch.
     fn assemble(
         inner: Option<GrokAuth>,
         path: PathBuf,
@@ -853,7 +853,7 @@ impl AuthManager {
     pub(crate) async fn enrich_auth_inline(&self, auth: &mut GrokAuth) {
         enrichment::enrich_inline(self, auth).await;
     }
-    /// Path to the `auth.json` this manager reads/writes (respects `GROK_AUTH_PATH` / constructor home).
+    /// Path to the `auth.json` this manager reads/writes (respects `EZER_AUTH_PATH` / constructor home).
     /// Prefer this over `grok_home()/auth.json` so temp-home tests and custom stores stay isolated.
     pub fn auth_json_path(&self) -> &Path {
         &self.path

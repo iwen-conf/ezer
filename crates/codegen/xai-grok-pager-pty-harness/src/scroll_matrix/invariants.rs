@@ -1,4 +1,4 @@
-//! The invariant suite: predicates over grouped `GROK_SCROLL_LOG` streams.
+//! The invariant suite: predicates over grouped `EZER_SCROLL_LOG` streams.
 //!
 //! Stall-safety: every timing predicate reads the RECORDER's clock (`ts_ms`, `ms_since_prev_flush`, `avg_interval_ms`), never the test process's.
 //! CI load can stretch host-side gesture delays but can only ever *widen* the producer-measured spacings.

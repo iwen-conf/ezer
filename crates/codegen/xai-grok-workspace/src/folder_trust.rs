@@ -4,7 +4,7 @@
 //! workspace for trust-sensitive configs (code-exec configs and project
 //! instructions/skills), resolves the pure trust [`decide`] precedence, prompts
 //! (MVP stderr), and reads/writes the durable [`crate::trust::TrustStore`]
-//! (`~/.grok/trusted_folders.toml`). The consume/gating half (the `DECISIONS`
+//! (`~/.ezer/trusted_folders.toml`). The consume/gating half (the `DECISIONS`
 //! cache, `resolve_and_record`, `project_scope_allowed`, the loader filters)
 //! lives in `xai-grok-shell`.
 //!
@@ -108,13 +108,13 @@ pub fn decide_inputs_with_interactive(
     }
 }
 
-/// Whether the whole folder-trust system is inert (auto-trusts everything) for this binary: true on a local/dev build (no `GROK_VERSION` stamp).
-/// Every trust auto-grant site calls this; when true grok never prompts, never gates repo-local configs, and does no `trusted_folders.toml` I/O.
+/// Whether the whole folder-trust system is inert (auto-trusts everything) for this binary: true on a local/dev build (no `EZER_VERSION` stamp).
+/// Every trust auto-grant site calls this; when true ezer never prompts, never gates repo-local configs, and does no `trusted_folders.toml` I/O.
 pub fn folder_trust_inert() -> bool {
     is_local_build()
 }
 
-/// Whether this binary was built without a release version stamp (`GROK_VERSION` unset at compile time), i.e. a local/dev build.
+/// Whether this binary was built without a release version stamp (`EZER_VERSION` unset at compile time), i.e. a local/dev build.
 /// Kept local rather than in `xai-grok-version`: adding a symbol to that near-universal crate widens the rebuild/test fan-out for unrelated targets.
 /// `option_env!` resolves the same in any crate. Cross-crate callers use [`folder_trust_inert`].
 fn is_local_build() -> bool {
@@ -123,10 +123,10 @@ fn is_local_build() -> bool {
     if std::env::var(xai_grok_version::TEST_VERSION_ENV).is_ok() {
         return false;
     }
-    option_env!("GROK_VERSION").is_none()
+    option_env!("EZER_VERSION").is_none()
 }
 
-/// Whether the folder-trust gate is enabled. Off on a local/dev build with no release stamp: a self-built grok auto-trusts.
+/// Whether the folder-trust gate is enabled. Off on a local/dev build with no release stamp: a self-built ezer auto-trusts.
 /// On a stamped build: env > user config > managed > remote > default true. Remote kill-switch or user opt-out turns it off.
 pub fn feature_enabled(remote: Option<&RemoteSettings>) -> bool {
     feature_enabled_for_build(remote, is_local_build())
@@ -144,7 +144,7 @@ fn feature_enabled_for_build(remote: Option<&RemoteSettings>, is_local_build: bo
     }
     let user = xai_grok_config::load_from_disk().ok();
     let managed = xai_grok_config::load_managed_config().ok();
-    BoolFlag::env("GROK_FOLDER_TRUST")
+    BoolFlag::env("EZER_FOLDER_TRUST")
         .config(from_toml(user.as_ref()))
         .managed(from_toml(managed.as_ref()))
         .feature_flag(remote.and_then(|r| r.folder_trust_enabled))
@@ -194,17 +194,17 @@ impl fmt::Display for GrantRefuse {
             Self::NoHome => write!(
                 f,
                 "Couldn't save folder trust: no home directory for the trust store. \
-                 Set GROK_HOME to an absolute directory (or unset it), then start Grok again."
+                 Set GROK_HOME to an absolute directory (or unset it), then start ezer again."
             ),
             Self::Unreadable => write!(
                 f,
                 "Couldn't save folder trust: the trust store could not be read. \
-                 Fix or delete ~/.grok/trusted_folders.toml, then start Grok again and press y."
+                 Fix or delete ~/.ezer/trusted_folders.toml, then start ezer again and press y."
             ),
             Self::KeyMoved => write!(
                 f,
                 "Couldn't save folder trust: the folder path changed. \
-                 Start Grok again from the folder you want to trust."
+                 Start ezer again from the folder you want to trust."
             ),
         }
     }
@@ -245,8 +245,8 @@ impl fmt::Display for GrantOutcome {
                 ..
             } => write!(
                 f,
-                "Couldn't save folder trust. Check that ~/.grok is writable, \
-                 then run `grok --trust` in this folder."
+                "Couldn't save folder trust. Check that ~/.ezer is writable, \
+                 then run `ezer --trust` in this folder."
             ),
             Self::Refused { reason } => write!(f, "{reason}"),
             Self::Granted { .. } | Self::AlreadyDurable { .. } => {
@@ -468,7 +468,7 @@ pub fn repo_config_kinds(cwd: &Path) -> Vec<&'static str> {
     collect_repo_config_kinds(cwd, false)
 }
 
-/// Whether a project `.grok/config.toml` `[permission]` value would contribute rules to the permission resolver.
+/// Whether a project `.ezer/config.toml` `[permission]` value would contribute rules to the permission resolver.
 /// Mirrors the shapes `permission::resolution` loads: non-empty `allow`/`deny`/`ask` arrays, or a non-empty verbose `rules` array.
 /// Empty arrays and empty tables do not gate (same as an empty `[mcp_servers]` or `[plugins].paths`).
 fn config_toml_permission_contributes(permission_value: &TomlValue) -> bool {
@@ -555,7 +555,7 @@ fn collect_repo_config_kinds(cwd: &Path, first_only: bool) -> Vec<&'static str> 
         }
     }
     // Project `.grok/lsp.json`.
-    if cwd.join(".grok").join("lsp.json").is_file() {
+    if cwd.join(".ezer").join("lsp.json").is_file() {
         hit!("lsp");
     }
     // Project `.cursor/mcp.json`: vendor MCP loading is default-on and tagged `Project`, so a repo shipping ONLY this file must still be gated
@@ -577,7 +577,7 @@ fn collect_repo_config_kinds(cwd: &Path, first_only: bool) -> Vec<&'static str> 
     // must not resolve trusted. Presence is type-agnostic: a directory or
     // symlink at a vendor hook path must gate too.
     let hook_root = chain.git_root.as_deref().unwrap_or(cwd);
-    if crate::util::path_present_or_uncertain(&hook_root.join(".grok").join("hooks"))
+    if crate::util::path_present_or_uncertain(&hook_root.join(".ezer").join("hooks"))
         || crate::util::path_present_or_uncertain(&hook_root.join(".cursor").join("hooks.json"))
     {
         hit!("hooks");
@@ -595,14 +595,14 @@ fn collect_repo_config_kinds(cwd: &Path, first_only: bool) -> Vec<&'static str> 
         hit!("agents");
     }
     // Presence matches exact-cwd discovery without parsing repository content.
-    let grok = cwd.join(".grok");
+    let grok = cwd.join(".ezer");
     if directory_present_or_uncertain(&grok.join("roles")) {
         hit!("roles");
     }
     if directory_present_or_uncertain(&grok.join("personas")) {
         hit!("personas");
     }
-    if directory_present_or_uncertain(&hook_root.join(".grok").join("workflows")) {
+    if directory_present_or_uncertain(&hook_root.join(".ezer").join("workflows")) {
         hit!("workflows");
     }
     if xai_grok_agent::prompt::agents_md::has_project_instruction_markers_in(
@@ -656,7 +656,7 @@ pub fn prompt_for_trust(key: &Path) -> bool {
     let _ = writeln!(
         err,
         "This folder contains repo-local config (MCP/LSP servers, hooks, permission rules) \
-         or project instructions/skills that Grok would otherwise apply automatically."
+         or project instructions/skills that ezer would otherwise apply automatically."
     );
     let _ = writeln!(err, "  Folder: {}", key.display());
     let _ = write!(
@@ -763,7 +763,7 @@ mod tests {
     #[test]
     fn repo_configs_present_detects_grok_config_mcp_servers() {
         let tmp = repo_tmp();
-        let grok = tmp.path().join(".grok");
+        let grok = tmp.path().join(".ezer");
         std::fs::create_dir_all(&grok).unwrap();
         std::fs::write(grok.join("config.toml"), "[mcp_servers.x]\ncommand=\"y\"\n").unwrap();
         assert!(repo_configs_present(tmp.path()));
@@ -772,7 +772,7 @@ mod tests {
     #[test]
     fn repo_configs_present_detects_grok_lsp_json() {
         let tmp = repo_tmp();
-        let grok = tmp.path().join(".grok");
+        let grok = tmp.path().join(".ezer");
         std::fs::create_dir_all(&grok).unwrap();
         std::fs::write(grok.join("lsp.json"), "{}").unwrap();
         assert!(repo_configs_present(tmp.path()));
@@ -808,7 +808,7 @@ mod tests {
     #[test]
     fn repo_configs_present_detects_project_rules_from_subdir() {
         let tmp = repo_tmp();
-        let rules = tmp.path().join(".grok").join("rules");
+        let rules = tmp.path().join(".ezer").join("rules");
         std::fs::create_dir_all(&rules).unwrap();
         std::fs::write(rules.join("style.md"), "# style\n").unwrap();
         let subdir = tmp.path().join("crates").join("inner");
@@ -818,7 +818,7 @@ mod tests {
 
     #[test]
     fn repo_configs_present_detects_empty_skill_roots_only_in_project_chain() {
-        for config in [".grok", ".agents", ".claude", ".cursor"] {
+        for config in [".ezer", ".agents", ".claude", ".cursor"] {
             for leaf in ["skills", "commands"] {
                 let tmp = repo_tmp();
                 let repo = tmp.path().join("repo");
@@ -853,7 +853,7 @@ mod tests {
         // A `.grok/agents`-only clone must be gated
         // A project agent definition can carry an inline `hooks:` block (code-exec) and can shadow a built-in subagent by name
         let tmp = repo_tmp();
-        std::fs::create_dir_all(tmp.path().join(".grok").join("agents")).unwrap();
+        std::fs::create_dir_all(tmp.path().join(".ezer").join("agents")).unwrap();
         assert!(repo_configs_present(tmp.path()));
     }
 
@@ -870,7 +870,7 @@ mod tests {
         // Agents live at the git root but the session is launched from a subdir
         // Detection walks from cwd to the git root exactly like agent discovery, so it must still fire (a cwd-only probe would miss it)
         let tmp = repo_tmp();
-        std::fs::create_dir_all(tmp.path().join(".grok").join("agents")).unwrap();
+        std::fs::create_dir_all(tmp.path().join(".ezer").join("agents")).unwrap();
         let subdir = tmp.path().join("crates").join("inner");
         std::fs::create_dir_all(&subdir).unwrap();
         assert!(repo_configs_present(&subdir));
@@ -879,7 +879,7 @@ mod tests {
     #[test]
     fn repo_configs_present_detects_project_roles() {
         let tmp = repo_tmp();
-        std::fs::create_dir_all(tmp.path().join(".grok").join("roles")).unwrap();
+        std::fs::create_dir_all(tmp.path().join(".ezer").join("roles")).unwrap();
 
         assert!(repo_configs_present(tmp.path()));
         assert!(repo_config_kinds(tmp.path()).contains(&"roles"));
@@ -888,7 +888,7 @@ mod tests {
     #[test]
     fn repo_configs_present_detects_project_personas() {
         let tmp = repo_tmp();
-        std::fs::create_dir_all(tmp.path().join(".grok").join("personas")).unwrap();
+        std::fs::create_dir_all(tmp.path().join(".ezer").join("personas")).unwrap();
 
         assert!(repo_configs_present(tmp.path()));
         assert!(repo_config_kinds(tmp.path()).contains(&"personas"));
@@ -897,7 +897,7 @@ mod tests {
     #[test]
     fn project_subagent_marker_regular_file_is_absent() {
         let tmp = repo_tmp();
-        let grok = tmp.path().join(".grok");
+        let grok = tmp.path().join(".ezer");
         std::fs::create_dir_all(&grok).unwrap();
         std::fs::write(grok.join("roles"), "not a directory").unwrap();
         assert!(!repo_configs_present(tmp.path()));
@@ -906,7 +906,7 @@ mod tests {
     #[test]
     fn project_subagent_marker_at_repo_root_is_absent_from_subdir() {
         let tmp = repo_tmp();
-        std::fs::create_dir_all(tmp.path().join(".grok/roles")).unwrap();
+        std::fs::create_dir_all(tmp.path().join(".ezer/roles")).unwrap();
         let subdir = tmp.path().join("nested");
         std::fs::create_dir_all(&subdir).unwrap();
         assert!(!repo_configs_present(&subdir));
@@ -917,7 +917,7 @@ mod tests {
     fn project_subagent_marker_symlink_to_directory_is_present() {
         let tmp = repo_tmp();
         let target = tmp.path().join("target-roles");
-        let grok = tmp.path().join(".grok");
+        let grok = tmp.path().join(".ezer");
         std::fs::create_dir_all(&target).unwrap();
         std::fs::create_dir_all(&grok).unwrap();
         std::os::unix::fs::symlink(&target, grok.join("roles")).unwrap();
@@ -928,7 +928,7 @@ mod tests {
     #[test]
     fn dangling_project_subagent_marker_is_absent() {
         let tmp = repo_tmp();
-        let grok = tmp.path().join(".grok");
+        let grok = tmp.path().join(".ezer");
         std::fs::create_dir_all(&grok).unwrap();
         std::os::unix::fs::symlink("missing", grok.join("personas")).unwrap();
         assert!(!repo_configs_present(tmp.path()));
@@ -937,7 +937,7 @@ mod tests {
     #[test]
     fn repo_configs_present_detects_project_workflows_from_subdir() {
         let tmp = repo_tmp();
-        std::fs::create_dir_all(tmp.path().join(".grok").join("workflows")).unwrap();
+        std::fs::create_dir_all(tmp.path().join(".ezer").join("workflows")).unwrap();
         let subdir = tmp.path().join("crates").join("inner");
         std::fs::create_dir_all(&subdir).unwrap();
         assert!(repo_configs_present(&subdir));
@@ -968,16 +968,16 @@ mod tests {
     fn repo_configs_present_detects_project_hooks() {
         // A hooks-only repo (no MCP/LSP configs) must still be gated, so its project hooks don't run ungated when the folder is untrusted
         let tmp = repo_tmp();
-        std::fs::create_dir_all(tmp.path().join(".grok").join("hooks")).unwrap();
+        std::fs::create_dir_all(tmp.path().join(".ezer").join("hooks")).unwrap();
         assert!(repo_configs_present(tmp.path()));
     }
 
     #[test]
     fn repo_configs_present_detects_project_hooks_file() {
         let tmp = repo_tmp();
-        let grok = tmp.path().join(".grok");
-        std::fs::create_dir_all(&grok).unwrap();
-        std::fs::write(grok.join("hooks"), "{}").unwrap();
+        let ezer = tmp.path().join(".ezer");
+        std::fs::create_dir_all(&ezer).unwrap();
+        std::fs::write(ezer.join("hooks"), "{}").unwrap();
 
         assert!(repo_configs_present(tmp.path()));
         assert!(repo_config_kinds(tmp.path()).contains(&"hooks"));
@@ -995,9 +995,9 @@ mod tests {
     #[test]
     fn repo_configs_present_detects_dangling_project_hooks_symlink() {
         let tmp = repo_tmp();
-        let grok = tmp.path().join(".grok");
-        std::fs::create_dir_all(&grok).unwrap();
-        std::os::unix::fs::symlink("missing-hooks", grok.join("hooks")).unwrap();
+        let ezer = tmp.path().join(".ezer");
+        std::fs::create_dir_all(&ezer).unwrap();
+        std::os::unix::fs::symlink("missing-hooks", ezer.join("hooks")).unwrap();
 
         assert!(repo_configs_present(tmp.path()));
         assert!(repo_config_kinds(tmp.path()).contains(&"hooks"));
@@ -1008,7 +1008,7 @@ mod tests {
         // Hooks live at the git root but the session is launched from a subdir
         // The gate must still fire because discovery resolves hooks from the root
         let tmp = repo_tmp();
-        std::fs::create_dir_all(tmp.path().join(".grok").join("hooks")).unwrap();
+        std::fs::create_dir_all(tmp.path().join(".ezer").join("hooks")).unwrap();
         let subdir = tmp.path().join("crates").join("inner");
         std::fs::create_dir_all(&subdir).unwrap();
         assert!(repo_configs_present(&subdir));
@@ -1019,7 +1019,7 @@ mod tests {
         // A plugin-only repo (no MCP/LSP/hooks configs) must still be gated
         // Otherwise a project plugin's hooks/MCP would run ungated when the folder is untrusted
         let tmp = repo_tmp();
-        std::fs::create_dir_all(tmp.path().join(".grok").join("plugins").join("x")).unwrap();
+        std::fs::create_dir_all(tmp.path().join(".ezer").join("plugins").join("x")).unwrap();
         assert!(repo_configs_present(tmp.path()));
     }
 
@@ -1029,7 +1029,7 @@ mod tests {
         // Detection walks from cwd to the git root exactly like discover_plugins, so a subdir-only plugin is not a fail-open hole
         let tmp = repo_tmp();
         let subdir = tmp.path().join("packages").join("foo");
-        std::fs::create_dir_all(subdir.join(".grok").join("plugins").join("evil")).unwrap();
+        std::fs::create_dir_all(subdir.join(".ezer").join("plugins").join("evil")).unwrap();
         assert!(repo_configs_present(&subdir));
     }
 
@@ -1037,9 +1037,9 @@ mod tests {
     fn repo_configs_present_false_for_empty_mcp_servers_table() {
         // A project config whose `[mcp_servers]` table is empty has nothing to gate, so it must not trip the gate
         let tmp = repo_tmp();
-        let grok = tmp.path().join(".grok");
-        std::fs::create_dir_all(&grok).unwrap();
-        std::fs::write(grok.join("config.toml"), "[mcp_servers]\n").unwrap();
+        let ezer = tmp.path().join(".ezer");
+        std::fs::create_dir_all(&ezer).unwrap();
+        std::fs::write(ezer.join("config.toml"), "[mcp_servers]\n").unwrap();
         assert!(!repo_configs_present(tmp.path()));
     }
 
@@ -1048,9 +1048,9 @@ mod tests {
         // A repo whose ONLY repo-local config is `[plugins].paths` (no plugin dir, no MCP/LSP/hooks) must still be gated
         // Those paths load as auto-trusted ConfigPath plugins, so an ungated clone is a live RCE
         let tmp = repo_tmp();
-        let grok = tmp.path().join(".grok");
-        std::fs::create_dir_all(&grok).unwrap();
-        std::fs::write(grok.join("config.toml"), "[plugins]\npaths = [\"./x\"]\n").unwrap();
+        let ezer = tmp.path().join(".ezer");
+        std::fs::create_dir_all(&ezer).unwrap();
+        std::fs::write(ezer.join("config.toml"), "[plugins]\npaths = [\"./x\"]\n").unwrap();
         assert!(repo_configs_present(tmp.path()));
     }
 
@@ -1058,9 +1058,9 @@ mod tests {
     fn repo_configs_present_false_for_empty_plugins_paths() {
         // An empty `[plugins].paths` (or a `[plugins]` table without `paths`) contributes no plugin code-exec, so it must not trip the gate
         let tmp = repo_tmp();
-        let grok = tmp.path().join(".grok");
-        std::fs::create_dir_all(&grok).unwrap();
-        std::fs::write(grok.join("config.toml"), "[plugins]\npaths = []\n").unwrap();
+        let ezer = tmp.path().join(".ezer");
+        std::fs::create_dir_all(&ezer).unwrap();
+        std::fs::write(ezer.join("config.toml"), "[plugins]\npaths = []\n").unwrap();
         assert!(!repo_configs_present(tmp.path()));
     }
 
@@ -1070,10 +1070,10 @@ mod tests {
         // Those allow rules auto-approve tool calls, so an ungated clone loads the attacker's policy
         // Also covers subdir launch (the cwd-to-git-root walk)
         let tmp = repo_tmp();
-        let grok = tmp.path().join(".grok");
-        std::fs::create_dir_all(&grok).unwrap();
+        let ezer = tmp.path().join(".ezer");
+        std::fs::create_dir_all(&ezer).unwrap();
         std::fs::write(
-            grok.join("config.toml"),
+            ezer.join("config.toml"),
             "[permission]\nallow = [\"Bash(*)\"]\n",
         )
         .unwrap();
@@ -1094,10 +1094,10 @@ mod tests {
     fn repo_configs_present_false_for_empty_permission() {
         // Empty allow/deny/ask arrays contribute no rules, so they must not trip the gate (mirrors empty `[mcp_servers]` / empty `[plugins].paths`)
         let tmp = repo_tmp();
-        let grok = tmp.path().join(".grok");
-        std::fs::create_dir_all(&grok).unwrap();
+        let ezer = tmp.path().join(".ezer");
+        std::fs::create_dir_all(&ezer).unwrap();
         std::fs::write(
-            grok.join("config.toml"),
+            ezer.join("config.toml"),
             "[permission]\nallow = []\ndeny = []\n",
         )
         .unwrap();
@@ -1109,9 +1109,9 @@ mod tests {
         // `repo_config_kinds` must agree with the gate, including from a subdir, so the two cannot drift
         // Must report `plugins`, `claude`, and `agents` via their markers
         let tmp = repo_tmp();
-        let grok = tmp.path().join(".grok");
-        std::fs::create_dir_all(grok.join("agents")).unwrap();
-        std::fs::write(grok.join("config.toml"), "[plugins]\npaths = [\"./x\"]\n").unwrap();
+        let ezer = tmp.path().join(".ezer");
+        std::fs::create_dir_all(ezer.join("agents")).unwrap();
+        std::fs::write(ezer.join("config.toml"), "[plugins]\npaths = [\"./x\"]\n").unwrap();
         let claude = tmp.path().join(".claude");
         std::fs::create_dir_all(&claude).unwrap();
         std::fs::write(claude.join("settings.json"), r#"{"env":{"X":"1"}}"#).unwrap();
@@ -1181,7 +1181,7 @@ mod tests {
     #[test]
     fn release_build_keeps_gate_when_enabled() {
         // A release-stamped build honors the remote enable. Isolate config so on-disk or ambient flags cannot override it
-        // Empty `GROK_HOME` and unset `GROK_FOLDER_TRUST`; nextest's process-per-test lets `grok_home()` pick up the temp dir
+        // Empty `GROK_HOME` and unset `EZER_FOLDER_TRUST`; nextest's process-per-test lets `grok_home()` pick up the temp dir
         let _lock = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
         let home = tempfile::tempdir().unwrap();
         let _home = EnvVarGuard::set("GROK_HOME", home.path());
@@ -1202,8 +1202,8 @@ mod tests {
 
     #[test]
     fn local_build_ignores_explicit_env_optin() {
-        // Auto-trust is absolute on a local build: even an explicit GROK_FOLDER_TRUST=1 does NOT enable the feature
-        // A self-built grok therefore never prompts
+        // Auto-trust is absolute on a local build: even an explicit EZER_FOLDER_TRUST=1 does NOT enable the feature
+        // A self-built ezer therefore never prompts
         // GROK_HOME is isolated so on-disk config can't influence it
         let _lock = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
         let home = tempfile::tempdir().unwrap();
@@ -1216,7 +1216,7 @@ mod tests {
     #[test]
     fn release_build_defaults_on() {
         // A release-stamped build with no env/config/managed/remote signal defaults the feature ON
-        // An empty GROK_HOME (no config.toml/managed config) and GROK_FOLDER_TRUST unset leave only the default
+        // An empty GROK_HOME (no config.toml/managed config) and EZER_FOLDER_TRUST unset leave only the default
         let _lock = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
         let home = tempfile::tempdir().unwrap();
         let _home = EnvVarGuard::set("GROK_HOME", home.path());
@@ -1228,12 +1228,12 @@ mod tests {
     #[test]
     fn is_local_build_honors_test_version_override() {
         let _lock = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
-        // A pinned GROK_TEST_VERSION simulates a release build, so it is not a local build
+        // A pinned EZER_TEST_VERSION simulates a release build, so it is not a local build
         {
             let _sim = EnvVarGuard::set(xai_grok_version::TEST_VERSION_ENV, Path::new("0.0.0-sim"));
             assert!(!is_local_build());
         }
-        // With it unset, an unstamped build (no GROK_VERSION) is a local build.
+        // With it unset, an unstamped build (no EZER_VERSION) is a local build.
         // Guard to the unstamped case so a release-stamped test binary (CI release) doesn't spuriously fail this arm
         let _unset = EnvVarGuard::unset(xai_grok_version::TEST_VERSION_ENV);
         if option_env!("GROK_VERSION").is_none() {
@@ -1244,7 +1244,7 @@ mod tests {
     #[test]
     fn store_io_is_noop_on_local_build() {
         // On a local/dev build the feature is inert. Guards use a unique per-repo key so they hold under single-process `cargo test`
-        // Assert only when compiled unstamped. `GROK_HOME` isolated and `ENV_LOCK` held so toggling `GROK_TEST_VERSION` is race-safe
+        // Assert only when compiled unstamped. `GROK_HOME` isolated and `ENV_LOCK` held so toggling `EZER_TEST_VERSION` is race-safe
         let _lock = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
         let home = tempfile::tempdir().unwrap();
         let _home = EnvVarGuard::set("GROK_HOME", home.path());

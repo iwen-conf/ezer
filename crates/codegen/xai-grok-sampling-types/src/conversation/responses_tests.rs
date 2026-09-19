@@ -966,7 +966,7 @@ fn test_btw_cross_api_responses_no_regressions() {
 #[test]
 fn test_transform_cwd_rewrites_reasoning_sibling() {
     // Reasoning siblings are subject to CWD rewriting via `transform_conversation_cwd` (see the `Reasoning(_)` arm)
-    let worktree = "/workspace/.grok/worktrees/project/ab-uuid-a";
+    let worktree = "/workspace/.ezer/worktrees/project/ab-uuid-a";
     let root = "/workspace/project";
 
     let mut items = vec![

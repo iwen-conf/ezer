@@ -14,7 +14,7 @@
 //! That covers the unambiguous hot path (raster advertised, no file-URL type alongside), skipping the ~0.5-0.9 s `osascript` round trip.
 //! Content is only read at an explicit user paste, the same user-intent boundary where the `osascript`/`pbpaste` subprocesses read the pasteboard.
 //! Every other pasteboard shape (file URLs, text-to-furl coercions, AppKit unavailable, read failure) falls back to the subprocess path.
-//! `GROK_CLIPBOARD_NO_NATIVE_READ=1` disables the in-process read entirely (kill switch if a future macOS gates `dataForType:` behind a prompt).
+//! `EZER_CLIPBOARD_NO_NATIVE_READ=1` disables the in-process read entirely (kill switch if a future macOS gates `dataForType:` behind a prompt).
 //!
 //! On Linux and Windows, `arboard` is used directly (it does not link AppKit on those platforms).
 //!
@@ -446,13 +446,13 @@ mod attachments_protocol {
         }
     }
 
-    /// Private 0700 scratch dir for one `osascript` raster hand-off, removed on drop; a path shared by every grok process let a concurrent probe swap the file between write and read.
+    /// Private 0700 scratch dir for one `osascript` raster hand-off, removed on drop; a path shared by every ezer process let a concurrent probe swap the file between write and read.
     pub struct ProbeTemps(tempfile::TempDir);
 
     impl ProbeTemps {
         pub fn new() -> anyhow::Result<Self> {
             let mut builder = tempfile::Builder::new();
-            builder.prefix("grok-clipboard-probe-");
+            builder.prefix("ezer-clipboard-probe-");
             #[cfg(unix)]
             {
                 use std::os::unix::fs::PermissionsExt;
@@ -761,11 +761,11 @@ mod platform {
         Some(advertised)
     }
 
-    /// `None` also when `GROK_CLIPBOARD_NO_NATIVE_READ` is set, the kill switch if a future macOS gates `dataForType:` behind
+    /// `None` also when `EZER_CLIPBOARD_NO_NATIVE_READ` is set, the kill switch if a future macOS gates `dataForType:` behind
     /// a privacy prompt. The focus/tick probes stay metadata-only either way. Thread-safety basis matches
     /// [`general_pasteboard`]: NSPasteboard is not MainThreadOnly, and only `types` and `dataForType:` are messaged.
     pub(super) fn native_image_read() -> Option<super::ImageData> {
-        if std::env::var_os("GROK_CLIPBOARD_NO_NATIVE_READ").is_some() {
+        if std::env::var_os("EZER_CLIPBOARD_NO_NATIVE_READ").is_some() {
             return None;
         }
         let _guard = PASTEBOARD_LOCK.lock();
@@ -1058,16 +1058,16 @@ mod platform {
         rx.recv_timeout(deadline)
     }
 
-    /// Memoized read of the `GROK_CLIPBOARD_NO_DATA_CONTROL` kill switch.
+    /// Memoized read of the `EZER_CLIPBOARD_NO_DATA_CONTROL` kill switch.
     /// Both gates (the data-control probe and the arboard bypass) read this one site, so they can never drift apart.
     #[cfg(target_os = "linux")]
     fn data_control_kill_switch_set() -> bool {
         static SET: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
-        *SET.get_or_init(|| std::env::var_os("GROK_CLIPBOARD_NO_DATA_CONTROL").is_some())
+        *SET.get_or_init(|| std::env::var_os("EZER_CLIPBOARD_NO_DATA_CONTROL").is_some())
     }
 
     /// True when the arboard leg must be skipped entirely, so copies and pastes ride the CLI tools instead.
-    /// On Wayland the `GROK_CLIPBOARD_NO_DATA_CONTROL` kill switch has to stop arboard from speaking data-control at all.
+    /// On Wayland the `EZER_CLIPBOARD_NO_DATA_CONTROL` kill switch has to stop arboard from speaking data-control at all.
     /// There is no way to force arboard off that backend: it picks data-control on its own whenever `WAYLAND_DISPLAY` is set.
     fn arboard_wayland_bypassed() -> bool {
         #[cfg(target_os = "linux")]
@@ -1093,7 +1093,7 @@ mod platform {
         LEASE
             .get_or_init(|| {
                 if arboard_wayland_bypassed() {
-                    tracing::debug!("arboard leg disabled (GROK_CLIPBOARD_NO_DATA_CONTROL)");
+                    tracing::debug!("arboard leg disabled (EZER_CLIPBOARD_NO_DATA_CONTROL)");
                     return None;
                 }
                 match spawn_with_deadline(
@@ -1126,7 +1126,7 @@ mod platform {
     ) -> anyhow::Result<T> {
         use std::sync::mpsc::RecvTimeoutError;
         if arboard_wayland_bypassed() {
-            anyhow::bail!("arboard leg disabled (GROK_CLIPBOARD_NO_DATA_CONTROL)");
+            anyhow::bail!("arboard leg disabled (EZER_CLIPBOARD_NO_DATA_CONTROL)");
         }
         let result = spawn_with_deadline("clipboard-read", ARBOARD_READ_WAIT, move || {
             arboard::Clipboard::new()

@@ -252,7 +252,7 @@ fn plan_file_backfills_none_on_legacy_snapshot() {
 }
 
 /// The fixed length is part of the public contract: verifier file paths embed it verbatim.
-/// Drift here would silently invalidate the `grok-goal-<12 hex chars>` scratch-root format and the 12-hex restore validation in `from_snapshot`.
+/// Drift here would silently invalidate the `ezer-goal-<12 hex chars>` scratch-root format and the 12-hex restore validation in `from_snapshot`.
 #[test]
 fn generate_verifier_id_is_short_hex_and_unique() {
     let a = generate_verifier_id();
@@ -1742,17 +1742,17 @@ fn terminal_transitions_clear_plan_baseline_file() {
 #[test]
 fn scratch_path_helpers_derive_pinned_layout() {
     let root = goal_scratch_root("vid123");
-    assert_eq!(root, std::env::temp_dir().join("grok-goal-vid123"));
+    assert_eq!(root, std::env::temp_dir().join("ezer-goal-vid123"));
     assert_eq!(
         implementer_scratch_dir("vid123"),
         std::env::temp_dir()
-            .join("grok-goal-vid123")
+            .join("ezer-goal-vid123")
             .join("implementer"),
     );
     assert_eq!(
         skeptic_scratch_dir("vid123", 2),
         std::env::temp_dir()
-            .join("grok-goal-vid123")
+            .join("ezer-goal-vid123")
             .join("skeptic-2"),
     );
 }

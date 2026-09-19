@@ -491,7 +491,7 @@ pub enum RekeyOutcome {
 pub enum SchemaState {
     /// The file is at this build's schema version; all operations work.
     Current,
-    /// The file was written by a newer grok.
+    /// The file was written by a newer ezer.
     /// Reads remain available while its schema is read-compatible; every write returns [`StoreError::NewerSchema`].
     NewerReadOnly { user_version: u32 },
 }

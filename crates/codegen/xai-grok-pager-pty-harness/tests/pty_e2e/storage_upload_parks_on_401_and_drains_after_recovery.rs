@@ -22,9 +22,9 @@ async fn storage_upload_parks_on_401_and_drains_after_recovery() {
     // Disable only the fake API-key credential so the seeded OAuth entry stays active
     let overrides = [
         oauth_credential_ops()[0],
-        EnvOp::set("GROK_TRACE_UPLOAD", "true"),
-        EnvOp::set("GROK_TELEMETRY_TRACE_UPLOAD", "true"),
-        EnvOp::set("GROK_UPLOAD_QUEUE_AUTH_PROBE_SECS", "2"),
+        EnvOp::set("EZER_TRACE_UPLOAD", "true"),
+        EnvOp::set("EZER_TELEMETRY_TRACE_UPLOAD", "true"),
+        EnvOp::set("EZER_UPLOAD_QUEUE_AUTH_PROBE_SECS", "2"),
     ];
 
     let binary = pager_binary().expect("resolve pager binary");

@@ -152,7 +152,7 @@ fn default_btw_attempts() -> u32 {
 
 // Local feedback persistence types
 
-/// A feedback entry persisted to `~/.grok/sessions/.../feedback.jsonl`.
+/// A feedback entry persisted to `~/.ezer/sessions/.../feedback.jsonl`.
 ///
 /// Uses a tagged enum so different feedback types are self-describing in the JSONL file (currently only `UserFeedback`).
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -237,7 +237,7 @@ pub enum PersistenceMsg {
     SetRemoteAgentId(String),
     CurrentModel {
         model_id: acp::ModelId,
-        /// The active agent definition name (e.g. `"grok-build"`).
+        /// The active agent definition name (e.g. `"ezer-build"`).
         /// Persisted in `summary.agent_name` so session resume doesn't depend on the mutable model catalog.
         agent_name: Option<String>,
         reasoning_effort: Option<Option<ReasoningEffort>>,
@@ -385,7 +385,7 @@ fn session_exists_for_cwd_in_root(session_id: &str, cwd: &str, sessions_root: &P
 
 /// Find the local child session id that was previously restored from `remote_session_id` in the given `cwd`.
 /// When a remote session is restored, a new local child is created with `summary.parent_session_id == remote_session_id`.
-/// On a second `grok -r <remote_id>` in the same cwd, this function returns the already-restored child so no duplicate restore is performed.
+/// On a second `ezer -r <remote_id>` in the same cwd, this function returns the already-restored child so no duplicate restore is performed.
 pub fn find_local_child_for_remote(remote_session_id: &str, cwd: &str) -> Option<String> {
     let sessions_root = crate::util::grok_home::grok_home().join("sessions");
     find_local_child_for_remote_in_root(remote_session_id, cwd, &sessions_root)
@@ -521,7 +521,7 @@ fn find_local_child_for_remote_in_root(
     candidates.into_iter().next().map(|(_, _, id)| id)
 }
 
-/// Searches across ALL cwd directories under `~/.grok/sessions/`.
+/// Searches across ALL cwd directories under `~/.ezer/sessions/`.
 /// Use `session_exists_for_cwd` instead when the target cwd is known to avoid false-positive matches.
 /// Unlike [`resolve_local_session`] which only checks a single CWD, this scans every encoded-CWD subdirectory.
 pub fn resolve_local_session_any_cwd(session_id: &str) -> Option<String> {
@@ -887,7 +887,7 @@ pub fn ensure_owner_only_session_dir(info: &Info) -> std::io::Result<PathBuf> {
     ensure_owner_only_session_dir_in(&grok_home(), info)
 }
 
-/// Inner implementation with an injectable grok home for tests.
+/// Inner implementation with an injectable ezer home for tests.
 fn ensure_owner_only_session_dir_in(grok_home: &Path, info: &Info) -> std::io::Result<PathBuf> {
     ensure_owner_only_session_dir_in_with(
         grok_home,
@@ -921,7 +921,7 @@ fn ensure_owner_only_session_dir_in_with(
     Ok(dir)
 }
 
-/// `session_dir` with an injectable grok home (pure path computation).
+/// `session_dir` with an injectable ezer home (pure path computation).
 fn session_dir_in(grok_home: &Path, info: &Info) -> PathBuf {
     crate::util::grok_home::sessions_cwd_dir_in(grok_home, &info.cwd).join(info.id.to_string())
 }
@@ -933,7 +933,7 @@ pub(crate) fn get_prompt_file_path(info: &Info, prompt_index: usize) -> PathBuf 
     get_prompt_file_path_in(&grok_home(), info, prompt_index)
 }
 
-/// Inner implementation with an injectable grok home for tests.
+/// Inner implementation with an injectable ezer home for tests.
 fn get_prompt_file_path_in(grok_home: &Path, info: &Info, prompt_index: usize) -> PathBuf {
     // Best-effort; failures surface on the prompt-file write itself.
     let _ = ensure_owner_only_session_dir_in(grok_home, info);
@@ -1104,7 +1104,7 @@ pub struct Summary {
     pub head_branch: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub request_id: Option<String>,
-    /// Absolute path to the `.grok` directory, used by reconstruction.
+    /// Absolute path to the `.ezer` directory, used by reconstruction.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub grok_home: Option<String>,
     /// When the session last had content added (user or model messages).
@@ -1149,7 +1149,7 @@ pub struct Summary {
     pub last_recap: Option<String>,
 }
 
-/// `Summary::session_kind` for sessions whose cwd is inside a grok-managed worktree.
+/// `Summary::session_kind` for sessions whose cwd is inside a ezer-managed worktree.
 /// `source_workspace_dir` is only ever set alongside this kind.
 pub(crate) const WORKTREE_SESSION_KIND: &str = "worktree";
 
@@ -1254,7 +1254,7 @@ impl Summary {
         self.num_messages == 0 && self.display_title().trim().is_empty()
     }
 
-    /// Whether this is a one-shot `grok -p` session.
+    /// Whether this is a one-shot `ezer -p` session.
     /// Deliberately not part of [`Self::is_hidden`]: headless sessions stay listable (the picker's Headless page, the search index).
     /// Unstamped summaries (`session_kind` absent) are interactive, including pre-stamp one-shots and remote twins the registry has not classified.
     pub fn is_headless(&self) -> bool {
@@ -2465,7 +2465,7 @@ impl SessionPersistence {
     }
 }
 
-/// Collect MCP server stderr logs from `~/.grok/logs/mcp/` for inclusion in the session archive.
+/// Collect MCP server stderr logs from `~/.ezer/logs/mcp/` for inclusion in the session archive.
 fn collect_mcp_stderr_logs(files: &mut Vec<CopiedSessionFile>) {
     let mcp_log_dir = xai_grok_config::grok_home().join("logs").join("mcp");
     let Ok(entries) = std::fs::read_dir(&mcp_log_dir) else {
@@ -2576,7 +2576,7 @@ fn init_remote_sync(
             let auth_manager = auth_manager.ok_or_else(|| {
                 io::Error::new(
                     io::ErrorKind::PermissionDenied,
-                    "Writeback storage mode requires authentication. Run 'grok login' first.",
+                    "Writeback storage mode requires authentication. Run 'ezer login' first.",
                 )
             })?;
             if let Some(auth) = auth_manager.current_or_expired() {
@@ -2683,7 +2683,7 @@ pub(crate) fn io_error_to_acp(e: &io::Error) -> acp::Error {
 mod io_error_to_acp_tests;
 
 /// Best-effort worktree liveness touch: stamp `last_accessed_at` on the worktree containing this session's cwd.
-/// `grok worktree gc` then expires by last use, not creation time.
+/// `ezer worktree gc` then expires by last use, not creation time.
 /// Lives here (not in a `StorageAdapter`) so every session create/load path shares it regardless of backend.
 fn spawn_worktree_touch(info: &Info) -> tokio::task::JoinHandle<()> {
     let cwd = info.cwd.clone();

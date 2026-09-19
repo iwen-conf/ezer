@@ -1418,7 +1418,7 @@ mod searchable_text_tests {
             b.subagent_type = "explore".into();
             b.persona = Some("scout".into());
             b.role = Some("researcher".into());
-            b.model = Some("grok-test".into());
+            b.model = Some("ezer-test".into());
             b.activity_label = Some("Running: cargo build".into());
         }
         let text = block.searchable_text().expect("subagent text");
@@ -1426,7 +1426,7 @@ mod searchable_text_tests {
         assert!(text.contains("explore"), "got: {text:?}");
         assert!(text.contains("scout"), "got: {text:?}");
         assert!(text.contains("researcher"), "got: {text:?}");
-        assert!(text.contains("grok-test"), "got: {text:?}");
+        assert!(text.contains("ezer-test"), "got: {text:?}");
         assert!(text.contains("Running: cargo build"), "got: {text:?}");
         assert!(text.contains("panicked at assert"), "got: {text:?}");
     }

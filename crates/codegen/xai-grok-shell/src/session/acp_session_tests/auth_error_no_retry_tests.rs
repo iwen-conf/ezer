@@ -879,7 +879,7 @@ async fn proactive_refresh_makes_per_turn_refresh_a_cache_hit() {
 fn model_not_found_error() -> xai_grok_sampler::SamplingErrorInfo {
     xai_grok_sampler::SamplingErrorInfo {
             kind: xai_grok_sampler::SamplingErrorKind::Api,
-            message: "API error (status 404 Not Found): The model grok-build does not exist or your team does not have access".into(),
+            message: "API error (status 404 Not Found): The model ezer-build does not exist or your team does not have access".into(),
             status_code: Some(404),
             is_retryable: false,
             retry_after_secs: None,
@@ -928,19 +928,19 @@ async fn legacy_auth_hint_on_404_model_not_found() {
                 "404 with WebLogin must include deprecation message, got: {msg}"
             );
             assert!(
-                msg.contains("grok update"),
-                "hint must mention `grok update` before re-login, got: {msg}"
+                msg.contains("ezer update"),
+                "hint must mention `ezer update` before re-login, got: {msg}"
             );
             assert!(
-                msg.contains("grok logout"),
-                "hint must mention `grok logout`, got: {msg}"
+                msg.contains("ezer logout"),
+                "hint must mention `ezer logout`, got: {msg}"
             );
             assert!(
-                msg.contains("grok login"),
-                "hint must mention `grok login`, got: {msg}"
+                msg.contains("ezer login"),
+                "hint must mention `ezer login`, got: {msg}"
             );
-            let update_at = msg.find("grok update").expect("grok update");
-            let logout_at = msg.find("grok logout").expect("grok logout");
+            let update_at = msg.find("ezer update").expect("ezer update");
+            let logout_at = msg.find("ezer logout").expect("ezer logout");
             assert!(
                 update_at < logout_at,
                 "update must come before logout, got: {msg}"
@@ -1008,19 +1008,19 @@ async fn legacy_auth_hint_on_401_unauthorized() {
                 "401 with WebLogin must include deprecation message, got: {msg}"
             );
             assert!(
-                msg.contains("grok update"),
-                "hint must mention `grok update` before re-login, got: {msg}"
+                msg.contains("ezer update"),
+                "hint must mention `ezer update` before re-login, got: {msg}"
             );
             assert!(
-                msg.contains("grok logout"),
-                "hint must mention `grok logout`, got: {msg}"
+                msg.contains("ezer logout"),
+                "hint must mention `ezer logout`, got: {msg}"
             );
             assert!(
-                msg.contains("grok login"),
-                "hint must mention `grok login`, got: {msg}"
+                msg.contains("ezer login"),
+                "hint must mention `ezer login`, got: {msg}"
             );
-            let update_at = msg.find("grok update").expect("grok update");
-            let logout_at = msg.find("grok logout").expect("grok logout");
+            let update_at = msg.find("ezer update").expect("ezer update");
+            let logout_at = msg.find("ezer logout").expect("ezer logout");
             assert!(
                 update_at < logout_at,
                 "update must come before logout, got: {msg}"

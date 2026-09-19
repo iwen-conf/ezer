@@ -116,7 +116,7 @@ pub enum IntraCompactionError {
 /// `min_steps_before_compact` remains on [`IntraCompactionConfig`] for every
 /// mode, but is **not** enforced when
 /// [`mode`](IntraCompactionConfig::mode) is
-/// [`IntraCompactionMode::FullReplace`] — that path matches grok-build's
+/// [`IntraCompactionMode::FullReplace`] — that path matches ezer-build's
 /// full-replace trigger (token threshold alone) so a large first-step prompt
 /// can still compact. Partial modes still gate on min steps.
 pub fn should_compact(

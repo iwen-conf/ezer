@@ -424,7 +424,7 @@ mod tests {
             details_file: None,
             session_traces_dir: plan.parent().unwrap(),
             attempt: 2,
-            model_id: "grok-test",
+            model_id: "ezer-test",
             tool_names,
         }
     }

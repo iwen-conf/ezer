@@ -3,7 +3,7 @@
 //! The shared compaction algorithms operate over a sequence of *items*
 //! (turns/messages) without knowing the concrete harness type. The chat
 //! harness implements [`CompactionItem`] for its `GrokTurn`;
-//! grok-build implements it for `xai_grok_sampling_types::ConversationItem`.
+//! ezer-build implements it for `xai_grok_sampling_types::ConversationItem`.
 //!
 //! Keeping the contract minimal is deliberate: the algorithms only need
 //! enough structure to (a) classify roles, (b) read text, and (c) preserve
@@ -19,13 +19,13 @@
 
 /// Harness-agnostic role of a single conversation item.
 ///
-/// This is the common denominator of `GrokRole` (Grok chat) and the
-/// `ConversationItem` variants (grok-build).
+/// This is the common denominator of `GrokRole` (ezer chat) and the
+/// `ConversationItem` variants (ezer-build).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CompactionRole {
     /// System prompt.
     System,
-    /// Developer prompt (Grok chat) — maps to System on harnesses without a
+    /// Developer prompt (ezer chat) — maps to System on harnesses without a
     /// distinct developer role.
     Developer,
     /// A user message.
@@ -51,8 +51,8 @@ pub struct CompactionFileRef {
 /// compaction algorithms.
 ///
 /// Implementors:
-/// - Grok chat: `GrokTurn`
-/// - grok-build: `ConversationItem`
+/// - ezer chat: `GrokTurn`
+/// - ezer-build: `ConversationItem`
 pub trait CompactionItem {
     /// The harness-agnostic role of this item.
     fn role(&self) -> CompactionRole;
@@ -60,7 +60,7 @@ pub trait CompactionItem {
     /// The item's text content, if any. Tool results and assistant tool-only
     /// turns may have no text.
     ///
-    /// Returns an owned `String` because some harnesses (Grok chat's
+    /// Returns an owned `String` because some harnesses (ezer chat's
     /// `GrokTurn`) compute the flattened text on demand rather than storing a
     /// borrowable slice.
     fn text(&self) -> Option<String>;
@@ -75,7 +75,7 @@ pub trait CompactionItem {
     /// `false` for all non-assistant items.
     fn has_tool_requests(&self) -> bool;
 
-    /// Whether this item carries a *prior compaction summary* (Grok chat: a
+    /// Whether this item carries a *prior compaction summary* (ezer chat: a
     /// `Developer` turn with `DeveloperPromptCategory::ConversationCompaction`).
     ///
     /// The basic history filter keeps such items so earlier summaries get
@@ -103,13 +103,13 @@ pub trait CompactionItem {
 /// through generics, never as `dyn`.
 pub trait CompactionItemBuilder: CompactionItem + Clone {
     /// Construct the item that carries a compaction summary back into the
-    /// conversation (Grok chat: a `Developer` turn with category
+    /// conversation (ezer chat: a `Developer` turn with category
     /// `ConversationCompaction`). The result must satisfy
     /// `is_compaction_summary() == true`.
     fn compaction_summary_item(text: String) -> Self;
 
     /// Rebuild this item keeping only user-visible content, dropping tool
-    /// requests/results (Grok chat: keep only `Channel` contents of an
+    /// requests/results (ezer chat: keep only `Channel` contents of an
     /// assistant turn). Returns `None` when nothing visible remains.
     ///
     /// Only meaningful for `Assistant` items; the shared filters never call
@@ -118,7 +118,7 @@ pub trait CompactionItemBuilder: CompactionItem + Clone {
     fn strip_tool_content(&self) -> Option<Self>;
 
     /// Truncate this item's payload for **summarizer input** to roughly
-    /// `max_tokens` (grok-build style: `max_bytes = max_tokens * 4`, prefix
+    /// `max_tokens` (ezer-build style: `max_bytes = max_tokens * 4`, prefix
     /// clip). Used by FullReplace fit for oversized tool results and
     /// emergency tail shrink. Default: clone unchanged.
     ///
@@ -132,18 +132,18 @@ pub trait CompactionItemBuilder: CompactionItem + Clone {
 
 /// Write seam for the full-replace **assembler**
 /// ([`crate::code_compaction::assemble::assemble_compacted_history`]):
-/// constructs the typed harness items that make up grok-build's rebuilt
+/// constructs the typed harness items that make up ezer-build's rebuilt
 /// history.
 ///
 /// This is a sibling of [`CompactionItemBuilder`], not a part of it, on
-/// purpose. `CompactionItemBuilder` is already implemented by Grok chat's
+/// purpose. `CompactionItemBuilder` is already implemented by ezer chat's
 /// `GrokTurn`; adding these constructors to it as required methods would break
-/// that impl. They are also grok-build-specific (Grok chat's tail-keep path
+/// that impl. They are also ezer-build-specific (ezer chat's tail-keep path
 /// has no `user_meta` / `project_instructions` / `system_reminder` carrier
 /// concept), so they live in their own seam that only the full-replace
 /// assembler depends on.
 ///
-/// The grok-build implementor (`ConversationItem`) maps each constructor to the
+/// The ezer-build implementor (`ConversationItem`) maps each constructor to the
 /// matching factory so the `SyntheticReason` tags the replay / spawn-time
 /// idempotence guards rely on are preserved.
 pub trait CompactionItemFactory: Sized {
@@ -160,7 +160,7 @@ pub trait CompactionItemFactory: Sized {
 }
 
 /// Forward [`CompactionItem`] through shared references so the algorithms can
-/// operate over `&[Arc<T>]` (Grok chat stores turns as `Arc<GrokTurn>`).
+/// operate over `&[Arc<T>]` (ezer chat stores turns as `Arc<GrokTurn>`).
 impl<T: CompactionItem + ?Sized> CompactionItem for std::sync::Arc<T> {
     fn role(&self) -> CompactionRole {
         (**self).role()

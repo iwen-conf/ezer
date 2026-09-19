@@ -9,7 +9,7 @@ use crate::terminal::hyperlinks::SchemeFilter;
 /// Outcome of attempting to open a URL in the system browser/handler.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum OpenUrlResult {
-    /// Opener was launched (or `GROK_TEST_OPEN_URL_FILE` recorded the URL).
+    /// Opener was launched (or `EZER_TEST_OPEN_URL_FILE` recorded the URL).
     Opened,
     /// Scheme was rejected by the safety filter.
     RejectedScheme,
@@ -60,7 +60,7 @@ pub fn browser_unavailable_line(url: &str, copied: bool) -> String {
 pub fn open_url(url: &str) -> bool {
     // PTY e2e tests must see the open without launching a real browser
     // When this env var is set, append the URL to the file and skip the OS opener
-    if let Ok(path) = std::env::var("GROK_TEST_OPEN_URL_FILE") {
+    if let Ok(path) = std::env::var("EZER_TEST_OPEN_URL_FILE") {
         use std::io::Write;
         // Report the failed write: swallowing it leaves the PTY test failing with a generic timeout and no clue why
         if let Err(e) = std::fs::OpenOptions::new()
@@ -69,7 +69,7 @@ pub fn open_url(url: &str) -> bool {
             .open(&path)
             .and_then(|mut f| writeln!(f, "{url}"))
         {
-            tracing::warn!(error = %e, path, "GROK_TEST_OPEN_URL_FILE write failed");
+            tracing::warn!(error = %e, path, "EZER_TEST_OPEN_URL_FILE write failed");
             return false;
         }
         return true;
@@ -302,7 +302,7 @@ mod tests {
     #[test]
     fn open_path_command_passes_path_as_a_single_arg() {
         // Path with spaces must be one argument, never shell-interpolated.
-        let path = std::path::Path::new("/tmp/grok session/image 1.jpg");
+        let path = std::path::Path::new("/tmp/ezer session/image 1.jpg");
         let command = build_open_path_command(path);
         let args: Vec<_> = command.get_args().map(|a| a.to_os_string()).collect();
         assert!(args.contains(&path.as_os_str().to_os_string()));
@@ -447,8 +447,8 @@ mod tests {
 
     #[test]
     fn ensure_query_param_appends_when_missing() {
-        let out = ensure_query_param("https://grok.com/supergrok", "referrer", "grok-build");
-        assert_eq!(out, "https://grok.com/supergrok?referrer=grok-build");
+        let out = ensure_query_param("https://grok.com/supergrok", "referrer", "ezer-build");
+        assert_eq!(out, "https://grok.com/supergrok?referrer=ezer-build");
     }
 
     #[test]
@@ -456,7 +456,7 @@ mod tests {
         let out = ensure_query_param(
             "https://grok.com/supergrok?referrer=other",
             "referrer",
-            "grok-build",
+            "ezer-build",
         );
         assert_eq!(out, "https://grok.com/supergrok?referrer=other");
     }
@@ -466,11 +466,11 @@ mod tests {
         let out = ensure_query_param(
             "https://grok.com/supergrok?heavy=1",
             "referrer",
-            "grok-build",
+            "ezer-build",
         );
         assert_eq!(
             out,
-            "https://grok.com/supergrok?heavy=1&referrer=grok-build"
+            "https://grok.com/supergrok?heavy=1&referrer=ezer-build"
         );
     }
 
@@ -478,20 +478,20 @@ mod tests {
     fn ensure_query_param_preserves_fragment() {
         // The current remote settings value uses a hash fragment for client-side routing (`grok.com/#supergrok`)
         // We still want the referrer attached
-        let out = ensure_query_param("https://grok.com/#supergrok", "referrer", "grok-build");
-        assert_eq!(out, "https://grok.com/?referrer=grok-build#supergrok");
+        let out = ensure_query_param("https://grok.com/#supergrok", "referrer", "ezer-build");
+        assert_eq!(out, "https://grok.com/?referrer=ezer-build#supergrok");
     }
 
     #[test]
     fn ensure_query_param_returns_unchanged_on_parse_failure() {
-        let out = ensure_query_param("not a url", "referrer", "grok-build");
+        let out = ensure_query_param("not a url", "referrer", "ezer-build");
         assert_eq!(out, "not a url");
     }
 
     #[test]
     fn ensure_query_param_url_encodes_value() {
-        let out = ensure_query_param("https://grok.com/supergrok", "referrer", "grok build");
-        assert_eq!(out, "https://grok.com/supergrok?referrer=grok+build");
+        let out = ensure_query_param("https://grok.com/supergrok", "referrer", "ezer build");
+        assert_eq!(out, "https://grok.com/supergrok?referrer=ezer+build");
     }
 
     #[test]
@@ -555,7 +555,7 @@ mod tests {
 
     #[test]
     fn browser_unavailable_message_includes_full_url() {
-        let url = "https://grok.com/supergrok?referrer=grok-build";
+        let url = "https://grok.com/supergrok?referrer=ezer-build";
         assert_eq!(
             browser_unavailable_message(url),
             format!("{BROWSER_UNAVAILABLE_NOTICE}:\n{url}")
@@ -564,7 +564,7 @@ mod tests {
 
     #[test]
     fn browser_unavailable_line_is_url_first_single_line() {
-        let url = "https://grok.com/supergrok?referrer=grok-build";
+        let url = "https://grok.com/supergrok?referrer=ezer-build";
         let plain = browser_unavailable_line(url, false);
         assert!(plain.starts_with(url), "{plain}");
         assert!(!plain.contains('\n'), "{plain}");

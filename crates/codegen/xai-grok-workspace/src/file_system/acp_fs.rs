@@ -125,21 +125,21 @@ mod tests {
     #[test]
     fn resolve_path_rewrites_display_to_overlay() {
         let result = test_resolve(
-            "/root/.grok/worktrees/proj/ab-123-b-overlay",
+            "/root/.ezer/worktrees/proj/ab-123-b-overlay",
             Some("/testbed/proj"),
             "/testbed/proj/src/main.rs",
         );
         assert_eq!(
             result,
-            PathBuf::from("/root/.grok/worktrees/proj/ab-123-b-overlay/src/main.rs")
+            PathBuf::from("/root/.ezer/worktrees/proj/ab-123-b-overlay/src/main.rs")
         );
     }
 
     #[test]
     fn resolve_path_passes_through_overlay_path() {
-        let overlay_path = "/root/.grok/worktrees/proj/ab-123-b-overlay/src/main.rs";
+        let overlay_path = "/root/.ezer/worktrees/proj/ab-123-b-overlay/src/main.rs";
         let result = test_resolve(
-            "/root/.grok/worktrees/proj/ab-123-b-overlay",
+            "/root/.ezer/worktrees/proj/ab-123-b-overlay",
             Some("/testbed/proj"),
             overlay_path,
         );
@@ -149,7 +149,7 @@ mod tests {
     #[test]
     fn resolve_path_no_display_cwd_passthrough() {
         let result = test_resolve(
-            "/root/.grok/worktrees/proj/ab-123-b-overlay",
+            "/root/.ezer/worktrees/proj/ab-123-b-overlay",
             None,
             "/testbed/proj/src/main.rs",
         );
@@ -159,7 +159,7 @@ mod tests {
     #[test]
     fn resolve_path_relative_path_passthrough() {
         let result = test_resolve(
-            "/root/.grok/worktrees/proj/ab-123-b-overlay",
+            "/root/.ezer/worktrees/proj/ab-123-b-overlay",
             Some("/testbed/proj"),
             "src/main.rs",
         );

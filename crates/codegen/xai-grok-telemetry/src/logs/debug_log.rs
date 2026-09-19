@@ -1,11 +1,11 @@
 //! Reusable non-blocking file-logging tracing layers for the `--debug` firehose.
 //!
 //! Two install modes, chosen by env precedence (see `resolve_debug_target_inner`):
-//! - PerSession (`GROK_DEBUG_LOG=1`): a routing layer fans each session's
-//!   firehose to `~/.grok/debug/<session_id>.txt` (one file per session), with a
+//! - PerSession (`EZER_DEBUG_LOG=1`): a routing layer fans each session's
+//!   firehose to `~/.ezer/debug/<session_id>.txt` (one file per session), with a
 //!   `<role>-<pid>.txt` catch-all for events fired outside any session span, and
 //!   a `latest.txt` symlink pointing at the most-recently-opened session file.
-//! - SingleFile (explicit path via `GROK_LOG_FILE` or `GROK_DEBUG_LOG=<path>`): one flat `fmt` file, routing bypassed.
+//! - SingleFile (explicit path via `EZER_LOG_FILE` or `EZER_DEBUG_LOG=<path>`): one flat `fmt` file, routing bypassed.
 //!   Disk IO stays off the tracing hot path via `tracing_appender`'s non-blocking writer in both modes.
 
 use std::collections::HashMap;
@@ -34,8 +34,8 @@ pub(crate) enum DebugSource {
 impl DebugSource {
     fn label(self) -> &'static str {
         match self {
-            Self::GrokLogFile => "GROK_LOG_FILE",
-            Self::GrokDebugLog => "GROK_DEBUG_LOG",
+            Self::GrokLogFile => "EZER_LOG_FILE",
+            Self::GrokDebugLog => "EZER_DEBUG_LOG",
         }
     }
 }
@@ -372,18 +372,18 @@ pub fn flush() {
 /// Where the firehose should go, if anywhere.
 #[derive(Debug, PartialEq, Eq)]
 pub(crate) enum DebugTarget {
-    /// `GROK_DEBUG_LOG=1` → route per session into `<dir>` (`~/.grok/debug`).
+    /// `EZER_DEBUG_LOG=1` → route per session into `<dir>` (`~/.ezer/debug`).
     PerSession { dir: PathBuf },
     /// An explicit path writes one flat `fmt` file, routing bypassed.
     SingleFile { path: PathBuf, src: DebugSource },
 }
 
-/// Resolve the debug target, honoring precedence: explicit GROK_LOG_FILE wins (single file, RUST_LOG filter); else
-/// GROK_DEBUG_LOG — a truthy bool routes per session into `~/.grok/debug`, an explicit path writes a single file. Read
+/// Resolve the debug target, honoring precedence: explicit EZER_LOG_FILE wins (single file, RUST_LOG filter); else
+/// EZER_DEBUG_LOG — a truthy bool routes per session into `~/.ezer/debug`, an explicit path writes a single file. Read
 /// via `var_os` (not `var`) so a non-UTF-8 path isn't silently dropped.
 pub(crate) fn resolve_debug_target() -> Option<DebugTarget> {
-    let grok_log_file = std::env::var_os("GROK_LOG_FILE");
-    let grok_debug_log = std::env::var_os("GROK_DEBUG_LOG");
+    let grok_log_file = std::env::var_os("EZER_LOG_FILE");
+    let grok_debug_log = std::env::var_os("EZER_DEBUG_LOG");
     resolve_debug_target_inner(
         grok_log_file.as_deref(),
         grok_debug_log.as_deref(),
@@ -439,7 +439,7 @@ fn resolve_debug_target_inner(
 const LOG_RETENTION: std::time::Duration = std::time::Duration::from_secs(7 * 24 * 60 * 60);
 
 /// Prune `*.txt` firehose files (and orphaned `latest.txt` swap temps) under
-/// `~/.grok/debug` older than [`LOG_RETENTION`] so the dir doesn't grow
+/// `~/.ezer/debug` older than [`LOG_RETENTION`] so the dir doesn't grow
 /// unbounded. Age-based (not count-based) so a still-open log from a concurrent process is never unlinked mid-write; best-effort, ignore errors.
 pub(crate) fn sweep_old_logs() {
     prune_old_logs(&grok_home().join("debug"), LOG_RETENTION);
@@ -526,7 +526,7 @@ mod tests {
             assert!(
                 resolve_debug_target_inner(None, Some(OsStr::new(v)), Path::new("/debug"))
                     .is_none(),
-                "expected None for GROK_DEBUG_LOG={v:?}"
+                "expected None for EZER_DEBUG_LOG={v:?}"
             );
         }
     }
@@ -541,7 +541,7 @@ mod tests {
                 DebugTarget::PerSession {
                     dir: PathBuf::from("/debug")
                 },
-                "expected PerSession for GROK_DEBUG_LOG={v:?}"
+                "expected PerSession for EZER_DEBUG_LOG={v:?}"
             );
         }
     }
@@ -905,7 +905,7 @@ mod tests {
     fn prune_old_logs_missing_dir_is_noop() {
         // Best-effort: a nonexistent debug dir must not panic.
         prune_old_logs(
-            Path::new("/no/such/grok/debug/dir"),
+            Path::new("/no/such/ezer/debug/dir"),
             std::time::Duration::from_secs(1),
         );
     }

@@ -136,7 +136,7 @@ fn build_resource(cfg: &ExternalOtelConfig) -> opentelemetry_sdk::Resource {
         opentelemetry::KeyValue::new("service.version", cfg.client.service_version.clone()),
         opentelemetry::KeyValue::new("client.version", cfg.client.client_version.clone()),
         opentelemetry::KeyValue::new("app.entrypoint", cfg.client.app_entrypoint.clone()),
-        opentelemetry::KeyValue::new("grok_code.schema.version", super::schema::SCHEMA_VERSION),
+        opentelemetry::KeyValue::new("ezer.schema.version", super::schema::SCHEMA_VERSION),
     ];
     // terminal.type: emulator brand (TERM_PROGRAM) or terminfo type (TERM).
     if let Some(terminal_type) = std::env::var("TERM_PROGRAM")
@@ -148,7 +148,7 @@ fn build_resource(cfg: &ExternalOtelConfig) -> opentelemetry_sdk::Resource {
     }
     opentelemetry_sdk::Resource::builder_empty()
         // `grok-cli` is a wire commitment
-        .with_service_name("grok-cli")
+        .with_service_name("ezer-cli")
         .with_attributes(attrs)
         .build()
 }
@@ -726,7 +726,7 @@ mod tests {
     fn cfg_with_headers(headers: Vec<(String, String)>) -> ExternalOtelConfig {
         let mut cfg = ExternalOtelConfig::resolve_with(
             |name| match name {
-                "GROK_EXTERNAL_OTEL" => Some("1".into()),
+                "EZER_EXTERNAL_OTEL" => Some("1".into()),
                 "OTEL_LOGS_EXPORTER" => Some("otlp".into()),
                 _ => None,
             },
@@ -775,7 +775,7 @@ mod tests {
     fn grpc_exporters_build_for_https_endpoints() {
         let cfg = ExternalOtelConfig::resolve_with(
             |name| match name {
-                "GROK_EXTERNAL_OTEL" => Some("1".into()),
+                "EZER_EXTERNAL_OTEL" => Some("1".into()),
                 "OTEL_LOGS_EXPORTER" | "OTEL_METRICS_EXPORTER" => Some("otlp".into()),
                 "OTEL_EXPORTER_OTLP_PROTOCOL" => Some("grpc".into()),
                 // Nothing listens here: gRPC channels connect lazily, so exporter construction must still succeed
@@ -839,7 +839,7 @@ mod tests {
     fn inactive_signal_ca_does_not_disable_http_stream() {
         let cfg = ExternalOtelConfig::resolve_with(
             |name| match name {
-                "GROK_EXTERNAL_OTEL" => Some("1".into()),
+                "EZER_EXTERNAL_OTEL" => Some("1".into()),
                 // Only metrics export; logs are off but carry a broken CA.
                 "OTEL_METRICS_EXPORTER" => Some("otlp".into()),
                 "OTEL_EXPORTER_OTLP_LOGS_CERTIFICATE" => {
@@ -940,7 +940,7 @@ mod tests {
         assert!(err.to_string().contains("CLIENT_KEY"), "{err}");
     }
 
-    /// The DER-to-PEM re-encode used for `GROK_EXTRA_CA_BUNDLE` must produce a bundle other PEM parsers can read back, one block per DER.
+    /// The DER-to-PEM re-encode used for `EZER_EXTRA_CA_BUNDLE` must produce a bundle other PEM parsers can read back, one block per DER.
     #[test]
     fn ders_to_pem_bundle_roundtrips() {
         assert!(ders_to_pem_bundle(&[]).is_none());

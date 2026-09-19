@@ -1,4 +1,4 @@
-//! Compacted-history assembly (grok-build's rebuild structure, generic).
+//! Compacted-history assembly (ezer-build's rebuild structure, generic).
 //!
 //! Moved from `xai-chat-state::compaction_utils::build_compacted_history` and
 //! made generic over a write-side item factory so any harness can assemble
@@ -8,7 +8,7 @@
 //! [SP, UP', AGENTS_MD?, UQ_last?, recent…, summary, reminder?]
 //! ```
 //!
-//! grok-build is the canonical harness. The summary carrier text is built by
+//! ezer-build is the canonical harness. The summary carrier text is built by
 //! [`super::summary::format_compact_summary_content`].
 
 use crate::item::CompactionItemFactory;

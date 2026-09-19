@@ -20,7 +20,7 @@ impl std::str::FromStr for CompactionToolChoice {
     }
 }
 
-pub(crate) const ENV_COMPACTION_TOOL_CHOICE: &str = "GROK_COMPACTION_TOOL_CHOICE";
+pub(crate) const ENV_COMPACTION_TOOL_CHOICE: &str = "EZER_COMPACTION_TOOL_CHOICE";
 
 pub(crate) fn resolve_compaction_tool_choice_from(
     env: Option<&str>,
@@ -33,9 +33,9 @@ pub(crate) fn resolve_compaction_tool_choice_from(
         .unwrap_or_default()
 }
 
-pub(crate) const ENV_AUTO_COMPACT_THRESHOLD_PERCENT: &str = "GROK_AUTO_COMPACT_THRESHOLD_PERCENT";
+pub(crate) const ENV_AUTO_COMPACT_THRESHOLD_PERCENT: &str = "EZER_AUTO_COMPACT_THRESHOLD_PERCENT";
 
-/// Precedence (highest first): env `GROK_AUTO_COMPACT_THRESHOLD_PERCENT` user TOML `[model.<id>].auto_compact_threshold_percent` (`cfg.config_models`, the merge of user and managed `[model.<id>]` sections) user TOML `[session].auto_compact_threshold_percent` remote settings per-model `ModelInfo.auto_compact_threshold_percent` (kept out of `ConfigModelOverride::apply` so the user and remote per-model tiers stay distinct) remote settings global `RemoteSettings.auto_compact_threshold_percent` default `DEFAULT_AUTO_COMPACT_THRESHOLD_PERCENT`
+/// Precedence (highest first): env `EZER_AUTO_COMPACT_THRESHOLD_PERCENT` user TOML `[model.<id>].auto_compact_threshold_percent` (`cfg.config_models`, the merge of user and managed `[model.<id>]` sections) user TOML `[session].auto_compact_threshold_percent` remote settings per-model `ModelInfo.auto_compact_threshold_percent` (kept out of `ConfigModelOverride::apply` so the user and remote per-model tiers stay distinct) remote settings global `RemoteSettings.auto_compact_threshold_percent` default `DEFAULT_AUTO_COMPACT_THRESHOLD_PERCENT`
 pub(crate) fn resolve_auto_compact_threshold_percent(
     cfg: &crate::agent::config::Config,
     model_id: &str,
@@ -95,9 +95,9 @@ pub const DEFAULT_COMPACTION_WALL_CLOCK_BUDGET_SECS: u64 = 300;
 /// Below this, a configured budget is almost certainly a misconfig (fleet success p99 ~181s); logged at `warn`, not clamped.
 const COMPACTION_WALL_CLOCK_BUDGET_WARN_SECS: u64 = 120;
 
-const ENV_COMPACTION_WALL_CLOCK_BUDGET_SECS: &str = "GROK_COMPACTION_WALL_CLOCK_SECS";
+const ENV_COMPACTION_WALL_CLOCK_BUDGET_SECS: &str = "EZER_COMPACTION_WALL_CLOCK_SECS";
 
-/// Precedence: env `GROK_COMPACTION_WALL_CLOCK_SECS`, then remote `RemoteSettings.compaction_wall_clock_budget_secs`, then the client default. `0` **disables** it.
+/// Precedence: env `EZER_COMPACTION_WALL_CLOCK_SECS`, then remote `RemoteSettings.compaction_wall_clock_budget_secs`, then the client default. `0` **disables** it.
 /// Low values are warned, not clamped: any "safe" clamp (e.g. 30s) would itself cut legit compactions, trading one silent failure for another. Ops own the value.
 pub(crate) fn resolve_compaction_wall_clock_budget_secs(gb_global: Option<u64>) -> u64 {
     let from_env = std::env::var(ENV_COMPACTION_WALL_CLOCK_BUDGET_SECS)

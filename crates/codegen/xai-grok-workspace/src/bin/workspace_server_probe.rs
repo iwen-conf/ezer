@@ -10,7 +10,7 @@
 //!
 //! The client connects to the *local* server the workspace-server reaches back to (e.g. `ws://localhost:10030/v1/tools`), using a bearer token.
 //! `servers.list` is scoped per-user on the server, so the bearer must resolve to the same user that owns the session; the
-//! access token from `~/.grok/auth.json` does (same identity).
+//! access token from `~/.ezer/auth.json` does (same identity).
 
 #![deny(clippy::indexing_slicing)]
 
@@ -152,8 +152,8 @@ async fn connect_and_bind(
     // Strict servers (`--require-explicit-toolset`) fail metadata-less binds closed: bind with exactly the tools the checks below invoke
     let metadata = json!({
         "tools": [
-            {"id": "GrokBuild:run_terminal_cmd", "name_override": "run_terminal_command"},
-            {"id": "GrokBuild:read_file"},
+            {"id": "Ezer:run_terminal_cmd", "name_override": "run_terminal_command"},
+            {"id": "Ezer:read_file"},
         ],
     });
     let tools = harness

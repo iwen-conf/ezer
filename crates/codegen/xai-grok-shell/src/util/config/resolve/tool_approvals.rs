@@ -2,7 +2,7 @@ use crate::util::config::RemoteSettings;
 use toml::Value as TomlValue;
 
 /// Env override for the **remember tool approvals** permission-panel gate.
-pub(crate) const ENV_REMEMBER_TOOL_APPROVALS: &str = "GROK_REMEMBER_TOOL_APPROVALS";
+pub(crate) const ENV_REMEMBER_TOOL_APPROVALS: &str = "EZER_REMEMBER_TOOL_APPROVALS";
 
 /// Shared with the pager settings modal so the displayed default cannot drift from the resolver.
 pub const DEFAULT_REMEMBER_TOOL_APPROVALS: bool = true;
@@ -30,7 +30,7 @@ fn resolve_remember_tool_approvals_layers(
 }
 
 /// Resolve whether the granular per-tool "Always allow …" prompt options are shown.
-/// Precedence: requirements > env (`GROK_REMEMBER_TOOL_APPROVALS`) > `[ui].remember_tool_approvals` > managed > remote settings.
+/// Precedence: requirements > env (`EZER_REMEMBER_TOOL_APPROVALS`) > `[ui].remember_tool_approvals` > managed > remote settings.
 /// Defaults to `true` ([`DEFAULT_REMEMBER_TOOL_APPROVALS`]).
 pub fn resolve_remember_tool_approvals(
     requirements: Option<&TomlValue>,

@@ -1,9 +1,9 @@
-//! Data APIs for `grok models`. Rendering is the client's job.
+//! Data APIs for `ezer models`. Rendering is the client's job.
 use crate::agent::config::Config as AgentConfig;
 use agent_client_protocol as acp;
 use anyhow::Result;
 use xai_acp_lib::{AcpAgentTx, acp_send};
-/// Status for the `grok models` banner (the display order is not the sampling priority; see [`AuthStatus::resolve`]).
+/// Status for the `ezer models` banner (the display order is not the sampling priority; see [`AuthStatus::resolve`]).
 #[derive(Debug, PartialEq, Eq)]
 pub enum AuthStatus {
     ApiKey,
@@ -110,18 +110,18 @@ mod tests {
         }
     }
     /// Isolate process-global auth sources that `AuthStatus::resolve` consults.
-    /// Uses `GROK_AUTH_PATH` (not `GROK_HOME`) so a OnceLock-cached real home with `auth.json` cannot leak into these tests.
+    /// Uses `EZER_AUTH_PATH` (not `GROK_HOME`) so a OnceLock-cached real home with `auth.json` cannot leak into these tests.
     fn isolate_auth_sources() -> (tempfile::TempDir, [EnvGuard; 7]) {
         let dir = tempfile::tempdir().unwrap();
         let auth_path = dir.path().join("no-auth.json");
         let guards = [
             EnvGuard::unset(XAI_API_KEY_ENV_VAR),
             EnvGuard::unset(LEGACY_XAI_API_KEY_ENV_VAR),
-            EnvGuard::unset("GROK_AUTH"),
-            EnvGuard::set("GROK_AUTH_PATH", auth_path.to_str().unwrap()),
-            EnvGuard::unset("GROK_DEPLOYMENT_KEY"),
-            EnvGuard::unset("GROK_WS_ORIGIN"),
-            EnvGuard::unset("GROK_DISABLE_API_KEY_AUTH"),
+            EnvGuard::unset("EZER_AUTH"),
+            EnvGuard::set("EZER_AUTH_PATH", auth_path.to_str().unwrap()),
+            EnvGuard::unset("EZER_DEPLOYMENT_KEY"),
+            EnvGuard::unset("EZER_WS_ORIGIN"),
+            EnvGuard::unset("EZER_DISABLE_API_KEY_AUTH"),
         ];
         (dir, guards)
     }
@@ -160,7 +160,7 @@ mod tests {
     fn resolve_oauth_session() {
         let (_dir, _g) = isolate_auth_sources();
         let json = serde_json::to_string(&session_credential()).unwrap();
-        let _auth = EnvGuard::set("GROK_AUTH", &json);
+        let _auth = EnvGuard::set("EZER_AUTH", &json);
         assert_eq!(
             AuthStatus::resolve(&Config::default()),
             AuthStatus::LoggedIn(EXPECTED_LOGIN_HOST.to_owned())

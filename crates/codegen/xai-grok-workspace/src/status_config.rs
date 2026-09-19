@@ -1,6 +1,6 @@
 //! Runtime-tunable timing/threshold config for the workspace tool server.
 //!
-//! All values are read once at startup from `GROK_WORKSPACE_*` environment variables via [`StatusConfig::from_env`].
+//! All values are read once at startup from `EZER_WORKSPACE_*` environment variables via [`StatusConfig::from_env`].
 //! Unset or unparseable variables fall back to the documented defaults (with a `warn!` on parse failure), so construction never fails.
 
 use std::str::FromStr;
@@ -79,16 +79,16 @@ const MAX_OIDC_DURATION: Duration = Duration::from_secs(24 * 3600);
 /// Proactive OIDC refresh knobs.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ProactiveRefreshConfig {
-    /// `GROK_WORKSPACE_OIDC_PROACTIVE_REFRESH_ENABLED`. Default `true`.
+    /// `EZER_WORKSPACE_OIDC_PROACTIVE_REFRESH_ENABLED`. Default `true`.
     /// `false` keeps the SDK reactive provider (kill-switch for workspace-owned proactive refresh). `true` selects the workspace-owned provider.
     pub enabled: bool,
-    /// `GROK_WORKSPACE_OIDC_REFRESH_FRACTION`, open interval `(0, 1)`.
+    /// `EZER_WORKSPACE_OIDC_REFRESH_FRACTION`, open interval `(0, 1)`.
     pub fraction: f64,
-    /// `GROK_WORKSPACE_OIDC_REFRESH_JITTER_FRACTION`, closed `[0, 0.5]`.
+    /// `EZER_WORKSPACE_OIDC_REFRESH_JITTER_FRACTION`, closed `[0, 0.5]`.
     pub jitter_fraction: f64,
-    /// Hard floor before expiry (`GROK_WORKSPACE_OIDC_REFRESH_SAFETY_MARGIN_SECS`).
+    /// Hard floor before expiry (`EZER_WORKSPACE_OIDC_REFRESH_SAFETY_MARGIN_SECS`).
     pub safety_margin: Duration,
-    /// Floor between consecutive *successful* refreshes (`GROK_WORKSPACE_OIDC_MIN_REFRESH_INTERVAL_SECS`).
+    /// Floor between consecutive *successful* refreshes (`EZER_WORKSPACE_OIDC_MIN_REFRESH_INTERVAL_SECS`).
     /// Failure retries are bounded by expiry, not this floor.
     pub min_refresh_interval: Duration,
 }
@@ -106,30 +106,30 @@ impl Default for ProactiveRefreshConfig {
 }
 
 impl ProactiveRefreshConfig {
-    /// Populate from `GROK_WORKSPACE_OIDC_*`. Unset or unparseable vars fall back to the default with a `warn!`. Never fails.
+    /// Populate from `EZER_WORKSPACE_OIDC_*`. Unset or unparseable vars fall back to the default with a `warn!`. Never fails.
     pub fn from_env() -> Self {
         let defaults = Self::default();
         let mut cfg = Self {
             enabled: parse_or(
-                "GROK_WORKSPACE_OIDC_PROACTIVE_REFRESH_ENABLED",
+                "EZER_WORKSPACE_OIDC_PROACTIVE_REFRESH_ENABLED",
                 defaults.enabled,
             ),
             fraction: frac_or(
-                "GROK_WORKSPACE_OIDC_REFRESH_FRACTION",
+                "EZER_WORKSPACE_OIDC_REFRESH_FRACTION",
                 defaults.fraction,
                 |v| v > 0.0 && v < 1.0,
             ),
             jitter_fraction: frac_or(
-                "GROK_WORKSPACE_OIDC_REFRESH_JITTER_FRACTION",
+                "EZER_WORKSPACE_OIDC_REFRESH_JITTER_FRACTION",
                 defaults.jitter_fraction,
                 |v| (0.0..=0.5).contains(&v),
             ),
             safety_margin: secs_or(
-                "GROK_WORKSPACE_OIDC_REFRESH_SAFETY_MARGIN_SECS",
+                "EZER_WORKSPACE_OIDC_REFRESH_SAFETY_MARGIN_SECS",
                 defaults.safety_margin,
             ),
             min_refresh_interval: secs_or(
-                "GROK_WORKSPACE_OIDC_MIN_REFRESH_INTERVAL_SECS",
+                "EZER_WORKSPACE_OIDC_MIN_REFRESH_INTERVAL_SECS",
                 defaults.min_refresh_interval,
             ),
         };
@@ -144,7 +144,7 @@ impl ProactiveRefreshConfig {
             tracing::warn!(
                 fraction = self.fraction,
                 default = DEFAULT_OIDC_REFRESH_FRACTION,
-                "GROK_WORKSPACE OIDC refresh fraction out of range; using default"
+                "EZER_WORKSPACE OIDC refresh fraction out of range; using default"
             );
             self.fraction = DEFAULT_OIDC_REFRESH_FRACTION;
         }
@@ -152,7 +152,7 @@ impl ProactiveRefreshConfig {
             tracing::warn!(
                 jitter_fraction = self.jitter_fraction,
                 default = DEFAULT_OIDC_REFRESH_JITTER_FRACTION,
-                "GROK_WORKSPACE OIDC jitter fraction out of range; using default"
+                "EZER_WORKSPACE OIDC jitter fraction out of range; using default"
             );
             self.jitter_fraction = DEFAULT_OIDC_REFRESH_JITTER_FRACTION;
         }
@@ -160,7 +160,7 @@ impl ProactiveRefreshConfig {
             tracing::warn!(
                 safety_margin = ?self.safety_margin,
                 clamped = ?MAX_OIDC_DURATION,
-                "GROK_WORKSPACE OIDC safety margin above cap; clamped"
+                "EZER_WORKSPACE OIDC safety margin above cap; clamped"
             );
             self.safety_margin = MAX_OIDC_DURATION;
         }
@@ -168,7 +168,7 @@ impl ProactiveRefreshConfig {
             tracing::warn!(
                 min_refresh_interval = ?self.min_refresh_interval,
                 clamped = ?MAX_OIDC_DURATION,
-                "GROK_WORKSPACE OIDC min refresh interval above cap; clamped"
+                "EZER_WORKSPACE OIDC min refresh interval above cap; clamped"
             );
             self.min_refresh_interval = MAX_OIDC_DURATION;
         }
@@ -176,7 +176,7 @@ impl ProactiveRefreshConfig {
             tracing::warn!(
                 min_refresh_interval = ?self.min_refresh_interval,
                 floored_to = ?MIN_OIDC_MIN_REFRESH_INTERVAL,
-                "GROK_WORKSPACE OIDC min refresh interval below floor; floored"
+                "EZER_WORKSPACE OIDC min refresh interval below floor; floored"
             );
             self.min_refresh_interval = MIN_OIDC_MIN_REFRESH_INTERVAL;
         }
@@ -187,7 +187,7 @@ impl ProactiveRefreshConfig {
                     min_refresh_interval = ?self.min_refresh_interval,
                     safety_margin = ?self.safety_margin,
                     repaired_min = ?shrunk,
-                    "GROK_WORKSPACE OIDC min refresh interval must be < safety_margin; reduced"
+                    "EZER_WORKSPACE OIDC min refresh interval must be < safety_margin; reduced"
                 );
                 self.min_refresh_interval = shrunk;
             } else {
@@ -197,7 +197,7 @@ impl ProactiveRefreshConfig {
                         min_refresh_interval = ?self.min_refresh_interval,
                         safety_margin = ?self.safety_margin,
                         repaired_safety = ?raised,
-                        "GROK_WORKSPACE OIDC safety_margin too small to sit above min interval; raised"
+                        "EZER_WORKSPACE OIDC safety_margin too small to sit above min interval; raised"
                     );
                     self.safety_margin = raised;
                 } else {
@@ -208,7 +208,7 @@ impl ProactiveRefreshConfig {
                         safety_margin = ?self.safety_margin,
                         repaired_min = ?repaired_min,
                         repaired_safety = ?MAX_OIDC_DURATION,
-                        "GROK_WORKSPACE OIDC safety_margin cannot rise above the 24h cap; pinned and reduced min"
+                        "EZER_WORKSPACE OIDC safety_margin cannot rise above the 24h cap; pinned and reduced min"
                     );
                     self.safety_margin = MAX_OIDC_DURATION;
                     self.min_refresh_interval = repaired_min;
@@ -229,14 +229,14 @@ pub struct StatusConfig {
     pub ws_ping: Duration,
     /// Reconnect backoff schedule for the server SDK connection. `None` leaves the SDK's built-in default exponential schedule in place.
     pub ws_reconnect_backoff: Option<Vec<Duration>>,
-    /// Optional WebSocket liveness deadline (`GROK_WORKSPACE_WS_LIVENESS_DEADLINE_SECS`).
+    /// Optional WebSocket liveness deadline (`EZER_WORKSPACE_WS_LIVENESS_DEADLINE_SECS`).
     /// `None` leaves the SDK's `min(4× ping, 120s)` default in place.
     pub ws_liveness_deadline: Option<Duration>,
-    /// Initial hub-connect hedge delay (`GROK_WORKSPACE_HUB_CONNECT_HEDGE_AFTER_SECS`).
+    /// Initial hub-connect hedge delay (`EZER_WORKSPACE_HUB_CONNECT_HEDGE_AFTER_SECS`).
     pub hub_connect_hedge_after: Option<Duration>,
-    /// Initial hub-connect deadline (`GROK_WORKSPACE_HUB_CONNECT_DEADLINE_SECS`).
+    /// Initial hub-connect deadline (`EZER_WORKSPACE_HUB_CONNECT_DEADLINE_SECS`).
     pub hub_connect_deadline: Option<Duration>,
-    /// Proactive OIDC refresh policy (`GROK_WORKSPACE_OIDC_*`).
+    /// Proactive OIDC refresh policy (`EZER_WORKSPACE_OIDC_*`).
     pub oidc_refresh: ProactiveRefreshConfig,
     /// Number of consecutive server reconnect failures before warning.
     pub hub_warn_threshold: u32,
@@ -244,56 +244,56 @@ pub struct StatusConfig {
     pub hub_backoff_base: Duration,
     /// Idle duration after which an inactive session is pruned.
     pub session_idle_prune: Duration,
-    /// Legacy single-phase drain timeout (`GROK_WORKSPACE_DRAIN_TIMEOUT_SECS`), retained for compatibility.
-    /// The SIGTERM and server-evict paths now use the two-phase drain bounded by `GROK_WORKSPACE_TERMINATION_GRACE_MS`.
+    /// Legacy single-phase drain timeout (`EZER_WORKSPACE_DRAIN_TIMEOUT_SECS`), retained for compatibility.
+    /// The SIGTERM and server-evict paths now use the two-phase drain bounded by `EZER_WORKSPACE_TERMINATION_GRACE_MS`.
     pub drain_timeout: Duration,
     /// Per-call timeout for agent RPCs.
     pub agent_rpc_timeout: Duration,
     /// Timeout for establishing an agent connection.
     pub agent_connect_timeout: Duration,
-    /// Opt-in foreground-only idle (`GROK_WORKSPACE_IDLE_IGNORE_BACKGROUND_TASKS`).
+    /// Opt-in foreground-only idle (`EZER_WORKSPACE_IDLE_IGNORE_BACKGROUND_TASKS`).
     /// Requires the literal `"true"`; other spellings fall back to this default.
     pub idle_ignores_background: bool,
-    /// Recent preview-proxy traffic withholds idle for this window (`GROK_WORKSPACE_PREVIEW_ACTIVITY_WINDOW_MS`).
+    /// Recent preview-proxy traffic withholds idle for this window (`EZER_WORKSPACE_PREVIEW_ACTIVITY_WINDOW_MS`).
     pub preview_activity_window: Duration,
-    /// Cadence at which the preview-activity scraper polls the proxy (`GROK_WORKSPACE_PREVIEW_ACTIVITY_SCRAPE_INTERVAL_MS`).
+    /// Cadence at which the preview-activity scraper polls the proxy (`EZER_WORKSPACE_PREVIEW_ACTIVITY_SCRAPE_INTERVAL_MS`).
     /// Kept strictly below `preview_activity_window` by [`validate`](Self::validate).
     pub preview_activity_scrape_interval: Duration,
-    /// A client mutation RPC withholds idle for this window (`GROK_WORKSPACE_RPC_ACTIVITY_WINDOW_MS`); zero disables.
+    /// A client mutation RPC withholds idle for this window (`EZER_WORKSPACE_RPC_ACTIVITY_WINDOW_MS`); zero disables.
     /// Clamped to `MAX_RPC_ACTIVITY_WINDOW_MS` by [`validate`](Self::validate).
     pub rpc_activity_window: Duration,
-    /// Presence-keepalive kill-switch (`GROK_WORKSPACE_PRESENCE_KEEPALIVE_ENABLED`, default OFF).
+    /// Presence-keepalive kill-switch (`EZER_WORKSPACE_PRESENCE_KEEPALIVE_ENABLED`, default OFF).
     /// When off, the `ClientPresence` tier is wired with a zero window.
     pub presence_keepalive_enabled: bool,
-    /// A visible client-presence note withholds idle for this window (`GROK_WORKSPACE_PRESENCE_ACTIVITY_WINDOW_MS`); zero disables.
+    /// A visible client-presence note withholds idle for this window (`EZER_WORKSPACE_PRESENCE_ACTIVITY_WINDOW_MS`); zero disables.
     pub presence_activity_window: Duration,
-    /// A live scheduled task keeps the sandbox awake while its next run is at most this far away (`GROK_WORKSPACE_SCHEDULED_TASK_KEEP_AWAKE_MS`).
+    /// A live scheduled task keeps the sandbox awake while its next run is at most this far away (`EZER_WORKSPACE_SCHEDULED_TASK_KEEP_AWAKE_MS`).
     /// Zero turns it off. Clamped to `MAX_SCHEDULED_TASK_KEEP_AWAKE_MS` by [`validate`](Self::validate).
     pub scheduled_task_keep_awake: Duration,
-    /// Preview-state reporter kill-switch (`GROK_WORKSPACE_PREVIEW_STATE_REPORTER_ENABLED`, default OFF).
+    /// Preview-state reporter kill-switch (`EZER_WORKSPACE_PREVIEW_STATE_REPORTER_ENABLED`, default OFF).
     pub preview_state_reporter_enabled: bool,
-    /// Poll cadence (`GROK_WORKSPACE_PREVIEW_STATE_POLL_INTERVAL_MS`); floored by [`validate`](Self::validate).
+    /// Poll cadence (`EZER_WORKSPACE_PREVIEW_STATE_POLL_INTERVAL_MS`); floored by [`validate`](Self::validate).
     pub preview_state_poll_interval: Duration,
-    /// Preview-state long-poll hold (`GROK_WORKSPACE_PREVIEW_STATE_WAIT_SECS`).
+    /// Preview-state long-poll hold (`EZER_WORKSPACE_PREVIEW_STATE_WAIT_SECS`).
     /// Once the proxy's document carries a `generation`, the watcher holds `GET ?wait=<secs>&if_generation=<gen>` instead of fixed-interval polling.
     /// Zero (the default) disables long-polling; clamped to the proxy's own 15s hold ceiling by [`validate`](Self::validate).
     pub preview_state_wait: Duration,
-    /// Preview-proxy discovery-scan cadence (`GROK_WORKSPACE_PREVIEW_DISCOVERY_REFRESH_MS`).
+    /// Preview-proxy discovery-scan cadence (`EZER_WORKSPACE_PREVIEW_DISCOVERY_REFRESH_MS`).
     /// The supervisor forwards it to the proxy as `--discovery-refresh-ms`.
     /// Zero (the default) omits the flag, leaving the proxy default; nonzero is clamped into [100ms, 10s] by [`validate`](Self::validate).
     pub preview_discovery_refresh: Duration,
     /// Proxy loopback control port from the `--preview-control-port` CLI flag (set by `workspace_server`, not env).
     /// `None` uses the proxy default.
     pub preview_control_port: Option<u16>,
-    /// True when this container booted via the sandbox restore path, which injects `GROK_SESSION_RESTORED=true`; a first boot never does.
+    /// True when this container booted via the sandbox restore path, which injects `EZER_SESSION_RESTORED=true`; a first boot never does.
     pub session_restored: bool,
-    /// True when restore injects `GROK_REVIVE_SCRIPT_CONFIGURED=true` (launchable revive configured).
+    /// True when restore injects `EZER_REVIVE_SCRIPT_CONFIGURED=true` (launchable revive configured).
     /// The var is unset on first boot and non-launchable restores.
     pub revive_script_configured: bool,
-    /// True when restore injects `GROK_RESUME_NUDGE_DISABLED=true` (per-env `resume_nudge_disabled` sandbox config).
+    /// True when restore injects `EZER_RESUME_NUDGE_DISABLED=true` (per-env `resume_nudge_disabled` sandbox config).
     /// When set, the session-resumed nudge is suppressed at source for this boot.
     pub resume_nudge_disabled: bool,
-    /// True when restore injects `GROK_COMPUTER_SESSION_RESUMED_EMIT=true` (sandbox `computer_session_resumed_emit` config field; default OFF).
+    /// True when restore injects `EZER_COMPUTER_SESSION_RESUMED_EMIT=true` (sandbox `computer_session_resumed_emit` config field; default OFF).
     /// When false, the session-resumed nudge is suppressed at source.
     pub computer_session_resumed_emit: bool,
 }
@@ -340,87 +340,87 @@ impl Default for StatusConfig {
 }
 
 impl StatusConfig {
-    /// Populate from `GROK_WORKSPACE_*`. Unset or unparseable vars fall back to the default with a `warn!`. Never fails.
+    /// Populate from `EZER_WORKSPACE_*`. Unset or unparseable vars fall back to the default with a `warn!`. Never fails.
     pub fn from_env() -> Self {
         let defaults = Self::default();
         let (agent_rpc, agent_connect) = Self::agent_timeouts_from_env();
         let mut cfg = Self {
-            heartbeat: secs_or("GROK_WORKSPACE_HEARTBEAT_SECS", defaults.heartbeat),
-            keepalive: secs_or("GROK_WORKSPACE_KEEPALIVE_SECS", defaults.keepalive),
-            ws_ping: secs_or("GROK_WORKSPACE_WS_PING_SECS", defaults.ws_ping),
+            heartbeat: secs_or("EZER_WORKSPACE_HEARTBEAT_SECS", defaults.heartbeat),
+            keepalive: secs_or("EZER_WORKSPACE_KEEPALIVE_SECS", defaults.keepalive),
+            ws_ping: secs_or("EZER_WORKSPACE_WS_PING_SECS", defaults.ws_ping),
             ws_reconnect_backoff: backoff_schedule_from_env(
-                "GROK_WORKSPACE_WS_RECONNECT_BACKOFF_MS",
+                "EZER_WORKSPACE_WS_RECONNECT_BACKOFF_MS",
             ),
-            ws_liveness_deadline: optional_secs("GROK_WORKSPACE_WS_LIVENESS_DEADLINE_SECS"),
-            hub_connect_hedge_after: optional_secs("GROK_WORKSPACE_HUB_CONNECT_HEDGE_AFTER_SECS"),
-            hub_connect_deadline: optional_secs("GROK_WORKSPACE_HUB_CONNECT_DEADLINE_SECS"),
+            ws_liveness_deadline: optional_secs("EZER_WORKSPACE_WS_LIVENESS_DEADLINE_SECS"),
+            hub_connect_hedge_after: optional_secs("EZER_WORKSPACE_HUB_CONNECT_HEDGE_AFTER_SECS"),
+            hub_connect_deadline: optional_secs("EZER_WORKSPACE_HUB_CONNECT_DEADLINE_SECS"),
             oidc_refresh: ProactiveRefreshConfig::from_env(),
             hub_warn_threshold: parse_or(
-                "GROK_WORKSPACE_HUB_WARN_THRESHOLD",
+                "EZER_WORKSPACE_HUB_WARN_THRESHOLD",
                 defaults.hub_warn_threshold,
             ),
             hub_backoff_base: ms_or(
-                "GROK_WORKSPACE_HUB_BACKOFF_BASE_MS",
+                "EZER_WORKSPACE_HUB_BACKOFF_BASE_MS",
                 defaults.hub_backoff_base,
             ),
             session_idle_prune: secs_or(
-                "GROK_WORKSPACE_SESSION_IDLE_PRUNE_SECS",
+                "EZER_WORKSPACE_SESSION_IDLE_PRUNE_SECS",
                 defaults.session_idle_prune,
             ),
-            drain_timeout: secs_or("GROK_WORKSPACE_DRAIN_TIMEOUT_SECS", defaults.drain_timeout),
+            drain_timeout: secs_or("EZER_WORKSPACE_DRAIN_TIMEOUT_SECS", defaults.drain_timeout),
             agent_rpc_timeout: agent_rpc,
             agent_connect_timeout: agent_connect,
             idle_ignores_background: parse_or(
-                "GROK_WORKSPACE_IDLE_IGNORE_BACKGROUND_TASKS",
+                "EZER_WORKSPACE_IDLE_IGNORE_BACKGROUND_TASKS",
                 defaults.idle_ignores_background,
             ),
             preview_activity_window: ms_or(
-                "GROK_WORKSPACE_PREVIEW_ACTIVITY_WINDOW_MS",
+                "EZER_WORKSPACE_PREVIEW_ACTIVITY_WINDOW_MS",
                 defaults.preview_activity_window,
             ),
             preview_activity_scrape_interval: ms_or(
-                "GROK_WORKSPACE_PREVIEW_ACTIVITY_SCRAPE_INTERVAL_MS",
+                "EZER_WORKSPACE_PREVIEW_ACTIVITY_SCRAPE_INTERVAL_MS",
                 defaults.preview_activity_scrape_interval,
             ),
             rpc_activity_window: ms_or(
-                "GROK_WORKSPACE_RPC_ACTIVITY_WINDOW_MS",
+                "EZER_WORKSPACE_RPC_ACTIVITY_WINDOW_MS",
                 defaults.rpc_activity_window,
             ),
             presence_keepalive_enabled: parse_or(
-                "GROK_WORKSPACE_PRESENCE_KEEPALIVE_ENABLED",
+                "EZER_WORKSPACE_PRESENCE_KEEPALIVE_ENABLED",
                 defaults.presence_keepalive_enabled,
             ),
             presence_activity_window: ms_or(
-                "GROK_WORKSPACE_PRESENCE_ACTIVITY_WINDOW_MS",
+                "EZER_WORKSPACE_PRESENCE_ACTIVITY_WINDOW_MS",
                 defaults.presence_activity_window,
             ),
             scheduled_task_keep_awake: ms_or(
-                "GROK_WORKSPACE_SCHEDULED_TASK_KEEP_AWAKE_MS",
+                "EZER_WORKSPACE_SCHEDULED_TASK_KEEP_AWAKE_MS",
                 defaults.scheduled_task_keep_awake,
             ),
             preview_state_reporter_enabled: parse_or(
-                "GROK_WORKSPACE_PREVIEW_STATE_REPORTER_ENABLED",
+                "EZER_WORKSPACE_PREVIEW_STATE_REPORTER_ENABLED",
                 defaults.preview_state_reporter_enabled,
             ),
             preview_state_poll_interval: ms_or(
-                "GROK_WORKSPACE_PREVIEW_STATE_POLL_INTERVAL_MS",
+                "EZER_WORKSPACE_PREVIEW_STATE_POLL_INTERVAL_MS",
                 defaults.preview_state_poll_interval,
             ),
             preview_state_wait: secs_or(
-                "GROK_WORKSPACE_PREVIEW_STATE_WAIT_SECS",
+                "EZER_WORKSPACE_PREVIEW_STATE_WAIT_SECS",
                 defaults.preview_state_wait,
             ),
             preview_discovery_refresh: ms_or(
-                "GROK_WORKSPACE_PREVIEW_DISCOVERY_REFRESH_MS",
+                "EZER_WORKSPACE_PREVIEW_DISCOVERY_REFRESH_MS",
                 defaults.preview_discovery_refresh,
             ),
             preview_control_port: defaults.preview_control_port,
-            session_restored: std::env::var("GROK_SESSION_RESTORED").as_deref() == Ok("true"),
-            revive_script_configured: std::env::var("GROK_REVIVE_SCRIPT_CONFIGURED").as_deref()
+            session_restored: std::env::var("EZER_SESSION_RESTORED").as_deref() == Ok("true"),
+            revive_script_configured: std::env::var("EZER_REVIVE_SCRIPT_CONFIGURED").as_deref()
                 == Ok("true"),
-            resume_nudge_disabled: std::env::var("GROK_RESUME_NUDGE_DISABLED").as_deref()
+            resume_nudge_disabled: std::env::var("EZER_RESUME_NUDGE_DISABLED").as_deref()
                 == Ok("true"),
-            computer_session_resumed_emit: std::env::var("GROK_COMPUTER_SESSION_RESUMED_EMIT")
+            computer_session_resumed_emit: std::env::var("EZER_COMPUTER_SESSION_RESUMED_EMIT")
                 .as_deref()
                 == Ok("true"),
         };
@@ -433,8 +433,8 @@ impl StatusConfig {
     /// Reading just these two vars avoids re-running [`validate`](Self::validate) (and its possible duplicate `warn!`).
     pub fn agent_timeouts_from_env() -> (Duration, Duration) {
         let defaults = Self::default();
-        const RPC_VAR: &str = "GROK_WORKSPACE_AGENT_RPC_TIMEOUT_SECS";
-        const CONNECT_VAR: &str = "GROK_WORKSPACE_AGENT_CONNECT_TIMEOUT_SECS";
+        const RPC_VAR: &str = "EZER_WORKSPACE_AGENT_RPC_TIMEOUT_SECS";
+        const CONNECT_VAR: &str = "EZER_WORKSPACE_AGENT_CONNECT_TIMEOUT_SECS";
         (
             nonzero_secs_or(
                 RPC_VAR,
@@ -472,7 +472,7 @@ impl StatusConfig {
             tracing::warn!(
                 keepalive = ?self.keepalive,
                 heartbeat = ?self.heartbeat,
-                "GROK_WORKSPACE keepalive <= heartbeat; transport may time out between heartbeats"
+                "EZER_WORKSPACE keepalive <= heartbeat; transport may time out between heartbeats"
             );
         }
         let min_scrape = Duration::from_millis(MIN_PREVIEW_ACTIVITY_SCRAPE_INTERVAL_MS);
@@ -489,7 +489,7 @@ impl StatusConfig {
                 window = ?self.preview_activity_window,
                 clamped_scrape = ?scrape,
                 clamped_window = ?window,
-                "GROK_WORKSPACE preview scrape interval/window out of range; clamped to 1ms <= scrape < window"
+                "EZER_WORKSPACE preview scrape interval/window out of range; clamped to 1ms <= scrape < window"
             );
             self.preview_activity_window = window;
             self.preview_activity_scrape_interval = scrape;
@@ -500,7 +500,7 @@ impl StatusConfig {
             tracing::warn!(
                 window = ?self.rpc_activity_window,
                 clamped_window = ?rpc_cap,
-                "GROK_WORKSPACE rpc activity window above cap; clamped"
+                "EZER_WORKSPACE rpc activity window above cap; clamped"
             );
             self.rpc_activity_window = rpc_cap;
         }
@@ -509,7 +509,7 @@ impl StatusConfig {
             tracing::warn!(
                 window = ?self.presence_activity_window,
                 clamped_window = ?presence_cap,
-                "GROK_WORKSPACE presence activity window above cap; clamped"
+                "EZER_WORKSPACE presence activity window above cap; clamped"
             );
             self.presence_activity_window = presence_cap;
         }
@@ -518,7 +518,7 @@ impl StatusConfig {
             tracing::warn!(
                 window = ?self.scheduled_task_keep_awake,
                 clamped_window = ?scheduled_cap,
-                "GROK_WORKSPACE scheduled-task keep-awake window above cap; clamped"
+                "EZER_WORKSPACE scheduled-task keep-awake window above cap; clamped"
             );
             self.scheduled_task_keep_awake = scheduled_cap;
         }
@@ -527,7 +527,7 @@ impl StatusConfig {
             tracing::warn!(
                 poll_interval = ?self.preview_state_poll_interval,
                 floored_to = ?min_poll,
-                "GROK_WORKSPACE preview-state poll interval below floor; floored"
+                "EZER_WORKSPACE preview-state poll interval below floor; floored"
             );
             self.preview_state_poll_interval = min_poll;
         }
@@ -537,7 +537,7 @@ impl StatusConfig {
             tracing::warn!(
                 wait = ?self.preview_state_wait,
                 clamped_wait = ?wait_cap,
-                "GROK_WORKSPACE preview-state wait above the proxy's hold ceiling; clamped"
+                "EZER_WORKSPACE preview-state wait above the proxy's hold ceiling; clamped"
             );
             self.preview_state_wait = wait_cap;
         }
@@ -551,7 +551,7 @@ impl StatusConfig {
                 tracing::warn!(
                     refresh = ?self.preview_discovery_refresh,
                     clamped_refresh = ?refresh,
-                    "GROK_WORKSPACE preview discovery refresh out of range; clamped to 100ms..=10s"
+                    "EZER_WORKSPACE preview discovery refresh out of range; clamped to 100ms..=10s"
                 );
                 self.preview_discovery_refresh = refresh;
             }
@@ -567,7 +567,7 @@ fn parse_or<T: FromStr>(var: &str, default: T) -> T {
         Ok(raw) => match raw.parse::<T>() {
             Ok(value) => value,
             Err(_) => {
-                tracing::warn!(var, value = %raw, "Unparseable GROK_WORKSPACE value; using default");
+                tracing::warn!(var, value = %raw, "Unparseable EZER_WORKSPACE value; using default");
                 default
             }
         },
@@ -589,7 +589,7 @@ fn frac_or(var: &str, default: f64, in_range: impl Fn(f64) -> bool) -> f64 {
                 tracing::warn!(
                     var,
                     value = %raw,
-                    "GROK_WORKSPACE fraction out of range; using default"
+                    "EZER_WORKSPACE fraction out of range; using default"
                 );
                 default
             }
@@ -597,7 +597,7 @@ fn frac_or(var: &str, default: f64, in_range: impl Fn(f64) -> bool) -> f64 {
                 tracing::warn!(
                     var,
                     value = %raw,
-                    "Unparseable GROK_WORKSPACE value; using default"
+                    "Unparseable EZER_WORKSPACE value; using default"
                 );
                 default
             }
@@ -615,7 +615,7 @@ fn optional_secs(var: &str) -> Option<Duration> {
                 tracing::warn!(
                     var,
                     value = %raw,
-                    "Unparseable GROK_WORKSPACE value; using default"
+                    "Unparseable EZER_WORKSPACE value; using default"
                 );
                 None
             }
@@ -635,7 +635,7 @@ fn nonzero_secs_or(var: &str, secs: u64, default: Duration) -> Duration {
         tracing::warn!(
             var,
             default = ?default,
-            "GROK_WORKSPACE agent timeout of 0s is invalid; using default"
+            "EZER_WORKSPACE agent timeout of 0s is invalid; using default"
         );
         return default;
     }
@@ -655,7 +655,7 @@ fn backoff_schedule_from_env(var: &str) -> Option<Vec<Duration>> {
                 tracing::warn!(
                     var,
                     value = %raw,
-                    "Unparseable GROK_WORKSPACE backoff schedule; using SDK default"
+                    "Unparseable EZER_WORKSPACE backoff schedule; using SDK default"
                 );
                 return None;
             }
@@ -724,8 +724,8 @@ mod tests {
     #[test]
     fn preview_state_reporter_env_parses_and_floors() {
         let _guard = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
-        let enabled_var = "GROK_WORKSPACE_PREVIEW_STATE_REPORTER_ENABLED";
-        let interval_var = "GROK_WORKSPACE_PREVIEW_STATE_POLL_INTERVAL_MS";
+        let enabled_var = "EZER_WORKSPACE_PREVIEW_STATE_REPORTER_ENABLED";
+        let interval_var = "EZER_WORKSPACE_PREVIEW_STATE_POLL_INTERVAL_MS";
 
         unsafe { std::env::set_var(enabled_var, "true") };
         unsafe { std::env::set_var(interval_var, "0") };
@@ -755,7 +755,7 @@ mod tests {
     #[test]
     fn preview_state_wait_env_parses_and_clamps_to_the_proxy_hold_ceiling() {
         let _guard = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
-        let var = "GROK_WORKSPACE_PREVIEW_STATE_WAIT_SECS";
+        let var = "EZER_WORKSPACE_PREVIEW_STATE_WAIT_SECS";
 
         unsafe { std::env::remove_var(var) };
         assert_eq!(
@@ -790,7 +790,7 @@ mod tests {
     #[test]
     fn preview_discovery_refresh_env_parses_floors_and_clamps() {
         let _guard = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
-        let var = "GROK_WORKSPACE_PREVIEW_DISCOVERY_REFRESH_MS";
+        let var = "EZER_WORKSPACE_PREVIEW_DISCOVERY_REFRESH_MS";
 
         unsafe { std::env::remove_var(var) };
         assert_eq!(
@@ -840,7 +840,7 @@ mod tests {
     #[test]
     fn parse_or_unset_returns_default() {
         let _guard = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
-        let var = "GROK_WORKSPACE_TEST_PARSE_OR_UNSET";
+        let var = "EZER_WORKSPACE_TEST_PARSE_OR_UNSET";
         unsafe { std::env::remove_var(var) };
         assert_eq!(parse_or::<u32>(var, 5), 5);
     }
@@ -848,7 +848,7 @@ mod tests {
     #[test]
     fn parse_or_valid_parses() {
         let _guard = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
-        let var = "GROK_WORKSPACE_TEST_PARSE_OR_VALID";
+        let var = "EZER_WORKSPACE_TEST_PARSE_OR_VALID";
         unsafe { std::env::set_var(var, "42") };
         assert_eq!(parse_or::<u32>(var, 5), 42);
         unsafe { std::env::remove_var(var) };
@@ -857,7 +857,7 @@ mod tests {
     #[test]
     fn parse_or_invalid_falls_back_without_panic() {
         let _guard = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
-        let var = "GROK_WORKSPACE_TEST_PARSE_OR_INVALID";
+        let var = "EZER_WORKSPACE_TEST_PARSE_OR_INVALID";
         unsafe { std::env::set_var(var, "not-a-number") };
         assert_eq!(parse_or::<u32>(var, 5), 5);
         unsafe { std::env::remove_var(var) };
@@ -866,7 +866,7 @@ mod tests {
     #[test]
     fn secs_or_parses_into_duration() {
         let _guard = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
-        let var = "GROK_WORKSPACE_TEST_SECS_OR_VALID";
+        let var = "EZER_WORKSPACE_TEST_SECS_OR_VALID";
         unsafe { std::env::set_var(var, "120") };
         assert_eq!(
             secs_or(var, Duration::from_secs(30)),
@@ -878,7 +878,7 @@ mod tests {
     #[test]
     fn secs_or_unset_returns_default() {
         let _guard = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
-        let var = "GROK_WORKSPACE_TEST_SECS_OR_UNSET";
+        let var = "EZER_WORKSPACE_TEST_SECS_OR_UNSET";
         unsafe { std::env::remove_var(var) };
         assert_eq!(
             secs_or(var, Duration::from_secs(30)),
@@ -889,7 +889,7 @@ mod tests {
     #[test]
     fn secs_or_invalid_falls_back_without_panic() {
         let _guard = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
-        let var = "GROK_WORKSPACE_TEST_SECS_OR_INVALID";
+        let var = "EZER_WORKSPACE_TEST_SECS_OR_INVALID";
         unsafe { std::env::set_var(var, "12.5") };
         assert_eq!(
             secs_or(var, Duration::from_secs(30)),
@@ -901,7 +901,7 @@ mod tests {
     #[test]
     fn ms_or_parses_into_duration() {
         let _guard = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
-        let var = "GROK_WORKSPACE_TEST_MS_OR_VALID";
+        let var = "EZER_WORKSPACE_TEST_MS_OR_VALID";
         unsafe { std::env::set_var(var, "250") };
         assert_eq!(
             ms_or(var, Duration::from_millis(100)),
@@ -913,7 +913,7 @@ mod tests {
     #[test]
     fn ms_or_invalid_falls_back_without_panic() {
         let _guard = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
-        let var = "GROK_WORKSPACE_TEST_MS_OR_INVALID";
+        let var = "EZER_WORKSPACE_TEST_MS_OR_INVALID";
         unsafe { std::env::set_var(var, "abc") };
         assert_eq!(
             ms_or(var, Duration::from_millis(100)),
@@ -928,36 +928,36 @@ mod tests {
     fn from_env_clean_matches_default() {
         let _guard = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
         for var in [
-            "GROK_WORKSPACE_HEARTBEAT_SECS",
-            "GROK_WORKSPACE_KEEPALIVE_SECS",
-            "GROK_WORKSPACE_WS_PING_SECS",
-            "GROK_WORKSPACE_WS_RECONNECT_BACKOFF_MS",
-            "GROK_WORKSPACE_WS_LIVENESS_DEADLINE_SECS",
-            "GROK_WORKSPACE_HUB_CONNECT_HEDGE_AFTER_SECS",
-            "GROK_WORKSPACE_HUB_CONNECT_DEADLINE_SECS",
-            "GROK_WORKSPACE_OIDC_PROACTIVE_REFRESH_ENABLED",
-            "GROK_WORKSPACE_OIDC_REFRESH_FRACTION",
-            "GROK_WORKSPACE_OIDC_REFRESH_JITTER_FRACTION",
-            "GROK_WORKSPACE_OIDC_REFRESH_SAFETY_MARGIN_SECS",
-            "GROK_WORKSPACE_OIDC_MIN_REFRESH_INTERVAL_SECS",
-            "GROK_WORKSPACE_HUB_WARN_THRESHOLD",
-            "GROK_WORKSPACE_HUB_BACKOFF_BASE_MS",
-            "GROK_WORKSPACE_SESSION_IDLE_PRUNE_SECS",
-            "GROK_WORKSPACE_DRAIN_TIMEOUT_SECS",
-            "GROK_WORKSPACE_AGENT_RPC_TIMEOUT_SECS",
-            "GROK_WORKSPACE_AGENT_CONNECT_TIMEOUT_SECS",
-            "GROK_WORKSPACE_IDLE_IGNORE_BACKGROUND_TASKS",
-            "GROK_WORKSPACE_PREVIEW_ACTIVITY_WINDOW_MS",
-            "GROK_WORKSPACE_PREVIEW_ACTIVITY_SCRAPE_INTERVAL_MS",
-            "GROK_WORKSPACE_RPC_ACTIVITY_WINDOW_MS",
-            "GROK_WORKSPACE_PRESENCE_KEEPALIVE_ENABLED",
-            "GROK_WORKSPACE_PRESENCE_ACTIVITY_WINDOW_MS",
-            "GROK_WORKSPACE_PREVIEW_STATE_WAIT_SECS",
-            "GROK_WORKSPACE_PREVIEW_DISCOVERY_REFRESH_MS",
-            "GROK_SESSION_RESTORED",
-            "GROK_REVIVE_SCRIPT_CONFIGURED",
-            "GROK_RESUME_NUDGE_DISABLED",
-            "GROK_COMPUTER_SESSION_RESUMED_EMIT",
+            "EZER_WORKSPACE_HEARTBEAT_SECS",
+            "EZER_WORKSPACE_KEEPALIVE_SECS",
+            "EZER_WORKSPACE_WS_PING_SECS",
+            "EZER_WORKSPACE_WS_RECONNECT_BACKOFF_MS",
+            "EZER_WORKSPACE_WS_LIVENESS_DEADLINE_SECS",
+            "EZER_WORKSPACE_HUB_CONNECT_HEDGE_AFTER_SECS",
+            "EZER_WORKSPACE_HUB_CONNECT_DEADLINE_SECS",
+            "EZER_WORKSPACE_OIDC_PROACTIVE_REFRESH_ENABLED",
+            "EZER_WORKSPACE_OIDC_REFRESH_FRACTION",
+            "EZER_WORKSPACE_OIDC_REFRESH_JITTER_FRACTION",
+            "EZER_WORKSPACE_OIDC_REFRESH_SAFETY_MARGIN_SECS",
+            "EZER_WORKSPACE_OIDC_MIN_REFRESH_INTERVAL_SECS",
+            "EZER_WORKSPACE_HUB_WARN_THRESHOLD",
+            "EZER_WORKSPACE_HUB_BACKOFF_BASE_MS",
+            "EZER_WORKSPACE_SESSION_IDLE_PRUNE_SECS",
+            "EZER_WORKSPACE_DRAIN_TIMEOUT_SECS",
+            "EZER_WORKSPACE_AGENT_RPC_TIMEOUT_SECS",
+            "EZER_WORKSPACE_AGENT_CONNECT_TIMEOUT_SECS",
+            "EZER_WORKSPACE_IDLE_IGNORE_BACKGROUND_TASKS",
+            "EZER_WORKSPACE_PREVIEW_ACTIVITY_WINDOW_MS",
+            "EZER_WORKSPACE_PREVIEW_ACTIVITY_SCRAPE_INTERVAL_MS",
+            "EZER_WORKSPACE_RPC_ACTIVITY_WINDOW_MS",
+            "EZER_WORKSPACE_PRESENCE_KEEPALIVE_ENABLED",
+            "EZER_WORKSPACE_PRESENCE_ACTIVITY_WINDOW_MS",
+            "EZER_WORKSPACE_PREVIEW_STATE_WAIT_SECS",
+            "EZER_WORKSPACE_PREVIEW_DISCOVERY_REFRESH_MS",
+            "EZER_SESSION_RESTORED",
+            "EZER_REVIVE_SCRIPT_CONFIGURED",
+            "EZER_RESUME_NUDGE_DISABLED",
+            "EZER_COMPUTER_SESSION_RESUMED_EMIT",
         ] {
             unsafe { std::env::remove_var(var) };
         }
@@ -1012,11 +1012,11 @@ mod tests {
     #[test]
     fn from_env_reads_session_restored_true_only() {
         let _guard = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
-        unsafe { std::env::set_var("GROK_SESSION_RESTORED", "true") };
+        unsafe { std::env::set_var("EZER_SESSION_RESTORED", "true") };
         let restored = StatusConfig::from_env().session_restored;
-        unsafe { std::env::set_var("GROK_SESSION_RESTORED", "1") };
+        unsafe { std::env::set_var("EZER_SESSION_RESTORED", "1") };
         let non_canonical = StatusConfig::from_env().session_restored;
-        unsafe { std::env::remove_var("GROK_SESSION_RESTORED") };
+        unsafe { std::env::remove_var("EZER_SESSION_RESTORED") };
         assert!(restored);
         assert!(!non_canonical);
     }
@@ -1024,11 +1024,11 @@ mod tests {
     #[test]
     fn from_env_reads_revive_script_configured_true_only() {
         let _guard = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
-        unsafe { std::env::set_var("GROK_REVIVE_SCRIPT_CONFIGURED", "true") };
+        unsafe { std::env::set_var("EZER_REVIVE_SCRIPT_CONFIGURED", "true") };
         let configured = StatusConfig::from_env().revive_script_configured;
-        unsafe { std::env::set_var("GROK_REVIVE_SCRIPT_CONFIGURED", "1") };
+        unsafe { std::env::set_var("EZER_REVIVE_SCRIPT_CONFIGURED", "1") };
         let non_canonical = StatusConfig::from_env().revive_script_configured;
-        unsafe { std::env::remove_var("GROK_REVIVE_SCRIPT_CONFIGURED") };
+        unsafe { std::env::remove_var("EZER_REVIVE_SCRIPT_CONFIGURED") };
         assert!(configured);
         assert!(!non_canonical);
     }
@@ -1036,11 +1036,11 @@ mod tests {
     #[test]
     fn from_env_reads_resume_nudge_disabled_true_only() {
         let _guard = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
-        unsafe { std::env::set_var("GROK_RESUME_NUDGE_DISABLED", "true") };
+        unsafe { std::env::set_var("EZER_RESUME_NUDGE_DISABLED", "true") };
         let disabled = StatusConfig::from_env().resume_nudge_disabled;
-        unsafe { std::env::set_var("GROK_RESUME_NUDGE_DISABLED", "1") };
+        unsafe { std::env::set_var("EZER_RESUME_NUDGE_DISABLED", "1") };
         let non_canonical = StatusConfig::from_env().resume_nudge_disabled;
-        unsafe { std::env::remove_var("GROK_RESUME_NUDGE_DISABLED") };
+        unsafe { std::env::remove_var("EZER_RESUME_NUDGE_DISABLED") };
         assert!(disabled);
         assert!(!non_canonical);
     }
@@ -1048,11 +1048,11 @@ mod tests {
     #[test]
     fn from_env_reads_computer_session_resumed_emit_true_only() {
         let _guard = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
-        unsafe { std::env::set_var("GROK_COMPUTER_SESSION_RESUMED_EMIT", "true") };
+        unsafe { std::env::set_var("EZER_COMPUTER_SESSION_RESUMED_EMIT", "true") };
         let enabled = StatusConfig::from_env().computer_session_resumed_emit;
-        unsafe { std::env::set_var("GROK_COMPUTER_SESSION_RESUMED_EMIT", "1") };
+        unsafe { std::env::set_var("EZER_COMPUTER_SESSION_RESUMED_EMIT", "1") };
         let non_canonical = StatusConfig::from_env().computer_session_resumed_emit;
-        unsafe { std::env::remove_var("GROK_COMPUTER_SESSION_RESUMED_EMIT") };
+        unsafe { std::env::remove_var("EZER_COMPUTER_SESSION_RESUMED_EMIT") };
         assert!(enabled);
         assert!(!non_canonical);
     }
@@ -1060,27 +1060,27 @@ mod tests {
     #[test]
     fn from_env_reads_idle_ignore_background_true() {
         let _guard = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
-        unsafe { std::env::set_var("GROK_WORKSPACE_IDLE_IGNORE_BACKGROUND_TASKS", "true") };
+        unsafe { std::env::set_var("EZER_WORKSPACE_IDLE_IGNORE_BACKGROUND_TASKS", "true") };
         let cfg = StatusConfig::from_env();
-        unsafe { std::env::remove_var("GROK_WORKSPACE_IDLE_IGNORE_BACKGROUND_TASKS") };
+        unsafe { std::env::remove_var("EZER_WORKSPACE_IDLE_IGNORE_BACKGROUND_TASKS") };
         assert!(cfg.idle_ignores_background);
     }
 
     #[test]
     fn from_env_reads_preview_activity_window() {
         let _guard = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
-        unsafe { std::env::set_var("GROK_WORKSPACE_PREVIEW_ACTIVITY_WINDOW_MS", "120000") };
+        unsafe { std::env::set_var("EZER_WORKSPACE_PREVIEW_ACTIVITY_WINDOW_MS", "120000") };
         let cfg = StatusConfig::from_env();
-        unsafe { std::env::remove_var("GROK_WORKSPACE_PREVIEW_ACTIVITY_WINDOW_MS") };
+        unsafe { std::env::remove_var("EZER_WORKSPACE_PREVIEW_ACTIVITY_WINDOW_MS") };
         assert_eq!(cfg.preview_activity_window, Duration::from_millis(120_000));
     }
 
     #[test]
     fn from_env_reads_preview_activity_scrape_interval() {
         let _guard = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
-        unsafe { std::env::set_var("GROK_WORKSPACE_PREVIEW_ACTIVITY_SCRAPE_INTERVAL_MS", "5000") };
+        unsafe { std::env::set_var("EZER_WORKSPACE_PREVIEW_ACTIVITY_SCRAPE_INTERVAL_MS", "5000") };
         let cfg = StatusConfig::from_env();
-        unsafe { std::env::remove_var("GROK_WORKSPACE_PREVIEW_ACTIVITY_SCRAPE_INTERVAL_MS") };
+        unsafe { std::env::remove_var("EZER_WORKSPACE_PREVIEW_ACTIVITY_SCRAPE_INTERVAL_MS") };
         assert_eq!(
             cfg.preview_activity_scrape_interval,
             Duration::from_millis(5_000)
@@ -1135,26 +1135,26 @@ mod tests {
     #[test]
     fn from_env_reads_rpc_activity_window() {
         let _guard = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
-        unsafe { std::env::set_var("GROK_WORKSPACE_RPC_ACTIVITY_WINDOW_MS", "30000") };
+        unsafe { std::env::set_var("EZER_WORKSPACE_RPC_ACTIVITY_WINDOW_MS", "30000") };
         let cfg = StatusConfig::from_env();
-        unsafe { std::env::remove_var("GROK_WORKSPACE_RPC_ACTIVITY_WINDOW_MS") };
+        unsafe { std::env::remove_var("EZER_WORKSPACE_RPC_ACTIVITY_WINDOW_MS") };
         assert_eq!(cfg.rpc_activity_window, Duration::from_millis(30_000));
     }
 
     #[test]
     fn from_env_reads_presence_activity_window() {
         let _guard = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
-        unsafe { std::env::set_var("GROK_WORKSPACE_PRESENCE_ACTIVITY_WINDOW_MS", "45000") };
+        unsafe { std::env::set_var("EZER_WORKSPACE_PRESENCE_ACTIVITY_WINDOW_MS", "45000") };
         let cfg = StatusConfig::from_env();
-        unsafe { std::env::remove_var("GROK_WORKSPACE_PRESENCE_ACTIVITY_WINDOW_MS") };
+        unsafe { std::env::remove_var("EZER_WORKSPACE_PRESENCE_ACTIVITY_WINDOW_MS") };
         assert_eq!(cfg.presence_activity_window, Duration::from_millis(45_000));
     }
 
     #[test]
     fn presence_keepalive_env_gates_the_effective_window() {
         let _guard = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
-        let enabled_var = "GROK_WORKSPACE_PRESENCE_KEEPALIVE_ENABLED";
-        let window_var = "GROK_WORKSPACE_PRESENCE_ACTIVITY_WINDOW_MS";
+        let enabled_var = "EZER_WORKSPACE_PRESENCE_KEEPALIVE_ENABLED";
+        let window_var = "EZER_WORKSPACE_PRESENCE_ACTIVITY_WINDOW_MS";
 
         unsafe { std::env::remove_var(enabled_var) };
         unsafe { std::env::set_var(window_var, "45000") };
@@ -1224,7 +1224,7 @@ mod tests {
     fn nonzero_secs_or_zero_falls_back_to_default() {
         assert_eq!(
             nonzero_secs_or(
-                "GROK_WORKSPACE_AGENT_RPC_TIMEOUT_SECS",
+                "EZER_WORKSPACE_AGENT_RPC_TIMEOUT_SECS",
                 0,
                 Duration::from_secs(30)
             ),
@@ -1232,7 +1232,7 @@ mod tests {
         );
         assert_eq!(
             nonzero_secs_or(
-                "GROK_WORKSPACE_AGENT_CONNECT_TIMEOUT_SECS",
+                "EZER_WORKSPACE_AGENT_CONNECT_TIMEOUT_SECS",
                 0,
                 Duration::from_secs(5)
             ),
@@ -1244,7 +1244,7 @@ mod tests {
     fn nonzero_secs_or_positive_is_passed_through() {
         assert_eq!(
             nonzero_secs_or(
-                "GROK_WORKSPACE_AGENT_RPC_TIMEOUT_SECS",
+                "EZER_WORKSPACE_AGENT_RPC_TIMEOUT_SECS",
                 12,
                 Duration::from_secs(30)
             ),
@@ -1256,7 +1256,7 @@ mod tests {
     #[test]
     fn backoff_schedule_unset_returns_none() {
         let _guard = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
-        let var = "GROK_WORKSPACE_TEST_BACKOFF_UNSET";
+        let var = "EZER_WORKSPACE_TEST_BACKOFF_UNSET";
         unsafe { std::env::remove_var(var) };
         assert_eq!(backoff_schedule_from_env(var), None);
     }
@@ -1265,7 +1265,7 @@ mod tests {
     #[test]
     fn backoff_schedule_valid_list_parses_in_order() {
         let _guard = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
-        let var = "GROK_WORKSPACE_TEST_BACKOFF_VALID";
+        let var = "EZER_WORKSPACE_TEST_BACKOFF_VALID";
         unsafe { std::env::set_var(var, "100, 200,500,1000") };
         assert_eq!(
             backoff_schedule_from_env(var),
@@ -1282,7 +1282,7 @@ mod tests {
     #[test]
     fn frac_or_unset_returns_default() {
         let _guard = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
-        let var = "GROK_WORKSPACE_TEST_FRAC_OR_UNSET";
+        let var = "EZER_WORKSPACE_TEST_FRAC_OR_UNSET";
         unsafe { std::env::remove_var(var) };
         assert_eq!(frac_or(var, 0.6, |v| v > 0.0 && v < 1.0), 0.6);
     }
@@ -1290,7 +1290,7 @@ mod tests {
     #[test]
     fn frac_or_valid_parses() {
         let _guard = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
-        let var = "GROK_WORKSPACE_TEST_FRAC_OR_VALID";
+        let var = "EZER_WORKSPACE_TEST_FRAC_OR_VALID";
         unsafe { std::env::set_var(var, "0.75") };
         assert_eq!(frac_or(var, 0.6, |v| v > 0.0 && v < 1.0), 0.75);
         unsafe { std::env::remove_var(var) };
@@ -1299,7 +1299,7 @@ mod tests {
     #[test]
     fn frac_or_garbage_falls_back_to_default() {
         let _guard = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
-        let var = "GROK_WORKSPACE_TEST_FRAC_OR_GARBAGE";
+        let var = "EZER_WORKSPACE_TEST_FRAC_OR_GARBAGE";
         unsafe { std::env::set_var(var, "not-a-fraction") };
         assert_eq!(frac_or(var, 0.6, |v| v > 0.0 && v < 1.0), 0.6);
         unsafe { std::env::remove_var(var) };
@@ -1308,7 +1308,7 @@ mod tests {
     #[test]
     fn frac_or_out_of_range_falls_back_to_default() {
         let _guard = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
-        let var = "GROK_WORKSPACE_TEST_FRAC_OR_RANGE";
+        let var = "EZER_WORKSPACE_TEST_FRAC_OR_RANGE";
         unsafe { std::env::set_var(var, "0") };
         assert_eq!(frac_or(var, 0.6, |v| v > 0.0 && v < 1.0), 0.6);
         unsafe { std::env::set_var(var, "1") };
@@ -1326,11 +1326,11 @@ mod tests {
     fn oidc_refresh_env_parses_and_defaults() {
         let _guard = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
         for var in [
-            "GROK_WORKSPACE_OIDC_PROACTIVE_REFRESH_ENABLED",
-            "GROK_WORKSPACE_OIDC_REFRESH_FRACTION",
-            "GROK_WORKSPACE_OIDC_REFRESH_JITTER_FRACTION",
-            "GROK_WORKSPACE_OIDC_REFRESH_SAFETY_MARGIN_SECS",
-            "GROK_WORKSPACE_OIDC_MIN_REFRESH_INTERVAL_SECS",
+            "EZER_WORKSPACE_OIDC_PROACTIVE_REFRESH_ENABLED",
+            "EZER_WORKSPACE_OIDC_REFRESH_FRACTION",
+            "EZER_WORKSPACE_OIDC_REFRESH_JITTER_FRACTION",
+            "EZER_WORKSPACE_OIDC_REFRESH_SAFETY_MARGIN_SECS",
+            "EZER_WORKSPACE_OIDC_MIN_REFRESH_INTERVAL_SECS",
         ] {
             unsafe { std::env::remove_var(var) };
         }
@@ -1338,18 +1338,18 @@ mod tests {
         assert_eq!(cfg, ProactiveRefreshConfig::default());
         assert!(cfg.enabled);
 
-        unsafe { std::env::set_var("GROK_WORKSPACE_OIDC_PROACTIVE_REFRESH_ENABLED", "false") };
+        unsafe { std::env::set_var("EZER_WORKSPACE_OIDC_PROACTIVE_REFRESH_ENABLED", "false") };
         let cfg = ProactiveRefreshConfig::from_env();
         assert!(
             !cfg.enabled,
             "explicit false is the env kill-switch and must still win"
         );
 
-        unsafe { std::env::set_var("GROK_WORKSPACE_OIDC_PROACTIVE_REFRESH_ENABLED", "true") };
-        unsafe { std::env::set_var("GROK_WORKSPACE_OIDC_REFRESH_FRACTION", "0.7") };
-        unsafe { std::env::set_var("GROK_WORKSPACE_OIDC_REFRESH_JITTER_FRACTION", "0.1") };
-        unsafe { std::env::set_var("GROK_WORKSPACE_OIDC_REFRESH_SAFETY_MARGIN_SECS", "90") };
-        unsafe { std::env::set_var("GROK_WORKSPACE_OIDC_MIN_REFRESH_INTERVAL_SECS", "30") };
+        unsafe { std::env::set_var("EZER_WORKSPACE_OIDC_PROACTIVE_REFRESH_ENABLED", "true") };
+        unsafe { std::env::set_var("EZER_WORKSPACE_OIDC_REFRESH_FRACTION", "0.7") };
+        unsafe { std::env::set_var("EZER_WORKSPACE_OIDC_REFRESH_JITTER_FRACTION", "0.1") };
+        unsafe { std::env::set_var("EZER_WORKSPACE_OIDC_REFRESH_SAFETY_MARGIN_SECS", "90") };
+        unsafe { std::env::set_var("EZER_WORKSPACE_OIDC_MIN_REFRESH_INTERVAL_SECS", "30") };
         let cfg = ProactiveRefreshConfig::from_env();
         assert!(cfg.enabled);
         assert_eq!(cfg.fraction, 0.7);
@@ -1357,18 +1357,18 @@ mod tests {
         assert_eq!(cfg.safety_margin, Duration::from_secs(90));
         assert_eq!(cfg.min_refresh_interval, Duration::from_secs(30));
 
-        unsafe { std::env::set_var("GROK_WORKSPACE_OIDC_REFRESH_FRACTION", "nope") };
-        unsafe { std::env::set_var("GROK_WORKSPACE_OIDC_REFRESH_JITTER_FRACTION", "9") };
+        unsafe { std::env::set_var("EZER_WORKSPACE_OIDC_REFRESH_FRACTION", "nope") };
+        unsafe { std::env::set_var("EZER_WORKSPACE_OIDC_REFRESH_JITTER_FRACTION", "9") };
         let cfg = ProactiveRefreshConfig::from_env();
         assert_eq!(cfg.fraction, 0.6);
         assert_eq!(cfg.jitter_fraction, 0.2);
 
         for var in [
-            "GROK_WORKSPACE_OIDC_PROACTIVE_REFRESH_ENABLED",
-            "GROK_WORKSPACE_OIDC_REFRESH_FRACTION",
-            "GROK_WORKSPACE_OIDC_REFRESH_JITTER_FRACTION",
-            "GROK_WORKSPACE_OIDC_REFRESH_SAFETY_MARGIN_SECS",
-            "GROK_WORKSPACE_OIDC_MIN_REFRESH_INTERVAL_SECS",
+            "EZER_WORKSPACE_OIDC_PROACTIVE_REFRESH_ENABLED",
+            "EZER_WORKSPACE_OIDC_REFRESH_FRACTION",
+            "EZER_WORKSPACE_OIDC_REFRESH_JITTER_FRACTION",
+            "EZER_WORKSPACE_OIDC_REFRESH_SAFETY_MARGIN_SECS",
+            "EZER_WORKSPACE_OIDC_MIN_REFRESH_INTERVAL_SECS",
         ] {
             unsafe { std::env::remove_var(var) };
         }
@@ -1469,7 +1469,7 @@ mod tests {
     #[test]
     fn oidc_min_refresh_interval_zero_env_is_floored() {
         let _guard = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
-        let var = "GROK_WORKSPACE_OIDC_MIN_REFRESH_INTERVAL_SECS";
+        let var = "EZER_WORKSPACE_OIDC_MIN_REFRESH_INTERVAL_SECS";
         unsafe { std::env::set_var(var, "0") };
         let cfg = ProactiveRefreshConfig::from_env();
         assert_eq!(cfg.min_refresh_interval, MIN_OIDC_MIN_REFRESH_INTERVAL);
@@ -1479,7 +1479,7 @@ mod tests {
     #[test]
     fn ws_liveness_deadline_env_parses() {
         let _guard = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
-        let var = "GROK_WORKSPACE_WS_LIVENESS_DEADLINE_SECS";
+        let var = "EZER_WORKSPACE_WS_LIVENESS_DEADLINE_SECS";
 
         unsafe { std::env::remove_var(var) };
         assert_eq!(StatusConfig::from_env().ws_liveness_deadline, None);
@@ -1499,8 +1499,8 @@ mod tests {
     #[test]
     fn hub_connect_policy_env_parses() {
         let _guard = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
-        let hedge_var = "GROK_WORKSPACE_HUB_CONNECT_HEDGE_AFTER_SECS";
-        let deadline_var = "GROK_WORKSPACE_HUB_CONNECT_DEADLINE_SECS";
+        let hedge_var = "EZER_WORKSPACE_HUB_CONNECT_HEDGE_AFTER_SECS";
+        let deadline_var = "EZER_WORKSPACE_HUB_CONNECT_DEADLINE_SECS";
 
         unsafe {
             std::env::set_var(hedge_var, "3");
@@ -1520,7 +1520,7 @@ mod tests {
     #[test]
     fn backoff_schedule_malformed_returns_none() {
         let _guard = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
-        let var = "GROK_WORKSPACE_TEST_BACKOFF_MALFORMED";
+        let var = "EZER_WORKSPACE_TEST_BACKOFF_MALFORMED";
         unsafe { std::env::set_var(var, "100,not-a-number,500") };
         assert_eq!(backoff_schedule_from_env(var), None);
         unsafe { std::env::remove_var(var) };

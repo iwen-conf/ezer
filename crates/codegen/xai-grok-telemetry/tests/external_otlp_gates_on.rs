@@ -72,9 +72,9 @@ async fn external_stream_gates_on_end_to_end() {
 
     xai_grok_telemetry::log_event(xai_grok_telemetry::events::SessionHarness {
         session_id: "sess-gates-on".into(),
-        client_identifier: Some("grok-pager".into()),
+        client_identifier: Some("ezer".into()),
         model_id: "grok-4".into(),
-        agent_name: "grok-build-plan".into(),
+        agent_name: "ezer-build-plan".into(),
         permission_mode: xai_grok_telemetry::enums::PermissionMode::Ask,
         mcp_server_names: vec!["internal-mcp".into()],
         plugin_names: vec![],
@@ -113,7 +113,7 @@ async fn external_stream_gates_on_end_to_end() {
         hook_rewrote: false,
         duration_ms: 12,
         tool_result_size_bytes: None,
-        model_id: "grok".into(),
+        model_id: "ezer".into(),
         file_path: Some("/tmp/projectdir/config.toml".into()),
         parameters: Some(serde_json::json!({
             "marker": PARAM_MARK,
@@ -131,7 +131,7 @@ async fn external_stream_gates_on_end_to_end() {
         hook_rewrote: false,
         duration_ms: 8,
         tool_result_size_bytes: None,
-        model_id: "grok".into(),
+        model_id: "ezer".into(),
         file_path: None,
         parameters: Some(serde_json::json!({ "command": long_command })),
         tool_use_id: Some("call-bash-long".into()),
@@ -183,18 +183,18 @@ async fn external_stream_gates_on_end_to_end() {
     let records = server.recorder().log_records();
     let harness = server
         .recorder()
-        .log_record("grok_code.session_start")
-        .expect("grok_code.session_start record");
-    assert_eq!("ai.xai.grok_code", harness.scope);
+        .log_record("ezer.session_start")
+        .expect("ezer.session_start record");
+    assert_eq!("ai.xai.ezer", harness.scope);
     assert_eq!(
         harness.resource.get("service.name").and_then(Value::as_str),
-        Some("grok-cli"),
-        "service.name=grok-cli is a wire commitment"
+        Some("ezer-cli"),
+        "service.name=ezer-cli is a wire commitment"
     );
     assert_eq!(
         harness
             .resource
-            .get("grok_code.schema.version")
+            .get("ezer.schema.version")
             .and_then(Value::as_str),
         Some("v1")
     );
@@ -232,8 +232,8 @@ async fn external_stream_gates_on_end_to_end() {
 
     let prompt = server
         .recorder()
-        .log_record("grok_code.user_prompt")
-        .expect("grok_code.user_prompt record");
+        .log_record("ezer.user_prompt")
+        .expect("ezer.user_prompt record");
     let prompt_text = prompt
         .attributes
         .get("prompt")
@@ -257,8 +257,8 @@ async fn external_stream_gates_on_end_to_end() {
 
     let tool = server
         .recorder()
-        .log_record("grok_code.tool_result")
-        .expect("grok_code.tool_result record");
+        .log_record("ezer.tool_result")
+        .expect("ezer.tool_result record");
     assert_eq!(
         tool.attributes.get("tool_name").and_then(Value::as_str),
         Some("github__create_issue"),
@@ -316,7 +316,7 @@ async fn external_stream_gates_on_end_to_end() {
     let bash = records
         .iter()
         .find(|r| {
-            r.event_name == "grok_code.tool_result"
+            r.event_name == "ezer.tool_result"
                 && r.attributes.get("tool_use_id").and_then(Value::as_str) == Some("call-bash-long")
         })
         .expect("long-command tool_result");
@@ -341,8 +341,8 @@ async fn external_stream_gates_on_end_to_end() {
 
     let decision = server
         .recorder()
-        .log_record("grok_code.tool_decision")
-        .expect("grok_code.tool_decision record");
+        .log_record("ezer.tool_decision")
+        .expect("ezer.tool_decision record");
     assert_eq!(
         decision.attributes.get("decision").and_then(Value::as_str),
         Some("deny")
@@ -373,8 +373,8 @@ async fn external_stream_gates_on_end_to_end() {
 
     let assistant = server
         .recorder()
-        .log_record("grok_code.assistant_response")
-        .expect("grok_code.assistant_response record");
+        .log_record("ezer.assistant_response")
+        .expect("ezer.assistant_response record");
     assert_eq!(None, assistant.body, "no record may carry a body");
     let response = assistant
         .attributes
@@ -401,7 +401,7 @@ async fn external_stream_gates_on_end_to_end() {
 
     let tokens = server
         .recorder()
-        .metric_points_named("grok_code.token.usage");
+        .metric_points_named("ezer.token.usage");
     assert!(!tokens.is_empty(), "token.usage must export");
     for p in &tokens {
         let OtelMetricData::Sum { temporality, .. } = p.data else {

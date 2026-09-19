@@ -13,12 +13,12 @@
 //! There is no per-keystroke state machine to drift.
 //! Stale responses are discarded via a generation counter, mirroring `SuggestionController` (shell command suggestions).
 
-/// Env override for the whole feature: `GROK_PROMPT_SUGGESTIONS=0/1`.
+/// Env override for the whole feature: `EZER_PROMPT_SUGGESTIONS=0/1`.
 /// When unset, the persisted `prompt_suggestions` setting applies.
-pub const PROMPT_SUGGESTIONS_ENV: &str = "GROK_PROMPT_SUGGESTIONS";
+pub const PROMPT_SUGGESTIONS_ENV: &str = "EZER_PROMPT_SUGGESTIONS";
 
-/// Env override for the model used by the suggestion call: `GROK_PROMPT_SUGGESTIONS_MODEL=<model-id>`.
-pub const PROMPT_SUGGESTIONS_MODEL_ENV: &str = "GROK_PROMPT_SUGGESTIONS_MODEL";
+/// Env override for the model used by the suggestion call: `EZER_PROMPT_SUGGESTIONS_MODEL=<model-id>`.
+pub const PROMPT_SUGGESTIONS_MODEL_ENV: &str = "EZER_PROMPT_SUGGESTIONS_MODEL";
 
 /// Controller for the predicted-next-prompt ghost text.
 #[derive(Debug, Default)]
@@ -33,7 +33,7 @@ pub struct PromptSuggestionController {
     /// makes the impression fire exactly once per installed suggestion, at first visibility (divergent
     /// draft cleared, gate re-opened).
     shown_logged: bool,
-    /// Whether the feature is enabled. Resolved from `GROK_PROMPT_SUGGESTIONS`, falling back to the persisted `prompt_suggestions` setting.
+    /// Whether the feature is enabled. Resolved from `EZER_PROMPT_SUGGESTIONS`, falling back to the persisted `prompt_suggestions` setting.
     pub enabled: bool,
 }
 

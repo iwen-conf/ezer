@@ -46,7 +46,7 @@ pub(crate) fn build_base_resource(client: OtelClientInfo) -> opentelemetry_sdk::
         resource_attrs.push(opentelemetry::KeyValue::new("terminal.type", terminal_type));
     }
     opentelemetry_sdk::Resource::builder_empty()
-        .with_service_name("grok-cli")
+        .with_service_name("ezer-cli")
         .with_attributes(resource_attrs)
         .build()
 }
@@ -57,7 +57,7 @@ pub(crate) fn build_static_headers(
 ) -> std::collections::HashMap<String, String> {
     let mut static_headers = std::collections::HashMap::new();
     static_headers.insert(
-        "x-grok-client-version".to_string(),
+        "x-ezer-client-version".to_string(),
         client_version.to_string(),
     );
     let _ = (alpha_test_key, traces_url);

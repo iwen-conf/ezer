@@ -65,7 +65,7 @@ pub enum ToolApprovalGate {
 
 /// On by construction where the device is the user's own: there is no off switch on the device, only
 /// the tenant's `tool_approval_policy` delivered with the bind. The sandbox guest keeps the opt-in its
-/// plane already uses (`GROK_HITL_PERMISSION_LIVE`).
+/// plane already uses (`EZER_HITL_PERMISSION_LIVE`).
 pub fn approval_gate_for(host_kind: WorkspaceHostKind) -> ToolApprovalGate {
     resolve_gate(host_kind, hitl_permission_live_enabled())
 }

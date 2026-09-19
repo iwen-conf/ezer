@@ -1006,13 +1006,13 @@ mod tests {
     fn bg_config() -> ToolServerConfig {
         ToolServerConfig {
             tools: vec![
-                tc("GrokBuild:run_terminal_cmd", Some(ToolKind::Execute)),
+                tc("Ezer:run_terminal_cmd", Some(ToolKind::Execute)),
                 tc(
-                    "GrokBuild:get_task_output",
+                    "Ezer:get_task_output",
                     Some(ToolKind::BackgroundTaskAction),
                 ),
-                tc("GrokBuild:kill_task", Some(ToolKind::KillTaskAction)),
-                tc("GrokBuild:monitor", Some(ToolKind::Monitor)),
+                tc("Ezer:kill_task", Some(ToolKind::KillTaskAction)),
+                tc("Ezer:monitor", Some(ToolKind::Monitor)),
             ],
             behavior_preset: None,
         }

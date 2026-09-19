@@ -1,7 +1,7 @@
 //! End-to-end tests for `install_internal`, the GCS-bucket installer used when `installer = "internal"` is configured.
 //!
 //! Wires together a wiremock-mocked GCS bucket and an isolated `GROK_HOME` tempdir to verify the full install pipeline:
-//! fetch version, download the grok binary, chmod, atomic symlink, cleanup_old_downloads, persist installer config.
+//! fetch version, download the ezer binary, chmod, atomic symlink, cleanup_old_downloads, persist installer config.
 //!
 //! The function reads `grok_home()` (a process-wide `OnceLock`).
 //! All tests in this binary therefore share one `GROK_HOME` and run serially via `#[serial]`.
@@ -62,7 +62,7 @@ async fn mount_gcs(version: &str, platform: &str) -> MockServer {
 
     // Main grok binary download.
     Mock::given(method("GET"))
-        .and(path(format!("/grok-{version}-{platform}")))
+        .and(path(format!("/ezer-{version}-{platform}")))
         .respond_with(ResponseTemplate::new(200).set_body_bytes(b"#!/bin/sh\nexit 0\n".to_vec()))
         .mount(&server)
         .await;
@@ -94,8 +94,8 @@ async fn install_internal_pinned_version_writes_binary_and_symlink() {
     assert!(downloaded.exists(), "binary downloaded: {downloaded:?}");
     assert_eq!(std::fs::read(&downloaded).unwrap(), b"#!/bin/sh\nexit 0\n");
 
-    let symlink = home.join("bin").join("grok");
-    assert!(symlink.is_symlink(), "grok symlink created");
+    let symlink = home.join("bin").join("ezer");
+    assert!(symlink.is_symlink(), "ezer symlink created");
     let target = std::fs::read_link(&symlink).unwrap();
     assert_eq!(
         target.file_name().unwrap(),
@@ -106,7 +106,7 @@ async fn install_internal_pinned_version_writes_binary_and_symlink() {
     let agent_link = home.join("bin").join("agent");
     assert!(agent_link.is_symlink(), "agent symlink created");
     let agent_target = std::fs::read_link(&agent_link).unwrap();
-    assert_eq!(agent_target, target, "agent and grok point at same target");
+    assert_eq!(agent_target, target, "agent and ezer point at same target");
 }
 
 /// Regression: pre-existing `agent` symlink from a prior install must be swapped to the new version, not left stale (the original bug).
@@ -130,7 +130,7 @@ async fn install_internal_updates_stale_agent_symlink_to_new_version() {
     let rel_old = std::path::Path::new("..")
         .join("downloads")
         .join(format!("grok-0.1.180-{platform}"));
-    std::os::unix::fs::symlink(&rel_old, bin_dir.join("grok")).unwrap();
+    std::os::unix::fs::symlink(&rel_old, bin_dir.join("ezer")).unwrap();
     std::os::unix::fs::symlink(&rel_old, bin_dir.join("agent")).unwrap();
 
     install_internal_from_base(Some("0.1.181"), &cfg, &server.uri())
@@ -146,7 +146,7 @@ async fn install_internal_updates_stale_agent_symlink_to_new_version() {
     );
 }
 
-/// Rollback regression: if `agent` swap fails after `grok` succeeded, `grok` must roll back to its prior target (all-or-nothing).
+/// Rollback regression: if `agent` swap fails after `ezer` succeeded, `ezer` must roll back to its prior target (all-or-nothing).
 #[tokio::test]
 #[serial]
 async fn install_internal_rolls_back_grok_when_agent_swap_fails() {
@@ -166,7 +166,7 @@ async fn install_internal_rolls_back_grok_when_agent_swap_fails() {
     let rel_old = std::path::Path::new("..")
         .join("downloads")
         .join(format!("grok-0.1.180-{platform}"));
-    std::os::unix::fs::symlink(&rel_old, bin_dir.join("grok")).unwrap();
+    std::os::unix::fs::symlink(&rel_old, bin_dir.join("ezer")).unwrap();
 
     // Sabotage the agent swap: a non-empty directory makes the rename fail with EISDIR
     let agent_dir = bin_dir.join("agent");
@@ -178,16 +178,16 @@ async fn install_internal_rolls_back_grok_when_agent_swap_fails() {
         .expect_err("agent swap must fail when target is a non-empty dir");
     drop(err);
 
-    let grok_target = std::fs::read_link(bin_dir.join("grok")).unwrap();
+    let grok_target = std::fs::read_link(bin_dir.join("ezer")).unwrap();
     assert_eq!(
         grok_target.file_name().unwrap(),
         format!("grok-0.1.180-{platform}").as_str(),
-        "grok must be rolled back when agent swap fails"
+        "ezer must be rolled back when agent swap fails"
     );
 }
 
-/// Rollback regression for a fresh install (no prior `grok` or `agent`): a sabotaged `agent` swap must *remove* the just-created `grok` link.
-/// Otherwise `grok` would stay on the new binary while `agent` is absent.
+/// Rollback regression for a fresh install (no prior `ezer` or `agent`): a sabotaged `agent` swap must *remove* the just-created `ezer` link.
+/// Otherwise `ezer` would stay on the new binary while `agent` is absent.
 #[tokio::test]
 #[serial]
 async fn install_internal_rollback_removes_absent_prior_grok_link() {
@@ -206,8 +206,8 @@ async fn install_internal_rollback_removes_absent_prior_grok_link() {
     std::fs::create_dir(&agent_dir).unwrap();
     std::fs::write(agent_dir.join("blocker"), b"x").unwrap();
     assert!(
-        !bin_dir.join("grok").exists() && !bin_dir.join("grok").is_symlink(),
-        "precondition: grok must not exist before install",
+        !bin_dir.join("ezer").exists() && !bin_dir.join("ezer").is_symlink(),
+        "precondition: ezer must not exist before install",
     );
 
     let err = install_internal_from_base(Some("0.1.181"), &cfg, &server.uri())
@@ -215,10 +215,10 @@ async fn install_internal_rollback_removes_absent_prior_grok_link() {
         .expect_err("agent swap must fail when target is a non-empty dir");
     drop(err);
 
-    let grok_path = bin_dir.join("grok");
+    let grok_path = bin_dir.join("ezer");
     assert!(
         !grok_path.is_symlink() && !grok_path.exists(),
-        "grok must be removed on rollback when there was no prior link",
+        "ezer must be removed on rollback when there was no prior link",
     );
 }
 
@@ -258,7 +258,7 @@ async fn install_internal_cleans_up_stale_pager_symlink() {
     let home = test_home();
     let bin_dir = home.join("bin");
     std::fs::create_dir_all(&bin_dir).unwrap();
-    let pager_link = bin_dir.join("grok-pager");
+    let pager_link = bin_dir.join("ezer");
     std::os::unix::fs::symlink("/tmp/fake-old-pager", &pager_link).unwrap();
     assert!(
         pager_link.is_symlink(),
@@ -271,7 +271,7 @@ async fn install_internal_cleans_up_stale_pager_symlink() {
 
     assert!(
         !pager_link.exists() && !pager_link.is_symlink(),
-        "stale grok-pager symlink should be removed"
+        "stale ezer symlink should be removed"
     );
 }
 
@@ -445,7 +445,7 @@ async fn install_internal_cleans_up_old_versions_keeping_n_minus_one() {
         "oldest deleted"
     );
 
-    let target = std::fs::read_link(home.join("bin").join("grok")).unwrap();
+    let target = std::fs::read_link(home.join("bin").join("ezer")).unwrap();
     assert!(
         target
             .file_name()
@@ -487,7 +487,7 @@ async fn install_internal_idempotent_for_same_version() {
     .unwrap();
 
     assert_eq!(first, second);
-    let target = std::fs::read_link(test_home().join("bin").join("grok")).unwrap();
+    let target = std::fs::read_link(test_home().join("bin").join("ezer")).unwrap();
     assert!(target.to_string_lossy().contains("0.1.181"));
 }
 

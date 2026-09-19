@@ -139,7 +139,7 @@ pub struct GrepParams {
     pub max_chars_per_line: Option<usize>,
 }
 
-crate::register_resource!("grok_build", "Grep", GrepParams);
+crate::register_resource!("ezer_build", "Grep", GrepParams);
 
 // ───────────────────────────────────────────────────────────────────────────
 // Constants

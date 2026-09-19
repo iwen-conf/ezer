@@ -1,10 +1,10 @@
-//! Regression: `grok plugin marketplace remove` must fail closed when the config-init flock
+//! Regression: `ezer plugin marketplace remove` must fail closed when the config-init flock
 //! cannot be acquired — proceeding unlocked is the race the flock exists to prevent.
 
 #[test]
 fn cli_marketplace_remove_fails_closed_when_init_flock_held() {
     // One #[test] per binary: the env is process-global.
-    let grok_home = tempfile::tempdir().expect("grok home");
+    let grok_home = tempfile::tempdir().expect("ezer home");
     // SAFETY: no other threads are running yet.
     unsafe { std::env::set_var("GROK_HOME", grok_home.path()) };
 

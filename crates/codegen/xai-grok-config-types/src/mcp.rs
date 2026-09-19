@@ -71,7 +71,7 @@ pub enum McpServerProblemSeverity {
     Warning,
 }
 
-/// A problem found loading an `[mcp_servers.*]` entry. It is reported (never fatal) and shown by `grok inspect`.
+/// A problem found loading an `[mcp_servers.*]` entry. It is reported (never fatal) and shown by `ezer inspect`.
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct McpServerConfigProblem {
@@ -525,9 +525,9 @@ pub struct RelaySyncConfig {
 }
 
 impl RelaySyncConfig {
-    /// Check if relay sync is enabled. `GROK_RELAY_SYNC_ENABLED` takes precedence over config.
+    /// Check if relay sync is enabled. `EZER_RELAY_SYNC_ENABLED` takes precedence over config.
     pub fn is_enabled(&self) -> bool {
-        if let Ok(env_val) = std::env::var("GROK_RELAY_SYNC_ENABLED") {
+        if let Ok(env_val) = std::env::var("EZER_RELAY_SYNC_ENABLED") {
             return env_val.eq_ignore_ascii_case("true") || env_val == "1";
         }
         self.enabled.unwrap_or(false)

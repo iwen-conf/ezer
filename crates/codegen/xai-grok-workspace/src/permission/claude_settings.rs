@@ -20,7 +20,7 @@ pub struct ClaudeSettings {
     #[serde(default)]
     pub permissions: Option<ParsedPermissions>,
 
-    /// Raw `defaultMode` string when present (canonical under `permissions`, or grok-only root legacy).
+    /// Raw `defaultMode` string when present (canonical under `permissions`, or ezer-only root legacy).
     /// Recognized values: `acceptEdits`, `bypassPermissions`, `default`, `plan`, `dontAsk`, `auto`.
     #[serde(default)]
     pub default_mode: Option<String>,
@@ -71,7 +71,7 @@ impl ParsedPermissions {
 
 /// Returns `None` only when the file is missing, unreadable, or unparseable JSON.
 /// A `Some(ClaudeSettings)` may lack the `permissions` key, so callers still see `defaultMode` and `additionalDirectories`.
-/// Non-string array entries are skipped with warnings, and the canonical `permissions.*` keys win over the grok-legacy root keys.
+/// Non-string array entries are skipped with warnings, and the canonical `permissions.*` keys win over the ezer-legacy root keys.
 pub fn load_claude_settings(path: &Path) -> Option<ClaudeSettings> {
     // Opening a FIFO for read blocks until a writer appears; this runs on the session actor, so refuse non-regular files up front
     match std::fs::metadata(path) {
@@ -130,7 +130,7 @@ pub fn load_claude_settings(path: &Path) -> Option<ClaudeSettings> {
 }
 
 /// Canonical key is `permissions.defaultMode`.
-/// Root `defaultMode` is grok-only back-compat; use it only when the nested key is absent, never when nested is present but not a string.
+/// Root `defaultMode` is ezer-only back-compat; use it only when the nested key is absent, never when nested is present but not a string.
 pub(crate) fn extract_default_mode(value: &serde_json::Value, path: &Path) -> Option<String> {
     if let Some(perms) = value.get("permissions")
         && let Some(dm) = perms.get("defaultMode")
@@ -156,7 +156,7 @@ pub(crate) fn extract_default_mode(value: &serde_json::Value, path: &Path) -> Op
                 warn!(
                     path = %path.display(),
                     actual_type = %dm.type_of(),
-                    "root defaultMode (grok legacy): expected string, ignoring"
+                    "root defaultMode (ezer legacy): expected string, ignoring"
                 );
                 None
             }

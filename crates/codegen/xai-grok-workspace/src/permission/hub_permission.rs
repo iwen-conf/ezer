@@ -42,7 +42,7 @@ fn is_timeout_err(msg: &str) -> bool {
 
 /// Opt-in for the hub prompt path where it is not on by construction: the sandbox guest. Daemon hosts
 /// ignore it (see `approval_gate_for`).
-pub const HITL_PERMISSION_LIVE_ENV: &str = "GROK_HITL_PERMISSION_LIVE";
+pub const HITL_PERMISSION_LIVE_ENV: &str = "EZER_HITL_PERMISSION_LIVE";
 
 pub fn hitl_permission_live_enabled() -> bool {
     xai_grok_config::env_bool(HITL_PERMISSION_LIVE_ENV) == Some(true)

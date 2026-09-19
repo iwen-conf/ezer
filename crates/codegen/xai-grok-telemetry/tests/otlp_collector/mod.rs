@@ -132,7 +132,7 @@ pub fn generate_tls_material() -> TestTlsMaterial {
 
     let client_key = KeyPair::generate().expect("generate client key");
     let client_params =
-        CertificateParams::new(vec!["grok-client".to_owned()]).expect("client params");
+        CertificateParams::new(vec!["ezer-client".to_owned()]).expect("client params");
     let client_cert = client_params
         .signed_by(&client_key, &ca_cert, &ca_key)
         .expect("sign client cert");

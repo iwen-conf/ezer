@@ -76,8 +76,8 @@ async fn auth_provider_command_mints_the_session_credential() {
     use_temp_grok_home(home.path());
 
     // `echo <token>` is valid in both `sh -c` and `cmd /C`, so this phase needs no external binary and runs identically on every platform
-    let token = mint_with_provider(home.path(), "echo grok-ext-token").await;
-    assert_eq!(token, "grok-ext-token");
+    let token = mint_with_provider(home.path(), "echo ezer-ext-token").await;
+    assert_eq!(token, "ezer-ext-token");
 
     // Windows only: an absolute native path, the form an operator actually writes in config.toml, and the exact shape a POSIX shell mangles
     // Run after the portable phase so a failure here is unambiguously about backslash handling rather than the provider path in general

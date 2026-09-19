@@ -30,8 +30,8 @@ pub enum UpdateRunMode {
 
 const PROMPT_UPDATE_NOW: &str = "Update now? [Y/n/d]";
 const MSG_AUTO_UPDATE_BACKGROUND: &str = "Auto-update running in background.";
-const MSG_RUN_UPDATE_MANUAL: &str = "Run `grok update` to get the latest version.";
-/// An empty or `"stable"` channel means stable, the installers' default (`CHANNEL="${GROK_CHANNEL:-stable}"` in install.sh).
+const MSG_RUN_UPDATE_MANUAL: &str = "Run `ezer update` to get the latest version.";
+/// An empty or `"stable"` channel means stable, the installers' default (`CHANNEL="${EZER_CHANNEL:-stable}"` in install.sh).
 fn is_stable_channel(channel: &str) -> bool {
     channel.is_empty() || channel == "stable"
 }
@@ -63,16 +63,16 @@ fn manual_install_cmd(channel: &str) -> String {
         };
     }
     if cfg!(windows) {
-        format!("$env:GROK_CHANNEL='{channel}'; irm https://x.ai/cli/install.ps1 | iex")
+        format!("$env:EZER_CHANNEL='{channel}'; irm https://x.ai/cli/install.ps1 | iex")
     } else {
-        format!("curl -fsSL https://x.ai/cli/install.sh | GROK_CHANNEL='{channel}' bash")
+        format!("curl -fsSL https://x.ai/cli/install.sh | EZER_CHANNEL='{channel}' bash")
     }
 }
 
 fn reinstall_hint(installer: &str, channel: &str) -> String {
     match installer {
-        "npm" => "Please reinstall via npm:\n  npm i -g @xai-official/grok".to_string(),
-        "gh-release" => "Please reinstall via GitHub Releases:\n  gh release download --repo xai-org-shared/grok-build --pattern 'grok-*' --output grok && chmod +x grok".to_string(),
+        "npm" => "Please reinstall via npm:\n  npm i -g @ezer/ezer".to_string(),
+        "gh-release" => "Please reinstall via GitHub Releases:\n  gh release download --repo xai-org-shared/ezer-build --pattern 'ezer-*' --output ezer && chmod +x ezer".to_string(),
         _ => format!("Please reinstall via:\n  {}", manual_install_cmd(channel)),
     }
 }
@@ -185,7 +185,7 @@ pub fn print_update_status(status: &UpdateStatus, json: bool) -> anyhow::Result<
 
     if let Some(error) = status.error.as_deref() {
         println!(
-            "Grok Build - v{} [{}]",
+            "ezer - v{} [{}]",
             status.current_version, status.channel
         );
         println!("Update check failed: {error}");
@@ -197,24 +197,24 @@ pub fn print_update_status(status: &UpdateStatus, json: bool) -> anyhow::Result<
     if status.update_available {
         if let Some(latest_version) = status.latest_version.as_deref() {
             println!(
-                "A new version of Grok Build is available: {} -> {}{}",
+                "A new version of ezer is available: {} -> {}{}",
                 status.current_version, latest_version, channel_label
             );
         } else {
-            println!("A new version of Grok Build is available.");
+            println!("A new version of ezer is available.");
         }
         return Ok(());
     }
 
     if let Some(latest_version) = status.latest_version.as_deref() {
         println!(
-            "Grok Build - v{} (latest: {}){}",
+            "ezer - v{} (latest: {}){}",
             status.current_version, latest_version, channel_label
         );
         return Ok(());
     }
 
-    println!("Grok Build - v{}{}", status.current_version, channel_label);
+    println!("ezer - v{}{}", status.current_version, channel_label);
     Ok(())
 }
 
@@ -378,7 +378,7 @@ pub struct EnsureLatestOutcome {
 }
 
 /// Unlike [`run_update`] this never uses the compiled-in version for the download decision. A binary already installed by
-/// another process (TUI background download, explicit `grok update`) is reused as-is. On Windows a busy leader therefore
+/// another process (TUI background download, explicit `ezer update`) is reused as-is. On Windows a busy leader therefore
 /// still re-downloads hourly; only the symlink layout can prove the disk is current without exec'ing the binary.
 pub async fn ensure_latest_on_disk(update_config: &UpdateConfig) -> Result<EnsureLatestOutcome> {
     let _ensure_span = xai_grok_telemetry::region!(
@@ -438,7 +438,7 @@ pub async fn ensure_latest_on_disk(update_config: &UpdateConfig) -> Result<Ensur
     Ok(outcome)
 }
 
-/// Disk-version probe gated on the installer actually maintaining the managed `~/.grok/bin/grok` symlink. Only the
+/// Disk-version probe gated on the installer actually maintaining the managed `~/.ezer/bin/ezer` symlink. Only the
 /// internal (install.sh / CDN) and gh-release installers write that symlink. npm manages its own global install, so a
 /// symlink left over from a previous internal install would LIE about the npm install's version.
 fn disk_version_for_installer(installer: &str) -> Option<String> {
@@ -449,7 +449,7 @@ fn disk_version_for_installer(installer: &str) -> Option<String> {
 }
 
 fn env_installer() -> Option<&'static str> {
-    if let Ok(v) = std::env::var("GROK_INSTALLER") {
+    if let Ok(v) = std::env::var("EZER_INSTALLER") {
         return match v.to_ascii_lowercase().as_str() {
             "npm" => Some("npm"),
             "internal" => Some("internal"),
@@ -457,10 +457,10 @@ fn env_installer() -> Option<&'static str> {
             _ => None,
         };
     }
-    if std::env::var_os("GROK_MANAGED_BY_NPM").is_some() {
+    if std::env::var_os("EZER_MANAGED_BY_NPM").is_some() {
         return Some("npm");
     }
-    if std::env::var_os("GROK_MANAGED_BY_INTERNAL").is_some() {
+    if std::env::var_os("EZER_MANAGED_BY_INTERNAL").is_some() {
         return Some("internal");
     }
     if std::env::var_os("npm_config_user_agent").is_some() {
@@ -547,7 +547,7 @@ pub struct UpdateAvailable {
 pub struct BackgroundUpdateCheck {
     /// `Some` when the *running* binary is older than the channel pointer; drives the in-TUI restart hint regardless of who downloads the binary.
     pub update: Option<UpdateAvailable>,
-    /// Handle to the background `grok update` child, `Some` only when a download was actually started (the on-disk install was behind the pointer).
+    /// Handle to the background `ezer update` child, `Some` only when a download was actually started (the on-disk install was behind the pointer).
     /// The TUI parks this and `wait()`s on it at quit-for-update time instead of spawning a second downloader.
     pub download: Option<tokio::process::Child>,
 }
@@ -563,7 +563,7 @@ impl BackgroundUpdateCheck {
 
 /// Check for available updates without blocking the TUI startup. Sets [`BackgroundUpdateCheck::update`] when the running
 /// binary is older than the channel pointer. If `auto_update` is enabled and the on-disk install is also behind the
-/// pointer, kicks off a download (a detached `grok update` child). Only the restart hint is shown.
+/// pointer, kicks off a download (a detached `ezer update` child). Only the restart hint is shown.
 pub async fn check_update_background(update_config: &UpdateConfig) -> BackgroundUpdateCheck {
     let Some(installer) = get_installer().await else {
         return BackgroundUpdateCheck::none();
@@ -706,7 +706,7 @@ pub async fn run_update_if_available(
     let channel_label = format!(" [{}]", update_config.channel);
     if auto_update {
         eprintln!(
-            "A new version of Grok Build is available: {} -> {}{}",
+            "A new version of ezer is available: {} -> {}{}",
             current_version, latest_version, channel_label
         );
         if interactive {
@@ -734,7 +734,7 @@ pub async fn run_update_if_available(
             return Ok(false);
         }
         eprintln!(
-            "A new version of Grok Build is available: {} -> {}{}",
+            "A new version of ezer is available: {} -> {}{}",
             current_version, latest_version, channel_label
         );
         if interactive {
@@ -772,7 +772,7 @@ pub async fn run_update_if_available(
     Ok(false)
 }
 
-/// Launch "grok update" in blocking or non-blocking mode. `NonBlocking` mode returns the spawned child's handle. The
+/// Launch "ezer update" in blocking or non-blocking mode. `NonBlocking` mode returns the spawned child's handle. The
 /// TUI's quit-for-update path `wait()`s on that in-flight download instead of spawning a second downloader. Dropping the
 /// handle does not kill the child (`kill_on_drop` is off), so callers that don't care can ignore it.
 async fn run_update_subcommand(
@@ -788,7 +788,7 @@ async fn run_update_subcommand(
     // None at the startup spawns: they run before the settings prefetch, when this process knows no more than the child
     // Waiting would let telemetry delay an update
     if let Some(mode) = xai_grok_telemetry::client::current_mode() {
-        cmd.env("GROK_TELEMETRY_ENABLED", mode.to_string());
+        cmd.env("EZER_TELEMETRY_ENABLED", mode.to_string());
     }
     match run_mode {
         UpdateRunMode::Blocking => {
@@ -805,7 +805,7 @@ async fn run_update_subcommand(
             // The atomic install protocol makes mid-download kills safe
             let status = cmd.status().await?;
             if !status.success() {
-                anyhow::bail!("grok update failed with {}", status);
+                anyhow::bail!("ezer update failed with {}", status);
             }
             Ok(None)
         }
@@ -822,8 +822,8 @@ async fn run_update_subcommand(
     }
 }
 
-/// Resolve the grok binary path for re-execution after an update. `current_exe()` resolves symlinks via `/proc/self/exe`
-/// (see proc(5)), so it returns the old versioned target after a symlink swap. Prefer `~/.grok/bin/grok` which always
+/// Resolve the ezer binary path for re-execution after an update. `current_exe()` resolves symlinks via `/proc/self/exe`
+/// (see proc(5)), so it returns the old versioned target after a symlink swap. Prefer `~/.ezer/bin/ezer` which always
 /// points to the latest version.
 fn resolve_restart_exe() -> Result<std::path::PathBuf> {
     let canonical = grok_application();
@@ -833,7 +833,7 @@ fn resolve_restart_exe() -> Result<std::path::PathBuf> {
     Ok(std::env::current_exe()?)
 }
 
-/// Restart grok with the original command-line arguments to pick up the update.
+/// Restart ezer with the original command-line arguments to pick up the update.
 pub fn restart_grok() -> Result<()> {
     let exe = resolve_restart_exe()?;
     let mut cmd = Command::new(exe);
@@ -841,8 +841,8 @@ pub fn restart_grok() -> Result<()> {
         cmd.arg(arg);
     }
     cmd.env_clear();
-    cmd.envs(std::env::vars_os().filter(|(k, _)| k != "GROK_AUTO_UPDATE"));
-    eprintln!("Restarting Grok...");
+    cmd.envs(std::env::vars_os().filter(|(k, _)| k != "EZER_AUTO_UPDATE"));
+    eprintln!("Restarting ezer...");
 
     // Use exec on Unix to replace the current process, avoiding stdio issues when the parent exits
     // On Windows, fall back to spawn and exit
@@ -926,7 +926,7 @@ pub async fn run_install_script(
 }
 
 /// Every update path converges to the native build instead of perpetuating the translated one. That covers interactive
-/// `grok update`, background `--auto` children, the leader's hourly converge, and forced minimum-version installs.
+/// `ezer update`, background `--auto` children, the leader's hourly converge, and forced minimum-version installs.
 /// Without it, a lingering x86_64 process would reinstall x86_64 right over a fresh native install.
 pub(crate) fn detect_platform() -> Result<(&'static str, &'static str)> {
     let os = if cfg!(target_os = "macos") {
@@ -1231,7 +1231,7 @@ pub async fn download_silent(url: &str, dest: &std::path::Path) -> Result<()> {
     Ok(())
 }
 
-/// Delete `~/.grok/models_cache.json` after a successful update. The cache embeds the binary version, so the new binary
+/// Delete `~/.ezer/models_cache.json` after a successful update. The cache embeds the binary version, so the new binary
 /// would treat it as a miss anyway. Removing it eagerly avoids a wasted disk read and deserialize on first launch.
 async fn remove_stale_models_cache() {
     let cache = grok_home().join("models_cache.json");
@@ -1242,13 +1242,13 @@ async fn remove_stale_models_cache() {
     }
 }
 
-/// Remove the stale `grok-pager` symlink/binary from `~/.grok/bin/` left by
+/// Remove the stale `ezer` symlink/binary from `~/.ezer/bin/` left by
 /// older installations that shipped a separate pager binary.
 async fn remove_stale_pager(bin_dir: &std::path::Path) {
     let name = if cfg!(windows) {
-        "grok-pager.exe"
+        "ezer.exe"
     } else {
-        "grok-pager"
+        "ezer"
     };
     let link = bin_dir.join(name);
     if link.exists() || link.is_symlink() {
@@ -1496,7 +1496,7 @@ async fn smoke_test_binary(binary_path: &std::path::Path) -> Result<(), SmokeTes
 }
 
 /// Test-only entry point: same as [`install_internal`] but reads from `gcs_base_url` instead of the hardcoded GCS bucket.
-/// Persists installer config and writes to `~/.grok/bin/`, so callers must isolate `GROK_HOME`.
+/// Persists installer config and writes to `~/.ezer/bin/`, so callers must isolate `GROK_HOME`.
 #[doc(hidden)]
 pub async fn install_internal_from_base(
     target: Option<&str>,
@@ -1512,8 +1512,8 @@ pub async fn install_internal_from_base(
         .map_err(|e| InstallPhaseError::Activate(e).into())
 }
 
-/// A downloaded and smoke-tested binary in `~/.grok/downloads/`, not yet
-/// activated as the managed `grok`/`agent`.
+/// A downloaded and smoke-tested binary in `~/.ezer/downloads/`, not yet
+/// activated as the managed `ezer`/`agent`.
 struct VerifiedDownload {
     version: String,
     binary_path: std::path::PathBuf,
@@ -1549,10 +1549,10 @@ async fn download_verified_from_base(
     let download_dir = grok_home.join("downloads");
     tokio::fs::create_dir_all(&download_dir).await?;
 
-    let binary_name = format!("grok-{}-{}", version, platform);
+    let binary_name = format!("ezer-{}-{}", version, platform);
     let binary_path = download_dir.join(&binary_name);
 
-    eprintln!("  Downloading grok v{} ({})...", version, platform);
+    eprintln!("  Downloading ezer v{} ({})...", version, platform);
 
     // The downloaded binary is already +x (see `publish_downloaded_artifact`)
     download_cli_artifact_from_gcs(gcs_base_url, &binary_name, &binary_path, true).await?;
@@ -1613,8 +1613,8 @@ async fn activate_verified_download(download: &VerifiedDownload) -> Result<()> {
     eprintln!();
 
     // Current, N-1, and any leftover a live process is still executing.
-    cleanup_old_downloads(&download_dir, "grok", &download.version).await;
-    cleanup_old_downloads(&download_dir, "grok-pager", &download.version).await;
+    cleanup_old_downloads(&download_dir, "ezer", &download.version).await;
+    cleanup_old_downloads(&download_dir, "ezer", &download.version).await;
 
     // Persist installer to config.toml so future runs auto-detect internal.
     let _ = config::update_config(|st| {
@@ -1638,9 +1638,9 @@ async fn regenerate_completions(binary: &std::path::Path, grok_home: &std::path:
     let user_home = xai_dirs::home_dir().unwrap_or_default();
 
     let completions: &[(&str, std::path::PathBuf)] = &[
-        ("bash", grok_home.join("completions/bash/grok.bash")),
-        ("zsh", grok_home.join("completions/zsh/_grok")),
-        ("fish", user_home.join(".config/fish/completions/grok.fish")),
+        ("bash", grok_home.join("completions/bash/ezer.bash")),
+        ("zsh", grok_home.join("completions/zsh/_ezer")),
+        ("fish", user_home.join(".config/fish/completions/ezer.fish")),
     ];
 
     for (shell, dest) in completions {
@@ -1662,9 +1662,9 @@ async fn regenerate_completions(binary: &std::path::Path, grok_home: &std::path:
     }
 }
 
-/// When both paths share a grandparent (e.g. `~/.grok/bin/grok` and `~/.grok/downloads/grok-0.1.203-linux-x86_64`),
+/// When both paths share a grandparent (e.g. `~/.ezer/bin/ezer` and `~/.ezer/downloads/grok-0.1.203-linux-x86_64`),
 /// returns a relative path like `../downloads/grok-0.1.203-linux-x86_64`. Relative symlinks survive Docker bind-mounts
-/// where `~/.grok/` is mapped into a container with a different `$HOME` (and thus a different absolute prefix).
+/// where `~/.ezer/` is mapped into a container with a different `$HOME` (and thus a different absolute prefix).
 #[cfg(unix)]
 fn relative_symlink_target(target: &std::path::Path, link: &std::path::Path) -> std::path::PathBuf {
     let (Some(target_parent), Some(link_parent)) = (target.parent(), link.parent()) else {
@@ -1686,14 +1686,14 @@ fn relative_symlink_target(target: &std::path::Path, link: &std::path::Path) -> 
     target.to_path_buf()
 }
 
-/// The bootstrap installers (`install.sh`, `install.ps1`, `install-enterprise.sh`) maintain `grok` and `agent` in
-/// lockstep, and so must the updater. Otherwise `grok update` leaves `agent` pinned at the previous version. Any earlier
+/// The bootstrap installers (`install.sh`, `install.ps1`, `install-enterprise.sh`) maintain `ezer` and `agent` in
+/// lockstep, and so must the updater. Otherwise `ezer update` leaves `agent` pinned at the previous version. Any earlier
 /// successful swaps are rolled back if a later one fails, including *removing* a link that didn't exist before.
 async fn swap_managed_bin_links(
     binary_path: &std::path::Path,
     bin_dir: &std::path::Path,
 ) -> Result<std::path::PathBuf> {
-    let grok_name = if cfg!(windows) { "grok.exe" } else { "grok" };
+    let grok_name = if cfg!(windows) { "ezer.exe" } else { "ezer" };
     let agent_name = if cfg!(windows) { "agent.exe" } else { "agent" };
     let grok_link = bin_dir.join(grok_name);
     let pairs = [
@@ -2017,7 +2017,7 @@ async fn windows_replace_exe(src: &std::path::Path, dest: &std::path::Path) -> R
     rename_result.map_err(|e| {
         anyhow::anyhow!(
             "cannot rename locked executable {}: {e}\n\
-             Close all running grok sessions and retry.",
+             Close all running ezer sessions and retry.",
             dest.display(),
         )
     })?;
@@ -2080,7 +2080,7 @@ async fn heal_managed_install(installer: &str) {
 
 #[cfg(unix)]
 async fn reconcile_agent_to_grok(bin_dir: &std::path::Path) {
-    let grok_link = bin_dir.join("grok");
+    let grok_link = bin_dir.join("ezer");
     let agent_link = bin_dir.join("agent");
 
     let Ok(grok_target) = tokio::fs::read_link(&grok_link).await else {
@@ -2097,7 +2097,7 @@ async fn reconcile_agent_to_grok(bin_dir: &std::path::Path) {
     match atomic_symlink_swap(&grok_target, &agent_link).await {
         Ok(()) => tracing::info!(
             grok_target = %grok_target.display(),
-            "reconciled agent bin symlink to grok target"
+            "reconciled agent bin symlink to ezer target"
         ),
         Err(e) => tracing::warn!("failed to reconcile agent bin symlink: {e:#}"),
     }
@@ -2105,7 +2105,7 @@ async fn reconcile_agent_to_grok(bin_dir: &std::path::Path) {
 
 #[cfg(windows)]
 async fn reconcile_agent_exe_to_grok(bin_dir: &std::path::Path) {
-    let grok_exe = bin_dir.join("grok.exe");
+    let grok_exe = bin_dir.join("ezer.exe");
     let agent_exe = bin_dir.join("agent.exe");
 
     if tokio::fs::metadata(&grok_exe).await.is_err() {
@@ -2120,8 +2120,8 @@ async fn reconcile_agent_exe_to_grok(bin_dir: &std::path::Path) {
         }
     }
     match windows_replace_exe(&grok_exe, &agent_exe).await {
-        Ok(()) => tracing::info!("reconciled agent.exe to grok.exe"),
-        Err(e) => tracing::warn!("failed to reconcile agent.exe to grok.exe: {e:#}"),
+        Ok(()) => tracing::info!("reconciled agent.exe to ezer.exe"),
+        Err(e) => tracing::warn!("failed to reconcile agent.exe to ezer.exe: {e:#}"),
     }
 }
 
@@ -2202,7 +2202,7 @@ async fn gh_release_download(tag: &str, pattern: &str, dest: &std::path::Path) -
     Ok(())
 }
 
-/// Download and install grok from GitHub Releases (xai-org-shared/grok-build). Uses `gh release download` to fetch the
+/// Download and install ezer from GitHub Releases (xai-org-shared/ezer-build). Uses `gh release download` to fetch the
 /// binary matching the current platform. This works anywhere the `gh` CLI is authenticated, without needing npm or
 /// internal network access.
 async fn install_gh_release(target: Option<&str>) -> Result<()> {
@@ -2220,12 +2220,12 @@ async fn install_gh_release(target: Option<&str>) -> Result<()> {
     tokio::fs::create_dir_all(&download_dir).await?;
     tokio::fs::create_dir_all(&bin_dir).await?;
 
-    let binary_name = format!("grok-{}-{}", version, platform);
+    let binary_name = format!("ezer-{}-{}", version, platform);
     let binary_path = download_dir.join(&binary_name);
     let tag = format!("v{}", version);
 
     eprintln!(
-        "  Downloading grok v{} ({}) from GitHub Releases...",
+        "  Downloading ezer v{} ({}) from GitHub Releases...",
         version, platform
     );
 
@@ -2246,10 +2246,10 @@ async fn install_gh_release(target: Option<&str>) -> Result<()> {
     // resolve to the newly installed version.
     #[cfg(unix)]
     {
-        let latest_path = download_dir.join("grok-latest");
+        let latest_path = download_dir.join("ezer-latest");
         let rel_target = relative_symlink_target(&binary_path, &latest_path);
         if let Err(e) = atomic_symlink_swap(&rel_target, &latest_path).await {
-            tracing::warn!("Failed to update grok-latest symlink: {e}");
+            tracing::warn!("Failed to update ezer-latest symlink: {e}");
         }
     }
 
@@ -2257,11 +2257,11 @@ async fn install_gh_release(target: Option<&str>) -> Result<()> {
     // ~/.grok/downloads/ (legacy layout — skips the grok-latest indirection).
     // Permission errors are ignored
     #[cfg(unix)]
-    for name in ["grok", "agent"] {
+    for name in ["ezer", "agent"] {
         let system_link = std::path::PathBuf::from(format!("/usr/local/bin/{name}"));
         if let Ok(existing_target) = tokio::fs::read_link(&system_link).await {
             let target_str = existing_target.to_string_lossy();
-            if target_str.contains(".grok/downloads/") && !target_str.ends_with("grok-latest") {
+            if target_str.contains(".ezer/downloads/") && !target_str.ends_with("ezer-latest") {
                 let _ = atomic_symlink_swap(&binary_path, &system_link).await;
             }
         }
@@ -2272,8 +2272,8 @@ async fn install_gh_release(target: Option<&str>) -> Result<()> {
     eprintln!();
 
     // Current, N-1, and any leftover a live process is still executing.
-    cleanup_old_downloads(&download_dir, "grok", &version).await;
-    cleanup_old_downloads(&download_dir, "grok-pager", &version).await;
+    cleanup_old_downloads(&download_dir, "ezer", &version).await;
+    cleanup_old_downloads(&download_dir, "ezer", &version).await;
 
     // Persist installer to config.toml so future runs auto-detect gh-release.
     let _ = config::update_config(|st| {
@@ -2313,14 +2313,14 @@ fn create_temp_npmrc(npm_registry: Option<&str>) -> Result<Option<std::path::Pat
     Ok(None)
 }
 
-/// Check if other grok processes are running (macOS only). Any grok process running from that vendored path will be
+/// Check if other ezer processes are running (macOS only). Any ezer process running from that vendored path will be
 /// SIGKILL'd by the kernel. macOS (Apple Silicon in particular) can no longer verify the code signature of the mmap'd
 /// executable pages once the backing inode is unlinked.
 #[cfg(target_os = "macos")]
 fn warn_if_other_grok_processes_running() {
     let my_pid = std::process::id().to_string();
     let mut cmd = Command::new("pgrep");
-    cmd.args(["-f", "grok"])
+    cmd.args(["-f", "ezer"])
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
         .stderr(Stdio::null());
@@ -2334,12 +2334,12 @@ fn warn_if_other_grok_processes_running() {
             .collect();
         if !other_pids.is_empty() {
             eprintln!(
-                "  ⚠ Warning: {} other grok process(es) detected.",
+                "  ⚠ Warning: {} other ezer process(es) detected.",
                 other_pids.len()
             );
             eprintln!("    Processes running from the npm vendored binary path may be");
             eprintln!("    killed by macOS when npm replaces the package files.");
-            eprintln!("    Consider closing other grok sessions before updating.");
+            eprintln!("    Consider closing other ezer sessions before updating.");
             eprintln!();
         }
     }
@@ -2360,7 +2360,7 @@ fn install_npm(target: Option<&str>, channel: &str, npm_registry: Option<&str>) 
     warn_if_other_grok_processes_running();
 
     let version_arg = match target {
-        Some(ver) => format!("@xai-official/grok@{ver}"),
+        Some(ver) => format!("@ezer/ezer@{ver}"),
         None => {
             // All current callers resolve the version via get_latest_version (max(stable, alpha) for the alpha channel) before reaching here
             // Falling back to a raw dist-tag would bypass that logic, so warn loudly if this path is ever hit
@@ -2369,7 +2369,7 @@ fn install_npm(target: Option<&str>, channel: &str, npm_registry: Option<&str>) 
                 "install_npm called without a resolved version, falling back to dist-tag"
             );
             format!(
-                "@xai-official/grok@{}",
+                "@ezer/ezer@{}",
                 if channel == "alpha" {
                     "alpha"
                 } else {
@@ -2472,7 +2472,7 @@ pub async fn run_update(
             anyhow::bail!("{e}");
         }
         eprintln!(
-            "Installing Grok {} (current: {})...",
+            "Installing ezer {} (current: {})...",
             version, current_version
         );
         eprintln!();
@@ -2485,8 +2485,8 @@ pub async fn run_update(
         {
             tracing::warn!("Failed to persist auto_update=false for pinned install: {e}");
         }
-        eprintln!("  ✓ grok v{} installed successfully!", version);
-        eprintln!("  Please restart Grok.");
+        eprintln!("  ✓ ezer v{} installed successfully!", version);
+        eprintln!("  Please restart ezer.");
         return Ok(Some(version.to_string()));
     }
 
@@ -2593,12 +2593,12 @@ pub async fn run_update(
         .unwrap_or(true)
     {
         eprintln!(
-            "Forcing reinstall of Grok {} (already up to date)",
+            "Forcing reinstall of ezer {} (already up to date)",
             effective_current
         );
         &effective_current
     } else {
-        eprintln!("Updating Grok {} → {}", effective_current, install_target);
+        eprintln!("Updating ezer {} → {}", effective_current, install_target);
         &install_target
     };
 
@@ -2609,10 +2609,10 @@ pub async fn run_update(
     let stable_ptr = try_fetch_stable_pointer().await;
     write_version_cache(target_version, stable_ptr.as_deref()).await;
     refresh_deployment_config().await;
-    eprintln!("  ✓ grok v{} installed successfully!", target_version);
+    eprintln!("  ✓ ezer v{} installed successfully!", target_version);
 
-    if !force && std::env::var_os("GROK_AUTO_UPDATE").is_none() {
-        eprintln!("  Please restart Grok.");
+    if !force && std::env::var_os("EZER_AUTO_UPDATE").is_none() {
+        eprintln!("  Please restart ezer.");
     }
     Ok(Some(target_version.to_string()))
 }
@@ -2639,7 +2639,7 @@ async fn refresh_deployment_config() {
         Err(e) if e.is_auth_rejection() => tracing::debug!("managed config not applied: {e}"),
         Err(e) if e.is_retryable() => {
             tracing::debug!("managed config refresh failed: {e}");
-            eprintln!("  Couldn't apply managed configuration. Run `grok setup` to retry.");
+            eprintln!("  Couldn't apply managed configuration. Run `ezer setup` to retry.");
         }
         Err(e) => eprintln!("  Couldn't apply managed configuration. {e}"),
     }

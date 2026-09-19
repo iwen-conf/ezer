@@ -156,7 +156,7 @@ impl std::fmt::Debug for AgentMessageSender {
 pub struct AgentMessageSenderResource(pub AgentMessageSender);
 
 register_resource!(
-    "grok_build",
+    "ezer_build",
     "AgentMessageSenderResource",
     AgentMessageSenderResource
 );

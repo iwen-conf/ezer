@@ -222,7 +222,7 @@ impl AuthManager {
         if let Some(forced) = *self.dark_wake_override.lock() {
             return forced;
         }
-        match std::env::var("GROK_AUTH_FORCE_DARK_WAKE").ok().as_deref() {
+        match std::env::var("EZER_AUTH_FORCE_DARK_WAKE").ok().as_deref() {
             Some("1") => return true,
             Some("0") => return false,
             _ => {}

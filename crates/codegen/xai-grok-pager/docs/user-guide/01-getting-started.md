@@ -1,6 +1,6 @@
 # Getting Started
 
-**ezer** is a terminal-based AI coding assistant (a standalone Grok Build fork). It runs as a TUI that understands your codebase, executes shell commands, edits files, searches the web, and manages tasks — using your own OpenAI-compatible gateway. No xAI / grok.com account is required.
+**ezer** is a terminal-based AI coding assistant (a standalone ezer fork). It runs as a TUI that understands your codebase, executes shell commands, edits files, searches the web, and manages tasks — using your own OpenAI-compatible gateway. No xAI account is required.
 
 You can use it interactively as a full-screen TUI, run it headlessly for scripting and CI/CD, or integrate it into editors via the Agent Client Protocol (ACP).
 
@@ -16,7 +16,7 @@ cargo build -p xai-grok-pager-bin --release
 # config / sessions: ~/.ezer  (override with EZER_HOME)
 ```
 
-The leftover `install.sh` / `install.ps1` scripts still fetch published artifacts and install `ezer` as the primary command (`grok` remains a compatibility name).
+The leftover `install.sh` / `install.ps1` scripts still fetch published artifacts and install `ezer` as the primary command (`ezer` remains a compatibility name).
 
 Verify the installation:
 
@@ -25,8 +25,8 @@ ezer --version
 ```
 
 To fetch a repository through Grove (NFS on macOS, FUSE on Linux), enable
-`ezer clone` with `[clone] enabled = true` in Grove config, `GROK_CLONE=1`,
-or the enable-both convenience `GROK_GROVE=1` / `[cli] grove = true` in
+`ezer clone` with `[clone] enabled = true` in Grove config, `EZER_CLONE=1`,
+or the enable-both convenience `EZER_GROVE=1` / `[cli] grove = true` in
 `~/.ezer/config.toml`:
 
 ```bash
@@ -36,7 +36,7 @@ ezer clone <url> [dir]
 The default is a depth-1 checkout of the selected branch. Pass `--full-history`
 for a complete clone. Clone enablement is independent of session / `-w` Grove
 worktrees (the convenience above turns both on; the specific knobs still win).
-See [grok clone](27-grok-clone.md#authentication) and
+See [ezer clone](27-ezer-clone.md#authentication) and
 [Configuration reference](26-config-reference.md).
 
 ---
@@ -49,7 +49,7 @@ Start ezer by running:
 ezer
 ```
 
-On first launch ezer writes `~/.ezer/config.toml` with a BYOK Responses example pointed at `http://192.168.0.63:8788/v1`. Put your gateway key in that file (`api_key`) or in `EZER_API_KEY`. There is no grok.com login wall.
+On first launch ezer writes `~/.ezer/config.toml` with a BYOK Responses example pointed at `http://192.168.0.63:8788/v1`. Put your gateway key in that file (`api_key`) or in `EZER_API_KEY`. There is no browser login wall.
 
 ```bash
 export EZER_API_KEY="your-gateway-key"
@@ -62,12 +62,12 @@ See [Authentication](02-authentication.md) for the full set of auth options incl
 
 ## Basic Interaction
 
-Once authenticated, Grok presents a full-screen TUI with two main areas:
+Once authenticated, ezer presents a full-screen TUI with two main areas:
 
-- **Scrollback** -- the conversation history showing your prompts, Grok's responses, tool calls, file edits, and more.
+- **Scrollback** -- the conversation history showing your prompts, ezer's responses, tool calls, file edits, and more.
 - **Prompt** -- the input area at the bottom where you type messages.
 
-Type a message and press `Enter` to send it. Grok reads files, runs commands, and edits code as needed. Each tool run streams into the scrollback in real time.
+Type a message and press `Enter` to send it. ezer reads files, runs commands, and edits code as needed. Each tool run streams into the scrollback in real time.
 
 Press `Tab` to move focus between the prompt and the scrollback. While a turn is running, `Ctrl+C` cancels it once the composer is empty — with a draft, the first press only clears it. `Esc` never cancels a turn; mid-turn it shows a reminder to use `Ctrl+C`. Idle, press `Esc` twice within 800ms to clear a non-empty prompt, or (with an empty prompt and conversation messages) to open rewind — see [Keyboard Shortcuts](03-keyboard-shortcuts.md#escape). With the scrollback focused, use the arrow keys to select entries and to collapse or expand them. To navigate with `j`/`k` and fold with `h`/`l` instead, enable Vim mode.
 
@@ -90,7 +90,7 @@ The `@` operator opens a fuzzy file picker. By default it respects `.gitignore` 
 
 ### Permissions
 
-By default, Grok asks for permission before executing shell commands or editing files. You can approve individually or toggle always-approve mode:
+By default, ezer asks for permission before executing shell commands or editing files. You can approve individually or toggle always-approve mode:
 
 - Press `Ctrl+O` to toggle always-approve mode
 - Use the `--yolo` flag at launch: `ezer --yolo`
@@ -113,8 +113,8 @@ Every conversation is a **session**. Sessions are automatically saved to `~/.eze
 The scrollback is the main display area. It shows:
 
 - **User prompts** -- your messages, rendered as sticky headers
-- **Agent messages** -- Grok's responses with full markdown rendering and syntax highlighting
-- **Thinking blocks** -- Grok's reasoning process (collapsible)
+- **Agent messages** -- ezer's responses with full markdown rendering and syntax highlighting
+- **Thinking blocks** -- ezer's reasoning process (collapsible)
 - **Tool calls** -- file edits (with inline diffs), command executions, search results, and more
 - **Task lists** -- TODO items tracking progress
 
@@ -122,7 +122,7 @@ Collapse or expand the selected entry with the `Left`/`Right` arrow keys (or `h`
 
 ### Tools
 
-Grok has built-in tools for:
+ezer has built-in tools for:
 
 | Tool | Description |
 |------|-------------|
@@ -200,7 +200,7 @@ ezer -p "Explain this codebase"
 
 ## Headless Mode
 
-Run Grok non-interactively for scripting, CI/CD, and automation:
+Run ezer non-interactively for scripting, CI/CD, and automation:
 
 ```bash
 ezer -p "Your prompt here"
@@ -224,7 +224,7 @@ ezer -p "Review changes for bugs" --output-format json --yolo | jq -r '.text'
 
 ## Project Rules (AGENTS.md)
 
-Add per-project instructions by creating an `AGENTS.md` file in your repository. Grok reads these files and injects their contents as a project-instructions message at the start of the conversation:
+Add per-project instructions by creating an `AGENTS.md` file in your repository. ezer reads these files and injects their contents as a project-instructions message at the start of the conversation:
 
 ```
 ~/.ezer/AGENTS.md           # Global rules (apply to all projects)
@@ -232,7 +232,7 @@ Add per-project instructions by creating an `AGENTS.md` file in your repository.
 <cwd>/AGENTS.md             # Directory-level rules (highest priority)
 ```
 
-Deeper files take precedence. Grok also reads `CLAUDE.md` files for compatibility.
+Deeper files take precedence. ezer also reads `CLAUDE.md` files for compatibility.
 
 ---
 

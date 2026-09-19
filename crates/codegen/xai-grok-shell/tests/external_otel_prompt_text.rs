@@ -7,7 +7,7 @@ use xai_grok_telemetry::external::{self, ExternalOtelConfig};
 fn prompt_submitted_prompt_text_is_some_when_stream_active() {
     let mut cfg = ExternalOtelConfig::resolve_with(
         |name| match name {
-            "GROK_EXTERNAL_OTEL" => Some("1".into()),
+            "EZER_EXTERNAL_OTEL" => Some("1".into()),
             "OTEL_LOGS_EXPORTER" => Some("console".into()),
             _ => None,
         },

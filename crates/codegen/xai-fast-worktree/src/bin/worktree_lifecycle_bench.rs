@@ -1358,7 +1358,7 @@ fn cleanup_grove_identity(target: &CleanupTarget) -> Result<()> {
         let backing = data_dir.join("worktree-backing").join(&target.worktree_id);
         ensure!(!backing.exists(), "Grove backing remained after ID cleanup");
     }
-    let pin = format!("refs/grok/worktrees/{}", target.worktree_id);
+    let pin = format!("refs/ezer/worktrees/{}", target.worktree_id);
     let registry = runtime::CommandRegistry::new();
     ensure!(
         !git_success(

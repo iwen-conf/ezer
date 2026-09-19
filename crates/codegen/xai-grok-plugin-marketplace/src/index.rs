@@ -1,6 +1,6 @@
 //! Parse repo-level marketplace index.
 //!
-//! Catalog files are probed in order: `.grok-plugin/marketplace.json` (preferred), then `.grok-plugin/plugin.json`.
+//! Catalog files are probed in order: `.ezer-plugin/marketplace.json` (preferred), then `.ezer-plugin/plugin.json`.
 //! The `.claude-plugin/` copies of both follow, for compatibility with the alternate layout.
 //!
 //! When present, an index is preferred over filesystem scanning: it is faster and provides curated metadata (category, tags, homepage).
@@ -187,10 +187,10 @@ impl IndexEntry {
 }
 
 /// Attempt to load the marketplace index from the given root directory.
-/// `.grok-plugin/marketplace.json` (preferred xAI convention); `.grok-plugin/plugin.json`; `.claude-plugin/marketplace.json` (alternate layout compatibility); `.claude-plugin/plugin.json`.
+/// `.ezer-plugin/marketplace.json` (preferred xAI convention); `.ezer-plugin/plugin.json`; `.claude-plugin/marketplace.json` (alternate layout compatibility); `.claude-plugin/plugin.json`.
 /// Returns `Err` if a file exists but can't be parsed.
 pub fn load_index(marketplace_root: &Path) -> Result<Option<MarketplaceIndex>, String> {
-    let grok_dir = marketplace_root.join(".grok-plugin");
+    let grok_dir = marketplace_root.join(".ezer-plugin");
     let claude_dir = marketplace_root.join(".claude-plugin");
     let candidates = [
         grok_dir.join("marketplace.json"),
@@ -288,7 +288,7 @@ mod tests {
         std::fs::create_dir_all(&grok_dir).unwrap();
         std::fs::write(
             grok_dir.join("marketplace.json"),
-            r#"{"name": "grok", "plugins": []}"#,
+            r#"{"name": "ezer", "plugins": []}"#,
         )
         .unwrap();
         let result = load_index(dir.path()).unwrap();

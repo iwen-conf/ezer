@@ -1,4 +1,4 @@
-//! Grok tools library.
+//! ezer tools library.
 
 #![deny(clippy::indexing_slicing)]
 

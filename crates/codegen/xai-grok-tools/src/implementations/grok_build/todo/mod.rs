@@ -154,7 +154,7 @@ pub struct TodoState {
     todos: IndexMap<TodoId, TodoItem>,
 }
 
-crate::register_resource!("grok_build", "Todo", TodoState);
+crate::register_resource!("ezer_build", "Todo", TodoState);
 
 impl TodoState {
     pub fn push(&mut self, id: TodoId, todo: TodoItem) {
@@ -602,8 +602,8 @@ mod tests {
         let snapshot = res.serialize();
         let state_map = snapshot.get("state").unwrap();
         assert!(
-            state_map.get("grok_build.Todo").is_some(),
-            "TodoState should serialize under 'grok_build.Todo'"
+            state_map.get("ezer_build.Todo").is_some(),
+            "TodoState should serialize under 'ezer_build.Todo'"
         );
 
         // Deserialize into fresh Resources

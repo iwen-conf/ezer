@@ -87,8 +87,8 @@ pub enum TerminalName {
     /// The Classic and Reworked 2025 engines are indistinguishable, and all capabilities are conservative/Unknown.
     #[strum(to_string = "JetBrains")]
     JetBrains,
-    /// Grok Desktop (Electron app).
-    #[strum(to_string = "Grok Desktop")]
+    /// ezer Desktop (Electron app).
+    #[strum(to_string = "ezer Desktop")]
     GrokDesktop,
     /// VTE-based terminal (GNOME Terminal, kgx/GNOME Console, Tilix, etc.).
     #[strum(to_string = "VTE")]
@@ -234,7 +234,7 @@ pub struct TerminalContext {
     pub multiplexer: MultiplexerKind,
     /// Whether Byobu is wrapping the session, and which backend it uses.
     pub byobu: Option<ByobuBackend>,
-    /// Which embedded editor `:terminal` grok is running inside, if any.
+    /// Which embedded editor `:terminal` ezer is running inside, if any.
     pub embedded_editor: Option<EmbeddedEditor>,
     /// tmux client metadata (populated only when `multiplexer == Tmux`).
     pub tmux_meta: TmuxClientMeta,
@@ -286,7 +286,7 @@ impl TerminalContext {
     }
 
     /// Whether an outer layer (embedded-editor :terminal or multiplexer) can repaint our pane out of band, stranding rows until a full clear.
-    /// A heal keyed off this only fires when a FocusGained actually reaches grok.
+    /// A heal keyed off this only fires when a FocusGained actually reaches ezer.
     /// That needs focus reporting enabled upstream (e.g. tmux `focus-events on`, off by default).
     pub fn repaints_pane_out_of_band(&self) -> bool {
         self.embedded_editor.is_some() || self.multiplexer != MultiplexerKind::Undetected

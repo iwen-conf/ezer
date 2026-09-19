@@ -2,7 +2,7 @@
 //!
 //! - **Unix:** [`LeaderStream`] and [`LeaderListener`] are type aliases for `tokio::net::UnixStream` and `UnixListener`; no wrapper, no unsafe.
 //! - **Windows:** wraps `tokio::net::windows::named_pipe::*` (tokio doesn't expose AF_UNIX on Windows).
-//!   The leader's filesystem path is hashed into `\\.\pipe\grok-leader-<hash>` so callers keep their path-based API.
+//!   The leader's filesystem path is hashed into `\\.\pipe\ezer-leader-<hash>` so callers keep their path-based API.
 //!
 #[cfg(unix)]
 pub(super) use tokio::net::UnixListener as LeaderListener;
@@ -211,7 +211,7 @@ mod windows_impl {
         name
     }
 
-    /// Deterministic leaf name (`grok-leader-<hash>`) for a filesystem path.
+    /// Deterministic leaf name (`ezer-leader-<hash>`) for a filesystem path.
     ///
     /// Uses SipHash-1-3 with fixed keys so the hash is stable across Rust versions (unlike `DefaultHasher`, whose algorithm is unspecified).
     fn pipe_leaf_name(path: &Path) -> std::ffi::OsString {
@@ -222,7 +222,7 @@ mod windows_impl {
         let mut hasher = SipHasher13::new_with_keys(0x67726f6b_6c656164, 0x65725f70_69706521);
         path.hash(&mut hasher);
         let hash = hasher.finish();
-        std::ffi::OsString::from(format!("grok-leader-{hash:016x}"))
+        std::ffi::OsString::from(format!("ezer-leader-{hash:016x}"))
     }
 
     #[cfg(test)]
@@ -232,8 +232,8 @@ mod windows_impl {
 
         #[test]
         fn pipe_name_is_deterministic() {
-            let a = path_to_pipe_name(Path::new("/tmp/grok.sock"));
-            let b = path_to_pipe_name(Path::new("/tmp/grok.sock"));
+            let a = path_to_pipe_name(Path::new("/tmp/ezer.sock"));
+            let b = path_to_pipe_name(Path::new("/tmp/ezer.sock"));
             assert_eq!(a, b);
         }
 
@@ -248,7 +248,7 @@ mod windows_impl {
         fn pipe_name_has_correct_prefix() {
             let name = path_to_pipe_name(Path::new("/tmp/test.sock"));
             let s = name.to_string_lossy();
-            assert!(s.starts_with(r"\\.\pipe\grok-leader-"), "got: {s}");
+            assert!(s.starts_with(r"\\.\pipe\ezer-leader-"), "got: {s}");
         }
 
         #[test]
@@ -263,7 +263,7 @@ mod windows_impl {
         async fn listener_is_ready_tracks_pipe_lifecycle() {
             // Unique path per process so parallel test binaries don't collide on the derived pipe name
             let path =
-                std::env::temp_dir().join(format!("grok-ready-probe-{}.sock", std::process::id()));
+                std::env::temp_dir().join(format!("ezer-ready-probe-{}.sock", std::process::id()));
 
             // Nothing is bound yet, so the probe hits ERROR_FILE_NOT_FOUND and reports not ready
             assert!(!listener_is_ready(&path));

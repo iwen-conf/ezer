@@ -208,7 +208,7 @@ mod tests {
 
         let client_key = KeyPair::generate().expect("client key");
         let client_params =
-            CertificateParams::new(vec!["grok-client".into()]).expect("client params");
+            CertificateParams::new(vec!["ezer-client".into()]).expect("client params");
         let client_cert = client_params
             .signed_by(&client_key, &ca_cert, &ca_key)
             .expect("sign client");

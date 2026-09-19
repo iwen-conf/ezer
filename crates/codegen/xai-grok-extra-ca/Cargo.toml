@@ -3,7 +3,7 @@ license = "Apache-2.0"
 name = "xai-grok-extra-ca"
 version = "0.1.0"
 edition.workspace = true
-description = "TLS policy for the grok CLI: rustls backend pin, process crypto provider, shared root store, and opt-in GROK_EXTRA_CA_BUNDLE roots"
+description = "TLS policy for the ezer CLI: rustls backend pin, process crypto provider, shared root store, and opt-in EZER_EXTRA_CA_BUNDLE roots"
 
 [dependencies]
 base64 = { workspace = true }

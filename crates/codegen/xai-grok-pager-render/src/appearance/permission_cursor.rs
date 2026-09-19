@@ -102,12 +102,12 @@ thread_local! {
     static CONFIG_LOADED: Cell<bool> = const { Cell::new(false) };
 }
 
-/// Env `GROK_DEFAULT_SELECTED_PERMISSION`, then `[ui].default_selected_permission`, then AlwaysAllowAllSessions.
+/// Env `EZER_DEFAULT_SELECTED_PERMISSION`, then `[ui].default_selected_permission`, then AlwaysAllowAllSessions.
 /// Empty or unrecognised values fall through. Env exists so tests override without editing config.
 pub fn load_default_selected_permission() -> DefaultSelectedPermission {
     CONFIG_LOADED.with(|loaded| {
         if !loaded.get() {
-            let resolved = std::env::var("GROK_DEFAULT_SELECTED_PERMISSION")
+            let resolved = std::env::var("EZER_DEFAULT_SELECTED_PERMISSION")
                 .ok()
                 .map(|s| DefaultSelectedPermission::from_config_value(&s))
                 .filter(|p| *p != DefaultSelectedPermission::AlwaysAllowAllSessions)

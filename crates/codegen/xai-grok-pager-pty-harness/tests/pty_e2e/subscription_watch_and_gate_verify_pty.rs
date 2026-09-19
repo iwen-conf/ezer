@@ -133,8 +133,8 @@ fn pump_until(
 /// The qualifying-tier JWT refresh then hits `localhost:22255`: instant connection-refused instead
 /// of a real network call to auth.x.ai.
 fn seed_fake_oauth_local_issuer(content: &ContentController, user: &str) {
-    let grok_home = content.home().join(".grok");
-    std::fs::create_dir_all(&grok_home).expect("create temp .grok");
+    let grok_home = content.home().join(".ezer");
+    std::fs::create_dir_all(&grok_home).expect("create temp .ezer");
     std::fs::write(
         grok_home.join("auth.json"),
         format!(
@@ -165,7 +165,7 @@ fn spawn_subscription_pager(
 ) -> PtyHarness {
     seed_fake_oauth_local_issuer(content, oauth_user);
     let mut overrides = Vec::from(oauth_credential_ops());
-    overrides.push(EnvOp::set("GROK_LOCAL_AUTH", "1"));
+    overrides.push(EnvOp::set("EZER_LOCAL_AUTH", "1"));
     overrides.extend_from_slice(extra_env);
 
     let binary = pager_binary().expect("resolve pager binary");
@@ -216,7 +216,7 @@ async fn subscription_watch_polls_free_tier_then_goes_dormant_after_upgrade() {
     let mut harness = spawn_subscription_session(
         &content,
         "pty-subwatch",
-        &[EnvOp::set("GROK_SUBSCRIPTION_WATCH_INTERVAL_SECS", "1")],
+        &[EnvOp::set("EZER_SUBSCRIPTION_WATCH_INTERVAL_SECS", "1")],
     );
 
     // While free, the watch fires repeatedly at the (test-shrunk) cadence.
@@ -301,7 +301,7 @@ async fn startup_gate_shows_paywall_for_free_user_after_live_check() {
     content.server().set_settings(json!({
         "allow_access": false,
         "gate_message": GATE_MSG,
-        "gate_url": "https://grok.com/supergrok?referrer=grok-build",
+        "gate_url": "https://grok.com/supergrok?referrer=ezer-build",
         "gate_label": "Subscribe",
     }));
 
@@ -348,7 +348,7 @@ async fn stale_gate_push_never_flashes_paywall_for_subscribed_user() {
     let mut harness = spawn_subscription_session(
         &content,
         "pty-subgate-paid",
-        &[EnvOp::set("GROK_SUBSCRIPTION_WATCH_INTERVAL_SECS", "0")],
+        &[EnvOp::set("EZER_SUBSCRIPTION_WATCH_INTERVAL_SECS", "0")],
     );
 
     // Let startup fetches fully settle so the scripted one-shot below can only be consumed by the /new refresh

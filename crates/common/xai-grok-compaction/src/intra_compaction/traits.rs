@@ -20,7 +20,7 @@ pub enum CompactionTarget {
     /// inter-compaction.
     History,
     /// Replace the *whole* conversation (prior history + accumulated steps)
-    /// with a single summary — grok-build's full-replace strategy. No tail is
+    /// with a single summary — ezer-build's full-replace strategy. No tail is
     /// kept; the read-view is [`CompactionStreamProc::get_all_turns_for_compaction`].
     FullReplace,
 }
@@ -37,7 +37,7 @@ impl CompactionTarget {
 }
 
 /// Minimal interface the compaction orchestrator needs from the agent's
-/// stream processor. Implemented by Grok chat's
+/// stream processor. Implemented by ezer chat's
 /// `StreamProcessor` (`Item = Arc<GrokTurn>`).
 ///
 /// Two read-views are exposed:

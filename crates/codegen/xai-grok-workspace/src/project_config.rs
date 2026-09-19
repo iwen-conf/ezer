@@ -1,4 +1,4 @@
-//! Project config-file discovery: locating repo-local `.mcp.json` and `.grok/config.toml` files by walking from `cwd` up to the git root.
+//! Project config-file discovery: locating repo-local `.mcp.json` and `.ezer/config.toml` files by walking from `cwd` up to the git root.
 //!
 //! These pure `git2` and filesystem walks are shared by the shell's config loaders and the folder-trust gate's `repo_configs_present`.
 
@@ -54,8 +54,8 @@ fn is_user_grok_config_file(config_path: &Path) -> bool {
     canonical_config == canonical_user
 }
 
-/// Find `.ezer/config.toml` (preferred) or `.grok/config.toml` from `cwd` up to the git repo root.
-/// No repo: only `cwd/.ezer/config.toml` / `cwd/.grok/config.toml`. Excludes user-global config so `cwd == $HOME` is not a project overlay.
+/// Find `.ezer/config.toml` (preferred) or `.ezer/config.toml` from `cwd` up to the git repo root.
+/// No repo: only `cwd/.ezer/config.toml` / `cwd/.ezer/config.toml`. Excludes user-global config so `cwd == $HOME` is not a project overlay.
 pub fn find_project_configs(cwd: &Path) -> Vec<PathBuf> {
     find_project_configs_in(&RepoDirChain::resolve(cwd).dirs)
 }
@@ -65,7 +65,7 @@ fn project_config_path(dir: &Path) -> PathBuf {
     if ezer.is_file() {
         ezer
     } else {
-        dir.join(".grok").join("config.toml")
+        dir.join(".ezer").join("config.toml")
     }
 }
 
@@ -103,8 +103,8 @@ mod tests {
 
         let tmp = tempfile::tempdir().unwrap();
         let project = tmp.path().join("repo");
-        std::fs::create_dir_all(project.join(".grok")).unwrap();
-        std::fs::write(project.join(".grok/config.toml"), "# project\n").unwrap();
+        std::fs::create_dir_all(project.join(".ezer")).unwrap();
+        std::fs::write(project.join(".ezer/config.toml"), "# project\n").unwrap();
         let found = find_project_configs(&project);
         assert_eq!(found.len(), 1);
         let Some(first) = found.first() else {

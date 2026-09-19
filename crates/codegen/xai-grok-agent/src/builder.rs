@@ -15,8 +15,8 @@ use xai_grok_tools::computer::types::{AsyncFileSystem, TerminalBackend};
 use xai_grok_tools::notification::ToolNotificationHandle;
 use xai_grok_tools::registry::types::SessionContext;
 use xai_grok_tools::types::tool::ToolKind;
-/// The Grok [`ToolKind`] a vendor-compat `tools:` allowlist entry resolves to, so a plugin's upstream allowlist still binds.
-/// Backed by the shared vendor-to-Grok tool registry in `xai-grok-tools` (also used by the hook matcher).
+/// The ezer [`ToolKind`] a vendor-compat `tools:` allowlist entry resolves to, so a plugin's upstream allowlist still binds.
+/// Backed by the shared vendor-to-ezer tool registry in `xai-grok-tools` (also used by the hook matcher).
 fn claude_tool_kind(name: &str) -> Option<ToolKind> {
     xai_grok_tools::types::kind_for(name)
 }
@@ -107,9 +107,9 @@ fn ensure_plan_mode_tools(tool_config: &mut xai_grok_tools::registry::types::Too
     use xai_grok_tools::implementations::grok_build;
     let existing: std::collections::HashSet<&str> =
         tool_config.tools.iter().map(|tc| tc.id.as_str()).collect();
-    let missing_enter = !existing.contains("GrokBuild:enter_plan_mode");
-    let missing_exit = !existing.contains("GrokBuild:exit_plan_mode");
-    let missing_ask = !existing.contains("GrokBuild:ask_user_question");
+    let missing_enter = !existing.contains("Ezer:enter_plan_mode");
+    let missing_exit = !existing.contains("Ezer:exit_plan_mode");
+    let missing_ask = !existing.contains("Ezer:ask_user_question");
     drop(existing);
     if missing_enter {
         tool_config
@@ -401,7 +401,7 @@ impl AgentBuilder {
         self.backend_search = enabled;
         self
     }
-    /// `Disabled` (default) does not register the tool; flagged via remote `web_fetch_enabled` and the `GROK_WEB_FETCH` env.
+    /// `Disabled` (default) does not register the tool; flagged via remote `web_fetch_enabled` and the `EZER_WEB_FETCH` env.
     pub fn with_web_fetch_config(
         mut self,
         config: xai_grok_tools::implementations::grok_build::web_fetch::WebFetchConfig,
@@ -480,7 +480,7 @@ impl AgentBuilder {
         self.background_workflows_enabled = enabled;
         self
     }
-    /// Advertised in the GrokBuild Task description.
+    /// Advertised in the Ezer Task description.
     pub fn with_task_model_slugs(mut self, slugs: Vec<String>) -> Self {
         self.task_model_slugs = slugs;
         self
@@ -916,14 +916,14 @@ impl AgentBuilder {
             && let Ok(params_value) = serde_json::to_value(params)
             && let Some(obj) = params_value.as_object()
         {
-            merge_tool_params(&mut tool_config, &["GrokBuild:web_fetch"], obj);
+            merge_tool_params(&mut tool_config, &["Ezer:web_fetch"], obj);
         }
         if let Some(ref bash_params) = self.bash_params_json {
             merge_tool_params(
                 &mut tool_config,
                 &[
-                    "GrokBuild:run_terminal_cmd",
-                    "GrokBuildConcise:run_terminal_cmd",
+                    "Ezer:run_terminal_cmd",
+                    "EzerConcise:run_terminal_cmd",
                 ],
                 bash_params,
             );
@@ -931,14 +931,14 @@ impl AgentBuilder {
         if let Some(ref ask_params) = self.ask_user_question_params_json {
             merge_tool_params(
                 &mut tool_config,
-                &["GrokBuild:ask_user_question"],
+                &["Ezer:ask_user_question"],
                 ask_params,
             );
         }
         if self.is_non_interactive {
             let mut ni = serde_json::Map::new();
             ni.insert("non_interactive".into(), serde_json::Value::Bool(true));
-            merge_tool_params(&mut tool_config, &["GrokBuild:ask_user_question"], &ni);
+            merge_tool_params(&mut tool_config, &["Ezer:ask_user_question"], &ni);
         }
         if !definition.disallowed_tools.is_empty() {
             let before: std::collections::HashSet<String> =
@@ -1016,7 +1016,7 @@ impl AgentBuilder {
                     agent = %definition.name,
                     unresolved = ?unresolved,
                     allowed = ?definition.tools,
-                    "tools allowlist had unmappable entries; keeping full grok toolset"
+                    "tools allowlist had unmappable entries; keeping full ezer toolset"
                 );
             }
         }
@@ -1921,7 +1921,7 @@ mod tests {
         use xai_grok_tools::notification::ToolNotificationHandle;
         let tmp = tempfile::tempdir().unwrap();
         let write_skill = |dir: &str, content: &str| {
-            let d = tmp.path().join(".grok/skills").join(dir);
+            let d = tmp.path().join(".ezer/skills").join(dir);
             std::fs::create_dir_all(&d).unwrap();
             std::fs::write(d.join("SKILL.md"), content).unwrap();
         };
@@ -2000,61 +2000,61 @@ mod tests {
         }
         let cases: &[PagerFlagCase] = &[
             PagerFlagCase {
-                label: "grok-build / subagents+ask_user",
+                label: "ezer-build / subagents+ask_user",
                 profile: AgentDefinition::default_grok_build,
                 subagents: true,
                 ask_user: true,
             },
             PagerFlagCase {
-                label: "grok-build / subagents / no-ask-user",
+                label: "ezer-build / subagents / no-ask-user",
                 profile: AgentDefinition::default_grok_build,
                 subagents: true,
                 ask_user: false,
             },
             PagerFlagCase {
-                label: "grok-build / no-subagents / ask_user",
+                label: "ezer-build / no-subagents / ask_user",
                 profile: AgentDefinition::default_grok_build,
                 subagents: false,
                 ask_user: true,
             },
             PagerFlagCase {
-                label: "grok-build / no-subagents / no-ask-user",
+                label: "ezer-build / no-subagents / no-ask-user",
                 profile: AgentDefinition::default_grok_build,
                 subagents: false,
                 ask_user: false,
             },
             PagerFlagCase {
-                label: "grok-build-ask-user / subagents",
+                label: "ezer-build-ask-user / subagents",
                 profile: AgentDefinition::grok_build_ask_user,
                 subagents: true,
                 ask_user: true,
             },
             PagerFlagCase {
-                label: "grok-build-ask-user / no-subagents",
+                label: "ezer-build-ask-user / no-subagents",
                 profile: AgentDefinition::grok_build_ask_user,
                 subagents: false,
                 ask_user: true,
             },
             PagerFlagCase {
-                label: "grok-build-plan",
+                label: "ezer-build-plan",
                 profile: AgentDefinition::grok_build_plan,
                 subagents: true,
                 ask_user: true,
             },
             PagerFlagCase {
-                label: "grok-build-plan / no-ask-user",
+                label: "ezer-build-plan / no-ask-user",
                 profile: AgentDefinition::grok_build_plan,
                 subagents: true,
                 ask_user: false,
             },
             PagerFlagCase {
-                label: "grok-build-plan-no-subagents",
+                label: "ezer-build-plan-no-subagents",
                 profile: AgentDefinition::grok_build_plan_no_subagents,
                 subagents: false,
                 ask_user: true,
             },
             PagerFlagCase {
-                label: "grok-build-plan-no-subagents / no-ask-user",
+                label: "ezer-build-plan-no-subagents / no-ask-user",
                 profile: AgentDefinition::grok_build_plan_no_subagents,
                 subagents: false,
                 ask_user: false,
@@ -2109,11 +2109,11 @@ mod tests {
             );
             assert!(
                 names.contains(&"send_feedback"),
-                "[{label}] parent grok-build sessions must advertise send_feedback; got tools: {names:?}"
+                "[{label}] parent ezer-build sessions must advertise send_feedback; got tools: {names:?}"
             );
             assert!(
                 builtin_names.contains(&"send_feedback"),
-                "[{label}] parent grok-build built-in definitions must advertise send_feedback; got tools: {builtin_names:?}"
+                "[{label}] parent ezer-build built-in definitions must advertise send_feedback; got tools: {builtin_names:?}"
             );
             assert!(
                 names.contains(&"enter_plan_mode"),
@@ -2188,7 +2188,7 @@ mod tests {
             .unwrap_or_else(|| panic!("no {subagent_type} line in task description: {task}"))
             .to_owned()
     }
-    /// Tool definitions of a default grok-build primary with subagents on, so its `spawn_subagent` description carries
+    /// Tool definitions of a default ezer-build primary with subagents on, so its `spawn_subagent` description carries
     /// the previewed child lists; `configure` adds the session knobs under test.
     async fn previewing_primary(
         configure: impl FnOnce(AgentBuilder) -> AgentBuilder,
@@ -2456,7 +2456,7 @@ mod tests {
         definition.tool_config.tools = vec![
             (&ReadFileTool).into(),
             (&WorkflowTool).into(),
-            xai_grok_tools::registry::types::ToolConfig::from_id("GrokBuild:workflow"),
+            xai_grok_tools::registry::types::ToolConfig::from_id("Ezer:workflow"),
         ];
         let names =
             workflow_tool_names(crate::prompt::context::PromptAudience::Subagent, definition).await;
@@ -2550,7 +2550,7 @@ mod tests {
                 .tool_config
                 .tools
                 .iter()
-                .any(|tc| tc.id == "GrokBuild:ask_user_question"),
+                .any(|tc| tc.id == "Ezer:ask_user_question"),
             "test premise: the profile must not pre-declare ask_user_question"
         );
         let mut params = serde_json::Map::new();
@@ -2692,7 +2692,7 @@ mod tests {
         let mut def = crate::config::AgentDefinition::general_purpose();
         assert!(def.session_tools_allowed("read_file"));
         def.session_tools_allowlist = Some(vec!["read_file".into()]);
-        assert!(def.session_tools_allowed("GrokBuild:read_file"));
+        assert!(def.session_tools_allowed("Ezer:read_file"));
         assert!(!def.session_tools_allowed("grep"));
         def.session_tools_denylist = Some(vec!["read_file".into()]);
         assert!(!def.session_tools_allowed("read_file"));

@@ -152,7 +152,7 @@ async fn test_agent_from_config(
         backend,
         fs,
         cwd: std::path::PathBuf::from("/tmp"),
-        session_folder: std::env::temp_dir().join("grok-test"),
+        session_folder: std::env::temp_dir().join("ezer-test"),
         session_env: std::sync::Arc::new(std::collections::HashMap::new()),
         notification_handle: ToolNotificationHandle::noop(),
         owner_session_id: None,
@@ -805,9 +805,9 @@ pub(crate) fn search_replace_call_at(id: &str, path: &str) -> ToolCallResponse {
 pub(crate) fn read_and_edit_toolset() -> Vec<xai_grok_tools::registry::types::ToolConfig> {
     use xai_grok_tools::registry::types::ToolConfig;
     vec![
-        ToolConfig::from_id("GrokBuild:read_file"),
+        ToolConfig::from_id("Ezer:read_file"),
         ToolConfig {
-            id: "GrokBuild:search_replace".into(),
+            id: "Ezer:search_replace".into(),
             params: Some(
                 serde_json::from_value(serde_json::json!({
                     "skip_read_before_edit": true

@@ -45,11 +45,11 @@ pub fn test_home() -> &'static PathBuf {
         // these env vars. Tests using this helper must be `#[serial]`.
         unsafe {
             std::env::set_var("GROK_HOME", &path);
-            std::env::remove_var("GROK_TEST_VERSION");
+            std::env::remove_var("EZER_TEST_VERSION");
             std::env::remove_var("NPM_TOKEN");
-            std::env::remove_var("GROK_INSTALLER");
-            std::env::remove_var("GROK_MANAGED_BY_NPM");
-            std::env::remove_var("GROK_MANAGED_BY_INTERNAL");
+            std::env::remove_var("EZER_INSTALLER");
+            std::env::remove_var("EZER_MANAGED_BY_NPM");
+            std::env::remove_var("EZER_MANAGED_BY_INTERNAL");
         }
         path
     })
@@ -66,9 +66,9 @@ pub fn reset_home() {
     let _ = std::fs::remove_dir_all(home.join("downloads"));
     // SAFETY: tests using this helper must be `#[serial]`.
     unsafe {
-        std::env::remove_var("GROK_TEST_VERSION");
+        std::env::remove_var("EZER_TEST_VERSION");
         std::env::remove_var("NPM_TOKEN");
-        std::env::remove_var("GROK_INSTALLER");
+        std::env::remove_var("EZER_INSTALLER");
     }
 }
 
@@ -76,14 +76,14 @@ pub fn reset_home() {
 /// duration of the test (until [`reset_home`] or process exit).
 pub fn set_test_version(v: &str) {
     // SAFETY: tests using this helper must be `#[serial]`.
-    unsafe { std::env::set_var("GROK_TEST_VERSION", v) };
+    unsafe { std::env::set_var("EZER_TEST_VERSION", v) };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Install-test fixtures (shared by the blitz + convergence suites)
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// Host `{os}-{arch}` string matching the versioned binary naming scheme (`grok-{version}-{platform}`).
+/// Host `{os}-{arch}` string matching the versioned binary naming scheme (`ezer-{version}-{platform}`).
 pub fn host_platform() -> String {
     let os = if cfg!(target_os = "macos") {
         "macos"

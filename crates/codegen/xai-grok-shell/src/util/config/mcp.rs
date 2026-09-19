@@ -82,8 +82,8 @@ pub(crate) fn get_mcp_server_config(name: &str) -> Option<McpServerConfig> {
     configs.get(name).cloned()
 }
 
-/// Get MCP server config by name, checking project-scoped configs first. Walks from cwd up to the git repo root checking `.grok/config.toml` at each level.
-/// Project-scoped `.grok/config.toml` entries override global `~/.grok/config.toml` entries entirely (no deep merge of individual fields). Closer directories (cwd) take priority over further ones (repo root).
+/// Get MCP server config by name, checking project-scoped configs first. Walks from cwd up to the git repo root checking `.ezer/config.toml` at each level.
+/// Project-scoped `.ezer/config.toml` entries override global `~/.ezer/config.toml` entries entirely (no deep merge of individual fields). Closer directories (cwd) take priority over further ones (repo root).
 pub(crate) fn get_mcp_server_config_with_project(
     name: &str,
     cwd: &std::path::Path,
@@ -108,7 +108,7 @@ pub(crate) fn get_mcp_server_config_with_project(
 pub(crate) const MCP_SCOPE_PROJECT: &str = "project";
 const MCP_SCOPE_USER: &str = "user";
 
-/// Scope an MCP server resolves at: project when any project-scoped `.grok/config.toml` defines it, otherwise user.
+/// Scope an MCP server resolves at: project when any project-scoped `.ezer/config.toml` defines it, otherwise user.
 /// User scope covers the global config, `~/.claude.json`, `~/.cursor/mcp.json`, etc. See [`MCP_SCOPE_PROJECT`] / `MCP_SCOPE_USER`.
 pub(crate) fn mcp_server_scope(name: &str, cwd: &std::path::Path) -> &'static str {
     for config_path in crate::config::find_project_configs(cwd) {
@@ -179,8 +179,8 @@ pub(crate) fn load_mcp_servers_with_oauth(
     (acp_servers, oauth_configs)
 }
 
-/// Load MCP servers with project-scoped overrides from `.grok/config.toml`. Merge strategy: Load MCP servers from global `~/.grok/config.toml`
-/// Walk from git repo root down to `cwd`, loading `.grok/config.toml` at each level (matching skills and AGENTS.md discovery)
+/// Load MCP servers with project-scoped overrides from `.ezer/config.toml`. Merge strategy: Load MCP servers from global `~/.ezer/config.toml`
+/// Walk from git repo root down to `cwd`, loading `.ezer/config.toml` at each level (matching skills and AGENTS.md discovery)
 /// Each level's entries replace entries with the same name entirely (no deep merge; omitted fields fall back to defaults) Closer directories (cwd) take priority over further ones (repo root)
 pub fn load_mcp_servers(cwd: &std::path::Path, compat: &CompatConfig) -> Vec<acp::McpServer> {
     let global_config = crate::config::load_effective_config()
@@ -969,7 +969,7 @@ fn set_mcp_server_enabled_field(
     }
 }
 
-/// Upsert an MCP server entry in `~/.grok/config.toml`.
+/// Upsert an MCP server entry in `~/.ezer/config.toml`.
 /// Also removes the server from `disabled_mcp_servers` if present (a newly defined server should start enabled).
 pub(crate) async fn save_mcp_server_config(
     server_name: &str,
@@ -980,7 +980,7 @@ pub(crate) async fn save_mcp_server_config(
 
 /// Upsert an MCP server entry in the config file at `path`.
 ///
-/// Same behavior as [`save_mcp_server_config`] but targets an explicit config file, e.g. a project-scoped `.grok/config.toml`.
+/// Same behavior as [`save_mcp_server_config`] but targets an explicit config file, e.g. a project-scoped `.ezer/config.toml`.
 pub async fn save_mcp_server_config_at(
     path: &std::path::Path,
     server_name: &str,
@@ -1012,14 +1012,14 @@ pub async fn save_mcp_server_config_at(
     Ok(())
 }
 
-/// Delete an MCP server entry from `~/.grok/config.toml`.
+/// Delete an MCP server entry from `~/.ezer/config.toml`.
 /// Removes `[mcp_servers.<name>]`, cleans up `disabled_mcp_servers` and `[disabled_mcp_tools.<name>]` entries.
 /// Returns `true` if the entry existed.
 pub(crate) async fn delete_mcp_server_config(server_name: &str) -> Result<bool> {
     delete_mcp_server_config_at(&config_path(), server_name).await
 }
 
-/// Delete an MCP server entry from the config file at `path`. Same behavior as [`delete_mcp_server_config`] but targets an explicit config file, e.g. a project-scoped `.grok/config.toml`.
+/// Delete an MCP server entry from the config file at `path`. Same behavior as [`delete_mcp_server_config`] but targets an explicit config file, e.g. a project-scoped `.ezer/config.toml`.
 /// OAuth credential cleanup is keyed by server name against the global credential store. It therefore also drops credentials a same-named server in another config file uses.
 pub async fn delete_mcp_server_config_at(
     path: &std::path::Path,
@@ -1125,7 +1125,7 @@ fn deserialize_mcp_server_config(
 }
 
 /// Turn a failed `[mcp_servers.<name>]` entry into an actionable problem.
-/// The transport-less case is steered to `disabled_mcp_servers`, Grok's real disable mechanism.
+/// The transport-less case is steered to `disabled_mcp_servers`, ezer's real disable mechanism.
 fn diagnose_invalid_entry(name: &str, value: &TomlValue, error: &str) -> McpServerConfigProblem {
     let has_command = value.get("command").is_some();
     let has_url = value.get("url").is_some();
@@ -1134,12 +1134,12 @@ fn diagnose_invalid_entry(name: &str, value: &TomlValue, error: &str) -> McpServ
             "`mcp_servers.{name}` has no transport. To run it, set `command = \"...\"` or \
              `url = \"...\"`. To turn it off, add \"{name}\" to `disabled_mcp_servers` instead of \
              leaving an entry with no transport. \
-             See ~/.grok/docs/user-guide/07-mcp-servers.md"
+             See ~/.ezer/docs/user-guide/07-mcp-servers.md"
         )
     } else {
         format!(
             "`mcp_servers.{name}` has an invalid transport: {error}. \
-             See ~/.grok/docs/user-guide/07-mcp-servers.md"
+             See ~/.ezer/docs/user-guide/07-mcp-servers.md"
         )
     };
     McpServerConfigProblem {
@@ -1178,7 +1178,7 @@ pub(crate) fn parse_mcp_servers_with_problems(root: &TomlValue) -> ParsedMcpServ
                         severity: McpServerProblemSeverity::Warning,
                         message: format!(
                             "`mcp_servers.{name}` has an unrecognized field `{field}`; it is \
-                             ignored. See ~/.grok/docs/user-guide/07-mcp-servers.md"
+                             ignored. See ~/.ezer/docs/user-guide/07-mcp-servers.md"
                         ),
                     });
                 }
@@ -1192,7 +1192,7 @@ pub(crate) fn parse_mcp_servers_with_problems(root: &TomlValue) -> ParsedMcpServ
                         message: format!(
                             "`mcp_servers.{name}` is enabled but its `{field}` is blank. \
                              Set a value, or add \"{name}\" to `disabled_mcp_servers` to turn it \
-                             off. See ~/.grok/docs/user-guide/07-mcp-servers.md"
+                             off. See ~/.ezer/docs/user-guide/07-mcp-servers.md"
                         ),
                     });
                     continue;
@@ -1630,7 +1630,7 @@ fn load_all_mcp_configs(cwd: &std::path::Path) -> IndexMap<String, McpServerConf
 }
 
 /// Load all configured MCP servers with the scope each definition came from (`"user"` or `"project"`).
-/// Overlays project-scoped `.grok/config.toml` files from `cwd` up to the repo root onto the user-tier config, nearest definition winning.
+/// Overlays project-scoped `.ezer/config.toml` files from `cwd` up to the repo root onto the user-tier config, nearest definition winning.
 /// Overrides work the same way as in [`get_mcp_server_config_with_project`].
 pub fn load_mcp_server_configs_with_project(
     cwd: &std::path::Path,
@@ -1641,7 +1641,7 @@ pub fn load_mcp_server_configs_with_project(
 }
 
 /// The ONE global+project TOML overlay walk — merge, discovery, the OAuth map, and scope tags all
-/// derive from it. Project `.grok/config.toml` definitions replace user-tier ones, nearest wins.
+/// derive from it. Project `.ezer/config.toml` definitions replace user-tier ones, nearest wins.
 fn toml_mcp_server_configs_from(
     global_config: &TomlValue,
     cwd: &std::path::Path,
@@ -1660,7 +1660,7 @@ fn toml_mcp_server_configs_from(
                 tracing::debug!(
                     count = project_servers.len(),
                     path = %config_path.display(),
-                    "Loaded project-scoped MCP servers from .grok/config.toml"
+                    "Loaded project-scoped MCP servers from .ezer/config.toml"
                 );
                 for (name, config) in project_servers {
                     servers.insert(name, (config, MCP_SCOPE_PROJECT));
@@ -1672,7 +1672,7 @@ fn toml_mcp_server_configs_from(
     servers
 }
 
-/// MCP config problems across the same layers as [`load_mcp_server_configs_with_project`], for `grok inspect`.
+/// MCP config problems across the same layers as [`load_mcp_server_configs_with_project`], for `ezer inspect`.
 pub(crate) fn load_mcp_server_problems_with_project(
     cwd: &std::path::Path,
 ) -> Vec<McpServerConfigProblem> {
@@ -1710,7 +1710,7 @@ pub fn disabled_mcp_server_names(cwd: &std::path::Path) -> std::collections::Has
     disabled
 }
 
-/// Names `grok mcp enable`/`disable` may target. Covers user/project TOML (including setup-required/invalid entries that session merge drops) and the user `disabled_mcp_servers` list.
+/// Names `ezer mcp enable`/`disable` may target. Covers user/project TOML (including setup-required/invalid entries that session merge drops) and the user `disabled_mcp_servers` list.
 /// Also covers compat JSON (`.mcp.json`, Claude, Cursor) and **plugin** MCP servers (same discovery as doctor/`/mcps`).
 /// Does **not** include gateway connectors (`managed_gateway:…`); those use `disabled_mcp_tools.__managed_gateway_connectors` via the `/mcps` Space. `grok_com_*` is known only when a TOML / disabled / compat / plugin definition exists, not by prefix.
 pub fn cli_known_mcp_server_names(cwd: &std::path::Path) -> std::collections::HashSet<String> {
@@ -1763,14 +1763,14 @@ fn config_path() -> PathBuf {
         .join("config.toml")
 }
 
-/// Path to the user-level config file (`~/.grok/config.toml`).
+/// Path to the user-level config file (`~/.ezer/config.toml`).
 pub fn user_config_path() -> PathBuf {
     config_path()
 }
 
-/// Path to a project-level config file (`<dir>/.grok/config.toml`).
+/// Path to a project-level config file (`<dir>/.ezer/config.toml`).
 pub fn project_config_path(dir: &std::path::Path) -> PathBuf {
-    dir.join(".grok").join("config.toml")
+    dir.join(".ezer").join("config.toml")
 }
 
 /// True when the config file at `path` defines `[mcp_servers.<name>]`.
@@ -1842,8 +1842,8 @@ pub(crate) fn session_registry_from_toml_opt(root: &TomlValue) -> Option<bool> {
     }
 }
 
-/// Overrides `[cli] session_registry`; usable before `~/.grok/config.toml` exists.
-pub const SESSION_REGISTRY_ENV_VAR: &str = "GROK_SESSION_REGISTRY";
+/// Overrides `[cli] session_registry`; usable before `~/.ezer/config.toml` exists.
+pub const SESSION_REGISTRY_ENV_VAR: &str = "EZER_SESSION_REGISTRY";
 
 pub(crate) fn session_registry_from_env_opt() -> Option<bool> {
     xai_grok_config::env_bool(SESSION_REGISTRY_ENV_VAR)
@@ -1941,10 +1941,10 @@ mod tests {
         )
         .unwrap();
 
-        let grok = repo.path().join(".grok");
-        std::fs::create_dir_all(&grok).unwrap();
+        let ezer = repo.path().join(".ezer");
+        std::fs::create_dir_all(&ezer).unwrap();
         std::fs::write(
-            grok.join("config.toml"),
+            ezer.join("config.toml"),
             format!("[plugins]\npaths = [\"{}\"]\n", plugin_dir.display()),
         )
         .unwrap();
@@ -2173,7 +2173,7 @@ auto_update = true
     fn test_use_leader_no_cli_section() {
         let toml_str = r#"
 [models]
-default = "grok-code-fast-1"
+default = "ezer-code-fast-1"
 "#;
         let root: TomlValue = toml::from_str(toml_str).unwrap();
         if let TomlValue::Table(ref table) = root {
@@ -2217,7 +2217,7 @@ auto_update = true
     fn test_use_leader_opt_returns_none_when_no_cli_section() {
         let toml_str = r#"
 [models]
-default = "grok-code-fast-1"
+default = "ezer-code-fast-1"
 "#;
         let root: TomlValue = toml::from_str(toml_str).unwrap();
         assert_eq!(use_leader_from_toml_opt(&root), None);
@@ -2349,8 +2349,8 @@ enabled = false
         let root = toml::from_str::<TomlValue>(
             r#"
 [skills]
-paths = ["~/.grok/skills", "~/.grok/skills/special/SKILL.md"]
-ignore = ["~/.grok/skills/noisy/SKILL.md"]
+paths = ["~/.ezer/skills", "~/.ezer/skills/special/SKILL.md"]
+ignore = ["~/.ezer/skills/noisy/SKILL.md"]
 "#,
         )
         .unwrap();
@@ -2565,7 +2565,7 @@ expose_image_base64 = true
             r#"{
                 "mcpServers": {
                     "api": {
-                        "url": "${GROK_TEST_MCP_UNSET_VAR_12345:-https://fallback.example.com}/mcp"
+                        "url": "${EZER_TEST_MCP_UNSET_VAR_12345:-https://fallback.example.com}/mcp"
                     }
                 }
             }"#,
@@ -2859,15 +2859,15 @@ enabled = false
         assert!(project_body.contains("# keep me"), "{project_body}");
     }
 
-    /// `grok mcp enable` must replace a project `.grok/config.toml` symlink,
+    /// `ezer mcp enable` must replace a project `.ezer/config.toml` symlink,
     /// not rewrite the external referent.
     #[cfg(unix)]
     #[tokio::test]
     async fn project_enable_replaces_config_symlink_not_referent() {
         let tmp = tempfile::tempdir().unwrap();
         git2::Repository::init(tmp.path()).unwrap();
-        let grok = tmp.path().join(".grok");
-        std::fs::create_dir_all(&grok).unwrap();
+        let ezer = tmp.path().join(".grok");
+        std::fs::create_dir_all(&ezer).unwrap();
         let outside = tmp.path().join("outside.toml");
         std::fs::write(
             &outside,
@@ -2878,7 +2878,7 @@ enabled = false
 "#,
         )
         .unwrap();
-        let project_cfg = grok.join("config.toml");
+        let project_cfg = ezer.join("config.toml");
         std::os::unix::fs::symlink(&outside, &project_cfg).unwrap();
 
         assert!(

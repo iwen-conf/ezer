@@ -1,4 +1,4 @@
-//! On-disk cache for the subagent bundle xAI publishes: personas, roles, agents, skills, and workflows written under `<grok home>/bundled`.
+//! On-disk cache for the subagent bundle xAI publishes: personas, roles, agents, skills, and workflows written under `<ezer home>/bundled`.
 //!
 //! `manifest.json` records a checksum for every file this crate writes, so a file the user edited by hand is never overwritten and never pruned.
 //! Archive extraction is bounded (entry count, per-entry size, total decompressed size).

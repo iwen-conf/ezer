@@ -1,4 +1,4 @@
-//! The grok.com chat model catalog (`POST /rest/modes`): the models grok-web's chat picker shows, distinct from the CLI `/v1/models` build catalog.
+//! The grok.com chat model catalog (`POST /rest/modes`): the models ezer-web's chat picker shows, distinct from the CLI `/v1/models` build catalog.
 //! Transport only; the cache and the ACP mapping live in [`crate::agent::chat_modes`].
 
 use std::sync::Arc;
@@ -80,16 +80,16 @@ pub struct ChatModelsClient {
 
 impl ChatModelsClient {
     pub fn new(auth: Arc<AuthManager>) -> Self {
-        let base_url = std::env::var("GROK_MODES_BASE_URL")
+        let base_url = std::env::var("EZER_MODES_BASE_URL")
             .ok()
             .filter(|s| !s.is_empty())
             .or_else(|| {
-                std::env::var("GROK_CONVERSATIONS_BASE_URL")
+                std::env::var("EZER_CONVERSATIONS_BASE_URL")
                     .ok()
                     .filter(|s| !s.is_empty())
             })
             .or_else(|| {
-                std::env::var("GROK_CODE_WEB_URL")
+                std::env::var("EZER_CODE_WEB_URL")
                     .ok()
                     .filter(|s| !s.is_empty())
             })
@@ -125,9 +125,9 @@ impl ChatModelsClient {
                 self.auth.grok_com_config().token_header.clone(),
             )
             .header("x-userid", &auth.user_id)
-            .header("x-grok-client-version", xai_grok_version::VERSION)
+            .header("x-ezer-client-version", xai_grok_version::VERSION)
             .header(
-                "x-grok-client-identifier",
+                "x-ezer-client-identifier",
                 crate::http::process_client_identifier(),
             )
             .header(

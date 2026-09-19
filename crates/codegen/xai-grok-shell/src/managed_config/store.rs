@@ -127,7 +127,7 @@ pub(super) fn team_principal_signed_in() -> std::io::Result<bool> {
 /// Best-effort; a fail_closed opt-in is kept — swapping `auth.json` must not escape policy.
 pub fn clear_orphan() {
     // Env switch only: a served `[features] managed_config = false` must not veto evicting itself.
-    if crate::agent::config::env_bool("GROK_MANAGED_CONFIG") == Some(false)
+    if crate::agent::config::env_bool("EZER_MANAGED_CONFIG") == Some(false)
         || resolve_deployment_key().is_some()
     {
         return;
@@ -577,7 +577,7 @@ pub(crate) fn resolve_deployment_key() -> Option<String> {
         });
     crate::agent::config::resolve_string_flag(
         None,
-        "GROK_DEPLOYMENT_KEY",
+        "EZER_DEPLOYMENT_KEY",
         config_val.as_deref(),
         None,
     )
@@ -589,9 +589,9 @@ pub(super) fn deployment_key_fingerprint(key: &str) -> String {
     blake3::hash(key.as_bytes()).to_hex().to_string()
 }
 
-/// Overlay-free read: a `GROK_CONFIG` overlay must not suppress a policy-enforcement sync.
+/// Overlay-free read: a `EZER_CONFIG` overlay must not suppress a policy-enforcement sync.
 pub fn is_fetch_enabled() -> bool {
-    if let Some(v) = crate::agent::config::env_bool("GROK_MANAGED_CONFIG") {
+    if let Some(v) = crate::agent::config::env_bool("EZER_MANAGED_CONFIG") {
         return v;
     }
     crate::config::ConfigLayers::load()

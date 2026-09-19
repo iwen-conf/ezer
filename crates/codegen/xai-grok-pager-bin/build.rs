@@ -12,7 +12,7 @@ fn git_stdout(args: &[&str]) -> Option<String> {
 }
 
 fn main() {
-    println!("cargo:rerun-if-env-changed=GROK_VERSION");
+    println!("cargo:rerun-if-env-changed=EZER_VERSION");
 
     // Watch the git files that change on commit/checkout so the version stamp refreshes
     // Never emit a missing path: cargo treats it as always dirty and rebuilds this crate every build
@@ -31,7 +31,7 @@ fn main() {
         .filter(|s| s.len() == 12)
         .unwrap_or_else(|| "unknown".to_string());
 
-    let version = std::env::var("GROK_VERSION")
+    let version = std::env::var("EZER_VERSION")
         .or_else(|_| std::env::var("CARGO_PKG_VERSION"))
         .unwrap_or_else(|_| "0.0.0".to_string());
 

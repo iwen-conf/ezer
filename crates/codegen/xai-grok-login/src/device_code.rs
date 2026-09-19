@@ -26,14 +26,14 @@ const MIN_DEVICE_CODE_EXPIRY_FALLBACK_SECS: i64 = 10 * 60;
 pub enum DeviceCodeError {
     #[error(
         "Device-code login is not available for this deployment. \
-         Try `grok login` or set XAI_API_KEY instead."
+         Try `ezer login` or set XAI_API_KEY instead."
     )]
     NotEnabled,
 }
 
 // --- Public types ---
 
-/// Low-cardinality hint sent to the OAuth2 provider as the `x-grok-client-surface` header. It lets device-flow metrics separate logins a human can actually finish (`Ui`, `Cli`) from headless automation (`Headless`).
+/// Low-cardinality hint sent to the OAuth2 provider as the `x-ezer-client-surface` header. It lets device-flow metrics separate logins a human can actually finish (`Ui`, `Cli`) from headless automation (`Headless`).
 /// Headless automation mints a device code but can never reach the browser consent page. That traffic otherwise pollutes the device-flow conversion denominator.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, strum::AsRefStr, strum::IntoStaticStr)]
 #[strum(serialize_all = "snake_case")]
@@ -121,13 +121,13 @@ pub async fn request_device_code(
         client
             .post(&url)
             // Lets oauth2-provider segment device-flow success by client version.
-            .header("x-grok-client-version", xai_grok_version::VERSION)
+            .header("x-ezer-client-version", xai_grok_version::VERSION)
             // Lets oauth2-provider separate human-completable logins from headless automation in the device-flow funnel metrics
-            .header("x-grok-client-surface", surface.as_ref())
+            .header("x-ezer-client-surface", surface.as_ref())
             .form(&[
                 ("client_id", client_id),
                 ("scope", scope_str.as_str()),
-                ("referrer", "grok-build"),
+                ("referrer", "ezer-build"),
             ]),
         &url,
     )
@@ -174,7 +174,7 @@ pub async fn request_device_code(
 // --- Phase 2: Poll until approved ---
 
 /// Poll the token endpoint until the user approves (or denies, or the code expires).
-/// On success, persists credentials to `~/.grok/auth.json` and returns the authenticated `GrokAuth`.
+/// On success, persists credentials to `~/.ezer/auth.json` and returns the authenticated `GrokAuth`.
 /// Callers should have already displayed `device_code.verification_uri` and `device_code.user_code` to the user before calling this.
 pub async fn complete_device_code_login(
     issuer: &str,
@@ -198,14 +198,14 @@ pub async fn complete_device_code_login(
         tokio::time::sleep(poll_interval).await;
 
         if tokio::time::Instant::now() > deadline {
-            anyhow::bail!("Device code expired. Run `grok login --device-auth` again.");
+            anyhow::bail!("Device code expired. Run `ezer login --device-auth` again.");
         }
 
         let resp = with_alpha_test_key(
             client
                 .post(&token_url)
-                .header("x-grok-client-version", xai_grok_version::VERSION)
-                .header("x-grok-client-surface", surface.as_ref())
+                .header("x-ezer-client-version", xai_grok_version::VERSION)
+                .header("x-ezer-client-surface", surface.as_ref())
                 .form(&[
                     ("grant_type", DEVICE_GRANT_TYPE),
                     ("device_code", device_code.device_code.as_str()),
@@ -239,7 +239,7 @@ pub async fn complete_device_code_login(
             }
             "expired_token" => {
                 tracing::warn!(description = detail, "device auth token expired");
-                anyhow::bail!("Device code expired. Run `grok login --device-auth` again.");
+                anyhow::bail!("Device code expired. Run `ezer login --device-auth` again.");
             }
             other => {
                 tracing::warn!(
@@ -514,14 +514,14 @@ pub mod tests {
     #[test]
     fn build_auth_persists_credentials_without_proxy_fetch() {
         let temp_dir = tempfile::tempdir().unwrap();
-        let grok_home = temp_dir.path().join(".grok");
+        let grok_home = temp_dir.path().join(".ezer");
         std::fs::create_dir_all(&grok_home).unwrap();
         let auth_manager = auth_manager_with_grok_home(&grok_home, "http://127.0.0.1:9");
         let tokens = super::TokenOk {
             access_token: "access-token".to_string(),
             refresh_token: Some("refresh-token".to_string()),
             expires_in: Some(900),
-            scope: Some("openid email offline_access grok-cli:access".to_string()),
+            scope: Some("openid email offline_access ezer-cli:access".to_string()),
             id_token: Some(
                 "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiJ1c2VyLTEyMyIsImVtYWlsIjoiZGV2aWNlLWF1dGhAbG9jYWwudGVzdCJ9.sig".to_string(),
             ),
@@ -556,7 +556,7 @@ pub mod tests {
     fn build_auth_seeds_team_metadata_from_access_token() {
         ensure_crypto_provider();
         let temp_dir = tempfile::tempdir().unwrap();
-        let grok_home = temp_dir.path().join(".grok");
+        let grok_home = temp_dir.path().join(".ezer");
         std::fs::create_dir_all(&grok_home).unwrap();
         let auth_manager = auth_manager_with_grok_home(&grok_home, "http://127.0.0.1:9");
         let header = jsonwebtoken::Header::new(jsonwebtoken::Algorithm::HS256);
@@ -566,7 +566,7 @@ pub mod tests {
             "aud": "client-id",
             "exp": 9999999999u64,
             "iat": 1000000000u64,
-            "scope": "offline_access grok-cli:access team:read",
+            "scope": "offline_access ezer-cli:access team:read",
             "principal_type": "Team",
             "principal_id": "team-123",
             "client_id": "client-id",
@@ -581,7 +581,7 @@ pub mod tests {
             .unwrap(),
             refresh_token: Some("refresh-token".to_owned()),
             expires_in: Some(900),
-            scope: Some("offline_access grok-cli:access team:read".to_owned()),
+            scope: Some("offline_access ezer-cli:access team:read".to_owned()),
             id_token: None,
         };
 
@@ -630,7 +630,7 @@ pub mod tests {
     fn assert_build_auth_rejected(cfg: GrokComConfig, token_principal: &str, expected_err: &str) {
         ensure_crypto_provider();
         let temp_dir = tempfile::tempdir().unwrap();
-        let grok_home = temp_dir.path().join(".grok");
+        let grok_home = temp_dir.path().join(".ezer");
         std::fs::create_dir_all(&grok_home).unwrap();
         let auth_manager =
             Arc::new(AuthManager::new(&grok_home, cfg).with_proxy_base_url("http://127.0.0.1:9"));
@@ -673,7 +673,7 @@ pub mod tests {
             ..GrokComConfig::default()
         };
         let temp_dir = tempfile::tempdir().unwrap();
-        let grok_home = temp_dir.path().join(".grok");
+        let grok_home = temp_dir.path().join(".ezer");
         std::fs::create_dir_all(&grok_home).unwrap();
         let auth_manager =
             Arc::new(AuthManager::new(&grok_home, cfg).with_proxy_base_url("http://127.0.0.1:9"));

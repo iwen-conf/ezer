@@ -7,9 +7,9 @@ use xai_grok_tools::types::resources::TruncationCfg;
 const HEAD_TOKEN: &str = "HEADSTART_TOKEN_aaa";
 const TAIL_TOKEN: &str = "TAILEND_TOKEN_zzz";
 fn fake_prompt_path() -> std::path::PathBuf {
-    std::path::PathBuf::from("/tmp/grok-test-home/sessions/cwd/sid/prompts/prompt_0.txt")
+    std::path::PathBuf::from("/tmp/ezer-test-home/sessions/cwd/sid/prompts/prompt_0.txt")
 }
-/// What the real grok_build toolset resolves to.
+/// What the real ezer_build toolset resolves to.
 fn grok_build_info() -> ReadToolInfo {
     ReadToolInfo {
         tool: Some("read_file".to_owned()),
@@ -18,7 +18,7 @@ fn grok_build_info() -> ReadToolInfo {
         max_lines: MAX_LINES_READ,
     }
 }
-/// The bounded message for the grok_build read tool info, over the parts' own assembly.
+/// The bounded message for the ezer_build read tool info, over the parts' own assembly.
 fn bounded_message(
     context: &str,
     query: &str,
@@ -149,7 +149,7 @@ fn build_truncated_preserves_small_query_truncates_context() {
     assert!(message.contains(&query), "small query preserved intact");
     assert!(
         message.starts_with(&query),
-        "grok ordering: query block first"
+        "ezer ordering: query block first"
     );
     assert!(message.contains("CTXHEAD_TOKEN"), "context head preserved");
     assert!(!message.contains(&context), "oversized context truncated");
@@ -185,7 +185,7 @@ fn build_truncated_both_oversized_keeps_bounded_heads() {
     assert!(!message.contains(&context), "full context not inlined");
     assert!(
         message.starts_with("QHEAD_TOKEN"),
-        "grok ordering: query first"
+        "ezer ordering: query first"
     );
     assert!(
         message.len() <= LARGE_PROMPT_THRESHOLD,
@@ -739,7 +739,7 @@ async fn resolve_read_tool_info_reads_finalized_toolset() {
                 ("offset".to_owned(), "start_line".to_owned()),
                 ("limit".to_owned(), "line_count".to_owned()),
             ]);
-            let mut renamed = ToolConfig::from_id("GrokBuild:read_file").with_name("open_file");
+            let mut renamed = ToolConfig::from_id("Ezer:read_file").with_name("open_file");
             renamed.params_name_overrides = Some(overrides);
             *actor.agent.borrow_mut() = test_agent_with_tools(vec![renamed]).await;
             let cfg = TruncationConfig {

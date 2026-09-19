@@ -3,7 +3,7 @@ use xai_grok_tools::types::{claude_names_for, grok_names_for};
 
 /// A compiled hook matcher for tool names.
 /// The pattern semantics are chosen so that `matcher` entries in hooks migrated from other agent CLIs keep firing unchanged:
-/// an empty pattern or `"*"` matches every tool; a "simple" pattern (a plain name or `|`-list) is an **exact** match against each name (after external-to-Grok alias expansion), NOT a regex; anything else is an **unanchored** regex, also tested against the tool's external aliases, so e.g. `^Bash$` matches `run_terminal_command`.
+/// an empty pattern or `"*"` matches every tool; a "simple" pattern (a plain name or `|`-list) is an **exact** match against each name (after external-to-ezer alias expansion), NOT a regex; anything else is an **unanchored** regex, also tested against the tool's external aliases, so e.g. `^Bash$` matches `run_terminal_command`.
 #[derive(Debug, Clone)]
 pub struct HookMatcher {
     kind: MatcherKind,
@@ -70,7 +70,7 @@ fn is_simple_form(pattern: &str) -> bool {
             .all(|b| b.is_ascii_alphanumeric() || b == b'_' || b == b'|')
 }
 
-/// Expand a simple-form pattern into the exact set of names it matches: each `|`-term plus any Grok tool names that term aliases.
+/// Expand a simple-form pattern into the exact set of names it matches: each `|`-term plus any ezer tool names that term aliases.
 /// The alias mapping comes from the shared external-name registry in `xai-grok-tools`, so `"Bash"` also matches `run_terminal_command`.
 /// Empty terms and duplicates are dropped.
 fn exact_names(pattern: &str) -> Vec<String> {

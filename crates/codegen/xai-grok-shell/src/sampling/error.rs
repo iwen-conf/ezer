@@ -1,7 +1,7 @@
 //! Sampling error types.
 //!
 //! The canonical error types live in `xai_grok_sampling_types::error`.
-//! This module re-exports them and adds `map_sampling_err_to_acp`, which depends on `agent_client_protocol::Error` (a grok-shell dependency).
+//! This module re-exports them and adds `map_sampling_err_to_acp`, which depends on `agent_client_protocol::Error` (a ezer-shell dependency).
 
 pub use xai_grok_sampling_types::error::*;
 
@@ -30,7 +30,7 @@ pub const FREE_USAGE_EXHAUSTED_ERROR_CODE: &str = "subscription:free-usage-exhau
 
 /// User-facing free-usage exhaustion copy (paywall).
 /// Promises no reset duration; the backend config drives the quota window.
-pub const FREE_USAGE_USER_MESSAGE: &str = "You\u{2019}ve reached your free Grok Build usage limit for now. Get SuperGrok for much higher limits, or try again later: https://grok.com/supergrok?referrer=grok-build";
+pub const FREE_USAGE_USER_MESSAGE: &str = "You\u{2019}ve reached a usage limit for now. Set EZER_API_KEY / a BYOK gateway, or try again later.";
 
 /// Whether flattened server detail is free-usage-quota exhaustion (paywall), not transient throttling.
 /// Sniffs the well-known code embedded by `parse_error_bytes`.
@@ -77,11 +77,11 @@ fn strip_sampling_api_error_prefix(detail: &str) -> &str {
     detail.trim()
 }
 
-/// IC sometimes reuses OAuth free-tier upsell copy on 429s ("upgrade to a Grok subscription" / grok.com/supergrok).
+/// IC sometimes reuses OAuth free-tier upsell copy on 429s ("upgrade to a ezer subscription" / grok.com/supergrok).
 /// That is wrong for API-key / team auth: higher limits come from credits and spend-based rate-limit tiers, not a personal SuperGrok plan.
 fn pushes_consumer_subscription_upsell(detail: &str) -> bool {
     let d = detail.to_ascii_lowercase();
-    d.contains("grok.com/supergrok") || d.contains("upgrade to a grok subscription")
+    d.contains("grok.com/supergrok") || d.contains("upgrade to a ezer subscription")
 }
 
 /// User-facing copy for capacity/overload failures (stream `overloaded_error`, HTTP 529, proxy-wrapped 5xx).
@@ -116,13 +116,13 @@ pub(crate) fn map_sampling_err_to_acp(err: SamplingError) -> acp::Error {
             // Examples: content-safety blocks, ZDR-gated operations, remote-settings-blocked users
             // Passing the proxy's message via internal_error keeps the explanation visible without triggering the client's re-auth flow on -32000
             StatusCode::FORBIDDEN => {
-                let message = if message.contains("requires a Grok subscription")
+                let message = if message.contains("requires a ezer subscription")
                     && crate::agent::auth_method::has_xai_api_key_env()
                 {
                     format!(
                         "{message}\n\nYou have an API key set (XAI_API_KEY). \
                          Your cached OAuth session is being used instead. \
-                         To use your API key, run `grok logout` or type /logout in the TUI."
+                         To use your API key, run `ezer logout` or type /logout in the TUI."
                     )
                 } else {
                     message
@@ -270,8 +270,8 @@ pub const SERVICE_NAME_REWRITES: &[(&str, &str)] = &[
     ("inference_api", "inference backend"),
     ("research-api", "research backend"),
     ("research_api", "research backend"),
-    ("grok-code-backend", "code backend"),
-    ("grok_code_backend", "code backend"),
+    ("ezer-code-backend", "code backend"),
+    ("ezer_backend", "code backend"),
 ];
 
 /// Scrub every [`SERVICE_NAME_REWRITES`] entry out of `text`, ASCII-case-insensitively (upstream bodies title-case service names).
@@ -565,7 +565,7 @@ mod tests {
     #[test]
     fn format_rate_limited_api_key_rewrites_consumer_subscription_upsell() {
         let body = "Some resource has been exhausted: You are sending requests too quickly. \
-             Please slow down, or upgrade to a Grok subscription for higher limits: \
+             Please slow down, or upgrade to a ezer subscription for higher limits: \
              https://grok.com/supergrok";
         let wire = format!("API error (status 429 Too Many Requests): {body}");
         // OAuth keeps the IC body (personal plan upgrade is correct).
@@ -784,11 +784,11 @@ mod tests {
     /// Cleans up even if the closure panics.
     fn with_api_key_env<F: FnOnce()>(key: Option<&str>, f: F) {
         let prev = std::env::var("XAI_API_KEY").ok();
-        let prev_legacy = std::env::var("GROK_CODE_XAI_API_KEY").ok();
+        let prev_legacy = std::env::var("EZER_CODE_XAI_API_KEY").ok();
         // SAFETY: serial_test ensures no concurrent env mutation.
         unsafe {
             std::env::remove_var("XAI_API_KEY");
-            std::env::remove_var("GROK_CODE_XAI_API_KEY");
+            std::env::remove_var("EZER_CODE_XAI_API_KEY");
             if let Some(k) = key {
                 std::env::set_var("XAI_API_KEY", k);
             }
@@ -797,12 +797,12 @@ mod tests {
         // Restore original state.
         unsafe {
             std::env::remove_var("XAI_API_KEY");
-            std::env::remove_var("GROK_CODE_XAI_API_KEY");
+            std::env::remove_var("EZER_CODE_XAI_API_KEY");
             if let Some(v) = prev {
                 std::env::set_var("XAI_API_KEY", v);
             }
             if let Some(v) = prev_legacy {
-                std::env::set_var("GROK_CODE_XAI_API_KEY", v);
+                std::env::set_var("EZER_CODE_XAI_API_KEY", v);
             }
         }
         if let Err(e) = result {
@@ -816,7 +816,7 @@ mod tests {
         with_api_key_env(Some("xai-test"), || {
             let err = SamplingError::Api {
                 status: StatusCode::FORBIDDEN,
-                message: "The model 'grok-build' requires a Grok subscription.".into(),
+                message: "The model 'ezer-build' requires a ezer subscription.".into(),
                 model_metadata: None,
                 retry_after_secs: None,
                 should_retry: None,
@@ -826,8 +826,8 @@ mod tests {
             let data = acp_err.data.unwrap();
             let msg = data.as_str().unwrap();
             assert!(
-                msg.contains("grok logout"),
-                "should suggest grok logout when API key is available: {msg}"
+                msg.contains("ezer logout"),
+                "should suggest ezer logout when API key is available: {msg}"
             );
             assert!(
                 msg.contains("/logout"),
@@ -842,7 +842,7 @@ mod tests {
         with_api_key_env(None, || {
             let err = SamplingError::Api {
                 status: StatusCode::FORBIDDEN,
-                message: "The model 'grok-build' requires a Grok subscription.".into(),
+                message: "The model 'ezer-build' requires a ezer subscription.".into(),
                 model_metadata: None,
                 retry_after_secs: None,
                 should_retry: None,
@@ -852,7 +852,7 @@ mod tests {
             let data = acp_err.data.unwrap();
             let msg = data.as_str().unwrap();
             assert!(
-                !msg.contains("grok logout"),
+                !msg.contains("ezer logout"),
                 "should NOT suggest logout when no API key is available: {msg}"
             );
         });
@@ -874,7 +874,7 @@ mod tests {
             let data = acp_err.data.unwrap();
             let msg = data.as_str().unwrap();
             assert!(
-                !msg.contains("grok logout"),
+                !msg.contains("ezer logout"),
                 "should NOT suggest logout for non-subscription 403: {msg}"
             );
         });

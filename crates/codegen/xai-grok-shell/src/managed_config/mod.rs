@@ -1,5 +1,5 @@
 //! Sync `managed_config.toml` + `requirements.toml` from the deployment-config endpoint per principal;
-//! evicted on identity switch and logout so config never crosses principals (`GROK_MANAGED_CONFIG=0` skips the sweep).
+//! evicted on identity switch and logout so config never crosses principals (`EZER_MANAGED_CONFIG=0` skips the sweep).
 
 mod policy;
 mod response;

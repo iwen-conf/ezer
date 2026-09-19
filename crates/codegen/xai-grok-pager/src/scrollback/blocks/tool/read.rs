@@ -498,7 +498,7 @@ mod tests {
 
     #[test]
     fn skill_md_renders_as_skill_label() {
-        let block = ReadToolCallBlock::new("/home/user/.grok/skills/deploy/SKILL.md");
+        let block = ReadToolCallBlock::new("/home/user/.ezer/skills/deploy/SKILL.md");
         let output = block.output(&make_ctx());
         let text: String = first_line(&output)
             .content
@@ -664,7 +664,7 @@ mod tests {
     fn skill_header_selects_skill_name_only() {
         use crate::scrollback::types::{Selectable, derive_selection_text};
 
-        let block = ReadToolCallBlock::new("/home/user/.grok/skills/deploy/SKILL.md");
+        let block = ReadToolCallBlock::new("/home/user/.ezer/skills/deploy/SKILL.md");
         let output = block.output(&make_ctx());
         let header = first_line(&output);
 

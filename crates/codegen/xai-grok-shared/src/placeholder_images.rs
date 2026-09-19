@@ -1318,7 +1318,7 @@ mod tests {
         // `image_edit` then reads the session copy rather than re-decoding a large base64 blob
         let img = agent_client_protocol::ImageContent::new("AAAA", "image/png")
             .uri(Some(
-                "file:///Users/me/.grok/sessions/s/images/image-1.png".into(),
+                "file:///Users/me/.ezer/sessions/s/images/image-1.png".into(),
             ))
             .meta(display_number_meta(1));
         let refs = attached_image_references(std::slice::from_ref(&img));
@@ -1326,7 +1326,7 @@ mod tests {
             refs,
             vec![(
                 1,
-                "/Users/me/.grok/sessions/s/images/image-1.png".to_string()
+                "/Users/me/.ezer/sessions/s/images/image-1.png".to_string()
             )]
         );
     }

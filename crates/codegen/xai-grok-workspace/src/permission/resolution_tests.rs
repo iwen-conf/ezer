@@ -1141,7 +1141,7 @@ fn untrusted_project_claude_permissions_are_not_honored() {
     );
 }
 
-/// Untrusted clone must not contribute project `.grok/config.toml` `[permission]`.
+/// Untrusted clone must not contribute project `.ezer/config.toml` `[permission]`.
 /// Sync `block_on` so `ENV_LOCK` is not held across `.await`. Global counts are not exact: `grok_home()` is a process-wide `OnceLock`.
 #[test]
 fn untrusted_project_config_toml_permissions_are_not_honored() {
@@ -1163,10 +1163,10 @@ allow = ["Bash(git status)"]
     let tmp = tempfile::tempdir().unwrap();
     // Bound project discovery to this temp dir (canonical walker uses git root).
     git2::Repository::init(tmp.path()).expect("git init");
-    let grok = tmp.path().join(".grok");
-    std::fs::create_dir_all(&grok).unwrap();
+    let ezer = tmp.path().join(".grok");
+    std::fs::create_dir_all(&ezer).unwrap();
     std::fs::write(
-        grok.join("config.toml"),
+        ezer.join("config.toml"),
         r#"[permission]
 allow = ["Bash(evil *)"]
 "#,
@@ -1627,7 +1627,7 @@ fn non_bool_lock_key_warns_and_does_not_lock() {
         }
     }
 
-    let p = Path::new("/etc/grok/requirements.toml");
+    let p = Path::new("/etc/ezer/requirements.toml");
     let bad = layer("[ui]\ndisable_bypass_permissions_mode = \"true\"\n");
 
     let writer = CapturingWriter::default();
@@ -1653,7 +1653,7 @@ fn non_bool_lock_key_warns_and_does_not_lock() {
         "missing non-bool warning in: {out}"
     );
     assert!(
-        out.contains("/etc/grok/requirements.toml"),
+        out.contains("/etc/ezer/requirements.toml"),
         "non-bool warning must name the layer in: {out}"
     );
 }
@@ -1763,13 +1763,13 @@ fn admin_source_trusts_only_root_owned_tiers() {
         path: p.clone()
     }));
     assert!(is_admin_source(&RequirementSource::SystemRequirements {
-        path: "/etc/grok/requirements.toml".into(),
+        path: "/etc/ezer/requirements.toml".into(),
     }));
     assert!(!is_admin_source(&RequirementSource::Requirements {
-        path: "/home/u/.grok/requirements.toml".into(),
+        path: "/home/u/.ezer/requirements.toml".into(),
     }));
     assert!(!is_admin_source(&RequirementSource::ManagedConfig {
-        path: "/etc/grok/managed_config.toml".into(),
+        path: "/etc/ezer/managed_config.toml".into(),
     }));
     assert!(!is_admin_source(&RequirementSource::Config {
         path: p.clone()
@@ -1799,14 +1799,14 @@ fn drop_untrusted_catchall_allows_is_source_aware() {
         sourced(
             allow_any(Some("**/*")),
             RequirementSource::Requirements {
-                path: "/home/u/.grok/requirements.toml".into(),
+                path: "/home/u/.ezer/requirements.toml".into(),
             },
         ),
         // Managed config: defaults tier, untrusted even from /etc/grok.
         sourced(
             allow_any(Some("*")),
             RequirementSource::ManagedConfig {
-                path: "/etc/grok/managed_config.toml".into(),
+                path: "/etc/ezer/managed_config.toml".into(),
             },
         ),
         // Scoped Allow(Any) from an untrusted source: not a catch-all, kept
@@ -1818,7 +1818,7 @@ fn drop_untrusted_catchall_allows_is_source_aware() {
         sourced(
             allow_any(Some("*")),
             RequirementSource::SystemRequirements {
-                path: "/etc/grok/requirements.toml".into(),
+                path: "/etc/ezer/requirements.toml".into(),
             },
         ),
         sourced(
@@ -1875,10 +1875,10 @@ fn drop_untrusted_catchall_allows_is_source_aware() {
 fn drop_untrusted_freeform_catchalls_respects_source_and_scope() {
     let sourced = |value, source| Sourced { value, source };
     let untrusted = || RequirementSource::Requirements {
-        path: "/home/u/.grok/requirements.toml".into(),
+        path: "/home/u/.ezer/requirements.toml".into(),
     };
     let admin = || RequirementSource::SystemRequirements {
-        path: "/etc/grok/requirements.toml".into(),
+        path: "/etc/ezer/requirements.toml".into(),
     };
     let rules = vec![
         // Bare `allow = ["Bash"]` from an untrusted source: dropped

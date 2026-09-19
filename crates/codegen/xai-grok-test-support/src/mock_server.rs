@@ -208,7 +208,7 @@ impl MockInferenceServer {
     /// [`Self::url`] is `https://127.0.0.1:PORT/v1` and [`Self::ca_pem_path`] is the path to the
     /// CA PEM the client must trust. Only [`crate::headless::run_headless`] and
     /// [`crate::headless::run_headless_with_env`] inject it; any other runner must set
-    /// `GROK_EXTRA_CA_BUNDLE` to [`Self::ca_pem_path`] on its own `TestSandbox` via `set_env`.
+    /// `EZER_EXTRA_CA_BUNDLE` to [`Self::ca_pem_path`] on its own `TestSandbox` via `set_env`.
     pub async fn start_tls() -> anyhow::Result<Self> {
         Self::start_inner(
             vec![MockModelEntry::new(DEFAULT_MODEL)],

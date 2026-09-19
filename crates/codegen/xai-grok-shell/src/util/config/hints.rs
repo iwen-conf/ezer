@@ -106,7 +106,7 @@ impl Default for ResolvedContextualHints {
     }
 }
 
-/// Per tip, the env master `GROK_CONTEXTUAL_HINTS` (all-on/off) beats user config `[ui.contextual_hints].X`.
+/// Per tip, the env master `EZER_CONTEXTUAL_HINTS` (all-on/off) beats user config `[ui.contextual_hints].X`.
 /// User config beats the remote tier `contextual_hints.X` (which only sets the default or soft-disables), and that beats the default ON.
 pub fn resolve_contextual_hints(
     ui: &ContextualHints,
@@ -114,7 +114,7 @@ pub fn resolve_contextual_hints(
 ) -> ResolvedContextualHints {
     use crate::agent::config::BoolFlag;
     let resolve_tip = |user: Option<bool>, feature_flag: Option<bool>| -> bool {
-        BoolFlag::env("GROK_CONTEXTUAL_HINTS")
+        BoolFlag::env("EZER_CONTEXTUAL_HINTS")
             .config(user)
             .feature_flag(feature_flag)
             .default(true)
@@ -193,7 +193,7 @@ mod tests {
         assert_eq!(resolved.new_session_worktree_mode, WorktreeHintMode::Always);
     }
 
-    const ENV_CONTEXTUAL_HINTS: &str = "GROK_CONTEXTUAL_HINTS";
+    const ENV_CONTEXTUAL_HINTS: &str = "EZER_CONTEXTUAL_HINTS";
 
     // `GROK_CONTEXTUAL_HINTS` is process-global
     // Serialize the tests reading it and force it unset so a developer's shell value can't make them flaky

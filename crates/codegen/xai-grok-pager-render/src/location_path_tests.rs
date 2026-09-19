@@ -3,12 +3,12 @@ use super::*;
 #[test]
 fn shorten_location_path_kerem_grok_home() {
     assert_eq!(
-        shorten_location_path("~/.grok/worktrees/code-xai/dashboard-design").as_ref(),
-        "~/.g/w/code-xai/dashboard-design"
+        shorten_location_path("~/.ezer/worktrees/code-xai/dashboard-design").as_ref(),
+        "~/.e/w/code-xai/dashboard-design"
     );
     assert_eq!(
-        shorten_location_path("$GROK_HOME/worktrees/code-xai/dashboard-design").as_ref(),
-        "$GROK_HOME/w/code-xai/dashboard-design"
+        shorten_location_path("$EZER_HOME/worktrees/code-xai/dashboard-design").as_ref(),
+        "$EZER_HOME/w/code-xai/dashboard-design"
     );
 }
 
@@ -30,15 +30,15 @@ fn shorten_location_path_short_paths_leave_alone() {
     assert_eq!(shorten_location_path("~").as_ref(), "~");
     assert_eq!(shorten_location_path("~/src").as_ref(), "~/src");
     assert_eq!(shorten_location_path("~/src/repo").as_ref(), "~/src/repo");
-    assert_eq!(shorten_location_path("~/.grok").as_ref(), "~/.grok");
+    assert_eq!(shorten_location_path("~/.ezer").as_ref(), "~/.ezer");
     assert_eq!(
-        shorten_location_path("~/.grok/worktrees").as_ref(),
-        "~/.grok/worktrees"
+        shorten_location_path("~/.ezer/worktrees").as_ref(),
+        "~/.ezer/worktrees"
     );
-    assert_eq!(shorten_location_path("$GROK_HOME").as_ref(), "$GROK_HOME");
+    assert_eq!(shorten_location_path("$EZER_HOME").as_ref(), "$EZER_HOME");
     assert_eq!(
-        shorten_location_path("$GROK_HOME/worktrees").as_ref(),
-        "$GROK_HOME/worktrees"
+        shorten_location_path("$EZER_HOME/worktrees").as_ref(),
+        "$EZER_HOME/worktrees"
     );
     assert_eq!(shorten_location_path("/work/xai").as_ref(), "/work/xai");
     assert_eq!(shorten_location_path("relative").as_ref(), "relative");
@@ -82,7 +82,7 @@ fn shorten_location_path_multi_dot_dirs_are_not_traversal() {
     assert_eq!(shorten_location_component("."), ".");
     assert_eq!(shorten_location_component(".."), "..");
     assert_eq!(shorten_location_component("..."), "...");
-    assert_eq!(shorten_location_component(".grok"), ".g");
+    assert_eq!(shorten_location_component(".ezer"), ".e");
     assert_eq!(shorten_location_component("..cache"), "..c");
     assert_eq!(shorten_location_component("...foo"), "...f");
     assert_eq!(shorten_location_component("Documents"), "D");
@@ -152,7 +152,7 @@ fn shorten_location_path_unix_backslash_stays_in_component() {
 #[test]
 fn shorten_location_path_does_not_eat_grok_home_lookalike() {
     assert_eq!(
-        shorten_location_path("$GROK_HOME_BACKUP/a/b/c").as_ref(),
+        shorten_location_path("$EZER_HOME_BACKUP/a/b/c").as_ref(),
         "$/a/b/c"
     );
 }

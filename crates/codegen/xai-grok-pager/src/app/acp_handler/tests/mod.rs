@@ -1702,7 +1702,7 @@ pub(super) fn replay_disk_test_home() -> &'static std::path::Path {
         })
         .path()
 }
-/// Runs `f` with a thread-local grok home override.
+/// Runs `f` with a thread-local ezer home override.
 /// Disk replay tests then do not depend on process-wide `grok_home()` cache order when the full suite runs.
 pub(super) fn with_replay_disk_home<R>(f: impl FnOnce(&std::path::Path) -> R) -> R {
     let home = replay_disk_test_home();

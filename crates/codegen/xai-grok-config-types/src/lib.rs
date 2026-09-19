@@ -38,7 +38,7 @@ pub struct CampaignOverride {
 #[derive(Debug, Clone, Default, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(default)]
 pub struct DoomLoopRecoverySettings {
-    /// Send the `x-grok-doom-loop-check` header, parse the reported triggers, and resample confident loops.
+    /// Send the `x-ezer-doom-loop-check` header, parse the reported triggers, and resample confident loops.
     /// `Some(false)` is a kill-switch; absent uses the client default (on).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
@@ -50,7 +50,7 @@ pub struct DoomLoopRecoverySettings {
     /// Resample budget per turn (clamped to 0..=5); absent uses the client default (2).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub max_retries: Option<u32>,
-    /// Detector window sent as the value of `x-grok-doom-loop-check` (honored in 512..=4096, otherwise 4096; absent uses the client default, 1024).
+    /// Detector window sent as the value of `x-ezer-doom-loop-check` (honored in 512..=4096, otherwise 4096; absent uses the client default, 1024).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub window_tokens: Option<u32>,
 }
@@ -153,7 +153,7 @@ pub struct WorktreeAutoGcSettings {
         skip_serializing_if = "Option::is_none"
     )]
     pub max_age_by_kind: Option<std::collections::BTreeMap<String, WorktreeKindMaxAge>>,
-    /// Also rebuild discovery and scrub grok's stale `.git/worktrees/` entries (default off).
+    /// Also rebuild discovery and scrub ezer's stale `.git/worktrees/` entries (default off).
     #[serde(
         default,
         deserialize_with = "de_opt_bool_tolerant",
@@ -258,7 +258,7 @@ where
         }
     }
 }
-/// Consent notice from `grok_build_settings.consent_gate`.
+/// Consent notice from `ezer_build_settings.consent_gate`.
 /// The server decides which accounts see it; the payload carries no targeting.
 #[derive(Debug, Clone, Default, Deserialize, Serialize, PartialEq, Eq)]
 pub struct ConsentGate {
@@ -316,7 +316,7 @@ pub struct RemoteSettings {
     #[serde(default)]
     pub memory_enabled: Option<bool>,
     /// Dedicated memory-v2 settings object. This is isolated from the legacy
-    /// memory fields and populated from `grok_build_memory_v2_*` features.
+    /// memory fields and populated from `ezer_build_memory_v2_*` features.
     #[serde(default)]
     pub memory_v2: Option<memory::MemoryV2Settings>,
     #[serde(default)]
@@ -365,7 +365,7 @@ pub struct RemoteSettings {
     pub dream_check_interval_secs: Option<u64>,
     /// Cadence (seconds) of the pager's watch for a free account becoming paid.
     /// `0` disables it; the pager clamps and defaults (see its `app::subscription` module).
-    /// It arrives from the `grok_build_settings` remote settings flag via the cli-chat-proxy `/settings` flatten catch-all.
+    /// It arrives from the `ezer_build_settings` remote settings flag via the cli-chat-proxy `/settings` flatten catch-all.
     #[serde(default)]
     pub subscription_watch_interval_secs: Option<u64>,
     #[serde(default)]
@@ -378,7 +378,7 @@ pub struct RemoteSettings {
     /// OAuth2 client_id for the CLI. It pairs with `oauth2_issuer`.
     #[serde(default)]
     pub oauth2_client_id: Option<String>,
-    /// When `Some(true)`, enables grok's default OAuth2 (xAI auth.x.ai).
+    /// When `Some(true)`, enables ezer's default OAuth2 (xAI auth.x.ai).
     /// Enterprise OIDC (user's own IdP via `oidc` config) always wins.
     /// The `--oauth` CLI flag overrides it.
     #[serde(default)]
@@ -388,7 +388,7 @@ pub struct RemoteSettings {
     /// Remote kill-switch and default for the folder-trust gate.
     /// The gate decides whether repo-local MCP/LSP servers (commands from working-tree config files) need a per-folder trust decision before they spawn.
     /// `Some(true)` enables, `Some(false)` is a kill-switch, `None` falls back to the client default (on).
-    /// It sits below env `GROK_FOLDER_TRUST`, user `[folder_trust] enabled`, and managed config in the resolver chain.
+    /// It sits below env `EZER_FOLDER_TRUST`, user `[folder_trust] enabled`, and managed config in the resolver chain.
     /// See `agent::folder_trust::feature_enabled`.
     #[serde(default)]
     pub folder_trust_enabled: Option<bool>,
@@ -412,7 +412,7 @@ pub struct RemoteSettings {
     /// It is the lowest-precedence fallback; per-server config, env, and requirements/managed override it.
     #[serde(default)]
     pub mcp_startup_timeout_secs: Option<u64>,
-    /// Global default MCP tool-result inline cap (bytes), from remote settings `grok_build_settings.max_mcp_output_bytes`.
+    /// Global default MCP tool-result inline cap (bytes), from remote settings `ezer_build_settings.max_mcp_output_bytes`.
     /// Requirements, env, and `config.toml [mcp] max_output_bytes` override it. The built-in default is 20_000.
     #[serde(default)]
     pub max_mcp_output_bytes: Option<u64>,
@@ -432,7 +432,7 @@ pub struct RemoteSettings {
     pub worktree_auto_gc: Option<WorktreeAutoGcSettings>,
     /// Enable/disable the runtime turn-end TodoGate remotely.
     /// Precedence: CLI `--todo-gate`, then this field, then the built-in default (`false`).
-    /// The gate ships disabled; set this to `Some(true)` (via the `grok_build_settings` remote settings key) to enable it.
+    /// The gate ships disabled; set this to `Some(true)` (via the `ezer_build_settings` remote settings key) to enable it.
     /// See `session::acp_session::resolve_reminder_policy`.
     #[serde(default)]
     pub todo_gate_enabled: Option<bool>,
@@ -443,7 +443,7 @@ pub struct RemoteSettings {
     pub todo_gate_max_fires_per_prompt: Option<u32>,
     /// Length-salvage continue budget for `max_tokens`-truncated turns.
     /// `Some(0)` is explicit off and kills every tier, including the
-    /// always-on cursor one and the `GROK_LENGTH_SALVAGE` env opt-in.
+    /// always-on cursor one and the `EZER_LENGTH_SALVAGE` env opt-in.
     /// Otherwise: cursor tier > env opt-in > this field > off. See
     /// `session::acp_session_impl::length_salvage`.
     #[serde(default)]
@@ -586,7 +586,7 @@ pub struct RemoteSettings {
     #[serde(default, deserialize_with = "deserialize_tolerant")]
     pub slash_command_tags: Option<std::collections::BTreeMap<String, String>>,
     /// When present, controls the non-Git-repo warning at session start.
-    /// It arrives as `non_git_warning` in `grok_build_settings`.
+    /// It arrives as `non_git_warning` in `ezer_build_settings`.
     /// It takes precedence over `[features] non_git_warning` in config.toml.
     /// `Some(true)` enables, `Some(false)` acts as a kill-switch, `None` falls back to local config.
     #[serde(default)]
@@ -609,8 +609,8 @@ pub struct RemoteSettings {
     pub session_summary_model: Option<String>,
     #[serde(default)]
     pub image_description_model: Option<String>,
-    /// Server-side pin for the next-prompt suggestion model (tab-autocomplete ghost text), from the `grok_build_settings` remote settings flag.
-    /// It sits below env (`GROK_PROMPT_SUGGESTIONS_MODEL`) and `[models] prompt_suggestion` in config.toml.
+    /// Server-side pin for the next-prompt suggestion model (tab-autocomplete ghost text), from the `ezer_build_settings` remote settings flag.
+    /// It sits below env (`EZER_PROMPT_SUGGESTIONS_MODEL`) and `[models] prompt_suggestion` in config.toml.
     /// It sits above the client hint and the built-in `grok-4.6` default.
     /// When the effective model is not in the shell's model catalog the suggestion request is skipped entirely; the session model is never used instead.
     /// See `ModelOverrideConfig::resolve` and `handle_suggest_prompt`.
@@ -646,7 +646,7 @@ pub struct RemoteSettings {
     #[serde(default)]
     pub image_gen_enabled: Option<bool>,
     /// Remote settings flag: optional Imagine model override for `image_gen`.
-    /// When present and non-empty, `image_gen` uses this model slug (e.g. `grok-imagine-image`) instead of the default `grok-imagine-image-quality`.
+    /// When present and non-empty, `image_gen` uses this model slug (e.g. `ezer-imagine-image`) instead of the default `ezer-imagine-image-quality`.
     /// Absent or empty uses the default model.
     #[serde(default)]
     pub image_gen_model_override: Option<String>,
@@ -726,17 +726,17 @@ pub struct RemoteSettings {
     pub sharing_enabled: Option<bool>,
     /// Voice mode (STT dictation). The client default is on when absent.
     /// `Some(false)` is a remote kill switch; `Some(true)` forces on.
-    /// `GROK_VOICE_MODE` overrides it locally. The free-tier SuperGrok upsell is a separate client tier gate.
+    /// `EZER_VOICE_MODE` overrides it locally. The free-tier SuperGrok upsell is a separate client tier gate.
     #[serde(default)]
     pub voice_mode_enabled: Option<bool>,
     /// Consolidated panel dock above the prompt. Off when absent.
-    /// `Some(true)` from `grok_build_settings.dock_enabled` turns it on for the targeted cohort.
-    /// `GROK_DOCK` (or the older `GROK_DOCK_V2`) overrides it locally.
+    /// `Some(true)` from `ezer_build_settings.dock_enabled` turns it on for the targeted cohort.
+    /// `EZER_DOCK` (or the older `EZER_DOCK_V2`) overrides it locally.
     #[serde(default)]
     pub dock_enabled: Option<bool>,
     /// The terminal-native `terminal` color theme (staged rollout). Hidden when absent.
-    /// `Some(true)` from `grok_build_settings.terminal_theme_enabled` reveals it for the targeted cohort.
-    /// `GROK_TERMINAL_THEME` overrides it locally.
+    /// `Some(true)` from `ezer_build_settings.terminal_theme_enabled` reveals it for the targeted cohort.
+    /// `EZER_TERMINAL_THEME` overrides it locally.
     #[serde(default)]
     pub terminal_theme_enabled: Option<bool>,
     /// Whether ZDR (Zero Data Retention) users are allowed to use the product.
@@ -748,7 +748,7 @@ pub struct RemoteSettings {
     #[serde(default)]
     pub privacy_notice_rollout: Option<bool>,
     /// Days after a privacy-banner dismiss before it may re-show for users who remain opted out of coding-data sharing.
-    /// It comes from `grok_build_settings`; `None` or `0` means it never re-shows after dismiss.
+    /// It comes from `ezer_build_settings`; `None` or `0` means it never re-shows after dismiss.
     #[serde(default)]
     pub privacy_banner_reshow_days: Option<u64>,
     /// Remote settings tier of the `remember_tool_approvals` gate (whether per-tool "Always allow …" prompt options are shown).
@@ -792,7 +792,7 @@ pub struct RemoteSettings {
     /// It is used only when no effective TOML permission key is set.
     #[serde(default)]
     pub permission_mode: Option<String>,
-    /// User's subscription tier from remote settings `grok_build_access_gate`.
+    /// User's subscription tier from remote settings `ezer_build_access_gate`.
     /// E.g. "free", "premium", "supergrok", "supergrok_heavy".
     /// It is stamped on analytics events and the user profile for filtering.
     #[serde(default)]
@@ -810,7 +810,7 @@ pub struct RemoteSettings {
     /// When `None` or `Some(false)`, sessions are shown in a flat list.
     #[serde(default)]
     pub session_picker_grouped: Option<bool>,
-    /// Whether the user is allowed to use Grok Build. Remote settings `grok_build_access_gate` targeting rules set it.
+    /// Whether the user is allowed to use ezer. Remote settings `ezer_build_access_gate` targeting rules set it.
     /// `None` means no server response yet (the client uses its own fallback check); `Some(false)` means blocked.
     #[serde(default)]
     pub allow_access: Option<bool>,
@@ -825,7 +825,7 @@ pub struct RemoteSettings {
     #[serde(default)]
     pub on_demand_enabled: Option<bool>,
     /// When set to a non-empty URL, the pager's `/usage` command shows a link to that URL instead of fetching billing data from the backend.
-    /// The remote settings `grok_build_usage_redirect_url` feature flag controls it (target it at personal-team users).
+    /// The remote settings `ezer_build_usage_redirect_url` feature flag controls it (target it at personal-team users).
     /// `None` or empty keeps the default of fetching usage from the backend.
     #[serde(default)]
     pub usage_billing_redirect_url: Option<String>,
@@ -835,11 +835,11 @@ pub struct RemoteSettings {
     /// Enable AI-powered shell command suggestions remotely.
     #[serde(default)]
     pub suggestions_ai_enabled: Option<bool>,
-    /// Global auto-compact threshold percent (0-100) from remote settings `grok_build_settings`.
-    /// A per-model override on `ModelInfo` (`grok_build_models`) takes precedence; user config and env var further override per the resolver chain.
+    /// Global auto-compact threshold percent (0-100) from remote settings `ezer_build_settings`.
+    /// A per-model override on `ModelInfo` (`ezer_build_models`) takes precedence; user config and env var further override per the resolver chain.
     #[serde(default)]
     pub auto_compact_threshold_percent: Option<u8>,
-    /// Max subagent nesting depth (`grok_build_settings.subagents_max_depth`).
+    /// Max subagent nesting depth (`ezer_build_settings.subagents_max_depth`).
     #[serde(default)]
     pub subagents_max_depth: Option<u32>,
     #[serde(default)]
@@ -851,28 +851,28 @@ pub struct RemoteSettings {
     pub subagents_limit_behavior: Option<String>,
     #[serde(default)]
     pub workflow_max_concurrent_agents: Option<u32>,
-    /// Max parallel `image_gen` and `image_edit` tool calls in one model step (`grok_build_settings.max_parallel_image_gen_calls`).
+    /// Max parallel `image_gen` and `image_edit` tool calls in one model step (`ezer_build_settings.max_parallel_image_gen_calls`).
     #[serde(default)]
     pub max_parallel_image_gen_calls: Option<u32>,
-    /// Max parallel video-gen tool calls in one model step (`grok_build_settings.max_parallel_video_gen_calls`).
+    /// Max parallel video-gen tool calls in one model step (`ezer_build_settings.max_parallel_video_gen_calls`).
     #[serde(default)]
     pub max_parallel_video_gen_calls: Option<u32>,
     /// Global system-prompt identity label. A per-model override wins; see `resolve_system_prompt_label`.
     #[serde(default)]
     pub system_prompt_label: Option<String>,
     /// Global per-compaction wall-clock budget (seconds) from remote settings; `0` disables.
-    /// Env (`GROK_COMPACTION_WALL_CLOCK_SECS`) overrides it. `resolve_compaction_wall_clock_budget_secs` resolves it.
+    /// Env (`EZER_COMPACTION_WALL_CLOCK_SECS`) overrides it. `resolve_compaction_wall_clock_budget_secs` resolves it.
     #[serde(default)]
     pub compaction_wall_clock_budget_secs: Option<u64>,
     /// Compaction mode (`summary`, `transcript`, or `segments`) from remote settings.
-    /// Env (`GROK_COMPACTION_MODE`) and user config override it.
+    /// Env (`EZER_COMPACTION_MODE`) and user config override it.
     #[serde(default)]
     pub compaction_mode: Option<String>,
     /// Segments verbatim detail (`none`, `minimal`, `balanced`, or `verbose`) from remote settings.
-    /// Env (`GROK_COMPACTION_DETAIL`) and config override it.
+    /// Env (`EZER_COMPACTION_DETAIL`) and config override it.
     #[serde(default)]
     pub compaction_detail: Option<String>,
-    /// remote settings verbatim-input flag; env (`GROK_COMPACTION_VERBATIM_INPUT`) and config override it. `None` = default (true).
+    /// remote settings verbatim-input flag; env (`EZER_COMPACTION_VERBATIM_INPUT`) and config override it. `None` = default (true).
     #[serde(default)]
     pub compaction_verbatim_input: Option<bool>,
     #[serde(default)]
@@ -883,14 +883,14 @@ pub struct RemoteSettings {
     /// See `Config::resolve_image_edit`.
     #[serde(default)]
     pub imagine_tools_disabled: Option<Vec<String>>,
-    /// Remote settings gate for the `grok workspace` CLI command (Computer Hub workspace exposure).
-    /// It comes from `grok_build_settings.workspace_command_enabled`.
+    /// Remote settings gate for the `ezer workspace` CLI command (Computer Hub workspace exposure).
+    /// It comes from `ezer_build_settings.workspace_command_enabled`.
     /// `Some(true)` enables it; `None` or `Some(false)` (the default) keep it off.
     #[serde(default)]
     pub workspace_command_enabled: Option<bool>,
     #[serde(default)]
     pub workspace_dashboard_enabled: Option<bool>,
-    /// Soft default for `keep_text_selection` (`"flash"`, `"hold"`, or `"word_select"`), from `grok_build_settings.keep_text_selection_default`.
+    /// Soft default for `keep_text_selection` (`"flash"`, `"hold"`, or `"word_select"`), from `ezer_build_settings.keep_text_selection_default`.
     /// It applies only when the user has set no local text-selection preference; an explicit local `keep_text_selection` always wins.
     /// An absent or unrecognized value keeps the client default (`flash`).
     /// Set it remotely to stage a new default to a segment, cut everyone over, or revert it for a customer.
@@ -953,7 +953,7 @@ pub struct ContextualHintsRemote {
     /// Export/copy tip after three nearby drag-copies.
     #[serde(default)]
     pub export_copy: Option<bool>,
-    /// SSH wrap session-load tip (recommend `grok wrap ssh` for remote sessions).
+    /// SSH wrap session-load tip (recommend `ezer wrap ssh` for remote sessions).
     #[serde(default)]
     pub ssh_wrap: Option<bool>,
 }
@@ -1038,13 +1038,13 @@ where
     }
 }
 /// A model and the harness whose system prompt and toolset flavor that model must run against.
-/// The pair is the atomic configurable unit because a model is only guaranteed to work with a compatible harness (cursor vs grok-build).
+/// The pair is the atomic configurable unit because a model is only guaranteed to work with a compatible harness (cursor vs ezer-build).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct GoalRoleModel {
     /// Model id, e.g. "grok-4". It resolves against available models at spawn time; unknown or unauthorized fails open to the current model.
     pub model: String,
-    /// Harness `agent_type` (e.g. "cursor", "grok-build-plan") whose `AgentDefinition` decides the role subagent's harness flavor.
-    /// The flavor (system prompt and cursor-vs-grok-build toolset) applies regardless of the session or parent agent.
+    /// Harness `agent_type` (e.g. "cursor", "ezer-build-plan") whose `AgentDefinition` decides the role subagent's harness flavor.
+    /// The flavor (system prompt and cursor-vs-ezer-build toolset) applies regardless of the session or parent agent.
     /// It is resolved by name (project/plugin/builtin lookup, then re-flavored by the subagent toolset resolver).
     /// The main session's env/ACP/strict-harness precedence chain plays no part.
     /// It is not a subagent type: the role always spawns `general-purpose`, so the harness only re-flavors that toolset.
@@ -1373,7 +1373,7 @@ mod tests {
     fn remote_settings_goal_skeptic_models_one_bad_item_does_not_poison_pool() {
         let json = r#"{"goal_skeptic_models": [
             {"model": "grok-4", "agent_type": "general-purpose"},
-            {"model": "grok-broken"},
+            {"model": "ezer-broken"},
             {"model": "grok-3", "agent_type": "cursor"}
         ]}"#;
         let s: RemoteSettings = serde_json::from_str(json).unwrap();

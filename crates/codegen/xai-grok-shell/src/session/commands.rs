@@ -427,7 +427,7 @@ pub enum SessionCommand {
     },
     /// Signals then report the override model rather than the agent-level default.
     /// `SetSessionModel` does NOT update `primaryModelId` in signals; the resolved model is already tracked via inference responses.
-    /// Keeps the existing base_url, api_key, and other config; only the `model` field in the `x-grok-model-override` header changes.
+    /// Keeps the existing base_url, api_key, and other config; only the `model` field in the `x-ezer-model-override` header changes.
     OverrideModelName {
         model_name: String,
         extra_headers: indexmap::IndexMap<String, String>,
@@ -457,7 +457,7 @@ pub enum SessionCommand {
     ReloadPlugins {
         registry: Option<std::sync::Arc<xai_grok_agent::plugins::PluginRegistry>>,
     },
-    /// Re-discover the session's own project hooks (`.grok/hooks`, `.cursor/hooks.json`, …) mid-session, re-evaluating folder trust.
+    /// Re-discover the session's own project hooks (`.ezer/hooks`, `.cursor/hooks.json`, …) mid-session, re-evaluating folder trust.
     /// Used by the interactive folder-trust grant so a granted folder's repo-local hooks start without a session restart.
     /// Plugin-contributed hooks are handled by `ReloadPlugins`; this covers the non-plugin project hook registry.
     ReloadHooks,

@@ -126,7 +126,7 @@ async fn start_bundle_server(
                             None
                         },
                         client_version: headers
-                            .get("x-grok-client-version")
+                            .get("x-ezer-client-version")
                             .and_then(|v| v.to_str().ok())
                             .map(str::to_owned),
                     });
@@ -162,7 +162,7 @@ async fn start_bundle_server(
                             None
                         },
                         client_version: headers
-                            .get("x-grok-client-version")
+                            .get("x-ezer-client-version")
                             .and_then(|v| v.to_str().ok())
                             .map(str::to_owned),
                     });
@@ -696,21 +696,21 @@ fn parse_remote_model_value_top_level_wins_over_meta() {
 #[test]
 fn parse_reads_show_model_fingerprint_field() {
     let value = serde_json::json!({
-        "model": "grok-build",
+        "model": "ezer-build",
         "context_window": 256_000,
         "show_model_fingerprint": true
     });
     let result = parse_remote_model_value(&value, "https://default.url").unwrap();
     assert!(result.show_model_fingerprint);
     let value = serde_json::json!({
-        "model": "grok-build",
+        "model": "ezer-build",
         "contextWindow": 256_000,
         "showModelFingerprint": true
     });
     let result = parse_remote_model_value(&value, "https://default.url").unwrap();
     assert!(result.show_model_fingerprint);
     let value = serde_json::json!({
-        "model": "grok-build",
+        "model": "ezer-build",
         "context_window": 256_000,
         "_meta": { "showModelFingerprint": true }
     });
@@ -824,19 +824,19 @@ fn list_url_explicit_overrides_derivation() {
         "https://registry.acme.com/api/list-models"
     );
 }
-/// REGRESSION: `grok setup` must send the deployment key to the proxy, never the inference endpoint.
+/// REGRESSION: `ezer setup` must send the deployment key to the proxy, never the inference endpoint.
 #[test]
 #[serial_test::serial]
 fn deployment_config_url_uses_cli_chat_proxy_when_not_overridden() {
     use crate::agent::config::EndpointsConfig;
     for k in [
-        "GROK_CLI_CHAT_PROXY_BASE_URL",
-        "GROK_MANAGED_CONFIG_URL",
-        "GROK_XAI_API_BASE_URL",
+        "EZER_CLI_CHAT_PROXY_BASE_URL",
+        "EZER_MANAGED_CONFIG_URL",
+        "EZER_XAI_API_BASE_URL",
     ] {
         unsafe { std::env::remove_var(k) };
     }
-    unsafe { std::env::set_var("GROK_DEPLOYMENT_KEY", "xai-token-ENTERPRISE") };
+    unsafe { std::env::set_var("EZER_DEPLOYMENT_KEY", "xai-token-ENTERPRISE") };
     let managed: toml::Value = toml::from_str(
         r#"[endpoints]
             deployment_key = "xai-token-ENTERPRISE"

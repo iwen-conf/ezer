@@ -44,7 +44,7 @@ fn spawn_probe(socket: &Path, filtered: bool) -> std::process::Output {
 
 fn unique_socket_path() -> PathBuf {
     let dir = std::env::temp_dir().join(format!(
-        "grok-child-net-e2e-{}-{}",
+        "ezer-child-net-e2e-{}-{}",
         std::process::id(),
         std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)

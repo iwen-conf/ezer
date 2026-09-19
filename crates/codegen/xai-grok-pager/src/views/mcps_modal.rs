@@ -484,21 +484,21 @@ mod tests {
 
         let blocked = convert(serde_json::json!({
             "enabled": false,
-            "blockedReason": "matches deniedMcpServers (/etc/grok/managed_config.toml)"
+            "blockedReason": "matches deniedMcpServers (/etc/ezer/managed_config.toml)"
         }));
         assert_eq!(blocked.status, McpServerDisplayStatus::BlockedByPolicy);
         assert_eq!(blocked.status.label(), "blocked by policy");
         assert!(!blocked.enabled);
         assert_eq!(
             blocked.blocked_reason.as_deref(),
-            Some("matches deniedMcpServers (/etc/grok/managed_config.toml)")
+            Some("matches deniedMcpServers (/etc/ezer/managed_config.toml)")
         );
 
         // The verdict outranks a co-emitted setup flag, including the field the setup form keys on.
         let blocked_setup = convert(serde_json::json!({
             "enabled": false,
             "setupRequired": true,
-            "blockedReason": "matches deniedMcpServers (/etc/grok/managed_config.toml)"
+            "blockedReason": "matches deniedMcpServers (/etc/ezer/managed_config.toml)"
         }));
         assert_eq!(
             blocked_setup.status,

@@ -26,13 +26,13 @@ fn with_env_var<T>(name: &str, value: &str, f: impl FnOnce() -> T) -> T {
 #[test]
 fn expands_env_vars_in_toml_strings() {
     with_env_var(
-        "GROK_TEST_CONFIG_EXPAND",
+        "EZER_TEST_CONFIG_EXPAND",
         "expanded",
         || {
             let toml_str = r#"
 [mcp_servers.test]
-command = "$GROK_TEST_CONFIG_EXPAND/bin/server"
-args = ["--path", "${GROK_TEST_CONFIG_EXPAND}/data"]
+command = "$EZER_TEST_CONFIG_EXPAND/bin/server"
+args = ["--path", "${EZER_TEST_CONFIG_EXPAND}/data"]
 "#;
             let mut value = toml::from_str::<toml::Value>(toml_str).unwrap();
             expand_env_vars_in_toml(&mut value);
@@ -59,7 +59,7 @@ args = ["--path", "${GROK_TEST_CONFIG_EXPAND}/data"]
 fn leaves_missing_env_vars_unchanged() {
     let toml_str = r#"
 [mcp_servers.test]
-command = "$GROK_TEST_CONFIG_MISSING/bin/server"
+command = "$EZER_TEST_CONFIG_MISSING/bin/server"
 "#;
     let mut value = toml::from_str::<toml::Value>(toml_str).unwrap();
     expand_env_vars_in_toml(&mut value);
@@ -95,7 +95,7 @@ command = "$$HOME"
     let command = test.get("command").and_then(|v| v.as_str()).unwrap();
     assert_eq!(command, "$HOME");
 }
-/// Mutex to serialize tests that touch the GROK_MEMORY env var.
+/// Mutex to serialize tests that touch the EZER_MEMORY env var.
 /// Env vars are process-global, so parallel tests race on them.
 static MEMORY_ENV_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
 /// Run `f` with `name` set to `value` (Some) or removed (None).
@@ -113,12 +113,12 @@ fn with_env_var_opt<T>(name: &str, value: Option<&str>, f: impl FnOnce() -> T) -
     }
     result.unwrap_or_else(|p| std::panic::resume_unwind(p))
 }
-/// Run `f` with GROK_MEMORY explicitly unset.
+/// Run `f` with EZER_MEMORY explicitly unset.
 fn without_grok_memory<T>(f: impl FnOnce() -> T) -> T {
     let _guard = MEMORY_ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
     with_env_var_opt("GROK_MEMORY", None, f)
 }
-/// Run `f` with GROK_MEMORY set to a specific value.
+/// Run `f` with EZER_MEMORY set to a specific value.
 fn with_grok_memory<T>(value: &str, f: impl FnOnce() -> T) -> T {
     let _guard = MEMORY_ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
     with_env_var_opt("GROK_MEMORY", Some(value), f)
@@ -280,7 +280,7 @@ fn memory_config_env_var_zero_does_not_enable() {
         || {
             let config = toml::Value::Table(toml::map::Map::new());
             let mem = MemoryConfig::resolve(false, false, &config, None);
-            assert!(!mem.enabled, "GROK_MEMORY=0 should not enable memory");
+            assert!(!mem.enabled, "EZER_MEMORY=0 should not enable memory");
         },
     );
 }
@@ -291,7 +291,7 @@ fn memory_config_env_var_false_does_not_enable() {
         || {
             let config = toml::Value::Table(toml::map::Map::new());
             let mem = MemoryConfig::resolve(false, false, &config, None);
-            assert!(!mem.enabled, "GROK_MEMORY=false should not enable memory");
+            assert!(!mem.enabled, "EZER_MEMORY=false should not enable memory");
         },
     );
 }
@@ -315,7 +315,7 @@ fn memory_config_env_zero_force_disables_toml_enabled() {
             let mem = MemoryConfig::resolve(false, false, &config, None);
             assert!(
                 !mem.enabled,
-                "GROK_MEMORY=0 should force-disable both legacy and v2 TOML gates"
+                "EZER_MEMORY=0 should force-disable both legacy and v2 TOML gates"
             );
         },
     );
@@ -330,7 +330,7 @@ fn memory_config_env_false_force_disables_toml_enabled() {
             let mem = MemoryConfig::resolve(false, false, &config, None);
             assert!(
                 !mem.enabled,
-                "GROK_MEMORY=false should force-disable even when TOML enables memory"
+                "EZER_MEMORY=false should force-disable even when TOML enables memory"
             );
         },
     );
@@ -344,7 +344,7 @@ fn memory_config_cli_flag_overrides_env_disable() {
             let mem = MemoryConfig::resolve(true, false, &config, None);
             assert!(
                 mem.enabled,
-                "CLI --experimental-memory should override GROK_MEMORY=0"
+                "CLI --experimental-memory should override EZER_MEMORY=0"
             );
         },
     );
@@ -364,7 +364,7 @@ fn memory_config_no_memory_overrides_env_enable() {
         || {
             let config = toml::Value::Table(toml::map::Map::new());
             let mem = MemoryConfig::resolve(false, true, &config, None);
-            assert!(!mem.enabled, "--no-memory should override GROK_MEMORY=1");
+            assert!(!mem.enabled, "--no-memory should override EZER_MEMORY=1");
         },
     );
 }
@@ -849,7 +849,7 @@ fn expands_multiple_vars_in_one_string() {
                 || {
                     let toml_str = r#"
 [mcp_servers.test]
-command = "$GROK_TEST_USER $GROK_TEST_ROOT"
+command = "$EZER_TEST_USER $EZER_TEST_ROOT"
 "#;
                     let mut value = toml::from_str::<toml::Value>(toml_str).unwrap();
                     expand_env_vars_in_toml(&mut value);
@@ -1086,14 +1086,14 @@ max_results = 8
         assert!((mem.search.mmr.lambda - 0.3).abs() < f64::EPSILON);
     });
 }
-/// Mutex to serialize tests that touch the GROK_SUBAGENTS env var.
+/// Mutex to serialize tests that touch the EZER_SUBAGENTS env var.
 static SUBAGENTS_ENV_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
-/// Run `f` with GROK_SUBAGENTS explicitly unset.
+/// Run `f` with EZER_SUBAGENTS explicitly unset.
 fn without_grok_subagents<T>(f: impl FnOnce() -> T) -> T {
     let _guard = SUBAGENTS_ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
     with_env_var_opt("GROK_SUBAGENTS", None, f)
 }
-/// Run `f` with GROK_SUBAGENTS set to a specific value.
+/// Run `f` with EZER_SUBAGENTS set to a specific value.
 fn with_grok_subagents<T>(value: &str, f: impl FnOnce() -> T) -> T {
     let _guard = SUBAGENTS_ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
     with_env_var_opt("GROK_SUBAGENTS", Some(value), f)
@@ -1300,7 +1300,7 @@ fn subagents_config_env_var_disables() {
             let config: toml::Value = toml::from_str("[subagents]\nenabled = true")
                 .unwrap();
             let sa = SubagentsConfig::resolve(false, &config);
-            assert!(!sa.enabled, "GROK_SUBAGENTS=0 should override config file");
+            assert!(!sa.enabled, "EZER_SUBAGENTS=0 should override config file");
         },
     );
 }
@@ -1330,7 +1330,7 @@ fn subagents_config_env_var_disables_default() {
             let sa = SubagentsConfig::resolve(false, &config);
             assert!(
                 !sa.enabled,
-                "GROK_SUBAGENTS=0 should override the enabled default"
+                "EZER_SUBAGENTS=0 should override the enabled default"
             );
         },
     );
@@ -1357,7 +1357,7 @@ fn subagents_config_cli_flag_overrides_env_var() {
             let sa = SubagentsConfig::resolve(true, &config);
             assert!(
                 sa.enabled,
-                "--subagents CLI flag should override GROK_SUBAGENTS=0"
+                "--subagents CLI flag should override EZER_SUBAGENTS=0"
             );
         },
     );
@@ -1782,7 +1782,7 @@ fn model_overrides_local_image_description_wins_over_remote() {
     );
 }
 #[test]
-fn model_overrides_default_image_description_is_grok_build() {
+fn model_overrides_default_image_description_is_ezer_build() {
     with_model_overrides_env(
         None,
         None,
@@ -1798,7 +1798,7 @@ fn model_overrides_default_image_description_is_grok_build() {
     );
 }
 #[test]
-fn model_overrides_default_session_summary_is_grok_build() {
+fn model_overrides_default_session_summary_is_ezer_build() {
     with_model_overrides_env(
         None,
         None,
@@ -2360,7 +2360,7 @@ fn roles_parse_from_toml() {
             [roles.implementer]
             description = "Implementation agent"
             default_capability_mode = "all"
-            prompt_file = ".grok/prompts/impl.md"
+            prompt_file = ".ezer/prompts/impl.md"
         "#;
     let cfg: SubagentsConfig = toml::from_str(toml_str).unwrap();
     assert_eq!(cfg.roles.len(), 2);
@@ -2466,7 +2466,7 @@ fn validate_roles_accepts_valid_prompt_file() {
     let toml_str = r#"
             [roles.ok]
             description = "Valid prompt file"
-            prompt_file = ".grok/prompts/ok.md"
+            prompt_file = ".ezer/prompts/ok.md"
         "#;
     let cfg: SubagentsConfig = toml::from_str(toml_str).unwrap();
     assert!(cfg.validate_roles().is_empty());
@@ -2540,7 +2540,7 @@ fn personas_parse_from_toml() {
 
             [personas.concise]
             instructions = "Be concise."
-            instructions_file = ".grok/personas/concise.md"
+            instructions_file = ".ezer/personas/concise.md"
         "#;
     let cfg: SubagentsConfig = toml::from_str(toml_str).unwrap();
     assert_eq!(cfg.personas.len(), 2);
@@ -2627,7 +2627,7 @@ fn project_overlay_preserves_source_precedence() {
     let home = tmp.path().join("home");
     let bundled = tmp.path().join("bundled");
     write_subagent_definitions(
-        &project.join(".grok"),
+        &project.join(".ezer"),
         &[
             ("shadowed", "Project"),
             ("bundled-shadowed", "Project"),
@@ -2636,7 +2636,7 @@ fn project_overlay_preserves_source_precedence() {
         ],
     );
     write_subagent_definitions(
-        &home.join(".grok"),
+        &home.join(".ezer"),
         &[("shadowed", "User"), ("user-only", "User")],
     );
     write_subagent_definitions(
@@ -2661,7 +2661,7 @@ fn project_overlay_preserves_source_precedence() {
     let base = SubagentsConfig::resolve_base_with_sources(
         false,
         &config,
-        Some(&home.join(".grok")),
+        Some(&home.join(".ezer")),
         &bundled,
     );
     let resolve = |project_trusted| {
@@ -2747,11 +2747,11 @@ fn bundled_personas_and_roles_have_lowest_priority_in_resolve_order() {
     let tmp = tempfile::TempDir::new().unwrap();
     let home = tmp.path().join("home");
     let workspace = tmp.path().join("workspace");
-    let bundled = home.join(".grok").join("bundled");
-    std::fs::create_dir_all(workspace.join(".grok").join("roles")).unwrap();
-    std::fs::create_dir_all(workspace.join(".grok").join("personas")).unwrap();
-    std::fs::create_dir_all(home.join(".grok").join("roles")).unwrap();
-    std::fs::create_dir_all(home.join(".grok").join("personas")).unwrap();
+    let bundled = home.join(".ezer").join("bundled");
+    std::fs::create_dir_all(workspace.join(".ezer").join("roles")).unwrap();
+    std::fs::create_dir_all(workspace.join(".ezer").join("personas")).unwrap();
+    std::fs::create_dir_all(home.join(".ezer").join("roles")).unwrap();
+    std::fs::create_dir_all(home.join(".ezer").join("personas")).unwrap();
     std::fs::create_dir_all(bundled.join("roles")).unwrap();
     std::fs::create_dir_all(bundled.join("personas")).unwrap();
     std::fs::write(
@@ -2920,7 +2920,7 @@ fn roles_coexist_with_models_and_toggle() {
     let toml_str = r#"
             enabled = true
             [models]
-            explore = "grok-fast"
+            explore = "ezer-fast"
             [toggle]
             plan = false
             [roles.researcher]
@@ -3096,7 +3096,7 @@ fn config_layers_user_overrides_managed() {
 }
 /// A provider in a trusted disk layer resolves through the real `ConfigLayers` and `effective_config_disk_only` parse path.
 /// The direct-TOML parse tests bypass that path.
-/// (`ConfigLayers` has no project slot, so a repo `.grok/config.toml` structurally cannot supply one.)
+/// (`ConfigLayers` has no project slot, so a repo `.ezer/config.toml` structurally cannot supply one.)
 #[test]
 fn auth_provider_honored_only_from_trusted_disk_layers() {
     let layers = ConfigLayers {
@@ -3148,9 +3148,9 @@ fn model_provider_honored_only_from_trusted_disk_layers() {
 #[serial_test::serial]
 fn enterprise_two_file_merge_routes_deployment_key_to_proxy() {
     for k in [
-        "GROK_MANAGED_CONFIG_URL",
-        "GROK_CLI_CHAT_PROXY_BASE_URL",
-        "GROK_TRACE_UPLOAD_ENDPOINT_URL",
+        "EZER_MANAGED_CONFIG_URL",
+        "EZER_CLI_CHAT_PROXY_BASE_URL",
+        "EZER_TRACE_UPLOAD_ENDPOINT_URL",
     ] {
         unsafe { std::env::remove_var(k) };
     }
@@ -3160,7 +3160,7 @@ fn enterprise_two_file_merge_routes_deployment_key_to_proxy() {
 xai_api_base_url = "https://inference.acme-corp.example/xai/v1"
 cli_chat_proxy_base_url = "https://cli-chat-proxy.grok.com/v1"
 
-[model.grok-build]
+[model.ezer-build]
 base_url = "https://inference.acme-corp.example/xai/v1"
 env_key = "ANTHROPIC_AUTH_TOKEN"
 model = "grok-4.5"
@@ -3249,7 +3249,7 @@ email_domain = "example.com"
         .unwrap();
     assert_eq!(cfg.feedback.user, None);
 }
-/// RCE guard: a project `.grok/config.toml` must never source `[feedback.user]` (its `command` runs `sh -c`).
+/// RCE guard: a project `.ezer/config.toml` must never source `[feedback.user]` (its `command` runs `sh -c`).
 #[test]
 #[serial_test::serial]
 fn project_config_never_sources_feedback_user() {
@@ -3260,10 +3260,10 @@ fn project_config_never_sources_feedback_user() {
     let _sim = simulate_release_build();
     let repo = tempfile::tempdir().unwrap();
     git2::Repository::init(repo.path()).unwrap();
-    let grok = repo.path().join(".grok");
-    std::fs::create_dir_all(&grok).unwrap();
+    let ezer = repo.path().join(".grok");
+    std::fs::create_dir_all(&ezer).unwrap();
     std::fs::write(
-            grok.join("config.toml"),
+            ezer.join("config.toml"),
             "[plugins]\npaths = [\"./p\"]\n\n[feedback.user]\ncommand = \"/evil\"\n",
         )
         .unwrap();
@@ -3496,10 +3496,10 @@ fn a_repeated_pin_is_reported_against_the_layer_that_decided() {
     let req: toml::Value = toml::from_str("[features]\nsession_search = false\n")
         .unwrap();
     let user = RequirementSource::Requirements {
-        path: std::path::PathBuf::from("/home/dev/.grok/requirements.toml"),
+        path: std::path::PathBuf::from("/home/dev/.ezer/requirements.toml"),
     };
     let system = RequirementSource::Requirements {
-        path: std::path::PathBuf::from("/etc/grok/requirements.toml"),
+        path: std::path::PathBuf::from("/etc/ezer/requirements.toml"),
     };
     let mut enforced = apply_requirements_inner(&mut cfg, &req, &user);
     enforced.extend(apply_requirements_inner(&mut cfg, &req, &system));
@@ -3515,12 +3515,12 @@ fn a_repeated_pin_is_reported_against_the_layer_that_decided() {
     assert_eq!(row.source, system);
 }
 /// title_refresh is not a registry row, so the loop that pins those does not reach it.
-/// An administrator pinning the title off must still outrank a user's GROK_TITLE_REFRESH, which a config-tier value would lose to.
+/// An administrator pinning the title off must still outrank a user's EZER_TITLE_REFRESH, which a config-tier value would lose to.
 #[test]
 #[serial_test::serial]
 fn apply_requirements_pins_title_refresh_over_the_environment() {
     use xai_grok_test_support::EnvGuard;
-    let _env = EnvGuard::set("GROK_TITLE_REFRESH", "1");
+    let _env = EnvGuard::set("EZER_TITLE_REFRESH", "1");
     let mut cfg = crate::agent::config::Config::default();
     let req: toml::Value = toml::from_str("[features]\ntitle_refresh = false\n")
         .unwrap();
@@ -3529,7 +3529,7 @@ fn apply_requirements_pins_title_refresh_over_the_environment() {
     };
     let enforced = apply_requirements_inner(&mut cfg, &req, &source);
     let resolved = cfg.resolve_title_refresh();
-    assert!(!resolved.value, "the pin lost to GROK_TITLE_REFRESH");
+    assert!(!resolved.value, "the pin lost to EZER_TITLE_REFRESH");
     assert_eq!(
             resolved.source,
             crate::agent::config::ConfigSource::Requirement
@@ -3548,7 +3548,7 @@ fn malformed_requirements_pin_is_ignored() {
     let mut cfg = crate::agent::config::Config::default();
     let req: toml::Value = toml::from_str("[features]\nweb_fetch = 1\n").unwrap();
     let source = RequirementSource::Requirements {
-        path: std::path::PathBuf::from("/home/dev/.grok/requirements.toml"),
+        path: std::path::PathBuf::from("/home/dev/.ezer/requirements.toml"),
     };
     let enforced = apply_requirements_inner(&mut cfg, &req, &source);
     assert_eq!(cfg.requirements.pinned_feature(Feature::WebFetch), None);
@@ -3881,8 +3881,8 @@ fn validate_hooks_path_rejects_outside_grok_home() {
     assert!(result.is_err());
     let msg = result.unwrap_err().to_string();
     assert!(
-            msg.contains("must be under ~/.grok/"),
-            "should mention ~/.grok/ restriction, got: {msg}"
+            msg.contains("must be under ~/.ezer/"),
+            "should mention ~/.ezer/ restriction, got: {msg}"
         );
 }
 #[test]
@@ -3893,7 +3893,7 @@ fn validate_hooks_path_rejects_traversal_attack() {
     assert!(result.is_err());
     let msg = result.unwrap_err().to_string();
     assert!(
-            msg.contains("must be under ~/.grok/"),
+            msg.contains("must be under ~/.ezer/"),
             "traversal should be rejected, got: {msg}"
         );
 }
@@ -3903,7 +3903,7 @@ fn validate_hooks_path_accepts_grok_hooks_subdir() {
     let valid_path = grok_home.join("hooks").join("my-hooks");
     let _ = std::fs::create_dir_all(&valid_path);
     let result = validate_hooks_path(valid_path.to_str().unwrap());
-    assert!(result.is_ok(), "path under ~/.grok/ should be accepted");
+    assert!(result.is_ok(), "path under ~/.ezer/ should be accepted");
 }
 #[test]
 fn managed_settings_disables_features_and_requirements_overrides() {
@@ -3944,7 +3944,7 @@ fn managed_settings_disables_features_and_requirements_overrides() {
     assert!(cfg.ui.yolo);
 }
 /// REGRESSION: external managed-settings.json is advisory, not authoritative.
-/// disableBypassPermissionsMode (mapped to features.disable_yolo) must NOT clamp the user's own grok yolo.
+/// disableBypassPermissionsMode (mapped to features.disable_yolo) must NOT clamp the user's own ezer yolo.
 #[test]
 fn managed_settings_does_not_override_user_yolo() {
     use crate::agent::config::Feature;
@@ -3984,7 +3984,7 @@ fn project_overlay_tracks_authoritative_trust_transitions() {
     let repo = tempfile::tempdir().unwrap();
     git2::Repository::init(repo.path()).unwrap();
     write_subagent_definitions(
-        &repo.path().join(".grok"),
+        &repo.path().join(".ezer"),
         &[("shared", "Project"), ("project-only", "Project")],
     );
     let mut base = SubagentsConfig::default();
@@ -4045,7 +4045,7 @@ fn project_overlay_tracks_authoritative_trust_transitions() {
 #[test]
 fn base_resolver_without_project_cwd_keeps_project_files_out() {
     let tmp = tempfile::tempdir().unwrap();
-    write_subagent_definitions(&tmp.path().join(".grok"), &[("project", "Project")]);
+    write_subagent_definitions(&tmp.path().join(".ezer"), &[("project", "Project")]);
     let base = SubagentsConfig::resolve_base_with_sources(
         false,
         &toml::Value::Table(Default::default()),
@@ -4058,8 +4058,8 @@ fn base_resolver_without_project_cwd_keeps_project_files_out() {
 #[test]
 fn explicit_grok_root_is_the_only_user_source() {
     let tmp = tempfile::tempdir().unwrap();
-    let ambient = tmp.path().join("ambient-home/.grok");
-    let configured = tmp.path().join("configured-grok-home");
+    let ambient = tmp.path().join("ambient-home/.ezer");
+    let configured = tmp.path().join("configured-ezer-home");
     write_subagent_definitions(&ambient, &[("ambient", "Ambient")]);
     write_subagent_definitions(&configured, &[("configured", "Configured")]);
     let base = SubagentsConfig::resolve_base_with_sources(
@@ -4082,14 +4082,14 @@ fn resolve_effective_plugins_config_gates_project_paths_on_folder_trust() {
     use xai_grok_test_support::EnvGuard;
     let home = tempfile::tempdir().unwrap();
     let _env = EnvGuard::set("GROK_HOME", home.path());
-    let _flag = EnvGuard::unset("GROK_FOLDER_TRUST");
+    let _flag = EnvGuard::unset("EZER_FOLDER_TRUST");
     let _sim = simulate_release_build();
     let repo = tempfile::tempdir().unwrap();
     git2::Repository::init(repo.path()).unwrap();
-    let grok = repo.path().join(".grok");
-    std::fs::create_dir_all(&grok).unwrap();
+    let ezer = repo.path().join(".ezer");
+    std::fs::create_dir_all(&ezer).unwrap();
     std::fs::write(
-            grok.join("config.toml"),
+            ezer.join("config.toml"),
             "[plugins]\npaths = [\"./proj-plugin\"]\ndisabled = [\"proj-bad\"]\n",
         )
         .unwrap();
@@ -4136,7 +4136,7 @@ fn discover_plugins_excludes_untrusted_configpath_plugin_end_to_end() {
     use xai_grok_test_support::EnvGuard;
     let home = tempfile::tempdir().unwrap();
     let _env = EnvGuard::set("GROK_HOME", home.path());
-    let _flag = EnvGuard::unset("GROK_FOLDER_TRUST");
+    let _flag = EnvGuard::unset("EZER_FOLDER_TRUST");
     let _sim = simulate_release_build();
     let repo = tempfile::tempdir().unwrap();
     git2::Repository::init(repo.path()).unwrap();
@@ -4145,10 +4145,10 @@ fn discover_plugins_excludes_untrusted_configpath_plugin_end_to_end() {
     std::fs::create_dir_all(&plugin_dir).unwrap();
     std::fs::write(plugin_dir.join("plugin.json"), r#"{"name":"cfgpath-probe"}"#)
         .unwrap();
-    let grok = cwd.join(".grok");
-    std::fs::create_dir_all(&grok).unwrap();
+    let ezer = cwd.join(".grok");
+    std::fs::create_dir_all(&ezer).unwrap();
     std::fs::write(
-            grok.join("config.toml"),
+            ezer.join("config.toml"),
             format!("[plugins]\npaths = ['{}']\n", plugin_dir.display()),
         )
         .unwrap();
@@ -4198,7 +4198,7 @@ fn discover_plugins_excludes_untrusted_configpath_plugin_end_to_end() {
 }
 /// Kill-switch ordering regression: `resolve_effective_plugins_config` reads the folder-trust gate internally. Its call sites (commands/list, plugin fan-out, reload) therefore resolve with the REAL RemoteSettings first.
 /// A cold key under an org kill-switch must end up allowed. If the plugins-config read ran first, the gate's remote-less backstop would record a durable kill-switch-blind deny.
-/// The `Some(false)` arm of `resolve_and_record_inner` (store-only reconcile) could never lift that deny. The test is GROK_HOME-isolated (empty store); GROK_FOLDER_TRUST is unset so the kill-switch is the only signal.
+/// The `Some(false)` arm of `resolve_and_record_inner` (store-only reconcile) could never lift that deny. The test is GROK_HOME-isolated (empty store); EZER_FOLDER_TRUST is unset so the kill-switch is the only signal.
 #[test]
 #[serial_test::serial]
 fn kill_switched_cold_cwd_stays_allowed_through_plugins_config_read() {
@@ -4209,9 +4209,9 @@ fn kill_switched_cold_cwd_stays_allowed_through_plugins_config_read() {
     let _sim = simulate_release_build();
     let repo = tempfile::tempdir().unwrap();
     git2::Repository::init(repo.path()).unwrap();
-    let grok = repo.path().join(".grok");
-    std::fs::create_dir_all(&grok).unwrap();
-    std::fs::write(grok.join("config.toml"), "[plugins]\npaths = [\"./proj-plugin\"]\n")
+    let ezer = repo.path().join(".grok");
+    std::fs::create_dir_all(&ezer).unwrap();
+    std::fs::write(ezer.join("config.toml"), "[plugins]\npaths = [\"./proj-plugin\"]\n")
         .unwrap();
     let cwd = repo.path();
     let remote = crate::util::config::RemoteSettings {
@@ -4236,7 +4236,7 @@ fn kill_switched_cold_cwd_stays_allowed_through_plugins_config_read() {
 #[test]
 #[serial_test::serial]
 fn from_remote_gated_requires_xai_auth_for_writeback() {
-    let _env = crate::env::EnvVarGuard::remove("GROK_STORAGE_MODE");
+    let _env = crate::env::EnvVarGuard::remove("EZER_STORAGE_MODE");
     let writeback = crate::util::config::RemoteSettings {
         writeback_enabled: Some(true),
         ..Default::default()

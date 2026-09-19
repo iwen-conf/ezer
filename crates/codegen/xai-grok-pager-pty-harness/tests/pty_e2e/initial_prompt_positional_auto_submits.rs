@@ -2,7 +2,7 @@
 #[allow(unused_imports)]
 use super::common::*;
 
-/// Launching `grok "<prompt>"` (the prompt as a positional CLI arg) auto-starts a new session and submits it as the first turn.
+/// Launching `ezer "<prompt>"` (the prompt as a positional CLI arg) auto-starts a new session and submits it as the first turn.
 /// No keystrokes are injected.
 /// The full loop runs: CLI positional, TUI launch, NewSession, SendPrompt, shell agent, mock inference, streamed chunks, pager render.
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]

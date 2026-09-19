@@ -1,6 +1,6 @@
 //! `hashline_read` — anchor-annotated file reading.
 //!
-//! Reuses the core file-reading logic from [`grok_build::read_file::run_read_file`]
+//! Reuses the core file-reading logic from [`ezer_build::read_file::run_read_file`]
 //! and post-processes the result to replace standard line-number formatting with
 //! scheme-aware anchor annotations.
 //!
@@ -455,7 +455,7 @@ mod tests {
     }
 
     /// No per-line clip on the hashline read path either (it formats the
-    /// file content independently of grok_build `read_file`).
+    /// file content independently of ezer_build `read_file`).
     #[tokio::test]
     async fn read_long_line_unclipped_by_default() {
         let tmp = TempDir::new().unwrap();

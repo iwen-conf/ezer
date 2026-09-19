@@ -6,12 +6,12 @@ use std::path::PathBuf;
 use xai_grok_workspace::file_system::{
     FileReference, render_embedded_resource, render_file_reference,
 };
-/// Some templates put `<user_query>` last (context first); Grok puts it first.
+/// Some templates put `<user_query>` last (context first); ezer puts it first.
 /// Keeping them separate lets the caller truncate context without searching for the query boundary in a flat string.
 #[derive(Debug, Clone)]
 pub struct ParsedPrompt {
     /// Context blocks: `<attached_files>` payloads and resource-link sections.
-    /// Grok mode may include editor open/focus metadata; the compat mode does not.
+    /// ezer mode may include editor open/focus metadata; the compat mode does not.
     /// Empty string when there is no context.
     pub context: String,
     /// The user's query, already wrapped in `<user_query>` tags (or raw when verbatim).
@@ -32,7 +32,7 @@ impl ParsedPrompt {
             self.is_cursor,
         )
     }
-    /// Grok mode: `<user_query>`, then `<skill_information>`, then context.
+    /// ezer mode: `<user_query>`, then `<skill_information>`, then context.
     /// Query-last mode: context, then `<user_query>`, then `<skill_information>`.
     /// The `<skill_information>` block always follows `<user_query>` immediately.
     pub fn assemble_parts_with_skills(
@@ -343,7 +343,7 @@ fn render_regular_links(links: &[&acp::ResourceLink]) -> String {
     }
     s.trim_end_matches('\n').to_string()
 }
-/// Grok-format resource links: `<focused_files>` / `<open_files>` with metadata inside a `<system-reminder>` wrapper.
+/// ezer-format resource links: `<focused_files>` / `<open_files>` with metadata inside a `<system-reminder>` wrapper.
 fn render_resource_links_grok(resource_links: &[acp::ResourceLink]) -> String {
     let mut regular_links = Vec::new();
     let mut focused_files = Vec::new();
@@ -420,7 +420,7 @@ mod tests {
             format!("{query}\n\n{context}")
         }
     }
-    /// Shorthand: render and assemble for grok mode.
+    /// Shorthand: render and assemble for ezer mode.
     fn render_grok(
         message: &str,
         embedded: Vec<String>,
@@ -635,7 +635,7 @@ mod tests {
         assert!(result.contains("embedded content"));
         assert!(
             result.starts_with("<user_query>"),
-            "Grok should start with <user_query>, got: {result}"
+            "ezer should start with <user_query>, got: {result}"
         );
     }
     #[test]
@@ -648,7 +648,7 @@ mod tests {
         let rr_pos = result.find("Referenced resources:").unwrap();
         assert!(
             uq_pos < rr_pos,
-            "Grok: <user_query> ({uq_pos}) should come before resource links ({rr_pos})\ngot: {result}"
+            "ezer: <user_query> ({uq_pos}) should come before resource links ({rr_pos})\ngot: {result}"
         );
         assert!(result.contains("<system-reminder>"));
     }

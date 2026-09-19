@@ -638,7 +638,7 @@ impl Default for PruningConfig {
 #[serde(default)]
 pub struct MemoryConfig {
     pub enabled: bool,
-    /// Memory was turned off for the whole process (`--no-memory` or `GROK_MEMORY=0`).
+    /// Memory was turned off for the whole process (`--no-memory` or `EZER_MEMORY=0`).
     /// Unlike a TOML opt-out, the `/memory` session toggle cannot override this.
     #[serde(skip)]
     pub force_disabled: bool,
@@ -736,7 +736,7 @@ impl MemoryConfig {
         let gc = memory.gc.as_ref();
         let dream = memory.dream.as_ref();
         let remote_v2 = remote.and_then(|settings| settings.memory_v2.as_ref());
-        let legacy_enabled = crate::BoolFlag::env("GROK_MEMORY")
+        let legacy_enabled = crate::BoolFlag::env("EZER_MEMORY")
             .cli(memory_enabled_override)
             .config(memory.enabled)
             .feature_flag(remote.and_then(|settings| settings.memory_enabled))

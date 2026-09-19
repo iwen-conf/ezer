@@ -89,7 +89,7 @@ impl WelcomeWorkspaceMode {
 }
 
 /// Structured log target for welcome / in-session workspace mode events.
-pub const WORKSPACE_MODE_LOG: &str = "grok.pager.workspace_mode";
+pub const WORKSPACE_MODE_LOG: &str = "ezer.pager.workspace_mode";
 
 /// Log a welcome picker selection change (Ctrl+E cycle or click).
 pub fn log_welcome_mode_selected(
@@ -687,7 +687,7 @@ mod tests {
 mod apply_tests {
     use super::*;
     use crate::app::session_startup::{
-        GROK_CHAT_LOCAL_WORKSPACE_ACK_ENV, LocalWorkspaceMode, set_active_local_workspace,
+        EZER_CHAT_LOCAL_WORKSPACE_ACK_ENV, LocalWorkspaceMode, set_active_local_workspace,
     };
 
     #[test]
@@ -727,7 +727,7 @@ mod apply_tests {
     #[test]
     #[serial_test::serial(GROK_CHAT_LOCAL_WORKSPACE_ACK)]
     fn welcome_local_one_shot_only_when_agents_alive() {
-        let _ack = xai_grok_test_support::EnvGuard::set(GROK_CHAT_LOCAL_WORKSPACE_ACK_ENV, "1");
+        let _ack = xai_grok_test_support::EnvGuard::set(EZER_CHAT_LOCAL_WORKSPACE_ACK_ENV, "1");
         set_active_local_workspace(None).unwrap();
         let tmp = tempfile::tempdir().unwrap();
         let out = prepare_welcome_workspace_for_new_session(
@@ -756,7 +756,7 @@ mod apply_tests {
     #[test]
     #[serial_test::serial(GROK_CHAT_LOCAL_WORKSPACE_ACK)]
     fn welcome_local_stamps_own_mode() {
-        let _ack = xai_grok_test_support::EnvGuard::set(GROK_CHAT_LOCAL_WORKSPACE_ACK_ENV, "1");
+        let _ack = xai_grok_test_support::EnvGuard::set(EZER_CHAT_LOCAL_WORKSPACE_ACK_ENV, "1");
         set_active_local_workspace(None).unwrap();
         let tmp = tempfile::tempdir().unwrap();
         let out = prepare_welcome_workspace_for_new_session(
@@ -818,7 +818,7 @@ mod apply_tests {
     #[test]
     #[serial_test::serial(GROK_CHAT_LOCAL_WORKSPACE_ACK)]
     fn local_without_ack_awaits_confirm() {
-        let _ack = xai_grok_test_support::EnvGuard::unset(GROK_CHAT_LOCAL_WORKSPACE_ACK_ENV);
+        let _ack = xai_grok_test_support::EnvGuard::unset(EZER_CHAT_LOCAL_WORKSPACE_ACK_ENV);
         // Isolate the ack file from the developer machine
         let home = tempfile::tempdir().unwrap();
         let _home =

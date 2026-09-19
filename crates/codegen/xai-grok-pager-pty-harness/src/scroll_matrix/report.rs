@@ -54,7 +54,7 @@ pub struct CellReport {
     pub status: CellStatus,
     /// One row per declared invariant; empty when the run aborted before evaluation (see `note`).
     pub invariants: Vec<InvariantReport>,
-    /// The cell's `GROK_SCROLL_LOG` capture (kept for post-mortems).
+    /// The cell's `EZER_SCROLL_LOG` capture (kept for post-mortems).
     pub log_path: String,
     /// Streams grouped out of the capture (finalized + trailing in-flight).
     pub streams: usize,

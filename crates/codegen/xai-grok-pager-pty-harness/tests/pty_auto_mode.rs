@@ -3,8 +3,8 @@
 //! Uses `xai-grok-pager-pty-harness` (`PtyHarness`) and Shift+Tab (CSI Z, compatible with `ptyctl` key injection) to cycle Normal to Plan to Auto.
 //! The mode banner or status line must show Auto as its own mode, distinct from Always-Approve.
 //!
-//! Auth: seeds `HOME/.grok/auth.json` from `GROK_AUTH_JSON` (path) or the
-//! developer's `~/.grok/auth.json` so the pager skips device-login when
+//! Auth: seeds `HOME/.ezer/auth.json` from `EZER_AUTH_JSON` (path) or the
+//! developer's `~/.ezer/auth.json` so the pager skips device-login when
 //! credentials exist. Without auth the test records an environmental
 //! failure (login screen) and still asserts the harness API surface.
 //!
@@ -25,16 +25,16 @@ const WELCOME_SCREEN_SENTINEL: &str = "Quit";
 /// Back-tab (Shift+Tab, CSI Z); the pager binds it to CycleMode.
 const SHIFT_TAB: &[u8] = b"\x1b[Z";
 
-/// Prefer explicit path, else the user's real `~/.grok/auth.json`.
+/// Prefer explicit path, else the user's real `~/.ezer/auth.json`.
 fn auth_json_source() -> Option<PathBuf> {
-    if let Ok(p) = std::env::var("GROK_AUTH_JSON") {
+    if let Ok(p) = std::env::var("EZER_AUTH_JSON") {
         let pb = PathBuf::from(p);
         if pb.is_file() {
             return Some(pb);
         }
     }
     dirs_next_home()
-        .map(|h| h.join(".grok/auth.json"))
+        .map(|h| h.join(".ezer/auth.json"))
         .filter(|p| p.is_file())
 }
 
@@ -65,7 +65,7 @@ fn prepare_sandbox(sandbox: &mut TestSandbox, gate_on: bool) -> Vec<(String, Str
             );
         }
     } else {
-        eprintln!("pty_auto_mode: no ~/.grok/auth.json — may hit device login");
+        eprintln!("pty_auto_mode: no ~/.ezer/auth.json — may hit device login");
     }
 
     let home_s = home.display().to_string();
@@ -83,7 +83,7 @@ fn prepare_sandbox(sandbox: &mut TestSandbox, gate_on: bool) -> Vec<(String, Str
     // (`xai_grok_config::env_bool`) portable-pty merges this over the inherited environment, so a value exported in
     // the shell can't flip the result.
     env.push((
-        "GROK_AUTO_PERMISSION_MODE".into(),
+        "EZER_AUTO_PERMISSION_MODE".into(),
         if gate_on { "1" } else { "0" }.into(),
     ));
     env
@@ -98,7 +98,7 @@ fn is_login_screen(screen: &str) -> bool {
 /// Whether the caller expects seeded auth (CI, or a deliberate e2e run).
 /// When set, hitting the login screen means auth seeding broke, so the test fails instead of passing vacuously.
 fn require_auth() -> bool {
-    std::env::var("GROK_PTY_REQUIRE_AUTH").is_ok_and(|v| v == "1" || v == "true")
+    std::env::var("EZER_PTY_REQUIRE_AUTH").is_ok_and(|v| v == "1" || v == "true")
 }
 
 /// Cycle into Auto on the welcome (pre-session) screen and assert the screen shows Auto (mode banner), not Always-Approve alone.
@@ -126,7 +126,7 @@ fn pty_shift_tab_cycles_to_auto_mode_banner() {
     if is_login_screen(&early) {
         assert!(
             !require_auth(),
-            "GROK_PTY_REQUIRE_AUTH set but pager hit the login screen — auth seeding broke"
+            "EZER_PTY_REQUIRE_AUTH set but pager hit the login screen — auth seeding broke"
         );
         // Auth is still blocking (expired token or no network), an environmental failure
         // The UI-ring guarantee is covered by the dispatch-level unit tests; save the screen for debugging
@@ -209,7 +209,7 @@ fn pty_shift_tab_skips_auto_when_gate_off() {
     if is_login_screen(&early) {
         assert!(
             !require_auth(),
-            "GROK_PTY_REQUIRE_AUTH set but pager hit the login screen — auth seeding broke"
+            "EZER_PTY_REQUIRE_AUTH set but pager hit the login screen — auth seeding broke"
         );
         eprintln!(
             "pty_auto_mode(gate off): login/device-auth screen blocked cycle; env auth limit"

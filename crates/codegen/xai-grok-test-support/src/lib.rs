@@ -5,20 +5,20 @@
     unreachable_code,
     dead_code
 )]
-//! Shared test utilities for grok-build crates.
+//! Shared test utilities for ezer-build crates.
 //!
 //! Provides:
-//! - [`GrokStdioClient`]: ACP client that drives `grok agent stdio` as a subprocess, with a scripted [`ClientPolicy`] (set through [`SpawnOptions`]) and a typed transcript ([`TranscriptEntry`])
+//! - [`GrokStdioClient`]: ACP client that drives `ezer agent stdio` as a subprocess, with a scripted [`ClientPolicy`] (set through [`SpawnOptions`]) and a typed transcript ([`TranscriptEntry`])
 //! - [`AcpTestClient`]: writes verbatim JSON-RPC lines and reads until the response with the same id, for wire shapes the typed client can't produce (Foundation `\/` methods, string UUID ids)
 //! - [`MockInferenceServer`]: Mock `/v1/chat/completions`, `/v1/responses`, and `/v1/messages` with a request log and per conversation scripts
 //! - [`Conversation`]: Per conversation tool calls and replies, with [`Tool`] picking the name the request offers, turns pinned to a request, and failures answering in place of the content
 //! - [`ObservedFailure`]: What the mock did to a request in place of answering it plainly, on its log entry
-//! - [`leader::LeaderStdioClient`]: ACP client that drives `grok agent --leader stdio` (unix)
+//! - [`leader::LeaderStdioClient`]: ACP client that drives `ezer agent --leader stdio` (unix)
 //! - [`TestSandbox`]: Own isolated paths, hermetic child env, optional git setup, diagnostics
 //! - [`TestProcess`]: Own detached child lifecycle, process-tree teardown, bounded output tails
-//! - [`run_headless`]: Run `grok -p` against the mock server and capture output
+//! - [`run_headless`]: Run `ezer -p` against the mock server and capture output
 //! - [`git_workdir`]: Create a git-initialized [`TestSandbox`]
-//! - [`grok_binary`]: Resolve the grok binary path (GROK_BINARY env or cargo_bin)
+//! - [`grok_binary`]: Resolve the ezer binary path (EZER_BINARY env or cargo_bin)
 //! - [`spawn_counting_server`]: Connection-counting HTTP/1.1 server for wire/pooling tests
 //! - [`uds_proxy::UdsProxy`]: Frame-aware fault-injection proxy for leader IPC sockets (unix)
 //! - [`ResourceSnapshot`]: RSS/threads/fds sampling for soak tests
@@ -27,10 +27,10 @@
 //! - [`MockManagedConfigServer`]: mock of the server the managed configuration supervisor fetches policy from
 //! - [`ManagedPolicy`]: the configuration row the mock server serves for one principal, signed by a [`TestSigningKey`] or not
 #![deny(clippy::indexing_slicing)]
-/// Multiply a harness timeout by `GROK_TEST_TIMEOUT_SCALE` (positive integer, default 1).
-/// CI lanes on shared runner pools raise it so pool load slows tests instead of failing them (see the Grok Build merge CI workflow).
+/// Multiply a harness timeout by `EZER_TEST_TIMEOUT_SCALE` (positive integer, default 1).
+/// CI lanes on shared runner pools raise it so pool load slows tests instead of failing them (see the ezer merge CI workflow).
 pub fn scaled(base: std::time::Duration) -> std::time::Duration {
-    let scale = std::env::var("GROK_TEST_TIMEOUT_SCALE")
+    let scale = std::env::var("EZER_TEST_TIMEOUT_SCALE")
         .ok()
         .and_then(|v| v.parse::<u32>().ok())
         .filter(|&v| v > 0)

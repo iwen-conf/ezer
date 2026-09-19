@@ -1,4 +1,4 @@
-//! TLS policy for the grok CLI: OS roots, Mozilla roots, and opt-in extra roots from `GROK_EXTRA_CA_BUNDLE` (fallback: `SSL_CERT_FILE`).
+//! TLS policy for the ezer CLI: OS roots, Mozilla roots, and opt-in extra roots from `EZER_EXTRA_CA_BUNDLE` (fallback: `SSL_CERT_FILE`).
 //! A bad bundle is logged and skipped, never failing client construction.
 //!
 //! Every client pins rustls: feature unification can otherwise select native-tls, whose untyped errors break the certificate classifier.
@@ -15,7 +15,7 @@ use rustls::pki_types::pem::PemObject;
 
 pub const MAX_EXTRA_CA_BUNDLE_BYTES: u64 = 1024 * 1024;
 
-pub const ENV_GROK_EXTRA_CA_BUNDLE: &str = "GROK_EXTRA_CA_BUNDLE";
+pub const ENV_GROK_EXTRA_CA_BUNDLE: &str = "EZER_EXTRA_CA_BUNDLE";
 
 pub const ENV_SSL_CERT_FILE: &str = "SSL_CERT_FILE";
 
@@ -48,7 +48,7 @@ pub fn ensure_default_crypto_provider() {
     });
 }
 
-/// Builds a reqwest client with the grok TLS policy: the shared roots (OS store, Mozilla bundle, and any extra roots).
+/// Builds a reqwest client with the ezer TLS policy: the shared roots (OS store, Mozilla bundle, and any extra roots).
 /// The roots are read once per process instead of on each build.
 /// For HTTP/1.1 only, add `http1_only()` in `configure`.
 #[allow(clippy::disallowed_methods)] // the approved async build path
@@ -214,7 +214,7 @@ fn bundle_snapshot() -> &'static BundleSnapshot {
     })
 }
 
-/// `GROK_EXTRA_CA_BUNDLE` wins over `SSL_CERT_FILE`; an empty value disables both, since `SSL_CERT_FILE` is often set process-wide (Nix, conda).
+/// `EZER_EXTRA_CA_BUNDLE` wins over `SSL_CERT_FILE`; an empty value disables both, since `SSL_CERT_FILE` is often set process-wide (Nix, conda).
 fn configured_ca_bundle() -> Option<(&'static str, std::path::PathBuf)> {
     select_bundle(
         std::env::var_os(ENV_GROK_EXTRA_CA_BUNDLE),
@@ -222,7 +222,7 @@ fn configured_ca_bundle() -> Option<(&'static str, std::path::PathBuf)> {
     )
 }
 
-/// `GROK_EXTRA_CA_BUNDLE` wins over `SSL_CERT_FILE`; an empty value disables both, since `SSL_CERT_FILE` is often set process-wide (Nix, conda).
+/// `EZER_EXTRA_CA_BUNDLE` wins over `SSL_CERT_FILE`; an empty value disables both, since `SSL_CERT_FILE` is often set process-wide (Nix, conda).
 /// Pure so precedence is unit-tested without touching the process environment.
 fn select_bundle(
     bundle: Option<std::ffi::OsString>,

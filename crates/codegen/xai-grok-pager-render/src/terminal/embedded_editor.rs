@@ -1,4 +1,4 @@
-//! Detects whether grok is running inside an editor's embedded `:terminal` (Neovim/Vim `:terminal`, Emacs `vterm`).
+//! Detects whether ezer is running inside an editor's embedded `:terminal` (Neovim/Vim `:terminal`, Emacs `vterm`).
 //!
 //! Inside an editor `:terminal` the *immediate* terminal emulator is the editor's own libvterm, not tmux, even though `TMUX` is still inherited.
 //! A tmux DCS passthrough envelope (`\x1bPtmux;…\x1b\\`) is only understood by tmux.

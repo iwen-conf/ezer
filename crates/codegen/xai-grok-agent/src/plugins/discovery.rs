@@ -2,11 +2,11 @@
 //!
 //! Discovers plugins from multiple sources in priority order:
 //! 1. CLI `--plugin-dir` paths (scope: `CliOverride`)
-//! 2. `.grok/plugins/*/` (scope: `Project`, walked from cwd to worktree root)
+//! 2. `.ezer/plugins/*/` (scope: `Project`, walked from cwd to worktree root)
 //! 3. `.claude/plugins/*/` (scope: `Project`, compat)
-//! 4. `~/.grok/plugins/*/` (scope: `User`)
+//! 4. `~/.ezer/plugins/*/` (scope: `User`)
 //! 5. `~/.claude/plugins/*/` (scope: `User`, compat)
-//!    `~/.grok/installed-plugins/*/` (scope: `User`, marketplace installs)
+//!    `~/.ezer/installed-plugins/*/` (scope: `User`, marketplace installs)
 //!    Installed plugins from `~/.claude/plugins/installed_plugins.json` (scope: `User`)
 //! 6. Paths from `[plugins].paths` in config (scope: `ConfigPath`)
 //!
@@ -27,9 +27,9 @@ use super::trust::TrustStore;
 pub enum PluginScope {
     /// `--plugin-dir` (highest priority, always trusted)
     CliOverride = 0,
-    /// `.grok/plugins/` or `.claude/plugins/` in project (requires trust)
+    /// `.ezer/plugins/` or `.claude/plugins/` in project (requires trust)
     Project = 1,
-    /// `~/.grok/plugins/` or `~/.claude/plugins/` (always trusted)
+    /// `~/.ezer/plugins/` or `~/.claude/plugins/` (always trusted)
     User = 2,
     /// `[plugins].paths` in config (trust depends on location)
     ConfigPath = 3,
@@ -64,7 +64,7 @@ impl std::fmt::Display for PluginScope {
 pub enum PluginOrigin {
     /// CLI `--plugin-dir`.
     CliOverride,
-    /// Project `.grok/plugins/`.
+    /// Project `.ezer/plugins/`.
     ProjectGrok,
     /// Project `.claude/plugins/`.
     ProjectClaude,
@@ -82,7 +82,7 @@ pub enum PluginOrigin {
         /// Marketplace name from the `name@marketplace` JSON key, when present.
         marketplace: Option<String>,
     },
-    /// Grok's install registry (`~/.grok/installed-plugins`).
+    /// ezer's install registry (`~/.ezer/installed-plugins`).
     MarketplaceInstall {
         /// Marketplace source display name (None for direct git/local installs).
         source_name: Option<String>,
@@ -195,7 +195,7 @@ impl DiscoveryConfig {
 // ── Discovery entry point ─────────────────────────────────────────────
 
 /// User plugin directories in priority order: `$GROK_HOME/plugins` then `~/.claude/plugins`.
-/// Plugins are intentionally not discovered from legacy `~/.grok/plugins`.
+/// Plugins are intentionally not discovered from legacy `~/.ezer/plugins`.
 /// Trust, persisted data, and install paths all resolve under `grok_home()`, so a legacy scan would be half-initialized.
 fn user_plugin_dirs(home: Option<&Path>, grok: Option<&Path>) -> Vec<(PathBuf, PluginOrigin)> {
     let mut dirs = Vec::new();
@@ -208,7 +208,7 @@ fn user_plugin_dirs(home: Option<&Path>, grok: Option<&Path>) -> Vec<(PathBuf, P
     dirs
 }
 
-/// Origin for a project plugins parent dir: `.claude/plugins` vs `.grok/plugins`.
+/// Origin for a project plugins parent dir: `.claude/plugins` vs `.ezer/plugins`.
 fn project_plugins_dir_origin(plugins_dir: &Path) -> PluginOrigin {
     let is_claude = plugins_dir
         .parent()
@@ -232,10 +232,10 @@ pub fn project_plugin_dirs(cwd: Option<&Path>) -> (Vec<PathBuf>, Option<PathBuf>
     (project_plugin_dirs_in(&chain.dirs), chain.git_root)
 }
 
-/// Existing project plugin parent dirs (`.grok/plugins`, `.claude/plugins`) under each dir of a precomputed [`crate::repo::RepoDirChain`].
+/// Existing project plugin parent dirs (`.ezer/plugins`, `.claude/plugins`) under each dir of a precomputed [`crate::repo::RepoDirChain`].
 /// The folder-trust gate reuses its one shared chain here so detection and discovery can never drift.
 pub fn project_plugin_dirs_in(chain_dirs: &[PathBuf]) -> Vec<PathBuf> {
-    crate::repo::existing_subdirs_along(chain_dirs, &[".grok/plugins", ".claude/plugins"])
+    crate::repo::existing_subdirs_along(chain_dirs, &[".ezer/plugins", ".claude/plugins"])
 }
 
 /// `cwd` is used to find the git worktree root for project-scope plugins.
@@ -449,7 +449,7 @@ pub fn discover_plugins(
 
 // ── Internal helpers ──────────────────────────────────────────────────
 
-/// Scan a plugins parent directory (e.g. `~/.grok/plugins/`) and collect
+/// Scan a plugins parent directory (e.g. `~/.ezer/plugins/`) and collect
 /// each subdirectory as a plugin candidate.
 fn scan_plugin_dir(
     plugins_dir: &Path,
@@ -865,18 +865,18 @@ mod tests {
     #[test]
     fn user_plugin_dirs_are_grok_and_claude_only_no_legacy() {
         let home = Path::new("/home/u");
-        let grok = Path::new("/custom/grokhome");
-        let dirs = user_plugin_dirs(Some(home), Some(grok));
-        assert!(dirs.contains(&(grok.join("plugins"), PluginOrigin::UserGrok)));
+        let ezer = Path::new("/custom/grokhome");
+        let dirs = user_plugin_dirs(Some(home), Some(ezer));
+        assert!(dirs.contains(&(ezer.join("plugins"), PluginOrigin::UserGrok)));
         assert!(dirs.contains(&(
             home.join(".claude").join("plugins"),
             PluginOrigin::UserClaude
         )));
-        // Plugins are not discovered from the legacy ~/.grok tree.
+        // Plugins are not discovered from the legacy ~/.ezer tree.
         assert!(
             !dirs
                 .iter()
-                .any(|(p, _)| p == &home.join(".grok").join("plugins"))
+                .any(|(p, _)| p == &home.join(".ezer").join("plugins"))
         );
     }
 
@@ -916,7 +916,7 @@ mod tests {
     #[test]
     fn project_plugins_dir_origin_distinguishes_grok_and_claude() {
         assert_eq!(
-            project_plugins_dir_origin(Path::new("/repo/.grok/plugins")),
+            project_plugins_dir_origin(Path::new("/repo/.ezer/plugins")),
             PluginOrigin::ProjectGrok
         );
         assert_eq!(
@@ -929,8 +929,8 @@ mod tests {
     fn discover_user_plugins() {
         let tmp = tempfile::tempdir().unwrap();
 
-        // Create ~/.grok/plugins/ structure
-        let grok_plugins = tmp.path().join(".grok").join("plugins");
+        // Create ~/.ezer/plugins/ structure
+        let grok_plugins = tmp.path().join(".ezer").join("plugins");
         std::fs::create_dir_all(&grok_plugins).unwrap();
         make_manifest_plugin(&grok_plugins, "user-tool");
 
@@ -1506,7 +1506,7 @@ mod tests {
 
     #[test]
     fn discover_real_project_plugin_gated_on_project_trusted() {
-        // Drives discover_plugins end to end with a repo-local `.grok/plugins/<x>/` plugin that has an MCP component
+        // Drives discover_plugins end to end with a repo-local `.ezer/plugins/<x>/` plugin that has an MCP component
         // The plugin is trusted iff the folder-trust verdict (project_trusted) allows it
         // The plugin is found by name so any user-scoped plugins on the test host are irrelevant
         let tmp = tempfile::tempdir().unwrap();

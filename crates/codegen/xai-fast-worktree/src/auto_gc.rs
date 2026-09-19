@@ -15,15 +15,15 @@ pub(crate) const META_LAST_AUTO_GC_AT: &str = "last_auto_gc_at";
 pub(crate) const META_LAST_AUTO_REBUILD_AT: &str = "last_auto_rebuild_at";
 
 /// `0` / `false` / `off` / empty disables auto-GC.
-pub const ENV_AUTO_GC: &str = "GROK_WORKTREE_AUTO_GC";
+pub const ENV_AUTO_GC: &str = "EZER_WORKTREE_AUTO_GC";
 /// `1` / `true` / `on` forces age-count without delete.
-pub const ENV_AUTO_GC_DRY_RUN: &str = "GROK_WORKTREE_AUTO_GC_DRY_RUN";
+pub const ENV_AUTO_GC_DRY_RUN: &str = "EZER_WORKTREE_AUTO_GC_DRY_RUN";
 /// Default max age in seconds (overrides TOML/remote when set and parseable).
-pub const ENV_AUTO_GC_MAX_AGE: &str = "GROK_WORKTREE_AUTO_GC_MAX_AGE";
+pub const ENV_AUTO_GC_MAX_AGE: &str = "EZER_WORKTREE_AUTO_GC_MAX_AGE";
 /// `1` / `true` / `on` enables optional discovery rebuild + stale git prune.
-pub const ENV_AUTO_GC_REBUILD: &str = "GROK_WORKTREE_AUTO_GC_REBUILD";
+pub const ENV_AUTO_GC_REBUILD: &str = "EZER_WORKTREE_AUTO_GC_REBUILD";
 
-/// Test-only: clear every `GROK_WORKTREE_AUTO_GC*` var (shared list, not for production).
+/// Test-only: clear every `EZER_WORKTREE_AUTO_GC*` var (shared list, not for production).
 /// # Safety
 /// Caller must hold the env test lock; `remove_var` is unsound under concurrent env access.
 #[doc(hidden)]
@@ -70,7 +70,7 @@ pub struct WorktreeAutoGcLayer {
     pub dry_run: Option<bool>,
     pub include_orphan_snapshots: Option<bool>,
     pub max_age_by_kind: BTreeMap<WorktreeKind, Option<u64>>,
-    /// Optional discovery rebuild + grok-scoped stale `.git/worktrees/` scrub (default off).
+    /// Optional discovery rebuild + ezer-scoped stale `.git/worktrees/` scrub (default off).
     pub include_rebuild: Option<bool>,
     /// Independent rebuild throttle; absent ⇒ 24h.
     pub rebuild_min_interval_secs: Option<u64>,
@@ -281,7 +281,7 @@ pub(crate) fn env_auto_gc_rebuild() -> bool {
     env_var_truthy(ENV_AUTO_GC_REBUILD)
 }
 
-/// Parse `GROK_WORKTREE_AUTO_GC_MAX_AGE` as seconds; invalid/absent → None.
+/// Parse `EZER_WORKTREE_AUTO_GC_MAX_AGE` as seconds; invalid/absent → None.
 pub(crate) fn env_auto_gc_max_age() -> Option<u64> {
     match std::env::var(ENV_AUTO_GC_MAX_AGE) {
         Ok(v) => {
@@ -579,7 +579,7 @@ fn maybe_run_rebuild(
     let home = match resolve_grok_home() {
         Ok(h) => h,
         Err(e) => {
-            tracing::warn!(error = %e, "auto worktree rebuild skipped: grok home unresolved");
+            tracing::warn!(error = %e, "auto worktree rebuild skipped: ezer home unresolved");
             return (None, false);
         }
     };
@@ -618,12 +618,12 @@ fn collect_source_repos_for_prune(db: &WorktreeDb) -> BTreeSet<PathBuf> {
         .collect()
 }
 
-/// Scrub stale grok-owned registrations, scoped under the grok home to prove
+/// Scrub stale ezer-owned registrations, scoped under the ezer home to prove
 /// ownership. A blanket `git worktree prune` is unsafe; see
 /// [`crate::git::remove_stale_worktree_registrations_under`].
 fn prune_stale_git_worktree_registrations(repos: &BTreeSet<PathBuf>) -> u64 {
     let Ok(grok_home) = resolve_grok_home() else {
-        tracing::warn!("auto worktree registration scrub skipped: grok home unresolved");
+        tracing::warn!("auto worktree registration scrub skipped: ezer home unresolved");
         return 0;
     };
     let cleaned: u64 = repos
@@ -965,7 +965,7 @@ mod tests {
         );
     }
 
-    /// Kill switch: env `GROK_WORKTREE_AUTO_GC=0` or `opts.enabled=false` both
+    /// Kill switch: env `EZER_WORKTREE_AUTO_GC=0` or `opts.enabled=false` both
     /// short-circuit to `Disabled` with no stamp; an enabled pass with a clean
     /// env runs and stamps.
     #[test]
@@ -1556,7 +1556,7 @@ mod tests {
         assert!(report.stamped, "GC Ok must still stamp last_auto_gc_at");
     }
 
-    /// A real rebuild pass prunes a stale grok-owned registration even when the
+    /// A real rebuild pass prunes a stale ezer-owned registration even when the
     /// tracked row is the sole record and already dead — prune snapshots before
     /// GC unregisters it.
     #[test]

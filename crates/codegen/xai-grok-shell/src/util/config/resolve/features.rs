@@ -14,7 +14,7 @@ pub fn resolve_zdr_access_enabled(
     fn from_toml(v: Option<&TomlValue>) -> Option<bool> {
         v?.get("features")?.get("zdr_access_enabled")?.as_bool()
     }
-    BoolFlag::env("GROK_ZDR_ACCESS_ENABLED")
+    BoolFlag::env("EZER_ZDR_ACCESS_ENABLED")
         .requirement(from_toml(requirements))
         .config(from_toml(user))
         .managed(from_toml(managed))
@@ -27,7 +27,7 @@ pub(crate) fn turn_transient_retry_from_toml(v: Option<&TomlValue>) -> Option<bo
     v?.get("features")?.get("turn_transient_retry")?.as_bool()
 }
 
-/// Spawn-time kill switch: `[features] turn_transient_retry`, `GROK_TURN_TRANSIENT_RETRY`, remote key (below local), default on.
+/// Spawn-time kill switch: `[features] turn_transient_retry`, `EZER_TURN_TRANSIENT_RETRY`, remote key (below local), default on.
 /// Loads local layers itself; call once per session.
 pub(crate) fn resolve_turn_transient_retry(remote: Option<bool>) -> bool {
     let user_cfg = crate::config::load_effective_config().ok();

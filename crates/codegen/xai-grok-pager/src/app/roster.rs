@@ -176,7 +176,7 @@ mod tests {
         let cursor_row = agent::RosterEntry {
             session_id: "cursor-worker:bc-1".to_string(),
             title: Some("External agent bc-1".to_string()),
-            cwd: "/home/u/.grok/worktrees/proj/cursor-bc-1".to_string(),
+            cwd: "/home/u/.ezer/worktrees/proj/cursor-bc-1".to_string(),
             is_worktree: true,
             session_kind: Some("cursor-worker".to_string()),
             model_id: None,

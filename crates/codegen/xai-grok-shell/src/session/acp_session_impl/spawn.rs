@@ -361,7 +361,7 @@ pub(crate) async fn spawn_session_actor(
                     "CLI --allow catch-all ignored: always-approve disabled by managed policy"
                 );
                 if startup_hints.non_interactive {
-                    eprintln!("grok: --allow catch-all ignored: {reason}");
+                    eprintln!("ezer: --allow catch-all ignored: {reason}");
                 }
             }
             if !cli_permission_rules.is_empty() {
@@ -535,7 +535,7 @@ pub(crate) async fn spawn_session_actor(
         },
         |mc| mc.pruning.clone(),
     );
-    let context_window_override = std::env::var("GROK_DEBUG_CONTEXT_WINDOW")
+    let context_window_override = std::env::var("EZER_DEBUG_CONTEXT_WINDOW")
         .ok()
         .and_then(|v| v.parse::<u64>().ok())
         .and_then(std::num::NonZeroU64::new);
@@ -548,7 +548,7 @@ pub(crate) async fn spawn_session_actor(
         tracing::warn!(
             override_context_window = cw.get(),
             original_context_window = baseline_context_window.get(),
-            "GROK_DEBUG_CONTEXT_WINDOW override active"
+            "EZER_DEBUG_CONTEXT_WINDOW override active"
         );
     }
     let resolved_max_retries = xai_grok_sampler::resolve_max_retries(session_max_retries_source(
@@ -881,7 +881,7 @@ pub(crate) async fn spawn_session_actor(
                         stage = failure.stage,
                         error = %failure.error,
                         "MEMORY_INIT: memory-v2 {} failed; memory is disabled for this session. \
-                         Restart to retry, or start with `--no-memory` / `GROK_MEMORY=0` to skip memory.",
+                         Restart to retry, or start with `--no-memory` / `EZER_MEMORY=0` to skip memory.",
                         failure.stage,
                     );
                     memory_storage_for_session = None;

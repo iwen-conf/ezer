@@ -72,7 +72,7 @@ impl ChangelogManager {
     }
 
     /// Fetch both markdown and JSON changelogs for the current version. Each format is fetched independently (CDN, 3 s timeout) and cached to disk, falling back to the cached copy on failure.
-    /// Either field may be `None` if offline with no cache. When `GROK_CHANGELOG_OFFLINE` is set (PTY / integration tests), the CDN is skipped and only the disk cache is read.
+    /// Either field may be `None` if offline with no cache. When `EZER_CHANGELOG_OFFLINE` is set (PTY / integration tests), the CDN is skipped and only the disk cache is read.
     /// JSON is cached only after a successful parse; the markdown cache is write-through since it's consumed as raw text.
     pub fn fetch(&self) -> Changelog {
         // Always re-resolve from env so a caller holding an older manager (or a stale OnceLock) still reads the live harness home
@@ -80,7 +80,7 @@ impl ChangelogManager {
     }
 
     /// Fetch using this manager's already-resolved cache paths, an explicit offline flag, and an explicit CDN base. Split out of [`fetch`] so unit tests can drive it against a temp home without touching process-global env.
-    /// Mutating `GROK_HOME` / `GROK_CHANGELOG_OFFLINE` races across the parallel test harness. Passing an unreachable `base` forces a deterministic CDN miss instead of depending on whether the sandbox happens to block network.
+    /// Mutating `GROK_HOME` / `EZER_CHANGELOG_OFFLINE` races across the parallel test harness. Passing an unreachable `base` forces a deterministic CDN miss instead of depending on whether the sandbox happens to block network.
     /// Production callers always go through [`fetch`].
     fn fetch_with(&self, offline: bool, base: &str) -> Changelog {
         if offline {
@@ -167,7 +167,7 @@ impl ChangelogManager {
 /// When set, `ChangelogManager::fetch` skips the CDN and only reads disk cache.
 /// Used by PTY harness tests that seed `CHANGELOG.{md,json}` under a temp home.
 fn changelog_offline() -> bool {
-    std::env::var_os("GROK_CHANGELOG_OFFLINE").is_some_and(|v| !v.is_empty() && v != "0")
+    std::env::var_os("EZER_CHANGELOG_OFFLINE").is_some_and(|v| !v.is_empty() && v != "0")
 }
 
 fn read_cache(path: &std::path::Path) -> Option<String> {
@@ -220,7 +220,7 @@ mod tests {
     #[test]
     fn offline_mode_reads_seeded_disk_cache_only() {
         let tmp = tempfile::tempdir().unwrap();
-        let home = tmp.path().join("grok-home");
+        let home = tmp.path().join("ezer-home");
         std::fs::create_dir_all(&home).unwrap();
         std::fs::write(home.join("CHANGELOG.md"), "# seeded offline md\n").unwrap();
         std::fs::write(
@@ -247,7 +247,7 @@ mod tests {
     #[test]
     fn cdn_miss_falls_back_to_env_home_disk_cache() {
         let tmp = tempfile::tempdir().unwrap();
-        let home = tmp.path().join("grok-home-fallback");
+        let home = tmp.path().join("ezer-home-fallback");
         std::fs::create_dir_all(&home).unwrap();
         std::fs::write(home.join("CHANGELOG.md"), "# fallback md\n").unwrap();
 

@@ -5,7 +5,7 @@
 //! `priority` — no caller-supplied IDs.
 //!
 //! State is stored as `State<TodoState>` in Resources, shared with the
-//! grok_build todo infrastructure.
+//! ezer_build todo infrastructure.
 
 use std::fmt::Write;
 

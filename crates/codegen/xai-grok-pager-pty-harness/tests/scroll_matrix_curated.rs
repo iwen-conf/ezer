@@ -20,7 +20,7 @@ static SERIAL: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
 
 /// Per-cell captures land here: Bazel's `TEST_TMPDIR` (unique per test action), or the system temp dir for plain `cargo test`.
 /// This target is `tags = ["local"]`, so concurrent executions on a CI host would otherwise share `/tmp/scroll-matrix-curated/<cell_id>.jsonl`.
-/// A second run's stale-capture `remove_file` (and its pager's `GROK_SCROLL_LOG` writer) then corrupts the first run's in-flight capture.
+/// A second run's stale-capture `remove_file` (and its pager's `EZER_SCROLL_LOG` writer) then corrupts the first run's in-flight capture.
 fn artifacts_dir() -> PathBuf {
     std::env::var_os("TEST_TMPDIR")
         .map(PathBuf::from)

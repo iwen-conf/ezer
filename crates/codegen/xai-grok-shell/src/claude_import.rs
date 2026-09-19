@@ -22,9 +22,9 @@ use xai_grok_workspace::permission::types::{PatternMode, PermissionRule, RuleAct
 /// Scope for an import operation.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ImportScope {
-    /// User-level: writes to `~/.grok/config.toml`.
+    /// User-level: writes to `~/.ezer/config.toml`.
     Global,
-    /// Project-level: writes to `<repo>/.grok/config.toml`.
+    /// Project-level: writes to `<repo>/.ezer/config.toml`.
     Project,
 }
 
@@ -63,9 +63,9 @@ pub enum ImportableItem {
 /// A plan describing what would be imported and where.
 #[derive(Debug, Clone, Default)]
 pub struct ImportPlan {
-    /// Items to write to `~/.grok/config.toml`.
+    /// Items to write to `~/.ezer/config.toml`.
     pub global_items: Vec<ImportableItem>,
-    /// Items to write to `<repo>/.grok/config.toml`.
+    /// Items to write to `<repo>/.ezer/config.toml`.
     pub project_items: Vec<ImportableItem>,
 }
 
@@ -89,13 +89,13 @@ impl ImportPlan {
         let mut out = String::from("Found Claude settings to import:\n");
 
         if !self.global_items.is_empty() {
-            out.push_str("\nGlobal (~/.grok/config.toml):\n");
+            out.push_str("\nGlobal (~/.ezer/config.toml):\n");
             out.push_str(&format_item_summary(&self.global_items));
         }
 
         if !self.project_items.is_empty() {
             out.push_str(&format!(
-                "\nProject ({}/.grok/config.toml):\n",
+                "\nProject ({}/.ezer/config.toml):\n",
                 find_project_root(cwd).display()
             ));
             out.push_str(&format_item_summary(&self.project_items));
@@ -472,7 +472,7 @@ pub fn find_project_root(cwd: &Path) -> PathBuf {
 /// The fast path is a read lock and a cached `bool`, far below the cost of the uncached `read_to_string` and TOML parse.
 static MARKER_CACHE: std::sync::RwLock<Option<bool>> = std::sync::RwLock::new(None);
 
-/// Whether the current user has already imported Claude settings. Reads `[claude_compat] imported = true` from `~/.grok/config.toml` once per process and caches the result.
+/// Whether the current user has already imported Claude settings. Reads `[claude_compat] imported = true` from `~/.ezer/config.toml` once per process and caches the result.
 /// When the marker is set, runtime fallbacks that read `.claude/` should be skipped; the user has migrated to native config. Resilient: returns `false` on missing file, missing section, parse error, or any other failure.
 /// Trade-off: a user who manually flips the marker mid-session must restart to see the change, acceptable because reverting after import is rare. That variant logs one line so users can see the cutoff fired.
 pub(crate) fn is_claude_import_marked() -> bool {
@@ -531,7 +531,7 @@ pub(crate) fn is_claude_import_marked_at(config_path: &Path) -> bool {
         .unwrap_or(false)
 }
 
-/// Write `[claude_compat] imported = true` to `~/.grok/config.toml`.
+/// Write `[claude_compat] imported = true` to `~/.ezer/config.toml`.
 /// Uses the same atomic write pattern as `save_mcp_server_config` (write to `.tmp`, then rename).
 /// Creates the file and parent directory if missing. Existing content in the file is preserved.
 fn write_import_marker(config_path: &Path) -> anyhow::Result<()> {
@@ -593,7 +593,7 @@ pub fn mark_claude_imported() -> anyhow::Result<()> {
 
 /// Apply an import plan by writing TOML patches to the appropriate config files. This is additive-only: existing entries are never removed.
 /// New permission rules are appended; new env vars and MCP servers are added without overwriting existing keys or names.
-/// Project items are written to `<repo_root>/.grok/config.toml` (discovered via `git2::Repository::discover`), not `cwd/.grok/config.toml`. This avoids creating config files in unexpected subdirectories.
+/// Project items are written to `<repo_root>/.ezer/config.toml` (discovered via `git2::Repository::discover`), not `cwd/.ezer/config.toml`. This avoids creating config files in unexpected subdirectories.
 pub fn apply_import(plan: &ImportPlan, cwd: &Path) -> anyhow::Result<ImportResult> {
     let mut result = ImportResult::default();
 
@@ -623,7 +623,7 @@ pub fn apply_import(plan: &ImportPlan, cwd: &Path) -> anyhow::Result<ImportResul
 
     if !plan.project_items.is_empty() {
         let project_root = find_project_root(cwd);
-        let project_path = project_root.join(".grok").join("config.toml");
+        let project_path = project_root.join(".ezer").join("config.toml");
         let count = apply_items_to_config(&project_path, &plan.project_items)?;
         result.project_count = count;
         if count > 0 {
@@ -632,7 +632,7 @@ pub fn apply_import(plan: &ImportPlan, cwd: &Path) -> anyhow::Result<ImportResul
                 .push(project_path.to_string_lossy().to_string());
         }
 
-        let hooks_dir = project_root.join(".grok").join("hooks");
+        let hooks_dir = project_root.join(".ezer").join("hooks");
         let hook_count = apply_hooks_to_dir(&hooks_dir, &plan.project_items)?;
         result.project_count += hook_count;
         if hook_count > 0 {
@@ -928,7 +928,7 @@ fn merge_paths(
 }
 
 /// Merge `Hook` items into `<hooks_dir>/imported-from-claude.json`. The output JSON is the same shape that `xai-grok-hooks` natively understands (Claude-compatible).
-/// The native hooks loader scans `.grok/hooks/*.json` directly, so no separate config-side parser is required. Existing entries with the same `(event, matcher, command)` triple are deduped.
+/// The native hooks loader scans `.ezer/hooks/*.json` directly, so no separate config-side parser is required. Existing entries with the same `(event, matcher, command)` triple are deduped.
 fn apply_hooks_to_dir(hooks_dir: &Path, items: &[ImportableItem]) -> anyhow::Result<usize> {
     let new_hooks: Vec<&ImportableItem> = items
         .iter()
@@ -1070,7 +1070,7 @@ fn apply_hooks_to_dir(hooks_dir: &Path, items: &[ImportableItem]) -> anyhow::Res
         info!(
             path = %target.display(),
             count,
-            "Wrote imported hooks to .grok/hooks/imported-from-claude.json"
+            "Wrote imported hooks to .ezer/hooks/imported-from-claude.json"
         );
     }
 
@@ -1716,7 +1716,7 @@ mod tests {
         .unwrap();
 
         // Identify the probe by its unique raw command so real global hooks on the
-        // test host (from the non-injectable ~/.claude, ~/.grok) don't interfere.
+        // test host (from the non-injectable ~/.claude, ~/.ezer) don't interfere.
         let has_probe = |reg: &xai_grok_hooks::discovery::HookRegistry| {
             reg.all_hooks().iter().any(|h| {
                 h.command_raw
@@ -2058,9 +2058,9 @@ extra_rule_dirs = ["/c/rules"]
         )
         .unwrap();
 
-        // Note: `resolve_permissions_with_provenance` ALSO reads requirements, managed settings, and the developer's real `~/.grok/config.toml`.
+        // Note: `resolve_permissions_with_provenance` ALSO reads requirements, managed settings, and the developer's real `~/.ezer/config.toml`.
         // We can't isolate `grok_home()` because it's `OnceLock`-cached.
-        // Instead, assert on rule *provenance*: no rule should originate from our tempdir's `.claude/settings.json`. The dev's real ~/.grok config rules (if any) are out of scope for this test.
+        // Instead, assert on rule *provenance*: no rule should originate from our tempdir's `.claude/settings.json`. The dev's real ~/.ezer config rules (if any) are out of scope for this test.
         let resolved =
             xai_grok_workspace::permission::resolution::resolve_permissions_with_provenance(
                 dir.path(),
@@ -2105,7 +2105,7 @@ extra_rule_dirs = ["/c/rules"]
     #[serial]
     fn gate_marker_cache_unset_means_uses_disk() {
         // Sanity test: with the cache reset, `is_claude_import_marked()` must (a) not panic and (b) populate the cache for subsequent reads
-        // We intentionally **do not** assert a specific cached value: the dev's real `~/.grok/config.toml` may legitimately have the marker set during local testing, and we can't override `grok_home()`
+        // We intentionally **do not** assert a specific cached value: the dev's real `~/.ezer/config.toml` may legitimately have the marker set during local testing, and we can't override `grok_home()`
         // It's `OnceLock`-cached, so any prior test that calls it locks the value in for the entire process The `MarkerGuard` resets the cache after this test, so subsequent gate tests start clean
         let _g = MarkerGuard;
         reset_marker_cache_for_test();

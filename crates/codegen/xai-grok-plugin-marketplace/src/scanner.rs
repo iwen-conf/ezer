@@ -1,5 +1,5 @@
 //! Marketplace plugin discovery runs in one of two modes:
-//! 1. **Indexed:** if an index file exists, use it (see `index::load_index` for lookup order; `.grok-plugin/marketplace.json` is preferred).
+//! 1. **Indexed:** if an index file exists, use it (see `index::load_index` for lookup order; `.ezer-plugin/marketplace.json` is preferred).
 //! 2. **Filesystem fallback:** walk `plugins/*/` and resolve manifests directly.
 
 use std::path::Path;
@@ -444,13 +444,13 @@ mod tests {
         std::fs::write(
             grok_dir.join("marketplace.json"),
             r#"{
-                "name": "grok-marketplace",
+                "name": "ezer-marketplace",
                 "plugins": [{
-                    "name": "grok-plugin",
-                    "description": "From the .grok-plugin index",
+                    "name": "ezer-plugin",
+                    "description": "From the .ezer-plugin index",
                     "category": "design",
-                    "source": { "type": "local", "path": "./plugins/grok-plugin" },
-                    "tags": ["grok"]
+                    "source": { "type": "local", "path": "./plugins/ezer-plugin" },
+                    "tags": ["ezer"]
                 }]
             }"#,
         )

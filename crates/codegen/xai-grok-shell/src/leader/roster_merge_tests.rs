@@ -12,7 +12,7 @@ fn row(session_id: &str) -> RosterEntry {
     RosterEntry {
         session_id: session_id.to_owned(),
         title: Some("External agent bc-1".to_owned()),
-        cwd: "/home/u/.grok/worktrees/proj/cursor-bc-1".to_owned(),
+        cwd: "/home/u/.ezer/worktrees/proj/cursor-bc-1".to_owned(),
         is_worktree: true,
         session_kind: Some("cursor-worker".to_owned()),
         model_id: None,

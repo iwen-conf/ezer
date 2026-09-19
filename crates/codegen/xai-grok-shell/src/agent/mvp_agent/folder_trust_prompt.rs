@@ -1,4 +1,4 @@
-//! The interactive folder-trust prompt, an ACP round-trip (`x.ai/folder_trust/request`) from the agent to a GUI client (grok-desktop).
+//! The interactive folder-trust prompt, an ACP round-trip (`x.ai/folder_trust/request`) from the agent to a GUI client (ezer-desktop).
 //! It asks the client to decide trust for an untrusted workspace that has repo configs.
 //! On a grant it reloads the now-trusted project servers without a restart.
 //!
@@ -11,7 +11,7 @@
 //! After a grant, MCP, plugins, and each session's own project hooks are hot-reloaded in place.
 //! The reload covers every session sharing the granted workspace (same `workspace_key`), each reloaded against its own cwd.
 //! Project LSP is not hot-reloaded: the LSP backend is baked into the tool bridge at build time and has no in-place reconfigure API.
-//! Repo-local `.grok/lsp.json` servers therefore start on the next session open (the durable grant makes that re-spawn trusted).
+//! Repo-local `.ezer/lsp.json` servers therefore start on the next session open (the durable grant makes that re-spawn trusted).
 //! Project instructions and native project skills apply on the next agent build; trusted plugin skills reconcile in place.
 //! `lsp` is still reported in the prompt's `configKinds` because it is a real reason the folder is gated; only the post-grant hot-reload skips it.
 

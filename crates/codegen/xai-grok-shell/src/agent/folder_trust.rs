@@ -1,7 +1,7 @@
 //! Folder-trust gate ("do you trust this folder?").
 //!
 //! Repo-local MCP / LSP servers, permission policy, and project instructions/skills are configured by files an attacker can ship inside a cloned repository.
-//! Those files include `.mcp.json`, project `.grok/config.toml` (`[permission]` / `[mcp_servers]` / `[plugins].paths`), `.grok/lsp.json`, `AGENTS.md` / `CLAUDE.md`, and `.grok/skills`.
+//! Those files include `.mcp.json`, project `.ezer/config.toml` (`[permission]` / `[mcp_servers]` / `[plugins].paths`), `.ezer/lsp.json`, `AGENTS.md` / `CLAUDE.md`, and `.ezer/skills`.
 //! `~/.claude.json` `projects.<cwd>` is another such source.
 //! Those configs contain commands, auto-approve rules, or agent instructions the CLI would otherwise honor automatically, a 1-click RCE / policy bypass.
 //! This module resolves a VS-Code-style trust decision ONCE per workspace, BEFORE any repo-local server is spawned.
@@ -117,7 +117,7 @@ pub(crate) fn prompt_warranted(cwd: &Path, remote: Option<&RemoteSettings>) -> b
 
 /// Display-only summary of which repo-local code-exec config kinds are present for `cwd`, for the interactive trust prompt's UI. The kinds are the reasons the folder is gated.
 /// Single-sourced from the SAME scan as the canonical gate ([`xai_grok_workspace::folder_trust::repo_config_kinds`] / [`repo_configs_present`]).
-/// The prompt's reason list therefore cannot drift from what actually gated the folder (same markers, same cwd-to-git-root walk). So an `.grok/lsp.json`-only repo still has a non-empty reason list. Only the post-grant *hot-reload* skips LSP; project LSP applies on the next session open (the backend is spawn-baked into the tool bridge).
+/// The prompt's reason list therefore cannot drift from what actually gated the folder (same markers, same cwd-to-git-root walk). So an `.ezer/lsp.json`-only repo still has a non-empty reason list. Only the post-grant *hot-reload* skips LSP; project LSP applies on the next session open (the backend is spawn-baked into the tool bridge).
 pub(crate) fn detected_config_kinds(cwd: &Path) -> Vec<String> {
     xai_grok_workspace::folder_trust::repo_config_kinds(cwd)
         .into_iter()
@@ -254,7 +254,7 @@ pub(crate) fn resolve_launch_dir_trust(cwd: &Path, remote: Option<&RemoteSetting
 
 /// Cache-reconciling core of [`resolve_and_record`], split out so the invalidation path is testable without the process-global trust store.
 /// A cached **grant** (`Some(true)`) is durable and short-circuits; neither `store_trusted` nor `recompute` runs.
-/// A `grok --trust` grant issued AFTER this workspace was first resolved writes the store, so honor it on the next session without a restart. An **unrecorded** key (`None`) does a full `recompute`, which reports `(allowed, durable)`; the verdict is recorded ONLY when `durable`. The provisional "no repo configs" allow is non-durable, so it stays unrecorded.
+/// A `ezer --trust` grant issued AFTER this workspace was first resolved writes the store, so honor it on the next session without a restart. An **unrecorded** key (`None`) does a full `recompute`, which reports `(allowed, durable)`; the verdict is recorded ONLY when `durable`. The provisional "no repo configs" allow is non-durable, so it stays unrecorded.
 fn resolve_and_record_inner(
     key: &Path,
     store_trusted: impl FnOnce() -> bool,
@@ -346,9 +346,9 @@ fn compute_from_inputs(
     }
 }
 
-/// It MUST enumerate every project MCP source the loaders read. Name-based (not `ConfigSource`-based) ON PURPOSE. Sources: project `.grok/config.toml [mcp_servers]` (NOT the user-tier global config).
+/// It MUST enumerate every project MCP source the loaders read. Name-based (not `ConfigSource`-based) ON PURPOSE. Sources: project `.ezer/config.toml [mcp_servers]` (NOT the user-tier global config).
 /// Also project `.mcp.json` (`cwd` up to the repo root, never `$HOME`), project `.cursor/mcp.json`, and `~/.claude.json projects.<cwd>.mcpServers`.
-/// Edge case: a name declared in BOTH a project config and the global `~/.grok/config.toml` is dropped when untrusted. This is intended — untrusted project content must not influence the command spawned for a shared name.
+/// Edge case: a name declared in BOTH a project config and the global `~/.ezer/config.toml` is dropped when untrusted. This is intended — untrusted project content must not influence the command spawned for a shared name.
 pub(crate) fn project_scoped_mcp_names(cwd: &Path) -> HashSet<String> {
     let mut names = HashSet::new();
 
@@ -477,9 +477,9 @@ mod tests {
         let _sim = simulate_release_build();
         let home = tempfile::tempdir().unwrap();
         let _env = EnvGuard::set("GROK_HOME", home.path());
-        let _flag = EnvGuard::unset("GROK_FOLDER_TRUST");
+        let _flag = EnvGuard::unset("EZER_FOLDER_TRUST");
         let tmp = repo_tmp();
-        std::fs::create_dir_all(tmp.path().join(".grok").join("hooks")).unwrap();
+        std::fs::create_dir_all(tmp.path().join(".ezer").join("hooks")).unwrap();
         grant_folder_trust(tmp.path());
         let key = workspace_key(tmp.path());
         assert!(
@@ -550,11 +550,11 @@ mod tests {
         let _home = EnvGuard::set("HOME", home.path());
         let grok_home = tempfile::tempdir().unwrap();
         let _env = EnvGuard::set("GROK_HOME", grok_home.path());
-        let _flag = EnvGuard::unset("GROK_FOLDER_TRUST");
+        let _flag = EnvGuard::unset("EZER_FOLDER_TRUST");
         git2::Repository::init(home.path()).unwrap();
         // Repo-local code-exec config, so the final allow is the unrecordable-key rule at work
         // A recordable key with configs and an empty store would deny
-        std::fs::create_dir_all(home.path().join(".grok").join("hooks")).unwrap();
+        std::fs::create_dir_all(home.path().join(".ezer").join("hooks")).unwrap();
 
         assert!(
             !revoke_folder_trust(home.path()),
@@ -578,7 +578,7 @@ mod tests {
         // GROK_HOME-isolated so the trust store is empty; GROK_FOLDER_TRUST unset so the default-on feature flag applies
         let home = tempfile::tempdir().unwrap();
         let _env = EnvGuard::set("GROK_HOME", home.path());
-        let _flag = EnvGuard::unset("GROK_FOLDER_TRUST");
+        let _flag = EnvGuard::unset("EZER_FOLDER_TRUST");
         let tmp = repo_tmp();
         std::fs::write(tmp.path().join(".envrc"), "export GATED_ENVRC=1\n").unwrap();
 
@@ -610,7 +610,7 @@ mod tests {
         use xai_grok_workspace::permission::claude_settings::load_claude_env_with_project;
         let home = tempfile::tempdir().unwrap();
         let _env = EnvGuard::set("GROK_HOME", home.path());
-        let _flag = EnvGuard::unset("GROK_FOLDER_TRUST");
+        let _flag = EnvGuard::unset("EZER_FOLDER_TRUST");
         let tmp = repo_tmp();
         let claude = tmp.path().join(".claude");
         std::fs::create_dir_all(&claude).unwrap();
@@ -651,7 +651,7 @@ mod tests {
         use xai_grok_workspace::permission::claude_settings::load_claude_env_with_project;
         let home = tempfile::tempdir().unwrap();
         let _env = EnvGuard::set("GROK_HOME", home.path());
-        let _flag = EnvGuard::unset("GROK_FOLDER_TRUST");
+        let _flag = EnvGuard::unset("EZER_FOLDER_TRUST");
         let tmp = repo_tmp();
         let subdir = tmp.path().join("sub");
         let claude = subdir.join(".claude");
@@ -746,9 +746,9 @@ mod tests {
         let _sim = simulate_release_build();
         let home = tempfile::tempdir().unwrap();
         let _env = EnvGuard::set("GROK_HOME", home.path());
-        let _flag = EnvGuard::unset("GROK_FOLDER_TRUST");
+        let _flag = EnvGuard::unset("EZER_FOLDER_TRUST");
         let tmp = repo_tmp();
-        std::fs::create_dir_all(tmp.path().join(".grok").join("hooks")).unwrap();
+        std::fs::create_dir_all(tmp.path().join(".ezer").join("hooks")).unwrap();
         assert!(
             !project_scope_allowed(tmp.path()),
             "untrusted folder with repo configs must be denied (fail-closed)"
@@ -763,7 +763,7 @@ mod tests {
         let _sim = simulate_release_build();
         let home = tempfile::tempdir().unwrap();
         let _env = EnvGuard::set("GROK_HOME", home.path());
-        let _flag = EnvGuard::unset("GROK_FOLDER_TRUST");
+        let _flag = EnvGuard::unset("EZER_FOLDER_TRUST");
         let tmp = repo_tmp();
         assert!(
             project_scope_allowed(tmp.path()),
@@ -779,9 +779,9 @@ mod tests {
         let _sim = simulate_release_build();
         let home = tempfile::tempdir().unwrap();
         let _env = EnvGuard::set("GROK_HOME", home.path());
-        let _flag = EnvGuard::unset("GROK_FOLDER_TRUST");
+        let _flag = EnvGuard::unset("EZER_FOLDER_TRUST");
         let tmp = repo_tmp();
-        std::fs::create_dir_all(tmp.path().join(".grok").join("hooks")).unwrap();
+        std::fs::create_dir_all(tmp.path().join(".ezer").join("hooks")).unwrap();
         let mut store = TrustStore::load();
         store.set_trusted(&workspace_key(tmp.path())).unwrap();
         assert!(
@@ -797,13 +797,13 @@ mod tests {
         // Assert only when compiled unstamped (mirrors the inert tests elsewhere)
         // GROK_TEST_VERSION is unset so `is_local_build()` is genuinely true
         let _unset_ver = EnvGuard::unset(xai_grok_version::TEST_VERSION_ENV);
-        if option_env!("GROK_VERSION").is_some() {
+        if option_env!("EZER_VERSION").is_some() {
             return; // a release-stamped test binary is not a local build
         }
         let home = tempfile::tempdir().unwrap();
         let _env = EnvGuard::set("GROK_HOME", home.path());
         let tmp = repo_tmp();
-        std::fs::create_dir_all(tmp.path().join(".grok").join("hooks")).unwrap();
+        std::fs::create_dir_all(tmp.path().join(".ezer").join("hooks")).unwrap();
         assert!(
             project_scope_allowed(tmp.path()),
             "inert local/dev build must allow project scope even with configs"
@@ -818,9 +818,9 @@ mod tests {
         let _sim = simulate_release_build();
         let home = tempfile::tempdir().unwrap();
         let _env = EnvGuard::set("GROK_HOME", home.path());
-        let _flag = EnvGuard::unset("GROK_FOLDER_TRUST");
+        let _flag = EnvGuard::unset("EZER_FOLDER_TRUST");
         let tmp = repo_tmp();
-        std::fs::create_dir_all(tmp.path().join(".grok").join("plugins").join("evil")).unwrap();
+        std::fs::create_dir_all(tmp.path().join(".ezer").join("plugins").join("evil")).unwrap();
         assert!(
             !project_scope_allowed(tmp.path()),
             "plugin-only untrusted repo must be denied"
@@ -836,9 +836,9 @@ mod tests {
         let _sim = simulate_release_build();
         let home = tempfile::tempdir().unwrap();
         let _env = EnvGuard::set("GROK_HOME", home.path());
-        let _flag = EnvGuard::unset("GROK_FOLDER_TRUST");
+        let _flag = EnvGuard::unset("EZER_FOLDER_TRUST");
         let tmp = repo_tmp();
-        let grok = tmp.path().join(".grok");
+        let grok = tmp.path().join(".ezer");
         std::fs::create_dir_all(&grok).unwrap();
         std::fs::write(
             grok.join("config.toml"),
@@ -859,7 +859,7 @@ mod tests {
         let _sim = simulate_release_build();
         let home = tempfile::tempdir().unwrap();
         let _env = EnvGuard::set("GROK_HOME", home.path());
-        let _flag = EnvGuard::unset("GROK_FOLDER_TRUST");
+        let _flag = EnvGuard::unset("EZER_FOLDER_TRUST");
         let tmp = repo_tmp();
         let workspace_user = tmp.path().join("x/alice");
         std::fs::create_dir_all(&workspace_user).unwrap();
@@ -868,7 +868,7 @@ mod tests {
             "workspace-user-only-instructions",
         )
         .unwrap();
-        let skill_dir = workspace_user.join(".grok/skills/workspace-user-only-skill");
+        let skill_dir = workspace_user.join(".ezer/skills/workspace-user-only-skill");
         std::fs::create_dir_all(&skill_dir).unwrap();
         std::fs::write(
             skill_dir.join("SKILL.md"),
@@ -943,14 +943,14 @@ mod tests {
         let _sim = simulate_release_build();
         let home = tempfile::tempdir().unwrap();
         let _env = EnvGuard::set("GROK_HOME", home.path());
-        let _flag = EnvGuard::unset("GROK_FOLDER_TRUST");
+        let _flag = EnvGuard::unset("EZER_FOLDER_TRUST");
         let remote = RemoteSettings {
             folder_trust_enabled: Some(false),
             ..Default::default()
         };
 
         let tmp = repo_tmp();
-        std::fs::create_dir_all(tmp.path().join(".grok").join("hooks")).unwrap();
+        std::fs::create_dir_all(tmp.path().join(".ezer").join("hooks")).unwrap();
         assert!(
             resolve_and_record(tmp.path(), Some(&remote), false),
             "kill-switch (feature off) must resolve trusted even with repo configs"
@@ -963,7 +963,7 @@ mod tests {
         // Contrast: a cold `remote = None` gate read (no prior authoritative resolve) misses the kill-switch and denies the same scenario
         // That is the exact gap the up-front spawn resolve closes for chat/load sessions
         let cold = repo_tmp();
-        std::fs::create_dir_all(cold.path().join(".grok").join("hooks")).unwrap();
+        std::fs::create_dir_all(cold.path().join(".ezer").join("hooks")).unwrap();
         assert!(
             !project_scope_allowed(cold.path()),
             "cold remote=None gate read denies a kill-switched folder (regression contrast)"
@@ -981,11 +981,11 @@ mod tests {
         use xai_grok_agent::plugins::{PluginRegistry, SharedPluginRegistryHandle};
         let home = tempfile::tempdir().unwrap();
         let _env = EnvGuard::set("GROK_HOME", home.path());
-        let _flag = EnvGuard::unset("GROK_FOLDER_TRUST");
+        let _flag = EnvGuard::unset("EZER_FOLDER_TRUST");
         let tmp = repo_tmp();
         // A project plugin
         // Project scope is default-disabled, so name it in the `enabled` list to isolate the TRUST gate (not the enable gate)
-        let plugin = tmp.path().join(".grok").join("plugins").join("trustgate");
+        let plugin = tmp.path().join(".ezer").join("plugins").join("trustgate");
         std::fs::create_dir_all(&plugin).unwrap();
         std::fs::write(plugin.join("plugin.json"), r#"{"name":"trustgate"}"#).unwrap();
         let cfg = DiscoveryConfig {
@@ -1030,12 +1030,12 @@ mod tests {
         let _sim = simulate_release_build();
         // End-to-end load path: the folder-trust verdict threaded into `discover_hooks` excludes a repo-local project hook while untrusted
         // It includes the hook after the folder is granted trust, the path where the regression historically re-opened
-        // GROK_HOME-isolated so the grant writes to a temp store; GROK_FOLDER_TRUST unset so the default-on flag applies
+        // GROK_HOME-isolated so the grant writes to a temp store; EZER_FOLDER_TRUST unset so the default-on flag applies
         let home = tempfile::tempdir().unwrap();
         let _env = EnvGuard::set("GROK_HOME", home.path());
-        let _flag = EnvGuard::unset("GROK_FOLDER_TRUST");
+        let _flag = EnvGuard::unset("EZER_FOLDER_TRUST");
         let tmp = repo_tmp();
-        let hooks_dir = tmp.path().join(".grok").join("hooks");
+        let hooks_dir = tmp.path().join(".ezer").join("hooks");
         std::fs::create_dir_all(&hooks_dir).unwrap();
         // Top-level `{"hooks":{...}}` wrapper; no matcher means match-all
         // The parsed spec name is `<file_stem>:PreToolUse[..]`, so the file stem identifies it
@@ -1134,13 +1134,13 @@ mod tests {
         use xai_grok_tools::implementations::lsp::config::load_servers_with_plugins_sourced;
         use xai_grok_tools::types::config_source::ConfigSource;
 
-        // A `<cwd>/.grok/lsp.json` server must be tagged `Project` so the gate can distinguish it from user/plugin servers
+        // A `<cwd>/.ezer/lsp.json` server must be tagged `Project` so the gate can distinguish it from user/plugin servers
         // Asserts on the specific
-        // key, so any real `~/.grok/lsp.json` on the test host is irrelevant.
+        // key, so any real `~/.ezer/lsp.json` on the test host is irrelevant.
         let tmp = repo_tmp();
-        let grok = tmp.path().join(".grok");
-        std::fs::create_dir_all(&grok).unwrap();
-        std::fs::write(grok.join("lsp.json"), r#"{"projlsp": {"command": "true"}}"#).unwrap();
+        let ezer = tmp.path().join(".grok");
+        std::fs::create_dir_all(&ezer).unwrap();
+        std::fs::write(ezer.join("lsp.json"), r#"{"projlsp": {"command": "true"}}"#).unwrap();
 
         let sourced = load_servers_with_plugins_sourced(tmp.path(), &[], &[], &[], &[]);
         let (_, source) = sourced.get("projlsp").expect("project server present");
@@ -1155,11 +1155,11 @@ mod tests {
         use xai_grok_tools::implementations::lsp::config::load_servers_with_plugins_sourced;
 
         // End-to-end of the load-site gate (Sites A/B)
-        // A project server loaded from `<cwd>/.grok/lsp.json` is dropped once the workspace is untrusted
+        // A project server loaded from `<cwd>/.ezer/lsp.json` is dropped once the workspace is untrusted
         let tmp = repo_tmp();
-        let grok = tmp.path().join(".grok");
-        std::fs::create_dir_all(&grok).unwrap();
-        std::fs::write(grok.join("lsp.json"), r#"{"projlsp": {"command": "true"}}"#).unwrap();
+        let ezer = tmp.path().join(".grok");
+        std::fs::create_dir_all(&ezer).unwrap();
+        std::fs::write(ezer.join("lsp.json"), r#"{"projlsp": {"command": "true"}}"#).unwrap();
 
         let sourced = load_servers_with_plugins_sourced(tmp.path(), &[], &[], &[], &[]);
         assert!(
@@ -1182,7 +1182,7 @@ mod tests {
         )
     }
 
-    /// A git-init'd repo declaring two project-scoped MCP servers: `projjson` (`.mcp.json`) and `projtoml` (`.grok/config.toml [mcp_servers]`).
+    /// A git-init'd repo declaring two project-scoped MCP servers: `projjson` (`.mcp.json`) and `projtoml` (`.ezer/config.toml [mcp_servers]`).
     fn repo_with_project_mcp() -> tempfile::TempDir {
         let tmp = repo_tmp();
         std::fs::write(
@@ -1190,23 +1190,23 @@ mod tests {
             r#"{"mcpServers": {"projjson": {"url": "https://proj.example.com/mcp"}}}"#,
         )
         .unwrap();
-        let grok = tmp.path().join(".grok");
-        std::fs::create_dir_all(&grok).unwrap();
+        let ezer = tmp.path().join(".grok");
+        std::fs::create_dir_all(&ezer).unwrap();
         std::fs::write(
-            grok.join("config.toml"),
+            ezer.join("config.toml"),
             "[mcp_servers.projtoml]\nurl = \"https://projtoml.example.com/mcp\"\n",
         )
         .unwrap();
         tmp
     }
 
-    /// Pins the three known repo-local FILE sources of [`project_scoped_mcp_names`]. A project server declared in each of `.grok/config.toml`, `.mcp.json`, and `.cursor/mcp.json` must appear in the returned set.
+    /// Pins the three known repo-local FILE sources of [`project_scoped_mcp_names`]. A project server declared in each of `.ezer/config.toml`, `.mcp.json`, and `.cursor/mcp.json` must appear in the returned set.
     /// That catches a REGRESSION that drops one of them. It cannot catch a brand-new source TYPE added only to a loader; the single-source-of-truth doc on `project_scoped_mcp_names` is that guard.
     /// `~/.claude.json` is excluded: it lives under `$HOME` and a test must not clobber the real user file; its keys are covered by the shared reader.
     #[test]
     fn project_scoped_mcp_names_cover_every_source() {
         let tmp = repo_tmp();
-        let grok = tmp.path().join(".grok");
+        let grok = tmp.path().join(".ezer");
         std::fs::create_dir_all(&grok).unwrap();
         std::fs::write(
             grok.join("config.toml"),
@@ -1281,7 +1281,7 @@ mod tests {
         let key = workspace_key(tmp.path());
         record(&key, false);
         assert!(!project_scope_allowed(tmp.path()));
-        // Simulate a `grok --trust` grant landing in the store after the untrusted verdict was cached
+        // Simulate a `ezer --trust` grant landing in the store after the untrusted verdict was cached
         // The re-read sees trusted, so the next resolve upgrades the cache without a process restart
         let allowed = resolve_and_record_inner(
             &key,
@@ -1359,7 +1359,7 @@ mod tests {
         // The new hooks/plugins would then load and run ungated on the next /hooks reload or new session (TOCTOU) Drives the real `resolve_and_record` and `project_scope_allowed` Force the feature on via env (highest precedence) so the test does not depend on the host's folder-trust config
         unsafe { std::env::set_var("GROK_FOLDER_TRUST", "1") };
         // Simulate a release-stamped build
-        // An unstamped local/dev build (as in CI, no GROK_VERSION) auto-trusts, so the gate would never engage without this
+        // An unstamped local/dev build (as in CI, no EZER_VERSION) auto-trusts, so the gate would never engage without this
         unsafe { std::env::set_var(xai_grok_version::TEST_VERSION_ENV, "0.0.0-sim") };
         let tmp = repo_tmp();
 
@@ -1428,7 +1428,7 @@ mod tests {
     fn local_build_is_inert_launch_trust_auto_trusts() {
         // On a local/dev build the whole folder-trust system is inert
         // An untrusted repo that HAS repo-local configs (here an `.envrc`) with an EMPTY store still resolves trusted `resolve_launch_dir_trust` returns true, and the `.envrc` loads without any grant
-        // Assert the local branch ONLY when compiled unstamped (mirrors the workspace `is_local_build_honors_test_version_override`) GROK_TEST_VERSION is unset so `is_local_build()` is genuinely true; GROK_HOME-isolated so the real store is never touched
+        // Assert the local branch ONLY when compiled unstamped (mirrors the workspace `is_local_build_honors_test_version_override`) EZER_TEST_VERSION is unset so `is_local_build()` is genuinely true; GROK_HOME-isolated so the real store is never touched
         let _sim = EnvGuard::unset(xai_grok_version::TEST_VERSION_ENV);
         if option_env!("GROK_VERSION").is_some() {
             return; // a release-stamped test binary is not a local build
@@ -1472,7 +1472,7 @@ mod tests {
         let tmp = repo_tmp();
         std::fs::write(tmp.path().join(".mcp.json"), "{}").unwrap();
         // Simulate a release-stamped build so the inert local-build gate is off and the remote `folder_trust_enabled` flag actually engages
-        // GROK_FOLDER_TRUST unset: env outranks the remote flag, so an ambient opt-out would otherwise false-fail the Prompt assertion
+        // EZER_FOLDER_TRUST unset: env outranks the remote flag, so an ambient opt-out would otherwise false-fail the Prompt assertion
         let _sim = EnvGuard::set(xai_grok_version::TEST_VERSION_ENV, "0.0.0-sim");
         let _flag = EnvGuard::unset("GROK_FOLDER_TRUST");
         let remote = RemoteSettings {
@@ -1486,7 +1486,7 @@ mod tests {
     #[serial_test::serial]
     fn prompt_warranted_false_when_feature_disabled() {
         // The remote kill-switch (folder_trust_enabled = Some(false)) disables the feature even on a release-stamped build So no prompt is warranted even with repo configs present
-        // Simulate a release build so the inert local-build path is not what's under test GROK_HOME-isolated and GROK_FOLDER_TRUST unset so the kill-switch is the only signal
+        // Simulate a release build so the inert local-build path is not what's under test GROK_HOME-isolated and EZER_FOLDER_TRUST unset so the kill-switch is the only signal
         let home = tempfile::tempdir().unwrap();
         let _env = EnvGuard::set("GROK_HOME", home.path());
         let _flag = EnvGuard::unset("GROK_FOLDER_TRUST");
@@ -1548,7 +1548,7 @@ mod tests {
 
     #[test]
     fn detected_config_kinds_reports_lsp_only_repo() {
-        // Regression for the "empty configKinds" bug: a repo gated SOLELY by `.grok/lsp.json` must still produce a non-empty reason list
+        // Regression for the "empty configKinds" bug: a repo gated SOLELY by `.ezer/lsp.json` must still produce a non-empty reason list
         let tmp = repo_tmp();
         std::fs::create_dir_all(tmp.path().join(".grok")).unwrap();
         std::fs::write(tmp.path().join(".grok").join("lsp.json"), "{}").unwrap();

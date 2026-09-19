@@ -20,7 +20,7 @@ const TYPED_PREFIX: &str = "!cat SUGGEST";
 fn suggestions_env(histfile: &Path) -> Vec<(String, String)> {
     vec![
         ("SHELL".into(), "/bin/bash".into()),
-        ("GROK_SUGGESTIONS".into(), "0".into()),
+        ("EZER_SUGGESTIONS".into(), "0".into()),
         ("HISTFILE".into(), histfile.to_string_lossy().into_owned()),
     ]
 }

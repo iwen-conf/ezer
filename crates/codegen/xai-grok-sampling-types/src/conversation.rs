@@ -643,7 +643,7 @@ pub struct ConversationRequest {
     pub x_grok_req_id: Option<String>,
     pub x_grok_session_id: Option<String>,
     pub x_grok_turn_idx: Option<String>,
-    /// Turn-level resubmit attempt (absent on first submissions); sent as `x-grok-transient-retry` so the proxy can count retry traffic.
+    /// Turn-level resubmit attempt (absent on first submissions); sent as `x-ezer-transient-retry` so the proxy can count retry traffic.
     pub x_grok_transient_retry: Option<String>,
     pub x_grok_agent_id: Option<String>,
     pub x_grok_deployment_id: Option<String>,
@@ -835,7 +835,7 @@ pub struct ConversationResponse {
     /// Reasoning/thought chunks are **not** counted.
     /// The caller should then emit a fallback `AgentMessageChunk` so downstream consumers see the turn as complete.
     pub message_chunks_emitted: u64,
-    /// Server-reported doom-loop triggers for this response (Responses API only, opt-in via the `x-grok-doom-loop-check` header).
+    /// Server-reported doom-loop triggers for this response (Responses API only, opt-in via the `x-ezer-doom-loop-check` header).
     /// Empty when the check is disabled or nothing was reported; deduplicated by raw label.
     /// See [`crate::doom_loop`].
     pub doom_loop_signals: Vec<crate::doom_loop::DoomLoopSignal>,
@@ -2936,7 +2936,7 @@ mod tests {
     fn test_transform_cwd_transforms_tool_call_arguments() {
         // Tool call arguments containing paths are transformed alongside text content.
         // The model then sees consistent paths on the next turn
-        let worktree = "/home/user/.grok/worktrees/project/ab-uuid-a";
+        let worktree = "/home/user/.ezer/worktrees/project/ab-uuid-a";
         let root = "/home/user/project";
 
         let mut items = vec![ConversationItem::Assistant(AssistantItem {
@@ -4437,7 +4437,7 @@ mod tests {
             instructions: None,
             max_output_tokens: None,
             metadata: None,
-            model: "grok-build".to_string(),
+            model: "ezer-build".to_string(),
             object: "response".to_string(),
             output: vec![
                 make_reasoning("a", "thinking pre-search", None),
@@ -4650,7 +4650,7 @@ mod tests {
                 "encrypted": "bIfXFNBiP8EI8F7pkKC1tgbYjvVuIctMAlCUGMii",
                 "id": "rs_00000000-0000-4000-8000-000000000001"
             },
-            "model_id": "grok-build",
+            "model_id": "ezer-build",
             "model_fingerprint": "fp_test000000000001"
         });
         let mut seen = std::collections::HashSet::new();
@@ -4770,7 +4770,7 @@ mod tests {
         let raw = serde_json::json!({
             "type": "assistant",
             "content": "answer",
-            "model_id": "grok-build"
+            "model_id": "ezer-build"
         });
         let mut seen = std::collections::HashSet::new();
         assert!(upgrade_legacy_reasoning(&raw, &mut seen).is_empty());

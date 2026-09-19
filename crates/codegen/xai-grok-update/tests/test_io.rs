@@ -1,4 +1,4 @@
-//! These tests must run serially: they touch `GROK_HOME` (a `OnceLock` in `xai-grok-config`), `GROK_TEST_VERSION`, and `NPM_TOKEN`.
+//! These tests must run serially: they touch `GROK_HOME` (a `OnceLock` in `xai-grok-config`), `EZER_TEST_VERSION`, and `NPM_TOKEN`.
 //! Once `GROK_HOME` is initialized for a process, it can't be changed.
 //! We set it from a single shared `OnceLock` and reset the contents of the directory between tests.
 
@@ -148,7 +148,7 @@ async fn get_installed_version_falls_back_to_cargo_pkg_version_when_env_unset() 
     reset();
 
     unsafe {
-        std::env::remove_var("GROK_TEST_VERSION");
+        std::env::remove_var("EZER_TEST_VERSION");
     }
     let v = xai_grok_update::version::get_installed_grok_version();
     let _: semver::Version = v
@@ -164,20 +164,20 @@ async fn get_installed_version_with_env_var_takes_precedence() {
 
     let real = {
         unsafe {
-            std::env::remove_var("GROK_TEST_VERSION");
+            std::env::remove_var("EZER_TEST_VERSION");
         }
         xai_grok_update::version::get_installed_grok_version()
     };
 
     unsafe {
-        std::env::set_var("GROK_TEST_VERSION", "0.0.0-test");
+        std::env::set_var("EZER_TEST_VERSION", "0.0.0-test");
     }
     let overridden = xai_grok_update::version::get_installed_grok_version();
     assert_ne!(real, overridden);
     assert_eq!(overridden, "0.0.0-test");
 
     unsafe {
-        std::env::remove_var("GROK_TEST_VERSION");
+        std::env::remove_var("EZER_TEST_VERSION");
     }
 }
 #[tokio::test]
@@ -189,11 +189,11 @@ async fn get_installed_version_does_not_validate_env_var_format() {
     reset();
 
     unsafe {
-        std::env::set_var("GROK_TEST_VERSION", "not-a-version");
+        std::env::set_var("EZER_TEST_VERSION", "not-a-version");
     }
     let v = xai_grok_update::version::get_installed_grok_version();
     assert_eq!(v, "not-a-version");
     unsafe {
-        std::env::remove_var("GROK_TEST_VERSION");
+        std::env::remove_var("EZER_TEST_VERSION");
     }
 }

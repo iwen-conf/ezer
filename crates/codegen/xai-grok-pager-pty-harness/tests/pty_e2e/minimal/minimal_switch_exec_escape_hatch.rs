@@ -2,7 +2,7 @@
 #[allow(unused_imports)]
 use crate::common::*;
 
-/// `GROK_SCREEN_MODE_SWITCH=exec` forces the legacy switch that quits, execs, and resumes, keeping that fallback covered end to end.
+/// `EZER_SCREEN_MODE_SWITCH=exec` forces the legacy switch that quits, execs, and resumes, keeping that fallback covered end to end.
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 #[ignore]
 async fn minimal_switch_exec_escape_hatch() {
@@ -21,7 +21,7 @@ async fn minimal_switch_exec_escape_hatch() {
         DEFAULT_COLS,
         &content,
         &["--no-leader"],
-        &[("GROK_SCREEN_MODE_SWITCH", "exec")],
+        &[("EZER_SCREEN_MODE_SWITCH", "exec")],
         Some(project.path()),
     )
     .expect("spawn fullscreen pager");

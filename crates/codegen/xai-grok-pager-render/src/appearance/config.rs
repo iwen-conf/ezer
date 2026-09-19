@@ -340,7 +340,7 @@ pub struct AnimationConfig {
     /// Lower is a faster wave; higher is slower and smoother. Default: 32.
     pub wave_rows: u16,
     /// Show an FPS counter overlay in the top-right corner (debug/dev builds only).
-    /// Also enabled by the `GROK_FPS=1` env var. Default: false.
+    /// Also enabled by the `EZER_FPS=1` env var. Default: false.
     pub show_fps: bool,
 }
 
@@ -931,7 +931,7 @@ pub struct RawAnimationConfig {
     /// Lower = faster wave, higher = slower/smoother wave. Default: 32.
     pub wave_rows: u16,
     /// Show an FPS counter overlay in the top-right corner.
-    /// Requires a debug build. Also enabled by GROK_FPS=1 env var. Default: false.
+    /// Requires a debug build. Also enabled by EZER_FPS=1 env var. Default: false.
     pub show_fps: bool,
 }
 
@@ -1656,7 +1656,7 @@ impl RawAppearanceConfig {
         let pager_path = crate::util::display_user_grok_path("pager.toml");
         let header = format!(
             "\
-# Grok Pager Appearance Configuration ({pager_path})
+# ezer Pager Appearance Configuration ({pager_path})
 # Every value below is a commented-out built-in default: uncomment a line and
 # save to override it. Values left commented track future default changes.
 # Delete the file to regenerate this template.
@@ -1795,7 +1795,7 @@ pub fn persist_respect_manual_folds(enabled: bool) -> std::io::Result<()> {
     if xai_grok_config::user_grok_home().is_none() {
         return Err(Error::new(
             ErrorKind::NotFound,
-            "no user grok home resolved; refusing to write a cwd-relative pager.toml \
+            "no user ezer home resolved; refusing to write a cwd-relative pager.toml \
              that startup would never read",
         ));
     }

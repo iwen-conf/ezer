@@ -98,7 +98,7 @@ impl std::fmt::Debug for SubagentBackendResource {
 }
 
 register_resource!(
-    "grok_build",
+    "ezer_build",
     "SubagentBackendResource",
     SubagentBackendResource
 );

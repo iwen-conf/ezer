@@ -994,7 +994,7 @@ fn voice_off_target_surface_does_not_enable_or_record() {
     assert!(!app.voice_state.pending_cold_start());
     assert!(rx.try_recv().is_err(), "no PttPress without a target");
 }
-/// `grok dashboard` before login: the startup hook consumes the `GROK_OPEN_DASHBOARD_AT_STARTUP` env var and stashes
+/// `ezer dashboard` before login: the startup hook consumes the `EZER_OPEN_DASHBOARD_AT_STARTUP` env var and stashes
 /// `deferred_startup.open_dashboard`; `AuthComplete` must then open the dashboard view. Regression test for the silent drop where the user landed on the welcome screen / agent view instead.
 #[serial_test::serial(GROK_AGENT_DASHBOARD)]
 #[test]
@@ -1017,7 +1017,7 @@ fn auth_complete_opens_deferred_dashboard() {
     assert!(matches!(app.auth_state, AuthState::Done));
     assert!(
         matches!(app.active_view, ActiveView::AgentDashboard),
-        "deferred `grok dashboard` must open the dashboard after login",
+        "deferred `ezer dashboard` must open the dashboard after login",
     );
     assert!(
         !app.deferred_startup.open_dashboard,
@@ -1500,7 +1500,7 @@ fn dashboard_confirm_worktree_without_git_repo_creates_nothing() {
 #[test]
 fn dashboard_confirm_worktree_applies_pending_model_and_plan() {
     let mut app = test_app();
-    seed_model(&mut app, "grok-4.5", "Grok 4.5");
+    seed_model(&mut app, "grok-4.5", "ezer 4.5");
     open_dashboard(&mut app);
     app.cwd_has_git_ancestor = true;
     let model_id = acp::ModelId::new(std::sync::Arc::from("grok-4.5"));
@@ -1508,7 +1508,7 @@ fn dashboard_confirm_worktree_applies_pending_model_and_plan() {
         d.pending_model = Some(crate::views::dashboard::PendingDispatchModel {
             id: model_id.clone(),
             effort: Some(xai_grok_shell::sampling::types::ReasoningEffort::High),
-            display: "Grok 4.5".to_string(),
+            display: "ezer 4.5".to_string(),
         });
         d.pending_mode = crate::views::dashboard::DashboardDispatchMode::Plan;
         d.dispatch.set_text("do the thing");
@@ -2095,7 +2095,7 @@ fn dashboard_open_detects_standalone_grok_worktree() {
     );
 }
 /// Leader-mode independence: opening the dashboard works even when NOT in leader mode. The dashboard renders local sessions regardless; leader mode only adds the roster poll. Every entry point funnels through
-/// `Action::OpenDashboard`, so this covers `/dashboard`, `Ctrl+\`, `grok dashboard`, and the startup hook.
+/// `Action::OpenDashboard`, so this covers `/dashboard`, `Ctrl+\`, `ezer dashboard`, and the startup hook.
 #[serial_test::serial(GROK_AGENT_DASHBOARD)]
 #[test]
 fn dashboard_open_works_without_leader() {
@@ -2982,7 +2982,7 @@ fn seed_model(app: &mut AppView, id: &str, name: &str) {
 #[test]
 fn dashboard_slash_model_stages_pending_model() {
     let mut app = test_app();
-    seed_model(&mut app, "grok-4.5", "Grok 4.5");
+    seed_model(&mut app, "grok-4.5", "ezer 4.5");
     open_dashboard(&mut app);
     let effects = dispatch_dashboard_dispatch_slash(&mut app, "/model grok-4.5".into());
     assert!(
@@ -2998,7 +2998,7 @@ fn dashboard_slash_model_stages_pending_model() {
         .as_ref()
         .expect("pending_model must be set");
     assert_eq!(pending.id.0.as_ref(), "grok-4.5");
-    assert_eq!(pending.display, "Grok 4.5");
+    assert_eq!(pending.display, "ezer 4.5");
     assert!(pending.effort.is_none());
     assert_eq!(
         app.dashboard
@@ -3033,7 +3033,7 @@ fn dashboard_slash_restricted_command_upsells_via_toast() {
         .as_deref()
         .expect("restricted command must set the upsell toast");
     assert!(
-        toast.contains("/imagine") && toast.contains("SuperGrok"),
+        toast.contains("/imagine") && toast.contains("paid plan"),
         "toast must carry the upsell: {toast}"
     );
 }
@@ -3042,7 +3042,7 @@ fn dashboard_slash_restricted_command_upsells_via_toast() {
 #[test]
 fn dashboard_slash_command_error_gets_error_glyph_prefix() {
     let mut app = test_app();
-    seed_model(&mut app, "grok-4.5", "Grok 4.5");
+    seed_model(&mut app, "grok-4.5", "ezer 4.5");
     open_dashboard(&mut app);
     let effects = dispatch_dashboard_dispatch_slash(&mut app, "/model nonexistent".into());
     assert!(effects.is_empty(), "a failed command must not dispatch");
@@ -3655,13 +3655,13 @@ fn dashboard_cycle_mode_skips_always_approve_under_policy_pin() {
 fn dashboard_open_reseeds_pending_model_and_mode() {
     use crate::views::dashboard::DashboardDispatchMode;
     let mut app = test_app();
-    seed_model(&mut app, "grok-4.5", "Grok 4.5");
+    seed_model(&mut app, "grok-4.5", "ezer 4.5");
     open_dashboard(&mut app);
     if let Some(d) = app.dashboard.as_mut() {
         d.pending_model = Some(crate::views::dashboard::PendingDispatchModel {
             id: acp::ModelId::new(std::sync::Arc::from("grok-4.5")),
             effort: None,
-            display: "Grok 4.5".to_string(),
+            display: "ezer 4.5".to_string(),
         });
         d.pending_mode = DashboardDispatchMode::Plan;
     }
@@ -3929,14 +3929,14 @@ fn dashboard_dispatch_new_agent_is_working_with_prompt_title() {
 #[test]
 fn dashboard_dispatch_applies_pending_model_and_plan() {
     let mut app = test_app();
-    seed_model(&mut app, "grok-4.5", "Grok 4.5");
+    seed_model(&mut app, "grok-4.5", "ezer 4.5");
     open_dashboard(&mut app);
     let model_id = acp::ModelId::new(std::sync::Arc::from("grok-4.5"));
     if let Some(d) = app.dashboard.as_mut() {
         d.pending_model = Some(crate::views::dashboard::PendingDispatchModel {
             id: model_id.clone(),
             effort: Some(xai_grok_shell::sampling::types::ReasoningEffort::High),
-            display: "Grok 4.5".to_string(),
+            display: "ezer 4.5".to_string(),
         });
         d.pending_mode = crate::views::dashboard::DashboardDispatchMode::Plan;
     }
@@ -3968,14 +3968,14 @@ fn dashboard_dispatch_applies_pending_model_and_plan() {
 #[test]
 fn dashboard_new_agent_button_applies_pending_model_and_plan() {
     let mut app = test_app();
-    seed_model(&mut app, "grok-4.5", "Grok 4.5");
+    seed_model(&mut app, "grok-4.5", "ezer 4.5");
     open_dashboard(&mut app);
     let model_id = acp::ModelId::new(std::sync::Arc::from("grok-4.5"));
     if let Some(d) = app.dashboard.as_mut() {
         d.pending_model = Some(crate::views::dashboard::PendingDispatchModel {
             id: model_id.clone(),
             effort: Some(xai_grok_shell::sampling::types::ReasoningEffort::High),
-            display: "Grok 4.5".to_string(),
+            display: "ezer 4.5".to_string(),
         });
         d.pending_mode = crate::views::dashboard::DashboardDispatchMode::Plan;
     }
@@ -5479,7 +5479,7 @@ fn dashboard_overlay_cycle_non_agent_active_view_is_noop() {
 #[test]
 fn dashboard_overlay_cycle_non_overlay_noop_when_dashboard_disabled() {
     let _guard =
-        crate::test_util::EnvVarGuard::set("GROK_AGENT_DASHBOARD", std::path::Path::new("0"));
+        crate::test_util::EnvVarGuard::set("EZER_AGENT_DASHBOARD", std::path::Path::new("0"));
     let mut app = test_app_with_agent();
     let id1 = AgentId(0);
     mark_agent_nonempty(&mut app, id1);

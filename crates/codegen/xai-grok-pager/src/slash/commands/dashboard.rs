@@ -5,7 +5,7 @@
 //!
 //! Like other session-less commands it runs through `Action` only and takes no args.
 //! The command is hidden in the registry until `dashboard_enabled()` reveals it via [`crate::app::agent_view::AgentView::set_dashboard_visible`].
-//! With `[dashboard].enabled = false` or `GROK_AGENT_DASHBOARD=0` the dispatcher shows a toast and refuses to open.
+//! With `[dashboard].enabled = false` or `EZER_AGENT_DASHBOARD=0` the dispatcher shows a toast and refuses to open.
 //! The dashboard is independent of leader mode.
 
 use crate::app::actions::Action;
