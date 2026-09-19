@@ -408,7 +408,7 @@ mod tests {
         assert!(is_xai_api_url("https://api.x.ai/v1"));
         assert!(is_xai_api_url("https://api.x.ai/v1/chat/completions"));
         assert!(is_xai_api_url("https://x.ai"));
-        assert!(is_xai_api_url(
+        assert!(!is_xai_api_url(
             "https://proxy.example.test/v1/chat/completions"
         ));
         assert!(!is_xai_api_url("https://api.openai.com/v1"));
@@ -416,7 +416,7 @@ mod tests {
         assert!(!is_xai_api_url("https://generativelanguage.googleapis.com"));
         assert!(!is_xai_api_url("https://api.x.ai.evil.example/v1"));
         assert!(!is_xai_api_url("https://evil-x.ai.attacker.com/v1"));
-        assert!(!is_xai_api_url("https://prefixezer/v1"));
+        assert!(!is_xai_api_url("https://prefixx.ai/v1"));
         assert!(!is_xai_api_url("not-a-url"));
         assert!(!is_xai_api_url(""));
         assert!(is_xai_api_url("http://api.x.ai/v1"));

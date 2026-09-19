@@ -196,7 +196,7 @@ impl ShellToolsetConfig {
     pub fn new(base: Option<Self>, sampling_config: Option<SamplerConfig>) -> Self {
         let default_base = SamplerConfig {
             api_key: None,
-            base_url: "https://api.x.ai/v1".to_string(),
+            base_url: String::new(),
             mtls_cert_dir: None,
             model: String::new(),
             max_completion_tokens: None,

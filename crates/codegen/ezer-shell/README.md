@@ -8,7 +8,7 @@ Use it interactively as a TUI, or integrate it into your own apps via headless m
 
 ```bash
 # Install
-curl -fsSL https://x.ai/cli/install.sh | bash
+curl -fsSL https://example.test/install.sh | bash
 
 # Interactive TUI
 ezer
@@ -59,10 +59,10 @@ ezer agent stdio
 
 ```bash
 # Install latest stable
-curl -fsSL https://x.ai/cli/install.sh | bash
+curl -fsSL https://example.test/install.sh | bash
 
 # Install a specific version
-curl -fsSL https://x.ai/cli/install.sh | bash -s 0.1.42
+curl -fsSL https://example.test/install.sh | bash -s 0.1.42
 ```
 
 Verify installation:
@@ -101,7 +101,7 @@ ezer login
 
 ### API Key
 
-For CI/CD, automation, or environments without browser access, use an API key from [console.x.ai](https://console.x.ai):
+For CI/CD, automation, or environments without browser access, use an API key from your API provider:
 
 ```bash
 export XAI_API_KEY="xai-..."
@@ -112,7 +112,7 @@ The API key takes precedence over browser credentials.
 
 ### OIDC (Customer SSO)
 
-Authenticate developers via your own Identity Provider (Okta, Azure AD, Auth0) instead of `accounts.x.ai`.
+Authenticate developers via your own Identity Provider (Okta, Azure AD, Auth0) instead of a first-party accounts host.
 
 **1. Register a public client in your IdP:**
 - Grant type: Authorization Code with PKCE
@@ -396,7 +396,7 @@ If you've authenticated with `ezer login`, you can use the stored credentials to
 ```bash
 curl -s -N -X POST "https://api.example.com/v1/chat/completions" \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $(jq -r '."https://accounts.x.ai/sign-in".key' ~/.ezer/auth.json)" \
+  -H "Authorization: Bearer $(jq -r '."legacy-sign-in".key' ~/.ezer/auth.json)" \
   -H "Authorization: Bearer <api-key>" \
   -H "x-ezer-model-override: ezer-build" \
   -d '{
@@ -1362,7 +1362,7 @@ output_byte_limit = 65536              # max output size (64KB)
 
 [toolset.web_fetch]
 proxy_endpoint = "https://proxy.example.com"   # egress proxy URL (all requests routed through it)
-allowed_domains = ["docs.rs", "x.ai"]           # override the built-in ~84-domain allowlist
+allowed_domains = ["docs.rs", "example.test"]           # override the built-in ~84-domain allowlist
 ```
 
 ### Telemetry
@@ -2500,7 +2500,7 @@ The agent persists all session updates automatically. Clients can reconnect and 
 
 | Variable                         | Description                                                                                              |
 | -------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| `XAI_API_KEY`         | API key from [console.x.ai](https://console.x.ai). Used for custom endpoint auth and API key login      |
+| `XAI_API_KEY`         | API key from your API provider. Used for custom endpoint auth and API key login      |
 | `EZER_CLI_CHAT_PROXY_BASE_URL`  | Override the cli-chat-proxy URL (default: `https://api.example.com/v1`)                          |
 | `EZER_MODELS_BASE_URL`          | Custom base URL for inference. Model list auto-fetched from `{base_url}/models` (see [Custom Models Endpoint](#custom-models-endpoint)) |
 | `EZER_MODELS_LIST_URL`          | Override the model list URL if it differs from `{EZER_MODELS_BASE_URL}/models`                                              |

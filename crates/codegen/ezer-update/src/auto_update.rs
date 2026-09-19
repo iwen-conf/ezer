@@ -50,22 +50,22 @@ fn manual_install_cmd(channel: &str) -> String {
     if channel == "enterprise" {
         // Enterprise has its own bootstrap script; it needs no channel env.
         return if cfg!(windows) {
-            "irm https://x.ai/cli/enterprise-install.ps1 | iex".to_string()
+            "Please reinstall via GitHub Releases (enterprise channel).".to_string()
         } else {
-            "curl -fsSL https://x.ai/cli/enterprise-install.sh | bash".to_string()
+            "Please reinstall via GitHub Releases (enterprise channel).".to_string()
         };
     }
     if is_stable_channel(channel) || !safe {
         return if cfg!(windows) {
-            "irm https://x.ai/cli/install.ps1 | iex".to_string()
+            "Please reinstall via GitHub Releases.".to_string()
         } else {
-            "curl -fsSL https://x.ai/cli/install.sh | bash".to_string()
+            "Please reinstall via GitHub Releases.".to_string()
         };
     }
     if cfg!(windows) {
-        format!("$env:EZER_CHANNEL='{channel}'; irm https://x.ai/cli/install.ps1 | iex")
+        format!("Please reinstall via GitHub Releases (channel {channel}).")
     } else {
-        format!("curl -fsSL https://x.ai/cli/install.sh | EZER_CHANNEL='{channel}' bash")
+        format!("Please reinstall via GitHub Releases (channel {channel}).")
     }
 }
 

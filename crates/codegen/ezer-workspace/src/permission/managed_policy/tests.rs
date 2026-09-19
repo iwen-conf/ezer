@@ -942,7 +942,7 @@ fn mcp_name_matching_semantics() {
         ("foo", "barfoo", false, "never suffix"),
         ("foo", "bar", false, "different name"),
         ("", "foo", false, "empty entry never matches"),
-        ("Slack", "remote_slack", true, "display case folds"),
+        ("Slack", "ezer_com_slack", true, "display case folds"),
         ("My Server", "ezer_com_my_server", true, "spaces normalize to underscores"),
         ("ezer_com_my_server", "My Server", true, "managed entry vs display runtime"),
         ("My Server", "my_server", true, "display entry vs local runtime"),

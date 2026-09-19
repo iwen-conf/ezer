@@ -38,8 +38,9 @@ pub fn update_notice_allowed(installer: &str) -> bool {
     update_notice_allowed_for(installer, &gh_release_repo())
 }
 
-/// Primary CLI base URL: Cloudflare-fronted x.ai endpoint with edge caching for binaries and origin-respecting no-cache for channel pointers.
-pub(crate) const CLI_BASE_URL_PRIMARY: &str = "https://x.ai/cli";
+/// Former first-party CLI CDN. Empty in BYOK builds so the binary never
+/// embeds `x.ai` update hosts (PR #6: never hit those channels).
+pub(crate) const CLI_BASE_URL_PRIMARY: &str = "";
 
 /// Fallback CLI base URL: direct GCS, used when the primary is unreachable (Cloudflare outage, regional CF egress issue, DNS hijack, etc.).
 pub(crate) const CLI_BASE_URL_FALLBACK: &str =
@@ -61,7 +62,11 @@ pub(crate) fn cli_base_urls() -> Vec<String> {
             tracing::warn!("EZER_CLI_BASE_URL ignored: only loopback bases are honored");
         }
     }
-    CLI_BASE_URLS.iter().map(|s| (*s).to_owned()).collect()
+    CLI_BASE_URLS
+        .iter()
+        .filter(|s| !s.is_empty())
+        .map(|s| (*s).to_owned())
+        .collect()
 }
 
 /// Parsed, not prefix-matched: `http://127.0.0.1:9@evil.com` starts with a
