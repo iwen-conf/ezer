@@ -116,7 +116,7 @@ mod tests {
         assert!(toml.contains(DEFAULT_GATEWAY_BASE_URL));
         assert!(toml.contains("preferred_method = \"api_key\""));
         assert!(!toml.contains("auth.x.ai"));
-        assert!(!toml.contains("grok.com"));
+        assert!(!toml.contains("cli-chat-proxy"));
     }
 
     #[test]
