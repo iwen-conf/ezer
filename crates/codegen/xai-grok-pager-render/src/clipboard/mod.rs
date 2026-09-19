@@ -2414,11 +2414,11 @@ mod tests {
     /// The `GROK_HOME`-override integration test in `xai-grok-pager` covers that further.
     #[test]
     fn display_copy_path_abbreviates_home() {
-        if std::env::var_os("GROK_HOME").is_none() {
+        if std::env::var_os("EZER_HOME").is_none() && std::env::var_os("GROK_HOME").is_none() {
             let home = xai_dirs::home_dir().expect("home resolves in tests");
             assert_eq!(
-                display_copy_path(&home.join(".grok").join("last-copy.txt")),
-                "~/.grok/last-copy.txt"
+                display_copy_path(&home.join(".ezer").join("last-copy.txt")),
+                "~/.ezer/last-copy.txt"
             );
         }
         // Non-home paths pass through untouched, including multi-byte UTF-8 components (must never slice at a non-char boundary)

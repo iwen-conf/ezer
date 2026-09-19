@@ -9,8 +9,14 @@ use crate::loader::{
 /// Inline config overlay: a JSON object.
 pub const GROK_CONFIG_ENV: &str = "GROK_CONFIG";
 
+/// Preferred ezer alias for [`GROK_CONFIG_ENV`].
+pub const EZER_CONFIG_ENV: &str = "EZER_CONFIG";
+
 /// Path to an additional JSON or TOML config-overlay file (read by extension).
 pub const GROK_CONFIG_PATH_ENV: &str = "GROK_CONFIG_PATH";
+
+/// Preferred ezer alias for [`GROK_CONFIG_PATH_ENV`].
+pub const EZER_CONFIG_PATH_ENV: &str = "EZER_CONFIG_PATH";
 
 /// Hard cap on a `GROK_CONFIG_PATH` overlay read.
 /// A huge file, or a special node like `/dev/zero`, must never stall or OOM the agent, so the read is bounded.
@@ -38,20 +44,26 @@ pub struct ResolvedOverlay {
 }
 
 fn env_overlay_inputs() -> (Option<String>, Option<PathBuf>) {
-    let inline = match std::env::var_os(GROK_CONFIG_ENV) {
+    let inline = read_inline_overlay(EZER_CONFIG_ENV)
+        .or_else(|| read_inline_overlay(GROK_CONFIG_ENV));
+    let path = std::env::var_os(EZER_CONFIG_PATH_ENV)
+        .or_else(|| std::env::var_os(GROK_CONFIG_PATH_ENV))
+        .filter(|v| !v.is_empty())
+        .map(PathBuf::from);
+    (inline, path)
+}
+
+fn read_inline_overlay(var: &str) -> Option<String> {
+    match std::env::var_os(var) {
         Some(raw) => match raw.into_string() {
             Ok(s) => Some(s),
             Err(_) => {
-                tracing::warn!("GROK_CONFIG is not valid UTF-8; ignoring the overlay");
+                tracing::warn!("{var} is not valid UTF-8; ignoring the overlay");
                 None
             }
         },
         None => None,
-    };
-    let path = std::env::var_os(GROK_CONFIG_PATH_ENV)
-        .filter(|v| !v.is_empty())
-        .map(PathBuf::from);
-    (inline, path)
+    }
 }
 
 pub(crate) fn load_env_overlay() -> Option<toml::Value> {

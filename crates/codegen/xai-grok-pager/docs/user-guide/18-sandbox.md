@@ -9,14 +9,14 @@ Sandbox mode is off by default.
 ## Quick Start
 
 ```bash
-# Run with workspace sandbox (read everywhere, write to CWD + temp dirs + ~/.grok/)
-grok --sandbox workspace
+# Run with workspace sandbox (read everywhere, write to CWD + temp dirs + ~/.ezer/)
+ezer --sandbox workspace
 
-# Read-only mode (read everywhere, write only to ~/.grok/ + temp dirs)
-grok --sandbox read-only
+# Read-only mode (read everywhere, write only to ~/.ezer/ + temp dirs)
+ezer --sandbox read-only
 
-# Most restrictive profile (read CWD + system paths + ~/.grok, write CWD + ~/.grok/sessions + temp dirs, no child network)
-grok --sandbox strict
+# Most restrictive profile (read CWD + system paths + ~/.ezer, write CWD + ~/.ezer/sessions + temp dirs, no child network)
+ezer --sandbox strict
 ```
 
 ---
@@ -26,10 +26,10 @@ grok --sandbox strict
 | Profile               | FS Read                        | FS Write                                       | Child Network | Use Case                          |
 | --------------------- | ------------------------------ | ---------------------------------------------- | ------------- | --------------------------------- |
 | `off` (default)       | Unrestricted                   | Unrestricted                                   | Unrestricted  | No sandbox                        |
-| `workspace`           | Everywhere                     | CWD + `~/.grok/` + `/tmp` + `/var/tmp`         | Allowed       | Normal development                |
+| `workspace`           | Everywhere                     | CWD + `~/.ezer/` + `/tmp` + `/var/tmp`         | Allowed       | Normal development                |
 | `devbox`              | Everywhere                     | All top-level dirs except `/data`              | Allowed       | Disposable dev VMs                |
-| `read-only`           | Everywhere                     | `~/.grok/` + `/tmp` + `/var/tmp`               | Blocked¹      | Exploration, code review          |
-| `strict`              | CWD + system paths + `~/.grok` | CWD + `~/.grok/sessions` + `/tmp` + `/var/tmp` | Blocked¹      | Untrusted code                    |
+| `read-only`           | Everywhere                     | `~/.ezer/` + `/tmp` + `/var/tmp`               | Blocked¹      | Exploration, code review          |
+| `strict`              | CWD + system paths + `~/.ezer` | CWD + `~/.ezer/sessions` + `/tmp` + `/var/tmp` | Blocked¹      | Untrusted code                    |
 
 ¹ Child-network blocking is enforced on **Linux only** (via seccomp). On macOS it is a no-op — these profiles do not restrict child-process network there.
 
@@ -37,34 +37,34 @@ To block specific files (e.g. `.env` or credential paths) on top of a profile, d
 
 ### Profile Details
 
-**workspace** -- The recommended profile for everyday development. The agent can read any file on the system (for understanding dependencies, system libraries, etc.) but can only write to the current working directory, `~/.grok/`, and temp directories (`/tmp`, `/var/tmp`, plus the macOS temp dirs). Network access is allowed for tools like `web_search` and MCP servers.
+**workspace** -- The recommended profile for everyday development. The agent can read any file on the system (for understanding dependencies, system libraries, etc.) but can only write to the current working directory, `~/.ezer/`, and temp directories (`/tmp`, `/var/tmp`, plus the macOS temp dirs). Network access is allowed for tools like `web_search` and MCP servers.
 
 **devbox** -- A reserved built-in profile for disposable development VMs. The agent can read everywhere and write to every top-level directory except `/data` and the virtual filesystems (`/proc`, `/sys`, `/dev`), including the home directory. Network access is allowed. `--sandbox devbox` runs the built-in profile, which shadows any `[profiles.devbox]` you define in `sandbox.toml`.
 
-**read-only** -- Use when you want the agent to analyze code without modifying your project files. The agent can read everything but can only write to `~/.grok/` (needed for session persistence) and temp directories. Child-process network access is blocked on Linux (no-op on macOS).
+**read-only** -- Use when you want the agent to analyze code without modifying your project files. The agent can read everything but can only write to `~/.ezer/` (needed for session persistence) and temp directories. Child-process network access is blocked on Linux (no-op on macOS).
 
-**strict** -- The most restrictive profile, for reviewing untrusted code. The agent can read the current working directory, essential system paths, and `~/.grok`. Writes are limited to CWD, `~/.grok/sessions`, and temp directories — not the whole `~/.grok` tree. Child-process network access is blocked on Linux (no-op on macOS).
+**strict** -- The most restrictive profile, for reviewing untrusted code. The agent can read the current working directory, essential system paths, and `~/.ezer`. Writes are limited to CWD, `~/.ezer/sessions`, and temp directories — not the whole `~/.ezer` tree. Child-process network access is blocked on Linux (no-op on macOS).
 
 ### Direct global write protection
 
-Under `workspace`, `read-only`, and `strict` (and custom profiles that extend those bases), the kernel **write-denies** the Grok-owned direct disk paths used as user-global hook sources, plus its configuration and trust files (they stay readable when granted). Built-in `strict` can read `~/.grok` (they stay readable); writes are CWD + `~/.grok/sessions` + temp, not the whole tree. Write-deny still applies where the profile grants write:
+Under `workspace`, `read-only`, and `strict` (and custom profiles that extend those bases), the kernel **write-denies** the Grok-owned direct disk paths used as user-global hook sources, plus its configuration and trust files (they stay readable when granted). Built-in `strict` can read `~/.ezer` (they stay readable); writes are CWD + `~/.ezer/sessions` + temp, not the whole tree. Write-deny still applies where the profile grants write:
 
-- `~/.grok/hooks/` (hook directory)
-- `~/.grok/hooks-paths` (registry file; not loaded as hook JSON — only its absolute targets are)
+- `~/.ezer/hooks/` (hook directory)
+- `~/.ezer/hooks-paths` (registry file; not loaded as hook JSON — only its absolute targets are)
 - Absolute targets listed in `hooks-paths` (relative lines are ignored; missing targets refuse sandbox start)
-- `~/.grok/config.toml`, `~/.grok/trusted_folders.toml`, `~/.grok/managed_config.toml`, `~/.grok/requirements.toml`, `~/.grok/sandbox.toml` (settings, folder trust, managed policy, requirements, and sandbox profiles)
+- `~/.ezer/config.toml`, `~/.ezer/trusted_folders.toml`, `~/.ezer/managed_config.toml`, `~/.ezer/requirements.toml`, `~/.ezer/sandbox.toml` (settings, folder trust, managed policy, requirements, and sandbox profiles)
 
-Because these files are read-only under these profiles, a change that would be saved to them applies to the current session only. Accepting a folder-trust prompt, switching the model with `/model`, and changing the permission mode (`/auto` or Shift+Tab) take effect for the session but are not saved. To save folder trust, run `grok --trust` in the directory before starting the sandbox. To change the default model or permission mode, edit `~/.grok/config.toml` directly.
+Because these files are read-only under these profiles, a change that would be saved to them applies to the current session only. Accepting a folder-trust prompt, switching the model with `/model`, and changing the permission mode (`/auto` or Shift+Tab) take effect for the session but are not saved. To save folder trust, run `ezer --trust` in the directory before starting the sandbox. To change the default model or permission mode, edit `~/.ezer/config.toml` directly.
 
 On first launch under these profiles, Grok creates a real empty `hooks/` directory and empty `hooks-paths` file when they are missing (never symlinks or wrong types). Claude/Cursor global settings are **not** covered by this write-deny; discovery of those vendors remains separately gated by compatibility settings.
 
-A symlinked `$GROK_HOME` or a `hooks-paths` entry with a symlink component is refused at sandbox start (prevents retargeting). Existing parent directories of protected paths are pinned so they cannot be renamed out from under the deny (siblings remain writable). On Linux, nested user namespaces are disabled inside bubblewrap so mount binds cannot be rearranged. Project hooks remain gated by folder trust. The `devbox` profile does not apply this protection (disposable VMs). Profiles that require it refuse to start if the kernel policy cannot be applied (including Linux without verified read-only mounts).
+A symlinked `$EZER_HOME` or a `hooks-paths` entry with a symlink component is refused at sandbox start (prevents retargeting). Existing parent directories of protected paths are pinned so they cannot be renamed out from under the deny (siblings remain writable). On Linux, nested user namespaces are disabled inside bubblewrap so mount binds cannot be rearranged. Project hooks remain gated by folder trust. The `devbox` profile does not apply this protection (disposable VMs). Profiles that require it refuse to start if the kernel policy cannot be applied (including Linux without verified read-only mounts).
 
 ---
 
 ## Custom Profiles
 
-Create custom sandbox profiles in `~/.grok/sandbox.toml` (global) or `.grok/sandbox.toml` (per-project):
+Create custom sandbox profiles in `~/.ezer/sandbox.toml` (global) or `.ezer/sandbox.toml` (per-project):
 
 ```toml
 [profiles.project]
@@ -85,7 +85,7 @@ deny = ["/data/shared-secrets", "**/.env", "**/*.pem"]
 Use the custom profile:
 
 ```bash
-grok --sandbox project
+ezer --sandbox project
 ```
 
 A custom profile can't reuse a built-in name. `--sandbox devbox` always runs the built-in `devbox` profile, shadowing any `[profiles.devbox]` you define.
@@ -177,7 +177,7 @@ When a non-`off` sandbox profile is **requested** (CLI, `GROK_SANDBOX`, config, 
 
 - The agent runs **in-process**, not through the shared leader, so tool calls stay in this process when the profile is enforced. If leader mode would otherwise have been on, a one-line note at startup says so
 - If a built-in profile fails to apply, Grok warns and continues without enforcement (see [Platform Support](#platform-support)), but still refuses the leader so tools are not delegated elsewhere
-- `grok workspace start`, `restart`, and `resume` are unavailable; `pause`, `stop`, and `status` still work
+- `ezer workspace start`, `restart`, and `resume` are unavailable; `pause`, `stop`, and `status` still work
 
 Disable the profile at the source that selected it to use the refused commands.
 
@@ -188,8 +188,8 @@ The sandbox is **irreversible** once applied. The agent cannot relax restriction
 ## Resuming Sessions
 
 The profile a session was started with is saved with the session and is **fixed
-for the life of the session**. When you resume it (`grok --resume <id>`,
-`grok --continue`, or `grok -r`), Grok restores that same profile automatically —
+for the life of the session**. When you resume it (`ezer --resume <id>`,
+`ezer --continue`, or `ezer -r`), Grok restores that same profile automatically —
 so a session started with `--sandbox workspace` won't silently come back under a
 stricter default and break commands that previously worked.
 
@@ -254,7 +254,7 @@ The default (`inherit = "all"`, `ignore_default_excludes = true`) leaves the env
 
 ## Event Logging
 
-Sandbox events are logged to `~/.grok/sessions` for debugging. Events include:
+Sandbox events are logged to `~/.ezer/sessions` for debugging. Events include:
 
 - Profile applied (which profile, timestamp)
 - Violations (attempted access to denied paths)

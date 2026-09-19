@@ -7,7 +7,7 @@ multiplexers, containers, and SSH sessions can handle these features differently
 ## Diagnose and Fix Terminal Problems
 
 Run `/doctor` in Grok to check the current session and see available fixes. If
-Grok cannot start, run `grok doctor` in your shell. Use `grok doctor --json`
+Grok cannot start, run `ezer doctor` in your shell. Use `ezer doctor --json`
 for a machine-readable report.
 
 Doctor checks the terminal, multiplexer, color support, keyboard and newline
@@ -16,7 +16,7 @@ included. The in-app command can also check live session details such as
 notification focus tracking and sandbox profile conflicts.
 
 A report can contain issues or recommendations and still exit successfully.
-`grok doctor --json` reports the same color capability when piped. Microphone
+`ezer doctor --json` reports the same color capability when piped. Microphone
 checks do not start recording, so Doctor cannot detect macOS permission failures
 that appear only as silence during capture.
 
@@ -25,7 +25,7 @@ that appear only as silence during capture.
 
 When Doctor finds an explicit unhealthy tmux setting, `/doctor fix` lists the
 available automatic fixes. Apply one named fix at a time, for example
-`/doctor fix tmux-clipboard` or `grok doctor fix dcs-passthrough --yes`.
+`/doctor fix tmux-clipboard` or `ezer doctor fix dcs-passthrough --yes`.
 Doctor can persist these four tmux options:
 
 - `terminal.tmux-clipboard` — `set -g set-clipboard on`
@@ -141,29 +141,29 @@ backup file so you can retrieve the text. Run `/doctor` for other copy options.
 #### Apple Terminal over SSH
 
 Apple Terminal does not support OSC 52, so a remote copy cannot reach the local
-clipboard. Each copy is still saved to a backup file (`~/.grok/last-copy.txt` by
+clipboard. Each copy is still saved to a backup file (`~/.ezer/last-copy.txt` by
 default; override with `GROK_COPY_FILE`); the toast names that path when delivery
 is unverified or the clipboard is unreachable. You can also use `/copy <file>` or
 `/minimal`.
 
 For direct clipboard forwarding, run the SSH command from the local computer
-through `grok wrap`, for example `grok wrap ssh user@host`. The same command can
+through `ezer wrap`, for example `ezer wrap ssh user@host`. The same command can
 wrap container and pod shells. It also restores terminal modes after a dropped
 connection.
 
-When an SSH session is not using `grok wrap`, Grok shows the one-time tip
+When an SSH session is not using `ezer wrap`, Grok shows the one-time tip
 “Run `/doctor` for details and fixes.” The tip stops appearing after the session
 is launched through wrap. Turn it off with `/settings` → **Show contextual
 hints** → **SSH wrap**, or set `ssh_wrap = false` under
-`[ui.contextual_hints]` in `$GROK_HOME/config.toml`. This setting does not hide
+`[ui.contextual_hints]` in `$EZER_HOME/config.toml`. This setting does not hide
 the Doctor recommendation.
 
-For repeated SSH use, Doctor offers `grok doctor fix ssh-wrap`. It also shows
+For repeated SSH use, Doctor offers `ezer doctor fix ssh-wrap`. It also shows
 the one-off command, the file that would change, and the cases where the alias
 should be bypassed. The ID `terminal.ssh-wrap` remains accepted and appears in
 JSON.
 
-> **Warning**: `grok wrap` is experimental and may not work in every setup.
+> **Warning**: `ezer wrap` is experimental and may not work in every setup.
 
 #### iTerm2
 
@@ -175,8 +175,8 @@ check.
 
 Zellij and tmux control mode can limit the alternate screen. Grok normally uses
 inline mode in those environments. Run `/doctor` to see the detected condition.
-You can configure `[terminal] alt_screen` in `~/.grok/pager.toml`, or run
-`grok --no-alt-screen` to confirm inline mode works.
+You can configure `[terminal] alt_screen` in `~/.ezer/pager.toml`, or run
+`ezer --no-alt-screen` to confirm inline mode works.
 
 ### Zellij keybindings interfere with Grok
 
@@ -247,7 +247,7 @@ Microphone**, enable the terminal, and restart it. If access is already on, chec
 the input device and level under **System Settings → Sound → Input** and try
 again.
 
-Run `grok doctor`, or run `/doctor` while voice mode is on. The **Voice** section
+Run `ezer doctor`, or run `/doctor` while voice mode is on. The **Voice** section
 shows the microphone Grok would use. If no input device is available, Doctor
 shows `voice.no-input-device` and the next steps. Doctor cannot detect denied
 macOS microphone access passively when macOS supplies silence.
@@ -269,7 +269,7 @@ terminals, Terminal.app, Konsole, mlterm, and others). Grok Build therefore
 **does not** reorder RTL by default.
 
 If Arabic or Persian in **scrollback** (or list content) reads backwards,
-enable app-side reordering in `~/.grok/pager.toml` (or project config):
+enable app-side reordering in `~/.ezer/pager.toml` (or project config):
 
 ```toml
 [scrollback.display]

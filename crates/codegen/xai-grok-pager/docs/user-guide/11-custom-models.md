@@ -1,17 +1,13 @@
 # Custom Models
 
-Grok connects to custom model endpoints for alternative providers, self-hosted models, and overriding built-in settings. This guide explains how to select models, configure endpoints, and integrate third-party providers.
+ezer is a custom-provider / BYOK client. There is no bundled Grok/xAI model
+catalog. Configure at least one `[model.<name>]` (and usually `[models].default`)
+in `~/.ezer/config.toml`.
 
----
-
-## Default Models
-
-By default, Grok uses models hosted by SpaceXAI, and new sessions start with `grok-4.5`. Default models require no configuration. Authenticate with `grok login` or an API key, then start a session.
-
-List all available models:
+List configured / discovered models:
 
 ```bash
-grok models
+ezer models
 ```
 
 ---
@@ -21,7 +17,7 @@ grok models
 ### CLI Flag
 
 ```bash
-grok -p "Hello" -m grok-4.6
+ezer -p "Hello" -m my-model
 ```
 
 ### Slash Command
@@ -29,13 +25,13 @@ grok -p "Hello" -m grok-4.6
 In the TUI, switch models during a session:
 
 ```
-/model grok-4.6
+/model my-model
 ```
 
 Or use the alias:
 
 ```
-/m grok-4.6
+/m my-model
 ```
 
 ### Model Picker (Ctrl+M)
@@ -48,34 +44,36 @@ Enterprise hosts can pin the **selectable** set — not only the default — in 
 
 ```toml
 [models]
-default = "grok-4.5"
-allowed_models = ["grok-4.5", "grok-4*"]
+default = "my-model"
+allowed_models = ["my-model", "team-*"]
 ```
 
 A fleet pin matches the **model id** (not a user-chosen catalog key), so a local `[model.<name>]` entry cannot widen the set. User-config `allowed_models` still matches catalog key or model id. Omit the key to leave user config standing. An empty array is unrestricted. A present-but-unreadable pin fail-closes (nothing selectable). A default or `-m` value outside the pinned set is rejected once the model catalog is fetched — contact your administrator; the list is not user-editable.
 
 ### Config Default
 
-Set a persistent default in `~/.grok/config.toml`:
+Set a persistent default in `~/.ezer/config.toml`:
 
 ```toml
 [models]
-default = "grok-4.5"
+default = "my-model"
 ```
 
 ---
 
 ## Supported API Backends
 
-Grok supports three API backends. Set `api_backend` in your `[model.*]` config to choose which protocol the model uses:
+ezer supports three API backends. Set `api_backend` in your `[model.*]` config to choose which protocol the model uses:
 
 | Value | API | Default |
 |-------|-----|---------|
-| `"chat_completions"` | OpenAI Chat Completions (`/v1/chat/completions`) | Yes |
-| `"responses"` | OpenAI Responses (`/v1/responses`) | |
+| `"responses"` | OpenAI Responses (`POST /v1/responses`, streaming SSE) | Yes |
+| `"chat_completions"` | OpenAI Chat Completions (`/v1/chat/completions`) | compatibility only |
 | `"messages"` | Anthropic Messages (`/v1/messages`) | |
 
-When you omit `api_backend`, Grok uses `chat_completions`.
+When you omit `api_backend`, ezer uses **`responses`**. Full Responses support
+is first-class: input items, tool/function calls, reasoning items when present,
+streaming events, and non-stream completions.
 
 To send provider-specific authentication or version headers -- for example, Anthropic's `x-api-key` -- use the `extra_headers` field described below. Grok sends those headers verbatim with every request to the endpoint.
 
@@ -83,7 +81,7 @@ To send provider-specific authentication or version headers -- for example, Anth
 
 ## Configuring Custom Models
 
-Add custom model endpoints in `~/.grok/config.toml` under `[model.<name>]` sections:
+Add custom model endpoints in `~/.ezer/config.toml` under `[model.<name>]` sections:
 
 ```toml
 [model.my-model]
@@ -93,7 +91,7 @@ name = "Display Name"                     # Shown in the model picker
 description = "Model description"          # Optional description
 api_key = "sk-..."                        # API key for this provider (optional)
 env_key = "XAI_API_KEY"                   # Env var holding the API key (optional; string or array)
-api_backend = "chat_completions"          # "chat_completions", "responses", or "messages"
+api_backend = "responses"                 # default; "chat_completions" or "messages" if needed
 reasoning_summary = "concise"             # Responses API only: "none", "auto", "concise", or "detailed"
 temperature = 0.7                         # Sampling temperature
 top_p = 0.95                              # Nucleus sampling parameter
@@ -110,7 +108,7 @@ Grok resolves the API key in this order:
 
 1. The `api_key` field in the model config
 2. The environment variable(s) named by `env_key` — a single string or an array of names. The first set, non-empty value wins (for example `env_key = ["ANTHROPIC_AUTH_TOKEN", "LC_ANTHROPIC_AUTH_TOKEN"]` for SSH `LC_*` forwarding)
-3. Your signed-in session token (from `grok login`), for a model with no `api_key`/`env_key` of its own
+3. Your signed-in session token (from `ezer login`), for a model with no `api_key`/`env_key` of its own
 4. The `XAI_API_KEY` environment variable (global fallback; Grok also accepts `GROK_CODE_XAI_API_KEY` for backward compatibility)
 
 ### Context Window
@@ -235,7 +233,7 @@ name = "GPT-4o"
 env_key = "OPENAI_API_KEY"
 ```
 
-`api_backend` defaults to `"chat_completions"`, so you don't need to set it explicitly for OpenAI.
+`api_backend` defaults to `"responses"`. Set `api_backend = "chat_completions"` only for gateways that do not implement Responses.
 
 ### OpenAI (Responses API)
 
@@ -343,7 +341,7 @@ When you use `[endpoints]` with partial model overrides, Grok inherits the `base
 
 ### Auth Behavior
 
-When you set `models_base_url`, Grok uses API key auth (`Authorization: Bearer`) instead of session auth. You do not need `grok login` -- the API key is enough.
+When you set `models_base_url`, Grok uses API key auth (`Authorization: Bearer`) instead of session auth. You do not need `ezer login` -- the API key is enough.
 
 ---
 
@@ -379,13 +377,13 @@ supports_backend_search = true
 
 ```bash
 # List available models (including custom)
-grok models
+ezer models
 
 # Use in the TUI via slash command
 /model my-model
 
 # Use in headless mode
-grok -p "Hello" -m my-model
+ezer -p "Hello" -m my-model
 
 # Set as default in config.toml:
 [models]
@@ -428,7 +426,7 @@ telemetry = false
 
 ```bash
 # List available models
-grok models
+ezer models
 
 # Check config.toml for typos in [model.*] sections
 ```

@@ -192,14 +192,14 @@ fn discover_servers(cwd: &Path) -> (Vec<ConfigSourceStatus>, Vec<DiscoveredServe
 
     if user_config.is_file() {
         sources.push(ConfigSourceStatus {
-            path: "~/.grok/config.toml".to_string(),
+            path: "~/.ezer/config.toml".to_string(),
             status: ConfigSourceState::Found {
                 server_count: toml_counts.get(&user_config).copied().unwrap_or(0),
             },
         });
     } else {
         sources.push(ConfigSourceStatus {
-            path: "~/.grok/config.toml".to_string(),
+            path: "~/.ezer/config.toml".to_string(),
             status: ConfigSourceState::NotFound,
         });
     }
@@ -650,9 +650,9 @@ pub fn policy_enable_refusal(cwd: &Path, name: &str) -> Option<String> {
 /// Which config file a new MCP definition is written to.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum McpWriteScope {
-    /// `~/.grok/config.toml`.
+    /// `~/.ezer/config.toml`.
     User,
-    /// `./.grok/config.toml`.
+    /// `./.ezer/config.toml`.
     Project,
 }
 

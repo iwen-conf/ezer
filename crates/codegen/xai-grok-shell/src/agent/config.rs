@@ -3306,10 +3306,15 @@ pub(crate) fn resolve_model_list(
             models_list_url = ?cfg.endpoints.models_list_url,
             "custom models endpoint active, skipping built-in defaults",
         );
+    } else if !cfg.config_models.is_empty() {
+        tracing::info!(
+            count = cfg.config_models.len(),
+            "user [model.*] catalog present, skipping built-in Grok/xAI defaults",
+        );
     } else {
-        let defaults = default_model_entries(&cfg.endpoints);
-        tracing::debug!(count = defaults.len(), "loaded default models");
-        resolved.extend(defaults);
+        // ezer is a BYOK / custom-provider client. Do not inject the upstream
+        // Grok model catalog or point new sessions at api.x.ai.
+        tracing::debug!("skipping built-in Grok/xAI default model catalog");
     }
     if let Some(mut prefetched) = prefetched {
         tracing::debug!(count = prefetched.len(), "loaded prefetched models");
@@ -3699,7 +3704,7 @@ pub struct ModelEntryConfig {
     /// If not set, falls back to XAI_API_KEY.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub env_key: Option<EnvKeys>,
-    /// Values: "chat_completions" (default), "responses"
+    /// Values: "responses" (default), "chat_completions", "messages"
     #[serde(default)]
     pub api_backend: ApiBackend,
     #[serde(default, skip_serializing_if = "Option::is_none")]

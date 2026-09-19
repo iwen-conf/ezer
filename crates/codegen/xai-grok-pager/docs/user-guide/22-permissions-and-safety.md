@@ -21,9 +21,9 @@ Modes set a baseline. Allow, ask, and deny [rules](#configuring-permissions) sti
 | Scripts, SDKs, CI, agent servers | Always-approve; add [deny rules](#configuring-permissions) or hooks for hard limits |
 
 ```bash
-grok -p "Run the tests" --always-approve
-grok agent --always-approve stdio
-grok agent --always-approve serve --bind 127.0.0.1:2419 --secret <token>
+ezer -p "Run the tests" --always-approve
+ezer agent --always-approve stdio
+ezer agent --always-approve serve --bind 127.0.0.1:2419 --secret <token>
 ```
 
 ACP clients can set `"_meta": { "yoloMode": true }` on `session/new`. See [Agent mode](15-agent-mode.md#automation-and-sdks).
@@ -48,9 +48,9 @@ ACP clients can set `"_meta": { "yoloMode": true }` on `session/new`. See [Agent
 **CLI:**
 
 ```bash
-grok --always-approve -p "Run the test suite"
-grok --permission-mode auto
-grok agent --always-approve serve --bind 127.0.0.1:2419 --secret <token>
+ezer --always-approve -p "Run the test suite"
+ezer --permission-mode auto
+ezer agent --always-approve serve --bind 127.0.0.1:2419 --secret <token>
 ```
 
 **Config:**
@@ -78,7 +78,7 @@ Skips ordinary permission prompts so tools run without waiting for a click. `den
 Keep always-approve for automation, and add deny rules for paths or commands you never want run:
 
 ```toml
-# project .grok/config.toml
+# project .ezer/config.toml
 [ui]
 permission_mode = "always-approve"
 
@@ -90,20 +90,20 @@ deny = [
 ```
 
 ```bash
-grok -p "Deploy the service" --always-approve --deny 'Bash(rm -rf *)'
+ezer -p "Deploy the service" --always-approve --deny 'Bash(rm -rf *)'
 ```
 
 Deny always wins over allow and over always-approve’s normal pass-through. See [Configuring permissions](#configuring-permissions).
 
 ### Auto mode
 
-Reduces interactive prompts by checking many tool calls before they run. Routine local work often proceeds. A call the classifier will not auto-allow surfaces a permission prompt so you can allow or reject it. In non-interactive sessions (`grok -p`, unidentified stdio), that same call fails and is reported to the model (for example `Auto mode blocked this action …`).
+Reduces interactive prompts by checking many tool calls before they run. Routine local work often proceeds. A call the classifier will not auto-allow surfaces a permission prompt so you can allow or reject it. In non-interactive sessions (`ezer -p`, unidentified stdio), that same call fails and is reported to the model (for example `Auto mode blocked this action …`).
 
 For automation that must run tools without interactive approval, use always-approve (and deny rules if you need hard blocks) rather than auto alone.
 
 ### Disable always-approve (administrators)
 
-Organizations can prevent always-approve from being enabled via CLI, TUI, or `/always-approve`. Set this in `requirements.toml` (user-level under `~/.grok/`, or system-wide under `/etc/grok/` for enforcement users cannot remove):
+Organizations can prevent always-approve from being enabled via CLI, TUI, or `/always-approve`. Set this in `requirements.toml` (user-level under `~/.ezer/`, or system-wide under `/etc/grok/` for enforcement users cannot remove):
 
 ```toml
 [ui]
@@ -188,19 +188,19 @@ Permission rules can be global (all projects), project-scoped (one repository), 
 
 | Scope | File | Shared with teammates |
 |-------|------|-----------------------|
-| Global (all projects) | `~/.grok/config.toml` | No |
-| Project (committed) | `<project>/.grok/config.toml` | Yes (commit it) |
+| Global (all projects) | `~/.ezer/config.toml` | No |
+| Project (committed) | `<project>/.ezer/config.toml` | Yes (commit it) |
 | Project (personal) | `<project>/.claude/settings.local.json` | No (gitignore it) |
 | Interactive grants | Stored internally by Grok, per project | No |
 
 Notes on scoping:
 
-- Grok discovers a `.grok/config.toml` at every directory level from the repository root down to your working directory, so a subdirectory can add rules on top of the repo root's.
+- Grok discovers a `.ezer/config.toml` at every directory level from the repository root down to your working directory, so a subdirectory can add rules on top of the repo root's.
 - Rules from all scopes are merged into one rule set; `deny` > `ask` > `allow` applies across scopes, so a global `deny` cannot be overridden by a project `allow`.
 - Grok has no native `config.local.toml`. For personal, uncommitted rules in a project, use `.claude/settings.local.json`; Grok reads it directly (see [Claude Code Compatibility](#3-claude-code-compatibility-claudesettingsjson)).
 - Interactive "Always allow" decisions are stored outside the repository, scoped to the project (see [Interactive Approvals](#interactive-approvals-and-where-they-persist)).
 
-To stop prompts for a specific command in one project, add a narrow allow rule to that project's `.grok/config.toml` (or `.claude/settings.json`):
+To stop prompts for a specific command in one project, add a narrow allow rule to that project's `.ezer/config.toml` (or `.claude/settings.json`):
 
 ```toml
 [permission]
@@ -212,7 +212,7 @@ This approves only the listed commands. Always-approve mode, by contrast, approv
 ### 1. CLI Flags
 
 ```bash
-grok -p "Review the API changes" \
+ezer -p "Review the API changes" \
   --allow 'Bash(git *)' \
   --allow 'Bash(gh *)' \
   --allow 'Read' \
@@ -233,7 +233,7 @@ Rule syntax examples:
 
 See [Rule Matching Reference](#rule-matching-reference) for the exact matching semantics, including how chained commands and wildcards are evaluated.
 
-### 2. Native Configuration (`~/.grok/config.toml` and `.grok/config.toml`)
+### 2. Native Configuration (`~/.ezer/config.toml` and `.ezer/config.toml`)
 
 ```toml
 [permission]
@@ -251,9 +251,9 @@ The structured `tool` field accepts the lowercase names `bash`, `read`, `edit`, 
 
 Because `deny` always wins, you cannot combine these `allow` rules with a catch-all `deny` on `bash` to mean "only allow git/gh"; a `deny tool = "bash"` rule would block `git` and `gh` too. For deny-by-default, use `defaultMode: "dontAsk"` in `.claude/settings.json` or a `PreToolUse` hook (below).
 
-Rules from the global `~/.grok/config.toml` and every project `.grok/config.toml` (from the repo root down to your working directory) are merged into one rule set, alongside any `.claude/settings.json` rules.
+Rules from the global `~/.ezer/config.toml` and every project `.ezer/config.toml` (from the repo root down to your working directory) are merged into one rule set, alongside any `.claude/settings.json` rules.
 
-Managed configuration deployed by your organization also contributes `[permission]` rules: the system `/etc/grok/managed_config.toml`, and a user-level copy that Grok maintains automatically at `~/.grok/managed_config.toml`. Managed rules merge like rules from any other source, with two properties specific to managed `allow` rules: your own `deny` and `ask` rules win over a managed `allow` (severity ordering), and a catch-all managed `allow` is ignored when always-approve is locked off. For rules that users cannot edit away, use the root-owned system `/etc/grok/requirements.toml`.
+Managed configuration deployed by your organization also contributes `[permission]` rules: the system `/etc/grok/managed_config.toml`, and a user-level copy that Grok maintains automatically at `~/.ezer/managed_config.toml`. Managed rules merge like rules from any other source, with two properties specific to managed `allow` rules: your own `deny` and `ask` rules win over a managed `allow` (severity ordering), and a catch-all managed `allow` is ignored when always-approve is locked off. For rules that users cannot edit away, use the root-owned system `/etc/grok/requirements.toml`.
 
 Permission rules from every source are read once, when a session starts. Changes apply to the next session.
 
@@ -397,7 +397,7 @@ When a tool call requires approval, the permission prompt offers these choices:
 A narrower set of options remembers just the specific command, MCP tool, or web-fetch domain being prompted, for example "Always allow `cargo test`". These rows are on by default. Disable them with:
 
 ```toml
-# ~/.grok/config.toml
+# ~/.ezer/config.toml
 [ui]
 remember_tool_approvals = false
 ```
@@ -416,9 +416,9 @@ Commands on the [dangerous list](#dangerous-commands) (for example `git push` an
 
 Interactive grants are stored in Grok's own state directory under your home directory, scoped to the git repository you launched Grok in (its repository root), so a grant accepted at the repo root also applies in sessions started from a subdirectory of the same repository. Outside a git repository, grants are scoped to the launch directory, and each git worktree keeps its own grants. A grant made in one project never applies in another, grants are not written into the repository, and they are not meant to be hand-edited.
 
-To inspect or reset a project's grants, open the `sessions` subdirectory of your Grok home (the `.grok` directory under your home directory, or `$GROK_HOME`): each project directory there (URL-encoded scope root) holds a `permission.toml` (plus per-client `permission_<client>.toml` variants) listing the remembered command prefixes, globs, MCP tools/servers, web-fetch domains, and "never allow" entries. Deleting the file resets that project's grants; the next matching tool call prompts again. Treat it as read-only state — to *add* rules, use the declarative `[permission]` configuration instead.
+To inspect or reset a project's grants, open the `sessions` subdirectory of your Grok home (the `.grok` directory under your home directory, or `$EZER_HOME`): each project directory there (URL-encoded scope root) holds a `permission.toml` (plus per-client `permission_<client>.toml` variants) listing the remembered command prefixes, globs, MCP tools/servers, web-fetch domains, and "never allow" entries. Deleting the file resets that project's grants; the next matching tool call prompts again. Treat it as read-only state — to *add* rules, use the declarative `[permission]` configuration instead.
 
-Interactive grants are personal, per-machine state. For an allowlist you can review in code review and share with teammates, use declarative rules in the project's `.grok/config.toml` instead.
+Interactive grants are personal, per-machine state. For an allowlist you can review in code review and share with teammates, use declarative rules in the project's `.ezer/config.toml` instead.
 
 ---
 
@@ -430,7 +430,7 @@ A `PreToolUse` hook can enforce an allow list on the `Bash` tool that applies in
 
 ### Example: Allow Only `git` and `gh`
 
-**`~/.grok/hooks/git-gh-only.json`**
+**`~/.ezer/hooks/git-gh-only.json`**
 
 ```json
 {
@@ -451,7 +451,7 @@ A `PreToolUse` hook can enforce an allow list on the `Bash` tool that applies in
 }
 ```
 
-**`~/.grok/hooks/git-gh-only.sh`**
+**`~/.ezer/hooks/git-gh-only.sh`**
 
 ```bash
 #!/bin/sh
@@ -488,7 +488,7 @@ done
 ```
 
 ```bash
-chmod +x ~/.grok/hooks/git-gh-only.sh
+chmod +x ~/.ezer/hooks/git-gh-only.sh
 ```
 
 This hook denies every `Bash` command unless each chained segment starts with `git` or `gh`, and rejects command substitution, backgrounding, and redirection outright because it cannot verify what they execute. It works in every permission mode.
@@ -502,7 +502,7 @@ For hook installation, the JSON format, the trust model for project hooks, and o
 ### Headless git and gh Only (CI and Automation)
 
 ```bash
-grok -p "Implement the feature using only git and GitHub CLI" \
+ezer -p "Implement the feature using only git and GitHub CLI" \
   --allow 'Read' \
   --allow 'Grep' \
   --allow 'Bash(git *)' \
@@ -514,7 +514,7 @@ Install the `git-gh-only` hook above to deny every other `Bash` command. For den
 ### Read-Only Code Reviewer
 
 ```toml
-# .grok/config.toml
+# .ezer/config.toml
 [permission]
 rules = [
   { action = "allow", tool = "read" },
@@ -555,7 +555,7 @@ Recommended combination for untrusted code:
 
 1. **Prefer narrow patterns.** `Bash(git *)` grants less access than a bare `Bash` allow rule.
 2. **Combine layers.** `dontAsk`, narrow allow rules, a restrictive hook, and the sandbox each restrict independently.
-3. **Review project configuration from unfamiliar sources.** Folder trust gates project permission rules in `.grok/config.toml` and `.claude/settings.json`, plus startup loading of project instructions and skills. Headless startup with these sources requires `--trust` or a prior grant. Review them and any project hooks before trusting an unfamiliar checkout (see [10-hooks.md](10-hooks.md)).
+3. **Review project configuration from unfamiliar sources.** Folder trust gates project permission rules in `.ezer/config.toml` and `.claude/settings.json`, plus startup loading of project instructions and skills. Headless startup with these sources requires `--trust` or a prior grant. Review them and any project hooks before trusting an unfamiliar checkout (see [10-hooks.md](10-hooks.md)).
 4. **Test your policy.** With `defaultMode: "dontAsk"` set (or your `PreToolUse` hook installed), run representative commands and confirm what is blocked.
 5. **Treat the read-only command list as a convenience, not a security boundary.**
 

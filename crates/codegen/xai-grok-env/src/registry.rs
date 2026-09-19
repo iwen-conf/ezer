@@ -1,6 +1,8 @@
 pub const FIRST_PARTY_CREDENTIAL_ENV_VARS: &[&str] = &[
     "GROK_AUTH",
     "GROK_AUTH_PATH",
+    "EZER_API_KEY",
+    "OPENAI_API_KEY",
     "XAI_API_KEY",
     "GROK_DEPLOYMENT_KEY",
     "GROK_CODE_XAI_API_KEY",
