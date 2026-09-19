@@ -27,7 +27,7 @@ use tokio_stream::wrappers::ReceiverStream;
 use tokio_util::bytes::Bytes;
 use tokio_util::io::ReaderStream;
 use xai_circuit_breaker::{BreakerConfig, BreakerOpen, CircuitBreaker, Outcome, RetryPolicy};
-use xai_grok_auth::AuthCredentialProvider;
+use ezer_auth::AuthCredentialProvider;
 
 use crate::circuit_breaker_observer::TracingObserver;
 
@@ -367,14 +367,14 @@ impl StaticGrokAuth {
     }
 }
 
-impl xai_grok_auth::HttpAuth for StaticGrokAuth {
+impl ezer_auth::HttpAuth for StaticGrokAuth {
     fn apply(&self, builder: reqwest::RequestBuilder, _base_url: &str) -> reqwest::RequestBuilder {
         if let Some(ref key) = self.deployment_key {
             builder.header("Authorization", format!("Bearer {}", key))
         } else if let Some(ref token) = self.user_token {
             builder
                 .header("Authorization", format!("Bearer {}", token))
-                .header("X-XAI-Token-Auth", "xai-grok-cli")
+                .header("X-XAI-Token-Auth", "ezer-cli")
         } else {
             builder
         }
@@ -403,7 +403,7 @@ mod static_grok_auth_tests {
 /// `crate::http::shared_upload_client()`) to `with_provider`.
 fn default_upload_client() -> Client {
     #[expect(clippy::expect_used)]
-    xai_grok_extra_ca::build_reqwest_client(|builder| builder)
+    ezer_extra_ca::build_reqwest_client(|builder| builder)
         .expect("default reqwest client builds")
 }
 
@@ -444,7 +444,7 @@ impl StorageClient {
     pub fn new(proxy_base_url: &str, user_token: &str) -> Self {
         let creds = StaticGrokAuth::new(Some(user_token.to_owned()));
         let bearer = creds.wire_bearer();
-        let provider = Arc::new(xai_grok_auth::StaticAuthCredentialProvider::new(
+        let provider = Arc::new(ezer_auth::StaticAuthCredentialProvider::new(
             Box::new(creds),
             bearer,
         ));
@@ -1006,7 +1006,7 @@ impl StorageClient {
         let version = self
             .client_version
             .as_deref()
-            .unwrap_or(xai_grok_version::VERSION);
+            .unwrap_or(ezer_version::VERSION);
         let mut builder = builder.header("x-ezer-client-version", version);
 
         if let Some(id) = &self.client_identifier {
@@ -1017,7 +1017,7 @@ impl StorageClient {
             builder = builder.header("x-ezer-client-mode", mode);
         }
 
-        for (name, value) in xai_grok_otel::trace_context_headers().iter() {
+        for (name, value) in ezer_otel::trace_context_headers().iter() {
             builder = builder.header(name.clone(), value.clone());
         }
         builder
@@ -1812,9 +1812,9 @@ async fn upload_part_streaming(
         let mut request = client
             .post(&url)
             .header("Content-Type", "application/octet-stream")
-            .header("x-ezer-client-version", xai_grok_version::VERSION)
+            .header("x-ezer-client-version", ezer_version::VERSION)
             .header("Content-Length", length.to_string());
-        for (name, value) in xai_grok_otel::trace_context_headers().iter() {
+        for (name, value) in ezer_otel::trace_context_headers().iter() {
             request = request.header(name.clone(), value.clone());
         }
 

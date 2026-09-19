@@ -1,6 +1,6 @@
 //! Home-directory resolution generally: USERPROFILE-first `home_dir`, plus
-//! ezer-home (`$EZER_HOME`, deprecated `$GROK_HOME`, or `<home>/.ezer`).
-//! Shared by `xai-grok-config` and `xai-fast-worktree`.
+//! ezer-home (`$EZER_HOME`, deprecated `$EZER_HOME`, or `<home>/.ezer`).
+//! Shared by `ezer-config` and `xai-fast-worktree`.
 //!
 //! Which function to call:
 //! - [`grok_home`]: the usual choice, a cached, created path to build on.
@@ -31,7 +31,7 @@ pub const DEFAULT_DOT_DIR: &str = ".ezer";
 /// environment at the asking site.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum GrokHomeSource {
-    /// A non-empty `$EZER_HOME` or deprecated `$GROK_HOME` override.
+    /// A non-empty `$EZER_HOME` or deprecated `$EZER_HOME` override.
     EnvOverride,
     /// `<home>/.ezer` derived from the home directory.
     HomeDefault,
@@ -53,7 +53,7 @@ fn grok_home_in(home: &Path) -> PathBuf {
         .join(DEFAULT_DOT_DIR)
 }
 
-/// First non-empty of `$EZER_HOME`, then deprecated `$GROK_HOME`.
+/// First non-empty of `$EZER_HOME`, then deprecated `$EZER_HOME`.
 fn home_env_override(
     ezer_home_env: Option<&OsStr>,
     grok_home_env: Option<&OsStr>,
@@ -64,7 +64,7 @@ fn home_env_override(
         .map(PathBuf::from)
 }
 
-/// `$EZER_HOME` / `$GROK_HOME` verbatim when non-empty, else `<home>/.ezer`.
+/// `$EZER_HOME` / `$EZER_HOME` verbatim when non-empty, else `<home>/.ezer`.
 /// Used as-is (not canonicalized) so literal prefix checks and symlink guards still see original components.
 /// Never falls back to `~/.ezer`.
 fn resolve_grok_home_from(
@@ -92,7 +92,7 @@ pub fn resolve_grok_home_with_source() -> Option<(PathBuf, GrokHomeSource)> {
     )
 }
 
-/// The default `<home>/.ezer`, used when `$EZER_HOME` / `$GROK_HOME` are unset.
+/// The default `<home>/.ezer`, used when `$EZER_HOME` / `$EZER_HOME` are unset.
 pub fn default_grok_home() -> PathBuf {
     grok_home_in(&home_dir().unwrap_or_else(|| PathBuf::from(".")))
 }

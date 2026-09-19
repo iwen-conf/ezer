@@ -4,7 +4,7 @@
 //! sibling `-types` crate for WASM/no-tokio consumers.
 //!
 //! All variants are `#[non_exhaustive]`; add additively. The workspace
-//! translator (in `xai-grok-workspace`) maps these to
+//! translator (in `ezer-workspace`) maps these to
 //! `WorkspaceEvent`s and enriches `GitOperationCompleted { head_changed:
 //! true }` with `commit + branch + vcs` via a git shell-out — that I/O
 //! belongs at the workspace layer, not on the OS-watcher hot path.
@@ -37,7 +37,7 @@ pub enum FsEvent {
     GitOperationCompleted { head_changed: bool },
 }
 
-/// Aligned with `xai_grok_workspace_types::FsEventKind` (identity map at
+/// Aligned with `ezer_workspace_types::FsEventKind` (identity map at
 /// the workspace boundary). `notify::EventKind::{Access, Any, Other}` are
 /// filtered upstream and never surface here.
 #[derive(

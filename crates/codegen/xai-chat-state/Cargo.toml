@@ -18,8 +18,8 @@ tokio-util = { workspace = true }
 tracing = { workspace = true }
 # `CompactionDetail`, embedded in `CompactionMode::Segments`.
 xai-compaction-transcript = { workspace = true }
-xai-grok-compaction = { path = "../../common/xai-grok-compaction" }
-xai-grok-sampling-types = { path = "../xai-grok-sampling-types" }
+ezer-compaction = { path = "../../common/ezer-compaction" }
+ezer-sampling-types = { path = "../ezer-sampling-types" }
 xai-token-estimation = { workspace = true }
 
 [dev-dependencies]

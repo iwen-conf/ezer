@@ -155,7 +155,7 @@ pub(crate) async fn build_s3_client(
 fn extra_ca_tls_context() -> anyhow::Result<aws_smithy_http_client::tls::TlsContext> {
     use aws_smithy_http_client::tls::{TlsContext, TrustStore};
     let mut trust_store = TrustStore::default();
-    for pem in xai_grok_extra_ca::extra_root_pems() {
+    for pem in ezer_extra_ca::extra_root_pems() {
         trust_store = trust_store.with_pem_certificate(pem.clone());
     }
     TlsContext::builder()

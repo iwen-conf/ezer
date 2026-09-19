@@ -4,7 +4,7 @@ use std::collections::BTreeSet;
 use std::num::NonZeroU64;
 
 use serde::{Deserialize, Serialize};
-use xai_grok_sampling_types::{ConversationItem, SamplingConfig};
+use ezer_sampling_types::{ConversationItem, SamplingConfig};
 
 /// Canonical marker for an injected memory-context block. Shared by emitter and upsert/detection.
 /// A drift would silently break dedup and let blocks accumulate in the prompt prefix.
@@ -200,7 +200,7 @@ mod tests {
 
     #[test]
     fn snapshot_round_trips_with_data() {
-        use xai_grok_sampling_types::ConversationItem;
+        use ezer_sampling_types::ConversationItem;
 
         let snapshot = ChatStateSnapshot {
             conversation: vec![

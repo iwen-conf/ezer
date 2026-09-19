@@ -25,7 +25,7 @@ use tokio::io::{AsyncRead, ReadBuf};
 use tokio::sync::{Notify, mpsc, oneshot};
 use tracing::Instrument;
 use xai_circuit_breaker::{Disposition, RetryPolicy};
-use xai_grok_auth::AuthCredentialProvider;
+use ezer_auth::AuthCredentialProvider;
 /// Resolves upload credentials at upload time, plus hooks for refresh-aware creds and 401 attribution.
 /// The agent delegates to AuthManager so queued items do not retry with expired tokens.
 /// Optional hooks default to `None` so existing implementors keep compiling.
@@ -232,7 +232,7 @@ impl UploadSource {
 pub const QUEUE_ITEM_SIDECAR_SCHEMA_VERSION: u32 = 1;
 /// Sidecar manifest written as `<temp>.meta.json` next to a queue temp file.
 /// Carries everything a fresh process needs to re-enqueue after restart — the temp name alone is lossy.
-/// Read by `xai_grok_workspace::recovery`.
+/// Read by `ezer_workspace::recovery`.
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct QueueItemSidecar {
     /// Manifest schema version (see [`QUEUE_ITEM_SIDECAR_SCHEMA_VERSION`]).

@@ -1,6 +1,6 @@
 //! Cache-aware byte budgeting for inline images on owned request histories.
 
-use xai_grok_sampling_types::{ContentPart, ConversationItem};
+use ezer_sampling_types::{ContentPart, ConversationItem};
 
 /// Replaces an inline image evicted to keep the request body under the proxy's 50 MB limit.
 /// Phrased so the model treats the image as gone — a silent strip otherwise induces hallucination.
@@ -293,7 +293,7 @@ fn evict_images_to_budget(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use xai_grok_sampling_types::ToolCall;
+    use ezer_sampling_types::ToolCall;
 
     fn image(url: impl Into<String>) -> ContentPart {
         ContentPart::Image {

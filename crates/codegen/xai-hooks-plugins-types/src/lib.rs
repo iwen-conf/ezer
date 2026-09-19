@@ -2,7 +2,7 @@
 //!
 //! This crate defines the wire format for `x.ai/hooks/*` and `x.ai/plugins/*`
 //! ACP extension methods. It is dependency-free (only `serde`) so both
-//! `xai-grok-shell` and `xai-grok-pager` can depend on it without pulling
+//! `ezer-shell` and `ezer-pager` can depend on it without pulling
 //! in domain logic.
 //!
 //! Conversion from domain types (`HookSpec`, `LoadedPlugin`) to these DTOs
@@ -16,7 +16,7 @@ use serde::{Deserialize, Serialize};
 // Enums
 // ---------------------------------------------------------------------------
 
-/// Maps from `PluginScope` in `xai-grok-agent`. Variant renames: source `CliOverride` -> DTO `Cli` (matches Display
+/// Maps from `PluginScope` in `ezer-agent`. Variant renames: source `CliOverride` -> DTO `Cli` (matches Display
 /// output "cli"); source `ConfigPath` -> DTO `Config` (matches Display output "config").
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -27,7 +27,7 @@ pub enum PluginScope {
     Config,
 }
 
-/// The concrete discovery source a plugin came from. Maps from `PluginOrigin` in `xai-grok-agent`. Optional on
+/// The concrete discovery source a plugin came from. Maps from `PluginOrigin` in `ezer-agent`. Optional on
 /// [`PluginInfo`] so older shells (which don't send it) deserialize to `None`.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
@@ -38,7 +38,7 @@ pub enum PluginOrigin {
     ProjectGrok,
     /// Project `.claude/plugins/`.
     ProjectClaude,
-    /// `$GROK_HOME/plugins/`.
+    /// `$EZER_HOME/plugins/`.
     UserGrok,
     /// `~/.claude/plugins/`.
     UserClaude,
@@ -71,7 +71,7 @@ pub enum PluginOrigin {
     Unknown,
 }
 
-/// Maps from `HookEventName` in `xai-grok-hooks`. The source type's `SubagentEnd` variant (backward-compat alias) is
+/// Maps from `HookEventName` in `ezer-hooks`. The source type's `SubagentEnd` variant (backward-compat alias) is
 /// collapsed into `SubagentStop` during conversion.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]

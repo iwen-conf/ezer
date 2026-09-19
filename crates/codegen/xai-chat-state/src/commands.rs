@@ -3,7 +3,7 @@
 use std::collections::BTreeSet;
 
 use tokio::sync::oneshot;
-use xai_grok_sampling_types::{
+use ezer_sampling_types::{
     ConversationItem, ConversationRequest, DanglingToolCallReason, SamplingConfig, TokenUsage,
     ToolSpec, TraceContext,
 };
