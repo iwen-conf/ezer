@@ -11,7 +11,7 @@ Settings resolve highest-priority first:
 1. **CLI flags** (e.g. `--yolo`, `--model`, `--sandbox`)
 2. **Environment variables** (e.g. `XAI_API_KEY`, `GROK_MEMORY`)
 3. **`requirements.toml` / MDM** (org-enforced; clamps every config layer below, including the overlay)
-4. **`GROK_CONFIG` / `GROK_CONFIG_PATH` overlay** (above `config.toml` and managed, below `requirements.toml` / MDM)
+4. **`EZER_CONFIG` / `EZER_CONFIG_PATH` overlay** (aliases: `GROK_CONFIG` / `GROK_CONFIG_PATH`; above `config.toml` and managed, below `requirements.toml` / MDM)
 5. **config.toml** (`~/.ezer/config.toml`)
 6. **`managed_config.toml`** (org-deployed defaults; below `config.toml`)
 7. **Built-in defaults**
@@ -20,17 +20,17 @@ Within the config-file tier, the layers merge lowest-to-highest: `managed_config
 
 `GROK_CONFIG` / `GROK_CONFIG_PATH` (tier 4) are config **overlays**: a merged config layer, not direct-setting environment variables like `XAI_API_KEY` (tier 2). They set config keys (subject to the allowlist below), so read them as part of the config-file tier rather than the env-var tier.
 
-### Injecting config with `GROK_CONFIG`
+### Injecting config with `EZER_CONFIG`
 
-A harness or ACP client that launches `grok agent stdio` can inject settings without writing a `config.toml` or relocating `$GROK_HOME`:
+A harness or ACP client that launches `ezer agent stdio` can inject settings without writing a `config.toml` or relocating `$EZER_HOME`:
 
-- **`GROK_CONFIG`**: an inline JSON object overlay.
-- **`GROK_CONFIG_PATH`**: an *additional* file overlay (not a replacement for `config.toml`), a JSON or TOML file read by its extension (`.json` → JSON, else TOML). `GROK_CONFIG` wins if both are set. An empty `GROK_CONFIG` is treated as unset, and a malformed one logs a warning and falls through to `GROK_CONFIG_PATH`.
+- **`EZER_CONFIG`** (alias `GROK_CONFIG`): an inline JSON object overlay.
+- **`EZER_CONFIG_PATH`** (alias `GROK_CONFIG_PATH`): an *additional* file overlay (not a replacement for `config.toml`), a JSON or TOML file read by its extension (`.json` → JSON, else TOML). The inline env wins if both are set. An empty overlay is treated as unset, and a malformed one logs a warning and falls through to the path overlay.
 
 The overlay is **deep-merged** on top of your `config.toml` (it overrides only the keys it sets), placed above the user/managed layers but **below** `requirements.toml` / MDM so an enterprise pin still wins. A malformed blob is ignored with a warning. This mirrors `CODEX_CONFIG` from the `codex-acp` adapter (a JSON object merged into the session config); Grok is ACP-native, so the overlay lives in the agent itself. It only affects settings read from the merged config, and it is **not** a permission-escalation path. The overlay is confined, fail-closed, to an **allowlist** of soft settings (`models`, `features`, a narrowed `toolset`, and a `shell_environment_policy` limited to its filter fields, which select among env names the launcher already controls and cannot inject an env value into tool subprocesses); every other table is dropped at the choke point, so the overlay cannot spawn commands, set auth policy, redirect network traffic, elevate trust, or add a discovery source. Even on the allowlisted settings, a specific set of security gates read the raw disk layers rather than the overlay. The `ConfigLayers::env_overlay` rustdoc is the canonical list of what the overlay can and cannot reach and which gates read it overlay-free; see also the [internal environment-variables reference](../internal/22-environment-variables.md). Use `GROK_DEFAULT_SELECTED_PERMISSION` for headless permission control. For example, to set the default reasoning effort:
 
 ```bash
-GROK_CONFIG='{"models": {"default_reasoning_effort": "high"}}' grok agent stdio
+GROK_CONFIG='{"models": {"default_reasoning_effort": "high"}}' ezer agent stdio
 ```
 
 ---
@@ -167,7 +167,7 @@ Toggle it at runtime with `/vim-mode`, or from `/settings` → **Vim scrollback 
 
 #### Screen mode
 
-`[ui] screen_mode` is the **default render mode** for plain `grok` launches. Set it from `/settings` → **Default screen mode** (restart required) or edit `config.toml` by hand — both write the file. CLI flags (`--minimal` / `--fullscreen`) and slash commands (`/minimal` / `/fullscreen`) are session-scoped and do **not** write this key; after a slash switch, the reverse command returns you for that session only.
+`[ui] screen_mode` is the **default render mode** for plain `ezer` launches. Set it from `/settings` → **Default screen mode** (restart required) or edit `config.toml` by hand — both write the file. CLI flags (`--minimal` / `--fullscreen`) and slash commands (`/minimal` / `/fullscreen`) are session-scoped and do **not** write this key; after a slash switch, the reverse command returns you for that session only.
 
 | Value | Behavior |
 |-------|----------|
@@ -305,9 +305,9 @@ Remote (HTTP/SSE) servers receive a default `User-Agent: grok-cli/<version>` hea
 valid `User-Agent` entry in `headers` overrides it (Figma servers receive bare
 `grok-cli`). See [MCP servers](07-mcp-servers.md) for details.
 
-MCP servers can also be set per-project in `.grok/config.toml`. Project-scoped config contributes `[mcp_servers]`, `[plugins]`, and `[permission]` rules; every other section loads only from `~/.grok/config.toml`.
+MCP servers can also be set per-project in `.ezer/config.toml`. Project-scoped config contributes `[mcp_servers]`, `[plugins]`, and `[permission]` rules; every other section loads only from `~/.ezer/config.toml`.
 
-Priority for `[mcp_servers]` and `[plugins]`: `.grok/config.toml` (current dir) > `<repo-root>/.grok/config.toml` > `~/.grok/config.toml`. `[permission]` rules aren't overridden by priority — they merge across all files with `deny` > `ask` > `allow` (see [22-permissions-and-safety.md](22-permissions-and-safety.md)).
+Priority for `[mcp_servers]` and `[plugins]`: `.ezer/config.toml` (current dir) > `<repo-root>/.ezer/config.toml` > `~/.ezer/config.toml`. `[permission]` rules aren't overridden by priority — they merge across all files with `deny` > `ask` > `allow` (see [22-permissions-and-safety.md](22-permissions-and-safety.md)).
 
 ### Memory
 
@@ -360,14 +360,14 @@ To pin the model a subagent uses, set its entry under `[subagents.models]`.
 
 `/goal` has two drivers, chosen by the background-workflows setting. With workflows enabled, the host-owned workflow engine evaluates rounds and drives completion verification; with them disabled, `/goal` falls back to the legacy model-facing `update_goal` tool. Whether `/goal` is available at all is a separate switch (the goal feature setting).
 
-Background workflows — the `workflow` tool, named `.grok/workflows/*.rhai` scripts, `/deep-research`, and `/workflow` launches — are **on by default**. Disable with config, env, or remote settings.
+Background workflows — the `workflow` tool, named `.ezer/workflows/*.rhai` scripts, `/deep-research`, and `/workflow` launches — are **on by default**. Disable with config, env, or remote settings.
 
 ```toml
 [workflows]
 enabled = false                       # disable background workflows (or GROK_WORKFLOWS=0)
 ```
 
-Project workflows are discovered from `<repo-root>/.grok/workflows/`; user workflows from `~/.grok/workflows/`. Discovery and invocation key off the script's `meta.name`, so keep each filename aligned with its `meta.name`. Built-ins win over project names, and project names win over user names, so keep names unique across scopes.
+Project workflows are discovered from `<repo-root>/.ezer/workflows/`; user workflows from `~/.ezer/workflows/`. Discovery and invocation key off the script's `meta.name`, so keep each filename aligned with its `meta.name`. Built-ins win over project names, and project names win over user names, so keep names unique across scopes.
 
 Each launch gets a session-unique display handle such as `deep-research-2`. That handle is what you see in the `/workflow runs` dashboard and pass to `/workflow pause`, `resume`, or `stop` — the internal run IDs never surface in commands. A numbered handle isn't a reusable definition name, so the dashboard disables **save** until you pick a new unique `meta.name` and save the edited script yourself. See [Slash Commands](04-slash-commands.md) for examples.
 
@@ -411,7 +411,7 @@ For Claude and Cursor, `rules` and `agents` are independent: turning off named i
 
 Each cell can be set via environment variable or `config.toml`; see the environment-variables reference for the names. Resolution: env var > config.toml > default (on).
 
-`grok inspect` reports cells that still need session-start resolution as `?` until a value is available; cells with an explicit env or TOML value use that value. Affected discovery entries report `compatibilityStatus: "unresolved"` in JSON and `[compat unresolved]` in human output.
+`ezer inspect` reports cells that still need session-start resolution as `?` until a value is available; cells with an explicit env or TOML value use that value. Affected discovery entries report `compatibilityStatus: "unresolved"` in JSON and `[compat unresolved]` in human output.
 
 ### Plugins
 
@@ -425,7 +425,7 @@ disabled = ["user/a1b2c3d4/noisy-plugin"]
 
 `[hints]` holds small persisted UI preferences: remembered answers and modal layout. Grok writes these for you as you use the TUI, but you can edit or delete them by hand; removing a key restores the default.
 
-`[hints]` is read from the **effective config merge**, with the usual precedence: system managed → user `managed_config.toml` → user `config.toml` → user `requirements.toml` → system `requirements.toml`, higher layers winning. The TUI only ever **writes** these to your user `~/.grok/config.toml`.
+`[hints]` is read from the **effective config merge**, with the usual precedence: system managed → user `managed_config.toml` → user `config.toml` → user `requirements.toml` → system `requirements.toml`, higher layers winning. The TUI only ever **writes** these to your user `~/.ezer/config.toml`.
 
 ```toml
 [hints]
@@ -467,7 +467,7 @@ items = ["action-required", "spinner", "activity", "session-name", "grok"]
 | `sleep_prevention` | bool | `true` | Keep the display awake while the agent works (macOS/Linux). |
 | `progress_bar` | bool | `true` | Show a progress indicator in the terminal tab (OSC 9;4). |
 | `title.enabled` | bool | `true` | Set the terminal title to reflect agent state. |
-| `title.items` | array | (see above) | Items shown in the title bar. Options: `action-required`, `spinner`, `activity`, `session-name`, `cwd`, `model`, `turn-timer`, `grok`. |
+| `title.items` | array | (see above) | Items shown in the title bar. Options: `action-required`, `spinner`, `activity`, `session-name`, `cwd`, `model`, `turn-timer`, `ezer`. |
 
 #### Terminal support matrix
 
@@ -615,13 +615,13 @@ required_maximum_version = "0.2.200" # refuse to start above this
 - `required_minimum_version` (`GROK_REQUIRED_MINIMUM_VERSION`) and
   `required_maximum_version` (`GROK_REQUIRED_MAXIMUM_VERSION`) are hard bounds. If
   the running version is outside the range, the CLI exits at startup and instructs
-  the user to install an approved version. `grok update` and `grok --version` keep
+  the user to install an approved version. `ezer update` and `ezer --version` keep
   working so an out-of-range install can recover.
 - Bounds resolve across config layers by tightening only: a floor takes the
   highest value and a ceiling the lowest, so a managed bound can't be loosened,
   and a user or environment bound can't cancel a managed hard bound. An invalid
   value is ignored so a bad policy can't block startup.
-- An explicit `grok update --version X` is allowed above the ceiling, to recover
+- An explicit `ezer update --version X` is allowed above the ceiling, to recover
   from a too-new install, and rejected below the hard floor.
 
 ### Enterprise deployment
@@ -654,7 +654,7 @@ telemetry = false
 
 ## pager.toml (appearance configuration)
 
-Location: `~/.grok/pager.toml`. This controls the TUI's look and feel. Changes apply on restart.
+Location: `~/.ezer/pager.toml`. This controls the TUI's look and feel. Changes apply on restart.
 
 ### Terminal
 
@@ -801,7 +801,7 @@ The key ones. See the README for the complete list.
 
 | Variable | Description |
 |----------|-------------|
-| `GROK_HOME` | Override config directory (default: `~/.grok`) |
+| `EZER_HOME` | Override config directory (default: `~/.ezer`). Deprecated alias: `GROK_HOME`. |
 | `GROK_RESPECT_GITIGNORE` | Force gitignore filtering on (`1`) or off (`0`); overrides `[tools] respect_gitignore` |
 
 ### Telemetry
@@ -821,28 +821,28 @@ The key ones. See the README for the complete list.
 
 | Path | Description |
 |------|-------------|
-| `~/.grok/config.toml` | Main configuration file |
-| `~/.grok/pager.toml` | TUI appearance configuration |
-| `~/.grok/auth.json` | Authentication credentials (auto-managed) |
-| `~/.grok/sessions/` | Persisted sessions (organized by working directory) |
-| `~/.grok/memory/` | Cross-session memory files and index |
-| `~/.grok/skills/` | User-scoped skill definitions |
-| `~/.grok/plugins/` | User-scoped plugins |
-| `~/.grok/agents/` | User-scoped agent definitions |
-| `~/.grok/lsp.json` | LSP server configuration (user-scoped) |
-| `~/.grok/logs/` | Internal log files (e.g. `unified.jsonl`, MCP server logs) |
-| `.grok/config.toml` | Project-scoped MCP servers, plugins, and permission rules |
-| `.grok/skills/` | Project-scoped skill definitions |
-| `.grok/plugins/` | Project-scoped plugins |
-| `.grok/agents/` | Project-scoped agent definitions |
-| `.grok/hooks/` | Project-scoped hooks |
-| `.grok/lsp.json` | LSP server configuration |
+| `~/.ezer/config.toml` | Main configuration file |
+| `~/.ezer/pager.toml` | TUI appearance configuration |
+| `~/.ezer/auth.json` | Authentication credentials (auto-managed) |
+| `~/.ezer/sessions/` | Persisted sessions (organized by working directory) |
+| `~/.ezer/memory/` | Cross-session memory files and index |
+| `~/.ezer/skills/` | User-scoped skill definitions |
+| `~/.ezer/plugins/` | User-scoped plugins |
+| `~/.ezer/agents/` | User-scoped agent definitions |
+| `~/.ezer/lsp.json` | LSP server configuration (user-scoped) |
+| `~/.ezer/logs/` | Internal log files (e.g. `unified.jsonl`, MCP server logs) |
+| `.ezer/config.toml` | Project-scoped MCP servers, plugins, and permission rules |
+| `.ezer/skills/` | Project-scoped skill definitions |
+| `.ezer/plugins/` | Project-scoped plugins |
+| `.ezer/agents/` | Project-scoped agent definitions |
+| `.ezer/hooks/` | Project-scoped hooks |
+| `.ezer/lsp.json` | LSP server configuration |
 
 ### How Grok saves `config.toml`
 
-Writes to **`~/.grok/config.toml`** (`/settings`, `/vim-mode`, and other user-config saves) follow a leaf symlink. The atomic rename writes the referent (a file in your dotfiles repo). The link stays a link. If the link is dangling, the write creates the referent as a regular file.
+Writes to **`~/.ezer/config.toml`** (`/settings`, `/vim-mode`, and other user-config saves) follow a leaf symlink. The atomic rename writes the referent (a file in your dotfiles repo). The link stays a link. If the link is dangling, the write creates the referent as a regular file.
 
-Writes to a **project** `.grok/config.toml` (MCP / plugin / permission edits) **replace** a leaf symlink with a regular file. That keeps a later save from following the link out of the repository.
+Writes to a **project** `.ezer/config.toml` (MCP / plugin / permission edits) **replace** a leaf symlink with a regular file. That keeps a later save from following the link out of the repository.
 
 A user `config.toml` that cannot be parsed is not overwritten. Fix the syntax (or restore a backup) and save again.
 
@@ -850,16 +850,16 @@ A user `config.toml` that cannot be parsed is not overwritten. Fix the syntax (o
 
 ## Project-scoped configuration
 
-Some settings can be set per-project by placing files in `.grok/` inside your repository:
+Some settings can be set per-project by placing files in `.ezer/` inside your repository:
 
 | File | What it configures |
 |------|--------------------|
-| `.grok/config.toml` | MCP servers, plugins, permission rules, and the `[mcp] max_output_bytes` tool-result cap (other sections load only from `~/.grok/config.toml`) |
-| `.grok/skills/` | Project-specific skills |
-| `.grok/hooks/` | Project-specific lifecycle hooks |
-| `.grok/agents/` | Project-specific agent definitions |
-| `.grok/lsp.json` | LSP server configuration |
-| `.grok/sandbox.toml` | Custom sandbox profiles |
+| `.ezer/config.toml` | MCP servers, plugins, permission rules, and the `[mcp] max_output_bytes` tool-result cap (other sections load only from `~/.ezer/config.toml`) |
+| `.ezer/skills/` | Project-specific skills |
+| `.ezer/hooks/` | Project-specific lifecycle hooks |
+| `.ezer/agents/` | Project-specific agent definitions |
+| `.ezer/lsp.json` | LSP server configuration |
+| `.ezer/sandbox.toml` | Custom sandbox profiles |
 | `AGENTS.md` | Project instructions (system prompt) |
 
 Project-scoped MCP servers override global ones with the same name (full replacement, not a merge).
@@ -872,14 +872,14 @@ Language servers power passive diagnostics and the optional `lsp` tool (see the 
 
 | Source | Location | Scope |
 |--------|----------|-------|
-| User | `~/.grok/lsp.json` | All projects |
-| Project | `.grok/lsp.json` | Current repository |
+| User | `~/.ezer/lsp.json` | All projects |
+| Project | `.ezer/lsp.json` | Current repository |
 | Plugin | A trusted plugin's `.lsp.json` file, or an inline `lspServers` block in its `plugin.json` | Wherever the plugin is enabled |
 
 When the same server name comes from more than one source, it resolves highest-priority first:
 
-1. **Project** — `.grok/lsp.json`
-2. **User** — `~/.grok/lsp.json`
+1. **Project** — `.ezer/lsp.json`
+2. **User** — `~/.ezer/lsp.json`
 3. **Plugins** — file-based `.lsp.json`, then inline `lspServers`, in plugin load order
 
 Project and user entries replace lower-priority ones of the same name. Plugin entries only add servers whose names aren't already defined by a local file, so a local `lsp.json` always wins over a plugin. Plugin LSP servers load only after the plugin is trusted (see [Plugins](09-plugins.md)).

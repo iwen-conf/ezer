@@ -39,7 +39,7 @@ Grok also scans home-level rules, regardless of where it starts. These roots are
 
 | Location | Notes |
 |----------|-------|
-| `$GROK_HOME/rules/` (default `~/.grok/rules/`) | Always scanned; applies to all projects |
+| `$EZER_HOME/rules/` (default `~/.ezer/rules/`) | Always scanned; applies to all projects |
 | `~/.claude/rules/` | Controlled by `compat.claude.rules` |
 | `~/.cursor/rules/` | Controlled by `compat.cursor.rules` |
 | Each entry of `[paths] extra_rule_dirs` | Any absolute directory you list in `config.toml`; `~` is expanded |
@@ -51,7 +51,7 @@ Home rules load first, in the table order, followed by project files from repo r
 extra_rule_dirs = ["~/team-rules", "/opt/company/grok-rules"]
 ```
 
-Every `*.md` directly inside a listed directory is loaded as a rule (subdirectories are not scanned), in every project and regardless of folder trust, the repository's `.gitignore`, or the compatibility cells; the model receives them as user rules and `grok inspect` lists them as `global`. Entries must be absolute or start with `~/`; a relative or missing entry loads nothing. `/import-claude` writes your existing `~/.claude/rules/` here so it keeps loading after the Claude compatibility scan is turned off. The vendor `rules` cells control both home and project rules independently of the corresponding `agents` cells. Claude's `agents` cell controls named files under `~/.claude/` and project `<dir>/.claude/CLAUDE*.md`; generic top-level names such as `Claude.md`, `CLAUDE.md`, and `CLAUDE.local.md` remain recognized. See [Configuration](05-configuration.md#harness-compatibility).
+Every `*.md` directly inside a listed directory is loaded as a rule (subdirectories are not scanned), in every project and regardless of folder trust, the repository's `.gitignore`, or the compatibility cells; the model receives them as user rules and `ezer inspect` lists them as `global`. Entries must be absolute or start with `~/`; a relative or missing entry loads nothing. `/import-claude` writes your existing `~/.claude/rules/` here so it keeps loading after the Claude compatibility scan is turned off. The vendor `rules` cells control both home and project rules independently of the corresponding `agents` cells. Claude's `agents` cell controls named files under `~/.claude/` and project `<dir>/.claude/CLAUDE*.md`; generic top-level names such as `Claude.md`, `CLAUDE.md`, and `CLAUDE.local.md` remain recognized. See [Configuration](05-configuration.md#harness-compatibility).
 
 ---
 
@@ -59,7 +59,7 @@ Every `*.md` directly inside a listed directory is loaded as a rule (subdirector
 
 Grok scans for project rules in this order:
 
-1. **Home rules**: `$GROK_HOME`, then enabled `~/.claude/` and `~/.cursor/` sources, then `[paths] extra_rule_dirs`
+1. **Home rules**: `$EZER_HOME`, then enabled `~/.claude/` and `~/.cursor/` sources, then `[paths] extra_rule_dirs`
 2. **Repo rules**: If inside a git repo, every directory from the repo root down to the current working directory (inclusive)
 3. **CWD-only**: If not inside a git repo, only the current working directory
 
@@ -171,7 +171,7 @@ my-monorepo/
 To add rules for a single session without editing files, pass `--rules` (alias `--append-system-prompt`):
 
 ```bash
-grok --rules "Always use TypeScript. Prefer functional components."
+ezer --rules "Always use TypeScript. Prefer functional components."
 ```
 
 Grok appends this text to the session's system prompt. Use it for session-specific customization.
@@ -201,16 +201,16 @@ As top-level instruction files, Grok discovers only the recognized filenames lis
 
 ## The .grok/ Project Directory
 
-Beyond AGENTS.md files, the `.grok/` directory in your project root can contain additional project-level configuration:
+Beyond AGENTS.md files, the `.ezer/` directory in your project root can contain additional project-level configuration:
 
 | Path | Purpose |
 |------|---------|
-| `.grok/config.toml` | Project-scoped MCP servers, plugins, and permission rules (other settings load only from `~/.grok/config.toml`) |
-| `.grok/skills/` | Project-scoped skill definitions |
-| `.grok/plugins/` | Project-scoped plugins |
-| `.grok/agents/` | Project-scoped agent definitions |
-| `.grok/hooks/` | Project-scoped lifecycle hooks |
-| `.grok/lsp.json` | LSP server configuration |
+| `.ezer/config.toml` | Project-scoped MCP servers, plugins, and permission rules (other settings load only from `~/.ezer/config.toml`) |
+| `.ezer/skills/` | Project-scoped skill definitions |
+| `.ezer/plugins/` | Project-scoped plugins |
+| `.ezer/agents/` | Project-scoped agent definitions |
+| `.ezer/hooks/` | Project-scoped lifecycle hooks |
+| `.ezer/lsp.json` | LSP server configuration |
 
 These are all optional. See the respective guides for details on each.
 
@@ -218,10 +218,10 @@ These are all optional. See the respective guides for details on each.
 
 ## Inspecting Loaded Rules
 
-Use `grok inspect` to see all loaded project instructions:
+Use `ezer inspect` to see all loaded project instructions:
 
 ```bash
-grok inspect
+ezer inspect
 ```
 
 This shows each project instruction file it finds, with its path and approximate token count. Use it to confirm Grok picks up your rules.
@@ -238,7 +238,7 @@ This shows each project instruction file it finds, with its path and approximate
 
 4. **Use subdirectory scoping for large repos.** Different parts of a monorepo may have different conventions. Use per-directory AGENTS.md to scope rules appropriately.
 
-5. **Version control your rules.** Commit AGENTS.md to the repository so the whole team benefits. User-specific overrides belong in `~/.grok/` (global rules).
+5. **Version control your rules.** Commit AGENTS.md to the repository so the whole team benefits. User-specific overrides belong in `~/.ezer/` (global rules).
 
 6. **Do not duplicate documentation.** AGENTS.md should contain actionable instructions, not a copy of your project's README. Link to external docs if needed.
 

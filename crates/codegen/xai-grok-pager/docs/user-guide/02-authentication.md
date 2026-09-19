@@ -39,41 +39,42 @@ when only an API key is configured.
 
 ### Credential storage
 
-Tokens in `~/.grok/auth.json` (and MCP OAuth tokens in `~/.grok/mcp_credentials.json`) are written with owner-only permissions (`0600` on Unix). Anyone with filesystem access to those paths can use the credentials, so:
+Tokens in `~/.ezer/auth.json` (and MCP OAuth tokens in `~/.ezer/mcp_credentials.json`) are written with owner-only permissions (`0600` on Unix). Anyone with filesystem access to those paths can use the credentials, so:
 
 - Prefer full-disk encryption (FileVault, BitLocker, LUKS, or equivalent).
 - Do not copy `auth.json` or `mcp_credentials.json` into shared directories, tickets, or chat.
-- On multi-user hosts, keep `$HOME` / `$GROK_HOME` private to your account.
+- On multi-user hosts, keep `$HOME` / `$EZER_HOME` private to your account.
 
 ### Re-authenticate
 
 To switch accounts or resolve an authentication problem, run:
 
 ```bash
-grok login
+ezer login
 ```
 
-Running `grok login` starts the sign-in flow again, replacing your cached session. By default, it opens your browser and signs in through SpaceXAI OAuth at `auth.x.ai`. Pass a flag to select a different flow:
+`ezer login` is optional and only useful when you have configured enterprise OIDC or an external auth provider. It is not required for a local API key.
 
 | Flag | Description |
 |------|-------------|
-| `--oauth` | Sign in through SpaceXAI OAuth at `auth.x.ai`. This is the default, so the flag is optional. |
+| `--oauth` | Sign in through a configured OIDC issuer (not required for BYOK). |
 | `--device-auth` (alias `--device-code`) | Sign in with the device-code flow for headless or remote environments. |
 
-To sign out, run `grok logout`. It takes no flags and clears your cached credentials.
+To clear optional cached credentials, run `ezer logout`.
 
 ---
 
 ## API Key
 
-For CI/CD, automation, or environments without browser access, use an API key from [console.x.ai](https://console.x.ai):
+For CI/CD, automation, or environments without a browser, set a key in config or the environment:
 
 ```bash
-export XAI_API_KEY="xai-..."
-grok
+export EZER_API_KEY="sk-..."
+# or: export OPENAI_API_KEY="sk-..."
+ezer
 ```
 
-Grok uses the API key as a fallback when no session token is active. If you have already signed in interactively, the stored session token takes precedence. To fall back to the API key, run `grok logout` or delete `~/.grok/auth.json`.
+If a leftover session token is present in `~/.ezer/auth.json`, it can take precedence over the API key. Run `ezer logout` or delete that file to use the key alone.
 
 ---
 
@@ -84,7 +85,7 @@ Authenticate developers through your own Identity Provider (IdP) -- such as Okta
 ### 1. Register a public client in your IdP
 
 - Grant type: Authorization Code with PKCE (Proof Key for Code Exchange)
-- Redirect URI: `http://127.0.0.1/callback` -- a loopback address. Grok binds a random port at sign-in time, and most IdPs treat the loopback redirect as port-agnostic per [RFC 8252](https://tools.ietf.org/html/rfc8252).
+- Redirect URI: `http://127.0.0.1/callback` -- a loopback address. ezer binds a random port at sign-in time, and most IdPs treat the loopback redirect as port-agnostic per [RFC 8252](https://tools.ietf.org/html/rfc8252).
 - No client secret. PKCE replaces it.
 
 ### 2. Configure the CLI
@@ -92,7 +93,7 @@ Authenticate developers through your own Identity Provider (IdP) -- such as Okta
 Via config file:
 
 ```toml
-# ~/.grok/config.toml
+# ~/.ezer/config.toml
 [grok_com_config.oidc]
 issuer = "https://acme.okta.com"
 client_id = "0oa1b2c3d4e5f6g7h8i9"
@@ -111,9 +112,9 @@ You can also override the API endpoint to point at your own proxy:
 export GROK_CLI_CHAT_PROXY_BASE_URL="https://grok-proxy.acme.com/v1"
 ```
 
-### 3. Run `grok`
+### 3. Run `ezer`
 
-The CLI discovers endpoints via `{issuer}/.well-known/openid-configuration`, opens the IdP login page, and stores tokens in `~/.grok/auth.json`. Tokens auto-refresh silently via the stored `refresh_token`.
+The CLI discovers endpoints via `{issuer}/.well-known/openid-configuration`, opens the IdP login page, and stores tokens in `~/.ezer/auth.json`. Tokens auto-refresh silently via the stored `refresh_token`.
 
 ### Optional fields
 
@@ -185,7 +186,7 @@ JSON fields:
 Via config file:
 
 ```toml
-# ~/.grok/config.toml
+# ~/.ezer/config.toml
 [auth]
 auth_provider_command = "/usr/local/bin/my-auth-provider"
 auth_provider_label = "Acme Corp"   # optional -- customizes the TUI login button
@@ -211,7 +212,7 @@ same JSON fields (such as `issuer`) on every invocation, including refreshes.
   rejected. Nobody is watching. stdin is closed, your stderr is swallowed, and
   the binary is given a few seconds before it is killed. Mint silently or exit
   non-zero — never block.
-- **Unset — a sign-in.** `grok login`, the sign-in screen, or the escalation
+- **Unset — a sign-in.** `ezer login`, the sign-in screen, or the escalation
   Grok performs when a headless run couldn't mint. A user is waiting, your
   stderr reaches them, and you have 300 seconds — enough for a browser round
   trip or a device code.
@@ -251,7 +252,7 @@ run has the variable unset, like a sign-in. A binary that mints without help
 (service account, keytab, mounted token) succeeds there and the session heals
 itself. One that must prompt just sits, up to the 300s sign-in ceiling —
 nothing waits on it, the sign-in screen is already up, and that run's stderr
-goes to `~/.grok/leader.log` rather than to you.
+goes to `~/.ezer/leader.log` rather than to you.
 
 ### Environment Variables
 
@@ -270,7 +271,7 @@ goes to `~/.grok/leader.log` rather than to you.
 For headless environments (SSH sessions, Docker containers, remote VMs) where no browser is available locally:
 
 ```bash
-grok login --device-auth    # or: grok login --device-code
+ezer login --device-auth    # or: ezer login --device-code
 ```
 
 This prints a URL and code to the terminal. Open the URL on any device, enter the code, and complete authentication. Grok polls until the login is confirmed.
@@ -301,7 +302,7 @@ export GROK_AUTH_EARLY_INVALIDATION_SECS=0
 
 ## Hot Reload
 
-Grok picks up changes to `~/.grok/auth.json` automatically. If you update credentials externally (for example, with a script that writes new tokens), Grok uses the new credentials on the next API call without a restart.
+Grok picks up changes to `~/.ezer/auth.json` automatically. If you update credentials externally (for example, with a script that writes new tokens), Grok uses the new credentials on the next API call without a restart.
 
 ---
 
@@ -310,7 +311,7 @@ Grok picks up changes to `~/.grok/auth.json` automatically. If you update creden
 Grok resolves credentials for each request in this order, highest to lowest:
 
 1. **Per-model `api_key` or `env_key`** -- set under `[model.<name>]` in `config.toml`. Wins whenever present.
-2. **Active session token** -- obtained through browser, OIDC/OAuth2, or external-provider login and stored in `~/.grok/auth.json`.
+2. **Active session token** -- obtained through browser, OIDC/OAuth2, or external-provider login and stored in `~/.ezer/auth.json`.
 3. **`XAI_API_KEY`** -- fallback when no session token is active.
 
 When more than one login flow is configured, Grok populates the session token from the first available source, highest to lowest:
@@ -323,10 +324,10 @@ During a session, the active method handles all mid-session refreshes.
 
 ---
 
-## Grove Git credentials (not this page's `grok login`)
+## Grove Git credentials (not this page's `ezer login`)
 
 
-**`~/.grok/auth.json` is never read for Git.** `grok login` does not create a Git credential and `grok logout` does not revoke one; the daemon builds its own credential cell from `auth_mode` in Grove config. Those credentials are managed with `grove status` and `grove reload-credentials` -- see [grok clone](27-grok-clone.md#authentication) for the failure classes and their next steps.
+**`~/.ezer/auth.json` is never read for Git.** `ezer login` does not create a Git credential and `ezer logout` does not revoke one; the daemon builds its own credential cell from `auth_mode` in Grove config. Those credentials are managed with `grove status` and `grove reload-credentials` -- see [grok clone](27-grok-clone.md#authentication) for the failure classes and their next steps.
 
 ---
 
@@ -370,7 +371,7 @@ tail -f /tmp/grok.log
 In headless mode, logs go to stderr. Redirect them to a file:
 
 ```bash
-RUST_LOG=debug grok -p "hello" 2> /tmp/grok.log
+RUST_LOG=debug ezer -p "hello" 2> /tmp/grok.log
 ```
 
 ### Common log messages
@@ -385,7 +386,7 @@ RUST_LOG=debug grok -p "hello" 2> /tmp/grok.log
 
 ### Common fixes
 
-- **"Authentication failed"** -- Run `grok logout` to clear cached credentials, then `grok login` to sign in again.
+- **"Authentication failed"** -- Run `ezer logout` to clear cached credentials, then `ezer login` to sign in again.
 - **Token expires too quickly** -- Set `auth_token_ttl` or return `expires_in` in your auth provider's JSON output.
 - **OIDC redirect fails** -- Ensure your IdP allows loopback redirect URIs (`http://127.0.0.1/callback`).
 - **External auth provider not found** -- Check that the `auth_provider_command` path is correct and the binary is executable.

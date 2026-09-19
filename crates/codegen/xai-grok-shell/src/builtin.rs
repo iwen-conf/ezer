@@ -1,9 +1,9 @@
-//! Built-in files extracted to `~/.grok/` on startup.
+//! Built-in files extracted to `~/.ezer/` on startup.
 
 const BUILTIN_FILES: &[(&str, &str)] = &[("README.md", include_str!("../README.md"))];
 
-/// Extract built-in metadata files to `~/.grok/` on startup.
-/// User skills under `~/.grok/skills/` are never managed here. Platform skills are delivered separately through the bundled skill cache.
+/// Extract built-in metadata files to `~/.ezer/` on startup.
+/// User skills under `~/.ezer/skills/` are never managed here. Platform skills are delivered separately through the bundled skill cache.
 pub fn extract_builtin_files(grok_home: &std::path::Path) {
     let version = xai_grok_version::VERSION;
     let marker = grok_home.join(".metadata_version");
@@ -131,7 +131,7 @@ pub fn purge_stale_extracted_skills(grok_home: &std::path::Path) {
 }
 
 fn purge_skill_dirs_matching(grok_home: &std::path::Path, known: &[(&str, &str)]) {
-    // For reversing the extract-time `~/.grok/` -> home rewrite (help only).
+    // For reversing the extract-time `~/.ezer/` (and legacy `~/.grok/`) -> home rewrite (help only).
     let home_prefix = format!("{}/", grok_home.to_string_lossy());
 
     let mut names: Vec<&str> = known.iter().map(|&(name, _)| name).collect();
@@ -144,10 +144,11 @@ fn purge_skill_dirs_matching(grok_home: &std::path::Path, known: &[(&str, &str)]
             continue;
         };
         let on_disk = sha256_hex(content.as_bytes());
-        let unrewritten = sha256_hex(content.replace(&home_prefix, "~/.grok/").as_bytes());
-        let managed = known
-            .iter()
-            .any(|&(n, hash)| n == name && (hash == on_disk || hash == unrewritten));
+        let unrewritten_ezer = sha256_hex(content.replace(&home_prefix, "~/.ezer/").as_bytes());
+        let unrewritten_grok = sha256_hex(content.replace(&home_prefix, "~/.grok/").as_bytes());
+        let managed = known.iter().any(|&(n, hash)| {
+            n == name && (hash == on_disk || hash == unrewritten_ezer || hash == unrewritten_grok)
+        });
         if !managed {
             continue;
         }
@@ -301,8 +302,8 @@ mod tests {
         let tmp = tempfile::tempdir().unwrap();
         let home = tmp.path();
         // help's on-disk bytes are machine-dependent (home substituted in).
-        let raw = EXTRACTED_BODY.replace("platform", "read ~/.grok/docs/user-guide then platform");
-        let body = raw.replace("~/.grok/", &format!("{}/", home.to_string_lossy()));
+        let raw = EXTRACTED_BODY.replace("platform", "read ~/.ezer/docs/user-guide then platform");
+        let body = raw.replace("~/.ezer/", &format!("{}/", home.to_string_lossy()));
         let raw_hash = sha256_hex(raw.as_bytes());
         let dir = write_skill(home, "help", &body);
 

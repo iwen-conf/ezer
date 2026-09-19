@@ -1005,17 +1005,17 @@ fn symlinked_worktrees_dir_is_surfaced_not_silently_dropped() {
 fn symlinked_default_home_keeps_home_label() {
     let tmp = tempfile::TempDir::new().unwrap();
     let fake_home = tmp.path().join("home");
-    let real_grok = tmp.path().join("grok-on-disk");
+    let real_grok = tmp.path().join("ezer-on-disk");
     std::fs::create_dir_all(&fake_home).unwrap();
     std::fs::create_dir_all(&real_grok).unwrap();
-    std::os::unix::fs::symlink(&real_grok, fake_home.join(".grok")).unwrap();
+    std::os::unix::fs::symlink(&real_grok, fake_home.join(".ezer")).unwrap();
     let _home = crate::test_util::EnvVarGuard::set("HOME", &fake_home);
 
-    let resolved = dunce::canonicalize(&fake_home).unwrap().join(".grok");
+    let resolved = dunce::canonicalize(&fake_home).unwrap().join(".ezer");
     let canonical = dunce::canonicalize(&resolved).unwrap();
     assert_ne!(canonical, resolved, "the symlink must actually resolve");
     assert_eq!(
         crate::util::display_grok_home_prefix_for(&canonical),
-        "~/.grok"
+        "~/.ezer"
     );
 }

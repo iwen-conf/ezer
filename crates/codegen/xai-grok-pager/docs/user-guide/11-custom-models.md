@@ -17,7 +17,7 @@ ezer models
 ### CLI Flag
 
 ```bash
-grok -p "Hello" -m grok-4.6
+ezer -p "Hello" -m my-model
 ```
 
 ### Slash Command
@@ -25,13 +25,13 @@ grok -p "Hello" -m grok-4.6
 In the TUI, switch models during a session:
 
 ```
-/model grok-4.6
+/model my-model
 ```
 
 Or use the alias:
 
 ```
-/m grok-4.6
+/m my-model
 ```
 
 ### Model Picker (Ctrl+M)
@@ -44,19 +44,19 @@ Enterprise hosts can pin the **selectable** set — not only the default — in 
 
 ```toml
 [models]
-default = "grok-4.5"
-allowed_models = ["grok-4.5", "grok-4*"]
+default = "my-model"
+allowed_models = ["my-model", "team-*"]
 ```
 
 A fleet pin matches the **model id** (not a user-chosen catalog key), so a local `[model.<name>]` entry cannot widen the set. User-config `allowed_models` still matches catalog key or model id. Omit the key to leave user config standing. An empty array is unrestricted. A present-but-unreadable pin fail-closes (nothing selectable). A default or `-m` value outside the pinned set is rejected once the model catalog is fetched — contact your administrator; the list is not user-editable.
 
 ### Config Default
 
-Set a persistent default in `~/.grok/config.toml`:
+Set a persistent default in `~/.ezer/config.toml`:
 
 ```toml
 [models]
-default = "grok-4.5"
+default = "my-model"
 ```
 
 ---
@@ -108,7 +108,7 @@ Grok resolves the API key in this order:
 
 1. The `api_key` field in the model config
 2. The environment variable(s) named by `env_key` — a single string or an array of names. The first set, non-empty value wins (for example `env_key = ["ANTHROPIC_AUTH_TOKEN", "LC_ANTHROPIC_AUTH_TOKEN"]` for SSH `LC_*` forwarding)
-3. Your signed-in session token (from `grok login`), for a model with no `api_key`/`env_key` of its own
+3. Your signed-in session token (from `ezer login`), for a model with no `api_key`/`env_key` of its own
 4. The `XAI_API_KEY` environment variable (global fallback; Grok also accepts `GROK_CODE_XAI_API_KEY` for backward compatibility)
 
 ### Context Window
@@ -341,7 +341,7 @@ When you use `[endpoints]` with partial model overrides, Grok inherits the `base
 
 ### Auth Behavior
 
-When you set `models_base_url`, Grok uses API key auth (`Authorization: Bearer`) instead of session auth. You do not need `grok login` -- the API key is enough.
+When you set `models_base_url`, Grok uses API key auth (`Authorization: Bearer`) instead of session auth. You do not need `ezer login` -- the API key is enough.
 
 ---
 
@@ -377,13 +377,13 @@ supports_backend_search = true
 
 ```bash
 # List available models (including custom)
-grok models
+ezer models
 
 # Use in the TUI via slash command
 /model my-model
 
 # Use in headless mode
-grok -p "Hello" -m my-model
+ezer -p "Hello" -m my-model
 
 # Set as default in config.toml:
 [models]
@@ -426,7 +426,7 @@ telemetry = false
 
 ```bash
 # List available models
-grok models
+ezer models
 
 # Check config.toml for typos in [model.*] sections
 ```
