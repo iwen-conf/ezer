@@ -2176,7 +2176,7 @@ fn render_welcome_done(
                         .add_modifier(Modifier::BOLD),
                 ),
                 Span::styled(
-                    format!("v{ver} available. Run `ezer update` to install."),
+                    format!("v{ver} available — ezer will not auto-upgrade"),
                     Style::default().fg(theme.accent_user),
                 ),
             ]);

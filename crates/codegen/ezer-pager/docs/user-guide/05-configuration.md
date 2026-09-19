@@ -43,7 +43,7 @@ Location: `~/.ezer/config.toml` (`EZER_HOME` override). If the file is missing o
 
 ```toml
 [cli]
-auto_update = true                     # check for updates on launch
+auto_update = true                     # one-time GitHub notice on launch; never auto-install; never xAI banners
 
 [models]
 default = "workbuddy"                   # model used for new sessions
@@ -343,8 +343,11 @@ dimensions = 1024                     # vector dimensions
 
 ```toml
 [subagents]
-enabled = true
+enabled = true                        # default on for BYOK; omit or true. false / EZER_SUBAGENTS=0 / --no-subagents disables
+max_concurrent = 32                   # live children (EZER_MAX_CONCURRENT_SUBAGENTS)
+limit_behavior = "queue"              # queue | fail when the cap is hit (EZER_SUBAGENT_LIMIT_BEHAVIOR)
 sampling_limit = 12                   # concurrent in-flight subagent sampling calls per process; defaults to max_concurrent (32) when unset (EZER_SUBAGENT_SAMPLING_LIMIT)
+# workflow_max_concurrent = 32        # live workflow agent() / parallel() children (EZER_WORKFLOW_MAX_CONCURRENT_AGENTS)
 
 [subagents.toggle]
 explore = true                        # enable/disable specific types
@@ -355,6 +358,9 @@ explore = "workbuddy"               # route to different models
 ```
 
 To pin the model a subagent uses, set its entry under `[subagents.models]`.
+A `[subagents]` table that only sets limits or model pins does **not** turn
+the feature off — `enabled` defaults to `true`. Subagents work with custom
+Responses / WorkBuddy models; they inherit the parent model unless pinned.
 
 ### Goal mode and background workflows
 
@@ -591,6 +597,11 @@ process env (destination lock). `managed_config.toml` does not. There is no
 
 ### Version pinning
 
+Default runtime never auto-installs and never shows prompts fetched from xAI /
+grok.com / x.com (changelog CDN, inbox announcements, marketing tips). The
+one-shot "update available" notice is GitHub (`iwen-conf/ezer` or
+`$EZER_UPSTREAM_REPO`) only.
+
 Control which versions the CLI may auto-update to and which versions may run. Set
 these in `[cli]`, or in a managed layer for fleet-wide policy. Each has an
 environment override that can only tighten the bound, for CI and testing.
@@ -782,7 +793,12 @@ The key ones. See the README for the complete list.
 | Variable | Description |
 |----------|-------------|
 | `EZER_MEMORY` | Enable (`1`) or disable (`0`) cross-session memory |
-| `EZER_SUBAGENTS` | Enable (`1`) or disable (`0`) subagents |
+| `EZER_SUBAGENTS` | Enable (`1`) or disable (`0`) subagents (default on) |
+| `EZER_MAX_CONCURRENT_SUBAGENTS` | Cap on live child sessions (default 32) |
+| `EZER_SUBAGENT_LIMIT_BEHAVIOR` | `queue` (default) or `fail` when the live-child cap is hit |
+| `EZER_SUBAGENT_SAMPLING_LIMIT` | Cap on in-flight child sampling calls |
+| `EZER_SUBAGENT_WORKER_THREADS` | Threads in the subagent worker pool (clamped 2–4 unless set) |
+| `EZER_WORKFLOW_MAX_CONCURRENT_AGENTS` | Live workflow child agents (default 32) |
 | `EZER_WORKFLOWS` | Enable (`1`) or disable (`0`) background workflows and select the `/goal` driver (default on: host-owned workflow driver; off: legacy `update_goal`) |
 | `EZER_WEB_FETCH` | Enable (`1`) or disable (`0`) the web_fetch tool |
 | `EZER_WEB_FETCH_ALLOW_LOCAL` | Allow `web_fetch` to explicit loopback hosts only (`localhost` / `127.0.0.0/8` / `::1`). Same as `[toolset.web_fetch] allow_local`. Default off; private/metadata stay blocked. |

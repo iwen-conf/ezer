@@ -1735,7 +1735,7 @@ fn minimal_update_notice_commits_a_system_block() {
     let text = last_system_text(&app, AgentId(0));
     assert!(text.contains("Update available: v9.9.9"), "got: {text:?}");
     assert!(
-        text.contains("Run `ezer update` to install."),
+        text.contains("ezer will not auto-install."),
         "got: {text:?}"
     );
 }

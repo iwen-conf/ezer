@@ -1890,10 +1890,11 @@ impl MvpAgent {
                 .set(self.post_auth_settings_spawn_count.get() + 1);
         }
     }
-    /// Spawn the periodic remote-settings poll that pushes mid-session announcement changes to connected clients. Idempotent.
-    /// Plain loop (no cancellation) like `ensure_session_supervisor`; the LocalSet drop at process exit ends it. Skipped under `cfg!(test)` like the managed-config sync (PTY e2e runs the real binary and is unaffected).
+    /// Formerly spawned a periodic xAI `/v1/settings` poll that pushed `x.ai/announcements/update`.
+    /// BYOK builds never start that client: leftover grok.com credentials must not fetch or surface xAI banners.
     pub(super) fn spawn_announcements_refresh(&self) {
         if !ezer_env::xai_login_enabled() {
+            let _ = self.announcements_refresh_started.replace(true);
             return;
         }
         if cfg!(test) || self.announcements_refresh_started.replace(true) {
@@ -1928,7 +1929,8 @@ impl MvpAgent {
         self.emit_announcements(AnnouncementsPushMode::IfChanged);
     }
     /// Fetch half of a poll cycle: fresh settings from the proxy, then the poll-only apply.
-    /// Every failure path is a silent skip; the next tick retries.
+    /// Kept for tests and a possible future non-xAI poll; the announcements refresh loop is disabled.
+    #[allow(dead_code)]
     async fn fetch_and_store_polled_settings(&self) {
         let Ok(auth) = self.auth_manager.auth().await else {
             tracing::debug!("announcements refresh skipped: not authenticated");
@@ -1955,51 +1957,19 @@ impl MvpAgent {
             tracing::debug!("settings poll apply skipped: settings changed mid-fetch");
             return;
         }
-        stored.announcements = fresh.announcements;
+        // BYOK: never copy xAI announcement payloads into the live store.
+        stored.announcements = None;
         stored.accept_request_encodings = fresh.accept_request_encodings;
         crate::util::config::cache_remote_accept_request_encodings(
             &origin,
             &stored.accept_request_encodings,
         );
     }
-    /// The single announcements push gate: every `remote_settings` writer funnels through here. Emits `x.ai/announcements/update` and advances the last-emitted baseline per [`announcements_push_payload`].
-    /// `mode` decides when an unchanged list still pushes. The baseline advances only once the gateway accepts the send. A failed enqueue leaves it untouched so the next gate call re-diffs and re-pushes.
-    /// Synchronous by design: the decide, send, advance sequence cannot interleave with another gate call on the LocalSet.
+    /// The single announcements push gate. BYOK: never emit `x.ai/announcements/update`.
+    /// Leftover grok.com credentials and stored remote lists must not reach the TUI.
     pub(super) fn emit_announcements(&self, mode: AnnouncementsPushMode) {
-        let payload_list = {
-            let cfg = self.cfg.borrow();
-            let last = self.last_emitted_announcements.borrow();
-            announcements_push_payload(
-                cfg.remote_settings.as_ref().and_then(|s| s.announcements.as_deref()),
-                &last,
-                chrono::Utc::now(),
-                mode,
-            )
-        };
-        let Some(announcements) = payload_list else {
-            return;
-        };
-        let payload = serde_json::json!({
-            "gen": self.next_announcements_gen(),
-            "announcements": announcements,
-        });
-        let Ok(params) = serde_json::value::to_raw_value(&payload) else {
-            return;
-        };
-        let accepted = self
-            .gateway
-            .forward_fire_and_forget(
-                acp::ExtNotification::new("x.ai/announcements/update", params.into()),
-            );
-        if !accepted {
-            return;
-        }
-        *self.last_emitted_announcements.borrow_mut() = announcements.clone();
-        tracing::info!(
-            count = announcements.len(),
-            mode = ?mode,
-            "pushing announcements update to clients"
-        );
+        let _ = mode;
+        tracing::debug!("announcements push skipped: xAI announcement clients are disabled");
     }
     /// Next generation for an `x.ai/announcements/update` push.
     /// Strictly increasing within the process, and seeded from unix-epoch seconds.

@@ -36,7 +36,7 @@ pub enum SwitchModelError {
 pub enum Action {
     /// Quit the application.
     Quit,
-    /// Restart the binary to pick up a downloaded update.
+    /// Leave the TUI after an update notice (no auto-install; operator upgrades later).
     QuitForUpdate,
     /// Resume the recent foreign session offered on the launch welcome screen.
     ResumeForeignSession,
@@ -559,7 +559,7 @@ pub enum Action {
     /// Restart-required: tips are resolved once at startup.
     SetShowTips(bool),
     /// Commit the `auto_update` preference. Persisted to `[cli].auto_update`.
-    /// Restart-required: auto-update check fires once at startup.
+    /// Restart-required: the one-time update notice check fires once at startup.
     SetAutoUpdate(bool),
     /// Commit `[ui.display_refresh].auto_cadence_enabled`. Restart-required: cadence is pinned once at startup.
     SetDisplayRefreshAutoCadence(bool),

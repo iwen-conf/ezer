@@ -1292,13 +1292,14 @@ pub fn default_settings() -> Vec<SettingMeta> {
             key: "auto_update",
             category: SettingCategory::Advanced,
             owner: SettingOwner::Shell,
-            label: "Auto-update",
-            description: "Reserved. ezer never auto-upgrades; run `ezer update` to install. \
+            label: "Update check",
+            description: "Check for CLI updates on startup and show a one-time notice. \
+                          ezer never downloads or replaces the binary automatically. \
                           Restart required.",
             keywords: &[
                 "auto", "update", "updates", "upgrade", "version", "install", "channel",
             ],
-            kind: SettingKind::Bool { default: false },
+            kind: SettingKind::Bool { default: true },
             restart_required: true,
             hidden_in_minimal: false,
         },

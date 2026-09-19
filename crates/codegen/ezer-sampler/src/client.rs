@@ -2394,6 +2394,7 @@ mod tests {
             user: None,
             tools: None,
             tool_choice: None,
+            parallel_tool_calls: None,
             search_parameters: None,
             response_format: None,
             reasoning_effort: None,

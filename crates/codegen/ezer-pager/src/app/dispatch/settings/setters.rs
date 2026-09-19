@@ -1923,7 +1923,7 @@ pub(super) fn pr13_effective_default(key: &str) -> Option<bool> {
     use ezer_tools::implementations::ezer_build::ask_user_question;
     match key {
         "show_tips" => Some(true),
-        "auto_update" => Some(false),
+        "auto_update" => Some(true),
         "toolset.ask_user_question.timeout_enabled" => {
             Some(ask_user_question::DEFAULT_ASK_USER_QUESTION_TIMEOUT_ENABLED)
         }
@@ -1968,7 +1968,7 @@ pub(super) fn set_auto_update_inner(app: &mut AppView, value: bool) {
 /// Outer dispatcher for `Action::SetAutoUpdate`.
 pub(in crate::app::dispatch) fn set_auto_update(app: &mut AppView, new: bool) -> Vec<Effect> {
     let prev_state = app.auto_update;
-    let prev_effective = prev_state.unwrap_or(false);
+    let prev_effective = prev_state.unwrap_or(true);
     if prev_effective == new && prev_state.is_some() {
         return vec![];
     }
@@ -1977,7 +1977,7 @@ pub(in crate::app::dispatch) fn set_auto_update(app: &mut AppView, new: bool) ->
     tracing::info!(target: "settings", key = "auto_update", value = new, "setting changed");
     app.show_toast(&format!(
         "{} (restart to apply)",
-        save_success_toast("Auto-update", new),
+        save_success_toast("Update check", new),
     ));
     vec![Effect::PersistSetting {
         key: "auto_update",

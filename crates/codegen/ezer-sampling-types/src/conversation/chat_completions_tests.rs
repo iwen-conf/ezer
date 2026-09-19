@@ -48,6 +48,15 @@ fn test_conversation_request_to_chat_completion() {
     assert_eq!(chat_req.model, Some("grok-3".to_string()));
     assert_eq!(chat_req.temperature, Some(0.7));
     assert_eq!(chat_req.messages.len(), 2);
+    assert_eq!(chat_req.parallel_tool_calls, None);
+}
+
+#[test]
+fn chat_completion_enables_parallel_tool_calls_when_tools_present() {
+    let req = ConversationRequest::from_items(vec![ConversationItem::user("delegate")])
+        .with_tools(vec![make_test_tool()]);
+    let chat_req: ChatCompletionRequest = req.into();
+    assert_eq!(chat_req.parallel_tool_calls, Some(true));
 }
 
 #[test]

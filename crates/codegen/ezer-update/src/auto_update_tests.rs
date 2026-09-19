@@ -1623,14 +1623,9 @@ async fn test_cleanup_old_downloads_darwin_platform_recognized() {
 
 #[test]
 fn test_user_facing_constants_are_stable() {
-    assert_eq!(PROMPT_UPDATE_NOW, "Update now? [Y/n/d]");
-    assert_eq!(
-        MSG_AUTO_UPDATE_BACKGROUND,
-        "Auto-update running in background."
-    );
     assert_eq!(
         MSG_RUN_UPDATE_MANUAL,
-        "Run `ezer update` to get the latest version."
+        "ezer will not auto-install. Pull and rebuild, or run `ezer update` to install the published binary."
     );
 }
 

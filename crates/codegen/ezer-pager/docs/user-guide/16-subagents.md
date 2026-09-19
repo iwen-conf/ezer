@@ -2,7 +2,10 @@
 
 Subagents are independent child sessions that handle tasks in parallel. Each subagent has its own context window, so the main agent can delegate work (research, implementation, testing, and code review) without consuming its own context. A subagent reports a summary back to the parent when it finishes.
 
-Subagents are enabled by default.
+Subagents are enabled by default, including BYOK / custom Responses (WorkBuddy
+on a LAN gateway). No xAI OAuth is required. The parent may emit several
+`spawn_subagent` calls in one turn (`parallel_tool_calls: true` on the wire);
+those children run concurrently up to `max_concurrent`.
 
 ---
 
@@ -260,6 +263,20 @@ ezer manages worktrees through the `x.ai/git/worktree/*` extension methods, incl
 ---
 
 ## Configuration
+
+### Concurrency
+
+| Knob | Config | Environment | Default |
+|------|--------|-------------|---------|
+| Master switch | `[subagents] enabled` | `EZER_SUBAGENTS` (`0`/`1`) | on |
+| Live children | `[subagents] max_concurrent` | `EZER_MAX_CONCURRENT_SUBAGENTS` | 32 |
+| Over-cap behavior | `[subagents] limit_behavior` (`queue` / `fail`) | `EZER_SUBAGENT_LIMIT_BEHAVIOR` | `queue` |
+| In-flight sampling | `[subagents] sampling_limit` | `EZER_SUBAGENT_SAMPLING_LIMIT` | same as `max_concurrent` |
+| Nesting depth | `[subagents] max_depth` | `EZER_SUBAGENTS_MAX_DEPTH` | 1 (parent-only spawns) |
+| Workflow live children | `[subagents] workflow_max_concurrent` | `EZER_WORKFLOW_MAX_CONCURRENT_AGENTS` | 32 |
+| Worker threads | — | `EZER_SUBAGENT_WORKER_THREADS` | 2–4 (clamped) |
+
+CLI: `ezer --no-subagents` force-disables the task tool for that process.
 
 ### Per-Type Toggles and Model Overrides
 

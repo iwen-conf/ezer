@@ -75,15 +75,11 @@ impl ChangelogManager {
     /// Either field may be `None` if offline with no cache. When `EZER_CHANGELOG_OFFLINE` is set (PTY / integration tests), the CDN is skipped and only the disk cache is read.
     /// JSON is cached only after a successful parse; the markdown cache is write-through since it's consumed as raw text.
     pub fn fetch(&self) -> Changelog {
-        // Always re-resolve from env so a caller holding an older manager (or a stale OnceLock) still reads the live harness home
-        let offline = changelog_offline();
-        // BYOK: never fetch or surface the x.ai changelog CDN.
-        if !offline && !ezer_env::xai_login_enabled() {
-            return Changelog {
-                markdown: None,
-                entries: None,
-            };
-        }
+        // Always re-resolve from env so a caller holding an older manager (or a stale OnceLock) still reads the live harness home.
+        // BYOK: never hit x.ai/cli changelogs. Disk cache only unless `$EZER_CHANGELOG_CDN` is a non-xAI base
+        // or the user opted into grok.com login (`EZER_ENABLE_XAI_LOGIN`).
+        let offline = changelog_offline()
+            || (!ezer_env::xai_login_enabled() && !changelog_cdn_allowed());
         Self::from_env_home().fetch_with(offline, CHANGELOG_BASE)
     }
 
@@ -176,6 +172,18 @@ impl ChangelogManager {
 /// Used by PTY harness tests that seed `CHANGELOG.{md,json}` under a temp home.
 fn changelog_offline() -> bool {
     std::env::var_os("EZER_CHANGELOG_OFFLINE").is_some_and(|v| !v.is_empty() && v != "0")
+}
+
+/// Opt-in only. Default BYOK runtime never fetches `https://x.ai/cli/changelogs`.
+fn changelog_cdn_allowed() -> bool {
+    let Ok(base) = std::env::var("EZER_CHANGELOG_CDN") else {
+        return false;
+    };
+    let lower = base.to_ascii_lowercase();
+    !lower.is_empty()
+        && !lower.contains("x.ai")
+        && !lower.contains("grok.com")
+        && !lower.contains("x.com")
 }
 
 fn read_cache(path: &std::path::Path) -> Option<String> {
@@ -328,6 +336,11 @@ mod tests {
         ];
         let bullets = bullets_from_entries(&entries, 10);
         assert_eq!(bullets, vec!["Good entry", "Another good one"]);
+    }
+
+    #[test]
+    fn changelog_cdn_defaults_off_and_rejects_xai() {
+        assert!(!changelog_cdn_allowed());
     }
 
     #[test]

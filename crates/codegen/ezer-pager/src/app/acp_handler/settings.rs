@@ -320,15 +320,15 @@ pub(super) fn handle_settings_update(notif: &acp::ExtNotification, app: &mut App
     // A live session's scheduled fires keep the mode the shell pinned when the session's actor spawned
     // Applying a pushed flip here would make `/loop` promise a runtime those fires never get
 
-    // Re-resolve tips from config layers and the updated remote tips
-    if xai_ui && let Some(remote_tips) = update.tips {
+    // Re-resolve tips from local/managed config only — never xAI remote marketing copy.
+    if update.tips.is_some() {
         use ezer_shell::util::config::resolve_tips;
 
         app.tips = resolve_tips(
             requirements.as_ref(),
             user_config.as_ref(),
             managed_config.as_ref(),
-            Some(&remote_tips),
+            None,
         );
         if !app.tips.is_empty() {
             let grok_home = ezer_tools::util::grok_home::grok_home();
@@ -439,7 +439,7 @@ pub(super) fn handle_announcements_update(notif: &acp::ExtNotification, app: &mu
         return false;
     }
 
-    // Re-merge config layers like startup does: the push carries the remote list only
+    // Re-merge local config layers like startup does. Remote xAI / grok.com lists are ignored.
     // A wholesale replace would drop requirements/user/managed announcements and let the prune erase their persisted hide keys
     // The settings handler performs the same disk reads; pushes are rare
     let requirements = ezer_shell::config::load_merged_requirements();
@@ -457,7 +457,7 @@ pub(super) fn handle_announcements_update(notif: &acp::ExtNotification, app: &mu
 }
 
 /// Apply half of [`handle_announcements_update`], with config layers injected so the merge/prune behavior is unit-testable without disk state.
-/// `resolve_announcements` honors `EZER_ANNOUNCEMENTS_OVERRIDE` first, so a backend push can't reintroduce announcements when the override is set.
+/// The remote xAI list is ignored (BYOK). `resolve_announcements` honors `EZER_ANNOUNCEMENTS_OVERRIDE` first, so a backend push can't reintroduce announcements when the override is set.
 pub(super) fn apply_announcements_update(
     app: &mut AppView,
     next_gen: u64,
@@ -466,11 +466,13 @@ pub(super) fn apply_announcements_update(
     user_config: Option<&toml::Value>,
     managed_config: Option<&toml::Value>,
 ) {
+    // BYOK: ignore xAI / grok.com announcement payloads. Re-merge local config layers only.
+    let _ = remote;
     let merged = ezer_shell::util::config::resolve_announcements(
         requirements,
         user_config,
         managed_config,
-        Some(remote),
+        None,
     );
     let announcements = ezer_announcements::filter_expired(merged);
 

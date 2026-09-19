@@ -1400,12 +1400,12 @@ pub(crate) async fn run(
         use ezer_shell::util::config::{
             resolve_announcements, resolve_slash_command_tags, resolve_tips,
         };
-        let remote_announcements = remote_notices.and_then(|s| s.announcements.as_deref());
+        // BYOK: never surface announcements fetched from xAI / grok.com remote settings.
         let announcements = resolve_announcements(
             requirements.as_ref(),
             user_config.as_ref(),
             managed_config.as_ref(),
-            remote_announcements,
+            None,
         );
         app.active_announcements = ezer_announcements::filter_expired(announcements);
         if !app.active_announcements.is_empty() {
@@ -1414,12 +1414,12 @@ pub(crate) async fn run(
             app.announcement = app.active_announcements.get(idx).cloned();
         }
         app.sync_session_announcement_slash_gate();
-        let remote_tips = remote_notices.and_then(|s| s.tips.as_deref());
+        // Local / managed tips only — not xAI remote-settings marketing copy.
         app.tips = resolve_tips(
             requirements.as_ref(),
             user_config.as_ref(),
             managed_config.as_ref(),
-            remote_tips,
+            None,
         );
         if !app.tips.is_empty() {
             let grok_home = ezer_tools::util::grok_home::grok_home();
@@ -2288,7 +2288,7 @@ pub(crate) async fn run(
                 if let Some(update) = result {
                     tracing::info!(
                         latest_version = %update.latest_version,
-                        "Background update check: newer version available"
+                        "Background update check: newer version available (notice only)"
                     );
                     let latest = update.latest_version;
                     app.pending_update_version = Some(latest.clone());
