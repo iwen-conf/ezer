@@ -460,6 +460,7 @@ User-level configuration lives in `$EZER_HOME/config.toml` (default `~/.ezer/con
 | Key | Type / Values | Requirements | Managed | Details |
 | --- | --- | --- | --- | --- |
 | `session.auto_compact_threshold_percent` | `integer` | `yes` | `user` | Auto-compact when context usage reaches this percent (0–100). |
+| `session.length_salvage_budget` | `integer` | `yes` | `user` | How many times a turn may automatically continue after the model hits its **output** token limit (`max_completion_tokens` / `finish_reason: length` / Responses `incomplete_details.reason == max_output_tokens`). Default `5`. `0` disables salvage and hard-fails the turn. This is not context-window auto-compact. Also `EZER_LENGTH_SALVAGE=0` to disable. Does not change `reasoning_effort`. |
 | `session.load_envrc` | `boolean` | `yes` | `user` | Inject `.envrc` variables into bash. |
 
 ### `shell_environment_policy`

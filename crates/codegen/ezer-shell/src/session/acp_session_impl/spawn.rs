@@ -1953,10 +1953,13 @@ pub(crate) async fn spawn_session_actor(
         goal_summary_enabled: effective_config
             .resolve_goal_summary_enabled(goal_enabled)
             .value,
-        length_salvage_remote_budget: effective_config
-            .remote_settings
-            .as_ref()
-            .and_then(|r| r.length_salvage_budget),
+        length_salvage_remote_budget: super::length_salvage::merge_configured_length_salvage_budget(
+            effective_config.session.length_salvage_budget,
+            effective_config
+                .remote_settings
+                .as_ref()
+                .and_then(|r| r.length_salvage_budget),
+        ),
         goal_verifier_skeptic_count: effective_config.resolve_goal_verifier_count().value,
         goal_role_models,
         goal_use_current_model_only,

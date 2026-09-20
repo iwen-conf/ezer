@@ -952,8 +952,9 @@ pub(crate) struct SessionActor {
     /// Master switch for the one-shot goal summarizer (the closing "what was accomplished" summary on a verified achievement).
     /// Cached at actor construction (mirrors `goal_classifier_enabled`); absent remote setting tracks goal mode, `Some(false)` is a kill-switch.
     pub(crate) goal_summary_enabled: bool,
-    /// Remote tier of the Length-salvage budget resolver, snapshot from
-    /// `RemoteSettings` at actor construction. `Some(0)` is explicit off.
+    /// Configured Length-salvage budget snapshot at actor construction.
+    /// Merges user `[session].length_salvage_budget` with `RemoteSettings`.
+    /// `Some(0)` is explicit off. `None` uses the built-in default-on budget.
     pub(crate) length_salvage_remote_budget: Option<u32>,
     /// Resolved skeptic count for the verification stage.
     /// Cached at actor construction (mirrors `goal_classifier_enabled`) and threaded into [`Self::run_verification_stage_for_drain`].

@@ -114,6 +114,10 @@ pub(crate) enum RetryLabelStyle {
 }
 
 /// `{headline} | Retrying …` using [`format_request_failure`] headlines, else the bare retry clause.
+/// Quiet status while the shell resumes a `max_tokens`-truncated sample.
+/// Keep in sync with `ezer_shell::session::acp_session_impl::length_salvage::LENGTH_CONTINUE_STATUS`.
+pub(crate) const LENGTH_CONTINUE_STATUS: &str = "continuing after output limit…";
+
 pub(crate) fn format_retry_activity_label(
     attempt: u32,
     max_retries: u32,
@@ -121,6 +125,12 @@ pub(crate) fn format_retry_activity_label(
     error_type: Option<&str>,
     style: RetryLabelStyle,
 ) -> String {
+    let reason = reason.trim();
+    // Length-salvage continue is not a failed retry. Show the quiet status
+    // verbatim so the pager never paints "Response truncated | Retrying…".
+    if reason.starts_with("continuing after output limit") {
+        return LENGTH_CONTINUE_STATUS.to_string();
+    }
     let base = retry_clause(attempt, max_retries, style);
     match classified_retry_headline(reason, error_type) {
         Some(headline) => format!("{headline} | {base}"),
@@ -1029,6 +1039,33 @@ mod tests {
         assert_eq!(
             format_retry_activity_label(1, 3, dns, Some("a_future_kind"), RetryLabelStyle::Status),
             "Retrying (attempt 1)..."
+        );
+        let continue_label = format_retry_activity_label(
+            1,
+            5,
+            "continuing after output limit…",
+            None,
+            RetryLabelStyle::Status,
+        );
+        assert_eq!(continue_label, LENGTH_CONTINUE_STATUS);
+        assert!(
+            !continue_label.contains("Response truncated"),
+            "a successful length-salvage continue must not use the fatal truncation banner: {continue_label}"
+        );
+        assert!(
+            !continue_label.contains("Retrying"),
+            "continue status stays quiet, not a retry headline: {continue_label}"
+        );
+        let exhausted = format_retry_activity_label(
+            5,
+            5,
+            ezer_shell::sampling::error::MAX_TOKENS_TRUNCATION_MESSAGE,
+            Some("max_tokens_truncation"),
+            RetryLabelStyle::Status,
+        );
+        assert!(
+            exhausted.contains("Response truncated"),
+            "exhausted continues still use the truncation headline: {exhausted}"
         );
         assert_eq!(
             format_request_failure(

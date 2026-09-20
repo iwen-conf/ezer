@@ -2994,9 +2994,78 @@ impl SessionActor {
                     (r, latency)
                 }
                 Err(error) => {
-                    if salvage.awaiting_continuation()
-                        && crate::sampling::error::is_max_tokens_turn_error(&error)
-                    {
+                    let max_tokens_error =
+                        crate::sampling::error::is_max_tokens_turn_error(&error);
+                    let salvage_overflow = error
+                        .data
+                        .as_ref()
+                        .and_then(|d| d.get(crate::sampling::error::SALVAGE_CAUSE_KEY))
+                        .and_then(|v| v.as_str())
+                        == Some(crate::sampling::error::SALVAGE_CAUSE_OVERFLOW);
+                    // Empty / unsalvageable Length on the first sample (reasoning ate the
+                    // output budget) is still an output-limit cut. Continue it the same
+                    // way as a salvaged partial, unless this is a context-window overflow.
+                    if salvage.enabled() && max_tokens_error && !salvage_overflow {
+                        if salvage.awaiting_continuation() {
+                            salvage.response_arrived();
+                            ezer_telemetry::unified_log::warn(
+                                "shell.turn.length_empty_continuation",
+                                Some(self.session_info.id.0.as_ref()),
+                                Some(serde_json::json!({
+                                    "continue_attempts": salvage.continues(),
+                                    "continue_budget": salvage.budget(),
+                                    "cause": error
+                                        .data
+                                        .as_ref()
+                                        .and_then(|d| {
+                                            d.get(crate::sampling::error::SALVAGE_CAUSE_KEY)
+                                        })
+                                        .and_then(|v| v.as_str())
+                                        .unwrap_or(crate::sampling::error::SALVAGE_CAUSE_EMPTY),
+                                })),
+                            );
+                            if self.drain_interjections_at_safe_point().await {
+                                salvage.round_boundary();
+                                tracing::info!(
+                                    "Drained interjection(s) after an empty continuation; continuing"
+                                );
+                                continue;
+                            }
+                            self.chat_state_handle.pop_stranded_continue_reminder();
+                            self.tool_context.fail_task_output_usage_closed();
+                            return Err(self.fail_turn_length_salvage_exhausted().await);
+                        }
+                        match salvage.on_length_stop() {
+                            super::length_salvage::SalvageStep::Continue { inject_reminder } => {
+                                if inject_reminder {
+                                    self.inject_length_continue_reminder();
+                                }
+                                tracing::warn!(
+                                    session_id = %self.session_info.id,
+                                    retry = salvage.continues(),
+                                    max = salvage.budget(),
+                                    "Output token limit exceeded — continuing the turn"
+                                );
+                                ezer_telemetry::unified_log::warn(
+                                    "shell.turn.length_truncation_continue",
+                                    Some(self.session_info.id.0.as_ref()),
+                                    Some(serde_json::json!({
+                                        "continue_attempts": salvage.continues(),
+                                        "continue_budget": salvage.budget(),
+                                        "empty_first_sample": true,
+                                    })),
+                                );
+                                self.notify_length_continue(&salvage).await;
+                                continue;
+                            }
+                            super::length_salvage::SalvageStep::Exhaust
+                            | super::length_salvage::SalvageStep::None => {
+                                self.tool_context.fail_task_output_usage_closed();
+                                return Err(self.fail_turn_length_salvage_exhausted().await);
+                            }
+                        }
+                    }
+                    if salvage.awaiting_continuation() && max_tokens_error {
                         salvage.response_arrived();
                         ezer_telemetry::unified_log::warn(
                             "shell.turn.length_empty_continuation",
@@ -3505,19 +3574,13 @@ impl SessionActor {
                 match salvage.on_length_stop() {
                     super::length_salvage::SalvageStep::Continue { inject_reminder } => {
                         if inject_reminder {
-                            let tag = self.reminder_wrapper_tag();
-                            self.chat_state_handle.push_user_message(
-                                ConversationItem::length_continue_reminder(format!(
-                                    "<{tag}>{}</{tag}>",
-                                    super::length_salvage::LENGTH_CONTINUE_REMINDER_BODY
-                                )),
-                            );
+                            self.inject_length_continue_reminder();
                         }
                         tracing::warn!(
                             session_id = %self.session_info.id,
                             retry = salvage.continues(),
                             max = salvage.budget(),
-                            "Output token limit exceeded — injecting reminder and retrying"
+                            "Output token limit exceeded — continuing the turn"
                         );
                         ezer_telemetry::unified_log::warn(
                             "shell.turn.length_truncation_continue",
@@ -3527,13 +3590,14 @@ impl SessionActor {
                                 "continue_budget": salvage.budget(),
                             })),
                         );
+                        self.notify_length_continue(&salvage).await;
                         continue;
                     }
                     super::length_salvage::SalvageStep::Exhaust => {
                         tracing::error!(
                             session_id = %self.session_info.id,
                             retries = salvage.continues(),
-                            "Output token limit retries exhausted, completing the turn truncated"
+                            "Output token limit retries exhausted"
                         );
                         ezer_telemetry::unified_log::warn(
                             "shell.turn.length_truncation_exhausted",
@@ -3543,6 +3607,8 @@ impl SessionActor {
                                 "continue_budget": salvage.budget(),
                             })),
                         );
+                        self.tool_context.fail_task_output_usage_closed();
+                        return Err(self.fail_turn_length_salvage_exhausted().await);
                     }
                     super::length_salvage::SalvageStep::None => {}
                 }

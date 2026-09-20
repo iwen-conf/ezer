@@ -1947,6 +1947,27 @@ fn parses_auto_compact_threshold_percent() {
     assert_eq!(cfg.session.auto_compact_threshold_percent, Some(75));
 }
 #[test]
+fn parses_session_length_salvage_budget() {
+    let raw_config: toml::Value = toml::from_str(
+        r#"
+            [session]
+            length_salvage_budget = 3
+            "#,
+    )
+    .unwrap();
+    let cfg = Config::new_from_toml_cfg(&raw_config).expect("config should parse");
+    assert_eq!(cfg.session.length_salvage_budget, Some(3));
+    let off: toml::Value = toml::from_str(
+        r#"
+            [session]
+            length_salvage_budget = 0
+            "#,
+    )
+    .unwrap();
+    let cfg = Config::new_from_toml_cfg(&off).expect("config should parse");
+    assert_eq!(cfg.session.length_salvage_budget, Some(0));
+}
+#[test]
 fn compaction_mode_precedence_env_over_config_over_remote_over_default() {
     use xai_chat_state::CompactionMode;
     assert_eq!(

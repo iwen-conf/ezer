@@ -141,6 +141,12 @@ ezer resolves the API key in this order:
 
 The `context_window` value tells ezer when to trigger auto-compaction. When you override a known model, ezer inherits that model's context window. When you define a new model and omit `context_window`, ezer defaults to 200,000 tokens, so set it explicitly to match your provider.
 
+### Output token limit (not the context window)
+
+`max_completion_tokens` is the per-response **output** budget (visible tokens plus reasoning tokens on reasoning models). When a BYOK/Responses sample hits that cap (`finish_reason: length` or `incomplete_details.reason == max_output_tokens`), ezer automatically continues the same turn — it does not fail with "Response truncated". That is independent of auto-compact, which only fires when the **context window** is nearly full.
+
+Configure how many continues a turn may take with `[session] length_salvage_budget` (default 5; `0` disables). High `reasoning_effort` (including `max`) is unchanged: truncation is handled by continuing, not by lowering effort.
+
 ### Global Default Headers
 
 To apply the same headers to *every* model in the catalog -- built-in, prefetched from `/v1/models`, or custom -- set them once under the global `[models]` section instead of repeating them per model:
