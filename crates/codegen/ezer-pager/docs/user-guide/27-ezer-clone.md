@@ -27,7 +27,7 @@ copy while clone can stay on; `EZER_CLONE=0` keeps `ezer clone` off while
 worktrees can stay on.
 
 ```bash
-ezer clone <url> [dir] [--branch NAME] [--cone PATH]... [--full-history]
+ezer clone <url> [dir] [--branch NAME] [--full-history]
 ```
 
 ## History

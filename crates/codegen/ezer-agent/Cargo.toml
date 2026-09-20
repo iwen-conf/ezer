@@ -9,6 +9,7 @@ description = "Agent builder, definition parsing, and system prompt assembly"
 dunce = { workspace = true }
 ezer-hooks = { path = "../ezer-hooks" }
 ezer-sampling-types = { path = "../ezer-sampling-types" }
+ezer-telemetry = { workspace = true }
 ezer-tools = { path = "../ezer-tools" }
 xai-tty-utils = { workspace = true }
 xai-token-estimation = { workspace = true }

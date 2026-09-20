@@ -14,7 +14,9 @@ use ezer_test_support::{MockInferenceServer, TestSandbox};
 
 pub use ezer_test_support::mock_server::FeedbackPost;
 pub use ezer_test_support::mock_server::LogEntry;
+pub use ezer_test_support::mock_server::MockCanAdministerTeam;
 pub use ezer_test_support::mock_server::MockModelEntry as MockModel;
+pub use ezer_test_support::mock_server::MockUserTeam;
 pub use ezer_test_support::mock_server::StorageUpload;
 pub use ezer_test_support::sse;
 pub use ezer_test_support::{
