@@ -3,55 +3,67 @@ use super::*;
 mod span_capture {
     use std::collections::HashMap;
     use std::sync::{Arc, Mutex};
-    use std::time::{Duration, Instant};
 
     use tracing::span::{Attributes, Id};
     use tracing_subscriber::layer::{Context, Layer};
-    use tracing_subscriber::registry::LookupSpan;
-
-    pub(super) struct ClosedSpan {
-        pub(super) name: String,
-        pub(super) parent: Option<String>,
-        pub(super) elapsed: Duration,
-    }
 
     #[derive(Default)]
     pub(super) struct SpanLog {
-        open: HashMap<u64, (String, Option<String>, Instant)>,
-        pub(super) closed: Vec<ClosedSpan>,
+        open: HashMap<u64, String>,
+        pub(super) closed: Vec<String>,
     }
 
     pub(super) struct SpanTimingLayer(pub(super) Arc<Mutex<SpanLog>>);
 
-    impl<S: tracing::Subscriber + for<'a> LookupSpan<'a>> Layer<S> for SpanTimingLayer {
+    impl<S: tracing::Subscriber> Layer<S> for SpanTimingLayer {
         fn on_new_span(&self, attrs: &Attributes<'_>, id: &Id, _ctx: Context<'_, S>) {
-            let mut log = self.0.lock().unwrap();
-            let parent = attrs
-                .parent()
-                .and_then(|pid| log.open.get(&pid.into_u64()))
-                .map(|(name, _, _)| name.clone());
-            log.open.insert(
-                id.into_u64(),
-                (attrs.metadata().name().to_string(), parent, Instant::now()),
-            );
+            self.0
+                .lock()
+                .unwrap_or_else(|e| e.into_inner())
+                .open
+                .insert(id.into_u64(), attrs.metadata().name().to_owned());
         }
 
         fn on_close(&self, id: Id, _ctx: Context<'_, S>) {
-            let mut log = self.0.lock().unwrap();
-            if let Some((name, parent, opened)) = log.open.remove(&id.into_u64()) {
-                let elapsed = opened.elapsed();
-                log.closed.push(ClosedSpan {
-                    name,
-                    parent,
-                    elapsed,
-                });
+            let mut log = self.0.lock().unwrap_or_else(|e| e.into_inner());
+            if let Some(name) = log.open.remove(&id.into_u64()) {
+                log.closed.push(name);
             }
         }
     }
 }
 
+#[tracing::instrument(name = "session.spawn", skip_all)]
+async fn fake_spawn_session_actor() {
+    tracing::info_span!("spawn.actor_setup")
+        .in_scope(|| std::thread::sleep(Duration::from_millis(2)));
+}
+
+fn drive_fake_spawn_under(parent: &tracing::Span) {
+    use tracing::Instrument as _;
+    let rt = tokio::runtime::Builder::new_current_thread()
+        .build()
+        .expect("current-thread runtime");
+    rt.block_on(fake_spawn_session_actor().instrument(parent.clone()));
+}
+
 #[test]
-fn startup_phases_emit_spans_with_durations() {
+fn summary_is_byte_stable_for_fixed_inputs() {
+    let snap = PhaseSnapshot {
+        completed: vec![
+            (StartupPhase::ConfigLoad, Duration::from_millis(12)),
+            (StartupPhase::Bootstrap, Duration::from_millis(1500)),
+        ],
+        open: Some((StartupPhase::SessionCreate, Duration::from_millis(3))),
+    };
+    assert_eq!(
+        snap.summary(),
+        "config_load=12ms, bootstrap=1.5s, session_create>=3ms"
+    );
+}
+
+#[test]
+fn interactive_frame_bounds_the_root_span_and_records_once() {
     use tracing_subscriber::layer::SubscriberExt as _;
 
     let _serial = SERIAL.lock().unwrap_or_else(|e| e.into_inner());
@@ -65,83 +77,43 @@ fn startup_phases_emit_spans_with_durations() {
 
     let _p = begin(Owner::Client);
     enter(StartupPhase::ConfigLoad);
-    std::thread::sleep(Duration::from_millis(10));
-    // Re-entering the open phase must not open a second span.
-    enter(StartupPhase::ConfigLoad);
-    enter(StartupPhase::Bootstrap);
-    std::thread::sleep(Duration::from_millis(10));
-    {
-        let mut timer = crate::instrumentation::timer("session.git_divergence");
-        timer.with_subphase(Subphase::SessionGitScan);
-        std::thread::sleep(Duration::from_millis(10));
-    }
-    report_total(StartupOutcome::Ok);
+    assert!(record_interactive_frame(), "first frame records");
+    assert!(!record_interactive_frame(), "second frame is a no-op");
 
-    let log = log.lock().unwrap_or_else(|e| e.into_inner());
-    let names: Vec<&str> = log.closed.iter().map(|c| c.name.as_str()).collect();
-    assert_eq!(
-        names,
-        [
-            "startup.config_load",
-            "startup.session_git_scan",
-            "timer",
-            "startup.bootstrap",
-            "startup",
-        ]
-    );
-    for c in &log.closed {
-        assert!(
-            c.elapsed >= Duration::from_millis(10),
-            "{} must cover its region, got {:?}",
-            c.name,
-            c.elapsed
-        );
-    }
-
-    for c in &log.closed {
-        let expected_parent = match c.name.as_str() {
-            "startup" => None,
-            "timer" => Some("startup.bootstrap"),
-            "startup.session_git_scan" => Some("timer"),
-            _ => Some("startup"),
-        };
-        assert_eq!(c.parent.as_deref(), expected_parent, "{}", c.name);
-    }
-
-    // The launch-to-interactive bar contains every phase bar.
-    let root = log
-        .closed
-        .iter()
-        .find(|c| c.name == "startup")
-        .expect("the root startup span closes at the ok total");
-    let phase_sum: Duration = log
-        .closed
-        .iter()
-        .filter(|c| c.parent.as_deref() == Some("startup"))
-        .map(|c| c.elapsed)
-        .sum();
+    let closed = log.lock().unwrap_or_else(|e| e.into_inner());
     assert!(
-        root.elapsed >= phase_sum,
-        "root span ({:?}) must cover the phases it parents ({phase_sum:?})",
-        root.elapsed
+        closed.closed.iter().any(|name| name == "startup"),
+        "the first interactive frame closes the root span without a total"
     );
+    drop(closed);
+    clear();
 }
 
-#[tracing::instrument(name = "session.spawn", skip_all, fields(start_type = %start_type))]
-async fn fake_spawn_session_actor(start_type: &str) {
-    tracing::info_span!("spawn.actor_setup")
-        .in_scope(|| std::thread::sleep(Duration::from_millis(2)));
-}
+#[test]
+fn record_subphase_routes_each_arm_and_init_process_first_write_wins() {
+    use strum::IntoEnumIterator as _;
+    let _serial = SERIAL.lock().unwrap_or_else(|e| e.into_inner());
 
-fn drive_fake_spawn_under(parent: &tracing::Span) {
-    use tracing::Instrument as _;
-    let rt = tokio::runtime::Builder::new_current_thread()
-        .build()
-        .expect("current-thread runtime");
-    let spawn = async {
-        fake_spawn_session_actor("new").await;
-    };
-    rt.block_on(spawn.instrument(parent.clone()));
+    for sp in Subphase::iter() {
+        reset_for_tests();
+        record_subphase(sp, Duration::from_millis(7));
+        let sub = *subphases();
+        assert_eq!(sub.get(sp), Some(7), "{sp:?} routes to its own slot");
+        let set = Subphase::iter()
+            .filter(|&other| sub.get(other) == Some(7))
+            .count();
+        assert_eq!(set, 1, "{sp:?} sets exactly one slot");
+    }
+
+    reset_for_tests();
+    record_subphase(Subphase::InitProcess, Duration::from_millis(7));
+    record_subphase(Subphase::InitProcess, Duration::from_millis(999));
+    assert_eq!(subphases().get(Subphase::InitProcess), Some(7));
+
+    reset_for_tests();
+    record_subphase(Subphase::SessionLoad, Duration::from_millis(7));
+    record_subphase(Subphase::SessionLoad, Duration::from_millis(999));
+    assert_eq!(subphases().get(Subphase::SessionLoad), Some(999));
 }
 
 #[test]

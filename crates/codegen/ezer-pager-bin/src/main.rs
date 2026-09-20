@@ -122,6 +122,43 @@ fn command_needs_pre_sandbox_policy_heal(command: Option<&Command>) -> bool {
 }
 use std::env;
 use ezer_update::{UpdateConfig, auto_update, enforce_version_policy_or_exit};
+#[cfg(all(feature = "test-seams", debug_assertions))]
+mod test_seam {
+    const TEST_TRUSTED_PUBKEY_FILE_ENV: &str = "EZER_TEST_TRUSTED_PUBKEY_FILE";
+    pub(super) fn install() {
+        let Ok(path) = std::env::var(TEST_TRUSTED_PUBKEY_FILE_ENV) else {
+            return;
+        };
+        let bytes = match std::fs::read(&path) {
+            Ok(bytes) => bytes,
+            Err(e) => {
+                eprintln!("ezer test-seams: cannot read {path}: {e}");
+                return;
+            }
+        };
+        let Some(separator) = bytes.iter().position(|byte| *byte == b'\n') else {
+            eprintln!("ezer test-seams: pubkey file lacks a key_id separator");
+            return;
+        };
+        let (key_id, rest) = bytes.split_at(separator);
+        let Some(public_key) = rest.get(1..) else {
+            return;
+        };
+        let Ok(key_id) = std::str::from_utf8(key_id) else {
+            eprintln!("ezer test-seams: key_id is not utf8");
+            return;
+        };
+        let key_id = key_id.trim();
+        if public_key.len() != 32 {
+            eprintln!(
+                "ezer test-seams: pubkey must be 32 bytes, found {}",
+                public_key.len()
+            );
+            return;
+        }
+        ezer_config::signed_policy::test_seam::set_embedded_keys(Some(&[(key_id, public_key)]));
+    }
+}
 /// Apply headless args to an existing config, only overriding values that are explicitly set.
 /// Unset args leave the environment defaults in place.
 fn apply_headless_args_to_config(args: &HeadlessArgs, config: &mut AgentConfig) {
@@ -1959,6 +1996,8 @@ fn main() {
         return;
     }
     ezer_pager_minimal::install();
+    #[cfg(all(feature = "test-seams", debug_assertions))]
+    test_seam::install();
     #[cfg(all(feature = "jemalloc", unix))]
     ezer_pager::memory_release::install_release_hook(purge_jemalloc_retained_pages);
     #[cfg(all(feature = "jemalloc", unix))]
@@ -2239,8 +2278,12 @@ async fn async_main(mut args: PagerArgs) -> Result<()> {
             Command::Trace(trace_args) => {
                 init_tracing_simple("cli");
                 let _otel_guard = ezer_telemetry::otel_layer::otel_guard();
-                let agent_config = ezer_shell::config::load_agent_config_disk_only()
+                let mut agent_config = ezer_shell::config::load_agent_config_disk_only()
                     .map_err(|e| anyhow::anyhow!("Failed to create agent config: {e}"))?;
+                if !trace_args.local {
+                    agent_config.remote_settings =
+                        fetch_remote_settings(&agent_config.ezer_com_config).await;
+                }
                 return ezer_pager::trace_cmd::run(trace_args, &agent_config).await;
             }
             Command::Memory(memory_args) => {

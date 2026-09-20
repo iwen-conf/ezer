@@ -3235,6 +3235,7 @@ dependencies = [
  "ezer-config",
  "ezer-hooks",
  "ezer-sampling-types",
+ "ezer-telemetry",
  "ezer-tools",
  "fs2",
  "git2",
@@ -3531,11 +3532,13 @@ dependencies = [
  "ezer-version",
  "filetime",
  "fs2",
+ "indexmap",
  "jsonwebtoken",
  "libc",
  "loom",
  "obfstr",
  "parking_lot",
+ "pretty_assertions",
  "prost",
  "rand 0.9.5",
  "reqwest 0.12.24",
@@ -3559,6 +3562,7 @@ dependencies = [
  "urlencoding",
  "uuid",
  "webbrowser",
+ "wiremock",
  "xai-file-utils",
  "xai-system-power",
 ]
@@ -3729,7 +3733,7 @@ dependencies = [
 
 [[package]]
 name = "ezer-pager"
-version = "1.0.35"
+version = "1.0.38"
 dependencies = [
  "agent-client-protocol",
  "ansi-to-tui",
@@ -3834,7 +3838,7 @@ dependencies = [
 
 [[package]]
 name = "ezer-pager-bin"
-version = "1.0.35"
+version = "1.0.38"
 dependencies = [
  "anyhow",
  "clap",
@@ -4169,7 +4173,7 @@ dependencies = [
 
 [[package]]
 name = "ezer-shell"
-version = "1.0.35"
+version = "1.0.38"
 dependencies = [
  "agent-client-protocol",
  "anyhow",
@@ -4646,7 +4650,7 @@ dependencies = [
 
 [[package]]
 name = "ezer-version"
-version = "1.0.35"
+version = "1.0.38"
 dependencies = [
  "semver",
 ]
