@@ -5,7 +5,11 @@ use super::*;
 /// Matches the agent implementation's `MAX_RETRY_ITERATIONS`.
 const CURSOR_LENGTH_CONTINUE_BUDGET: u32 = 5;
 
-const DEFAULT_LENGTH_CONTINUE_BUDGET: u32 = 2;
+/// Default continue budget for every agent, including BYOK/custom models.
+/// High-reasoning turns (DeepSeek `max` via WorkBuddy, etc.) routinely hit
+/// `max_completion_tokens` / `incomplete_details.reason == max_output_tokens`
+/// after the thinking budget; a few automatic continues is the default path.
+pub(super) const DEFAULT_LENGTH_CONTINUE_BUDGET: u32 = 5;
 
 /// This reminder is injected once per turn on the first continue, wrapped in `SessionActor::reminder_wrapper_tag`.
 /// The trailing clause keeps a stranded copy from hijacking the user's next prompt.
@@ -13,15 +17,35 @@ pub(super) const LENGTH_CONTINUE_REMINDER_BODY: &str = "Your previous response e
      limit and was cut off. Continue from exactly where it stopped — or if a newer user \
      message follows this note, answer that instead.";
 
+/// Quiet pager/status copy while a length-salvage continue is in flight.
+/// Must not contain [`ezer_sampling_types::MAX_TOKENS_TRUNCATION_MESSAGE`] or the
+/// pager will classify it as a fatal "Response truncated" banner.
+pub(super) const LENGTH_CONTINUE_STATUS: &str = "continuing after output limit…";
+
+/// Merge user TOML `[session].length_salvage_budget` with the remote setting
+/// before it is stored on the actor. Either side's `0` is the kill switch.
+pub(super) fn merge_configured_length_salvage_budget(
+    user: Option<u32>,
+    remote: Option<u32>,
+) -> Option<u32> {
+    match (user, remote) {
+        (Some(0), _) | (_, Some(0)) => Some(0),
+        (Some(n), _) => Some(n),
+        (None, remote) => remote,
+    }
+}
+
 /// Pure form of [`SessionActor::length_salvage_budget`].
-/// Kill switches are absolute and outrank every tier, including the always-on cursor one: an explicit `EZER_LENGTH_SALVAGE=0` locally, and the remote `length_salvage_budget = 0` fleet-wide.
-/// Otherwise the precedence is cursor, then env opt-in, then remote budget, then off.
+/// Kill switches are absolute and outrank every tier, including the always-on
+/// cursor one and the implicit default: `EZER_LENGTH_SALVAGE=0`, user
+/// `session.length_salvage_budget = 0`, or remote `length_salvage_budget = 0`.
+/// Otherwise: cursor tier > env opt-in > explicit user/remote budget > default on.
 pub(super) fn resolve_length_salvage_budget(
     is_cursor: bool,
     env: Option<bool>,
-    remote: Option<u32>,
+    configured: Option<u32>,
 ) -> Option<u32> {
-    if env == Some(false) || remote == Some(0) {
+    if env == Some(false) || configured == Some(0) {
         return None;
     }
     if is_cursor {
@@ -30,12 +54,18 @@ pub(super) fn resolve_length_salvage_budget(
     if env == Some(true) {
         return Some(DEFAULT_LENGTH_CONTINUE_BUDGET);
     }
-    remote
+    if let Some(n) = configured.filter(|n| *n > 0) {
+        return Some(n);
+    }
+    Some(DEFAULT_LENGTH_CONTINUE_BUDGET)
 }
 
 impl SessionActor {
     /// `Some(budget)` salvages Length truncations (partial commit and bounded continues); `None` hard-fails.
-    /// Always on when [`SessionActor::is_cursor_agent`]; otherwise the `EZER_LENGTH_SALVAGE` env var (debug override), then the `length_salvage_budget` remote setting.
+    /// On by default for every agent (BYOK included). Kill with `EZER_LENGTH_SALVAGE=0`,
+    /// `[session] length_salvage_budget = 0`, or remote `length_salvage_budget = 0`.
+    /// A positive user or remote budget overrides the default; cursor still gets at
+    /// least the cursor tier when no explicit budget is configured.
     pub(super) fn length_salvage_budget(&self) -> Option<u32> {
         resolve_length_salvage_budget(
             self.is_cursor_agent(),
@@ -43,13 +73,35 @@ impl SessionActor {
             self.length_salvage_remote_budget,
         )
     }
+
+    pub(super) fn inject_length_continue_reminder(&self) {
+        let tag = self.reminder_wrapper_tag();
+        self.chat_state_handle.push_user_message(
+            ConversationItem::length_continue_reminder(format!(
+                "<{tag}>{}</{tag}>",
+                LENGTH_CONTINUE_REMINDER_BODY
+            )),
+        );
+    }
+
+    pub(super) async fn notify_length_continue(&self, salvage: &LengthSalvage) {
+        self.send_xai_notification(XaiSessionUpdate::RetryState(
+            crate::extensions::notification::RetryState::Retrying {
+                attempt: salvage.continues(),
+                max_retries: salvage.budget(),
+                reason: LENGTH_CONTINUE_STATUS.to_string(),
+                error_type: None,
+            },
+        ))
+        .await;
+    }
 }
 
 /// The turn loop's next step for a `Length`-stopped response.
 pub(super) enum SalvageStep {
     /// Retry the step; inject the once-per-turn reminder when set.
     Continue { inject_reminder: bool },
-    /// Budget just ran out: log once, then complete the turn truncated.
+    /// Budget just ran out: fail the turn with `MaxTokensTruncation`.
     Exhaust,
     /// Only the truncation mark (already exhausted, or salvage disabled).
     None,
@@ -174,6 +226,29 @@ mod tests {
     }
 
     #[test]
+    fn merge_user_budget_beats_remote_and_zero_kills() {
+        assert_eq!(
+            merge_configured_length_salvage_budget(Some(3), Some(9)),
+            Some(3)
+        );
+        assert_eq!(
+            merge_configured_length_salvage_budget(None, Some(9)),
+            Some(9)
+        );
+        assert_eq!(
+            merge_configured_length_salvage_budget(Some(0), Some(9)),
+            Some(0),
+            "user zero kills a remote budget"
+        );
+        assert_eq!(
+            merge_configured_length_salvage_budget(Some(3), Some(0)),
+            Some(0),
+            "remote zero kills a user budget"
+        );
+        assert_eq!(merge_configured_length_salvage_budget(None, None), None);
+    }
+
+    #[test]
     fn explicit_env_false_kills_every_tier() {
         assert_eq!(
             resolve_length_salvage_budget(true, Some(false), None),
@@ -220,7 +295,7 @@ mod tests {
     }
 
     #[test]
-    fn remote_budget_enables_default_agents() {
+    fn remote_budget_overrides_the_default() {
         assert_eq!(resolve_length_salvage_budget(false, None, Some(3)), Some(3));
     }
 
@@ -228,13 +303,16 @@ mod tests {
     fn env_gate_enables_the_default_budget() {
         assert_eq!(
             resolve_length_salvage_budget(false, Some(true), None),
-            Some(2)
+            Some(DEFAULT_LENGTH_CONTINUE_BUDGET)
         );
     }
 
     #[test]
-    fn disabled_without_cursor_or_env() {
-        assert_eq!(resolve_length_salvage_budget(false, None, None), None);
+    fn default_agents_are_on_without_cursor_or_env() {
+        assert_eq!(
+            resolve_length_salvage_budget(false, None, None),
+            Some(DEFAULT_LENGTH_CONTINUE_BUDGET)
+        );
     }
 
     #[test]

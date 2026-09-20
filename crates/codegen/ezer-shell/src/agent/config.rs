@@ -1562,6 +1562,12 @@ pub struct SessionConfig {
     /// `Option<bool>` so `None` round-trips as absent on disk (managed config wins over default).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub load_envrc: Option<bool>,
+    /// Bounded auto-continues when a sample hits `max_completion_tokens` /
+    /// `finish_reason: length` / Responses `incomplete_details.reason == max_output_tokens`.
+    /// `None` uses the built-in default (5). `Some(0)` disables salvage and hard-fails
+    /// the turn. This is output-token truncation, not context-window auto-compact.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub length_salvage_budget: Option<u32>,
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]

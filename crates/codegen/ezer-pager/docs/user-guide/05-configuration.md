@@ -102,6 +102,7 @@ remote_fetch = true                    # allow optional online model-catalog fet
 
 [session]
 auto_compact_threshold_percent = 85    # auto-compact at this % of context window (default: 85)
+length_salvage_budget = 5              # auto-continue after output-token truncation (0 disables)
 load_envrc = true                      # load .envrc environment variables
 
 [tools]

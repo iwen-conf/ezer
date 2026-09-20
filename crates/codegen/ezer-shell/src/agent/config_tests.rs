@@ -45,7 +45,7 @@ fn first_run_byok_template_parses_as_responses_gateway() {
 #[serial]
 fn first_run_byok_template_enables_concurrent_subagents() {
     clear_runtime_env_vars();
-    let raw: toml::Value = toml::from_str(&xai_ezer_config::default_byok_config_toml())
+    let raw: toml::Value = toml::from_str(&ezer_config::default_byok_config_toml())
         .expect("first-run template must be valid TOML");
     let mut cfg = Config::new_from_toml_cfg(&raw).expect("first-run template must parse");
     cfg.resolve_runtime_fields(&RuntimeResolutionContext {
@@ -67,7 +67,7 @@ fn first_run_byok_template_enables_concurrent_subagents() {
     );
     assert_eq!(
         cfg.subagents_max_concurrent,
-        xai_ezer_tools::implementations::ezer_build::task::admission::DEFAULT_MAX_CONCURRENT
+        ezer_tools::implementations::ezer_build::task::admission::DEFAULT_MAX_CONCURRENT
     );
 }
 
@@ -1945,6 +1945,27 @@ fn parses_auto_compact_threshold_percent() {
     .unwrap();
     let cfg = Config::new_from_toml_cfg(&raw_config).expect("config should parse");
     assert_eq!(cfg.session.auto_compact_threshold_percent, Some(75));
+}
+#[test]
+fn parses_session_length_salvage_budget() {
+    let raw_config: toml::Value = toml::from_str(
+        r#"
+            [session]
+            length_salvage_budget = 3
+            "#,
+    )
+    .unwrap();
+    let cfg = Config::new_from_toml_cfg(&raw_config).expect("config should parse");
+    assert_eq!(cfg.session.length_salvage_budget, Some(3));
+    let off: toml::Value = toml::from_str(
+        r#"
+            [session]
+            length_salvage_budget = 0
+            "#,
+    )
+    .unwrap();
+    let cfg = Config::new_from_toml_cfg(&off).expect("config should parse");
+    assert_eq!(cfg.session.length_salvage_budget, Some(0));
 }
 #[test]
 fn compaction_mode_precedence_env_over_config_over_remote_over_default() {
