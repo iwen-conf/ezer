@@ -20,7 +20,7 @@ const SETTINGS: &str = r#"{"permissions":{
     "ask":["Bash(rm *)","Bash(*rm -rf*)"]
 }}"#;
 
-const PAGER: ClientType = ClientType::GrokPager;
+const PAGER: ClientType = ClientType::EzerPager;
 const REMOVES: &str = r#"LOG=/x; ls "$LOG"; rm "$LOG""#;
 const WRAPPED_REMOVES: &str = r#"LOG=/x; ls "$LOG"; timeout 5 rm "$LOG""#;
 /// `rg:*` covers neither `ls` nor `echo`, so no configured allow decides LOG_SCRIPT.
@@ -66,7 +66,7 @@ impl FilenameFixture {
             &cwd,
             Some(config),
             client,
-            ClientType::GrokPager,
+            ClientType::EzerPager,
             /*remember_tool_approvals*/ true,
         );
         let (classifier, classifications) = capturing_classifier(verdict);
@@ -316,7 +316,7 @@ async fn recovered_scripts_keep_restrictive_controls_and_remembered_denies() {
         .run_until(async {
             let default = PermissionState::default;
             for mode in [PromptPolicy::Auto, PromptPolicy::Allow] {
-                for client in [ClientType::Generic, ClientType::GrokPager] {
+                for client in [ClientType::Generic, ClientType::EzerPager] {
                     let mut fixture =
                         FilenameFixture::with_rules(mode, &PARTIAL, client, default()).await;
                     fixture.manager.set_auto_mode(true);
@@ -326,7 +326,7 @@ async fn recovered_scripts_keep_restrictive_controls_and_remembered_denies() {
                     assert_ne!(Decision::Allow, decision, "{mode:?} {client:?}");
                     assert_eq!(Some(reasons::AUTO_CLASSIFIER_DENY), reason);
                     assert_eq!(1, fixture.classified());
-                    let prompted = usize::from(client == ClientType::GrokPager);
+                    let prompted = usize::from(client == ClientType::EzerPager);
                     assert_eq!(prompted, fixture.prompts.borrow().len());
                 }
             }

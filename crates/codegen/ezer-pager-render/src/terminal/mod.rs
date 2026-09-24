@@ -171,7 +171,7 @@ impl TerminalName {
             | Self::Alacritty
             | Self::Rio
             | Self::Foot
-            | Self::GrokDesktop
+            | Self::EzerDesktop
             | Self::Vte
             | Self::Terminator
             | Self::WindowsTerminal => WidthShrink::Rewraps,
