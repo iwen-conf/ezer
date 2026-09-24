@@ -241,34 +241,13 @@ user-level definition with the same name.
 
 ## Crate Relationships
 
-```
-┌──────────────────┐
-│  ezer-agent  │  ← This crate
-│  (Agent, Builder, │
-│   Definition)     │
-└────────┬─────────┘
-         │ depends on
-         ▼
-┌──────────────────┐
-│  ezer-tools  │
-│  (ToolBridge,    │
-│   ToolRegistry,  │
-│   ToolState)     │
-└────────▲─────────┘
-         │ depends on
-┌────────┴─────────┐
-│  ezer-shell  │  uses AgentBuilder to create
-│  (session host)  │  Agent during session setup
-└──────────────────┘
-```
+This crate uses `ezer-tools`.
+`ezer-tools` provides `ToolBridge` and `Resources`.
+Session tool state is in `Resources`.
+There is no `ToolState`.
 
-- **`ezer-tools`**: Provides `ToolBridge`, `ToolRegistry`,
-  `ToolState`, `SystemReminderLayer`, and tool implementations.
-  `ezer-agent` depends on it for tool setup.
-- **`ezer-shell`**: The application shell. Uses `AgentBuilder`
-  to construct an `Agent` during session creation. The shell
-  re-exports some modules from `ezer-agent` (AGENTS.md
-  discovery, skills discovery, base prompt rendering).
+`ezer-shell` is the session host.
+It uses `AgentBuilder` to construct an `Agent` at session setup.
 
 ## Built-in Agents
 

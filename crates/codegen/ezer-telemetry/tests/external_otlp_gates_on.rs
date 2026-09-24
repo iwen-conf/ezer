@@ -107,37 +107,23 @@ async fn external_stream_gates_on_end_to_end() {
         context_tokens: None,
         cost_usd_ticks: None,
     });
-    ezer_telemetry::log_event(ezer_telemetry::events::ToolCallCompleted {
-        tool_name: "github__create_issue".into(),
-        outcome: ezer_session_events::types::ToolOutcome::Success,
-        hook_rewrote: false,
-        duration_ms: 12,
-        tool_result_size_bytes: None,
-        model_id: "ezer".into(),
-        file_path: Some("/tmp/projectdir/config.toml".into()),
-        parameters: Some(serde_json::json!({
-            "marker": PARAM_MARK,
-            "token": SECRET_KEY,
-            "deep": {"a": {"b": "c"}},
-        })),
-        tool_use_id: Some("call-github".into()),
-        tool_output: Some(format!("ok {PARAM_MARK}")),
-        error_message: None,
-    });
+    let mut github = ezer_telemetry::events::completed_for_test("github__create_issue", "ezer");
+    github.duration_ms = 12;
+    github.file_path = Some("/tmp/projectdir/config.toml".into());
+    github.parameters = Some(serde_json::json!({
+        "marker": PARAM_MARK,
+        "token": SECRET_KEY,
+        "deep": {"a": {"b": "c"}},
+    }));
+    github.tool_use_id = Some("call-github".into());
+    github.tool_output = Some(format!("ok {PARAM_MARK}"));
+    ezer_telemetry::log_event(github);
     let long_command = format!("{LONG_CMD_MARK}{}", "x".repeat(600));
-    ezer_telemetry::log_event(ezer_telemetry::events::ToolCallCompleted {
-        tool_name: "run_terminal_cmd".into(),
-        outcome: ezer_session_events::types::ToolOutcome::Success,
-        hook_rewrote: false,
-        duration_ms: 8,
-        tool_result_size_bytes: None,
-        model_id: "ezer".into(),
-        file_path: None,
-        parameters: Some(serde_json::json!({ "command": long_command })),
-        tool_use_id: Some("call-bash-long".into()),
-        tool_output: None,
-        error_message: None,
-    });
+    let mut bash = ezer_telemetry::events::completed_for_test("run_terminal_cmd", "ezer");
+    bash.duration_ms = 8;
+    bash.parameters = Some(serde_json::json!({ "command": long_command }));
+    bash.tool_use_id = Some("call-bash-long".into());
+    ezer_telemetry::log_event(bash);
     ezer_telemetry::log_event(ezer_telemetry::events::PermissionDecisionRecord {
         payload: ezer_telemetry::events::PermissionDecisionPayload {
             tool_name: "run_terminal_cmd".into(),

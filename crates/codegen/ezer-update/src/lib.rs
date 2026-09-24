@@ -5,6 +5,7 @@ mod cleanup_downloads;
 pub mod notice;
 pub mod version;
 mod version_policy;
+mod winget;
 
 pub use auto_update::UpdateStatus;
 pub use version::{
