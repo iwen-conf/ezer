@@ -33,6 +33,7 @@ members = [
     "crates/codegen/ezer-env",
     "crates/codegen/ezer-extra-ca",
     "crates/codegen/ezer-feedback",
+    "crates/codegen/ezer-file-lock",
     "crates/codegen/ezer-foreign-sessions",
     "crates/codegen/ezer-gboom",
     "crates/codegen/ezer-hooks",
@@ -292,6 +293,7 @@ tower-http = "0.6"
 tracing = "0.1"
 tracing-opentelemetry = "0.33"
 tracing-subscriber = { version = "0.3.23", default-features = false, features = ["env-filter", "smallvec", "tracing-log", "std", "ansi"] }
+tree-sitter = "0.26"
 ts-rs = "12.0"
 tui-scrollbar = "0.2"
 two-face = { version = "0.4", default-features = false, features = ["syntect-onig"] }
@@ -335,6 +337,7 @@ ezer-diag-server = { path = "crates/codegen/ezer-diag-server" }
 ezer-env = { path = "crates/codegen/ezer-env" }
 ezer-extra-ca = { path = "crates/codegen/ezer-extra-ca" }
 ezer-feedback = { path = "crates/codegen/ezer-feedback" }
+ezer-file-lock = { path = "crates/codegen/ezer-file-lock" }
 ezer-foreign-sessions = { path = "crates/codegen/ezer-foreign-sessions" }
 ezer-http = { path = "crates/codegen/ezer-http" }
 ezer-image = { path = "crates/codegen/ezer-image" }

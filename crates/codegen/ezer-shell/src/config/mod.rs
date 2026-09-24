@@ -93,7 +93,7 @@ pub struct SubagentsConfig {
 use ezer_subagent_resolution::config::{SubagentPersona, SubagentRole};
 impl Default for SubagentsConfig {
     fn default() -> Self {
-        Self {
+        SubagentsConfig {
             enabled: true,
             max_depth: None,
             max_concurrent: None,
@@ -376,14 +376,10 @@ impl SubagentsConfig {
         }
         LimitBehavior::Queue
     }
-    /// Resolve the final subagents config from all sources (in priority order):
-    /// CLI `--no-subagents` (`Some(false)`) force-disables; a legacy `--subagents`
-    /// / TUI default of `Some(true)` force-enables. `EZER_SUBAGENTS` env var:
-    /// `1`/`true` enables, `0`/`false` force-disables. Config file `[subagents]`
-    /// section. Default (enabled). `enabled` is deliberately not remotely gated.
-    /// Only explicit local intent (CLI flag, `EZER_SUBAGENTS`, `[subagents] enabled`)
-    /// changes the default. A `[subagents]` table used only for limits or model
-    /// pins does not disable the feature.
+    /// Resolve the final subagents config from all sources (in priority order): CLI tri-state (`Some(false)` from `--no-subagents` force-disables, `Some(true)` force-enables, `None` defers)
+    /// `EZER_SUBAGENTS` env var: `1`/`true` enables, `0`/`false` force-disables; config file `[subagents] enabled`; Default (enabled).
+    /// `enabled` is deliberately not remotely gated. Only explicit local intent (CLI flag, `EZER_SUBAGENTS`, `[subagents] enabled`) changes the default.
+    /// A `[subagents]` table without an `enabled` key is not intent: it keeps the default so tuning `max_depth` or `[subagents.models]` cannot turn subagents off.
     /// Project files are excluded from this trust-independent base; Task boundaries overlay them using the parent cwd's authoritative trust verdict.
     pub fn resolve(cli_flag: Option<bool>, config: &toml::Value) -> Self {
         let user_ezer_root = ezer_config::user_ezer_home();
@@ -404,11 +400,15 @@ impl SubagentsConfig {
             .get("subagents")
             .and_then(|v| v.clone().try_into().ok())
             .unwrap_or_default();
+        let has_local_enabled = config
+            .get("subagents")
+            .and_then(|v| v.as_table())
+            .is_some_and(|t| t.contains_key("enabled"));
         let resolved = crate::agent::config::resolve_enabled(
             cli_flag,
             "EZER_SUBAGENTS",
             result.enabled,
-            config.get("subagents").is_some(),
+            has_local_enabled,
             None,
             true,
         );
@@ -939,11 +939,13 @@ fn walk_toml(
 }
 /// The `[skills]` table from an effective config, shared by the reload dispatch and `ezer inspect`.
 pub(crate) use crate::config::reloader::parse_skills_config;
-/// Effective config: the layers plus the campaign overlay (remote cache and `EZER_CAMPAIGNS_OVERRIDE`).
-pub use crate::util::config::load_effective_config;
 /// Effective config with disk campaigns only, for one-shot entrypoints that never fetch remote settings.
 /// This avoids resolving against a never-seeded cache.
 pub use crate::util::config::load_effective_config_disk_only;
+/// Effective config: the layers plus the campaign overlay (remote cache and `EZER_CAMPAIGNS_OVERRIDE`).
+pub use crate::util::config::{
+    EffectiveConfigLayers, load_effective_config, load_effective_config_with_layers,
+};
 /// Where a requirement or permission rule was loaded from.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum RequirementSource {

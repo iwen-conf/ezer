@@ -1,6 +1,6 @@
 [package]
 name = "ezer-pager"
-version = "1.0.38"
+version = "1.0.41"
 edition.workspace = true
 license = "Apache-2.0"
 authors = ["ezer contributors"]
@@ -188,6 +188,7 @@ windows-sys = { version = "0.59", features = ["Win32_System_Console"] }
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["test-util"] }
+xai-interjection-core = { workspace = true }
 # The fixture that builds a `[ui.status_line]` section field by field.
 ezer-status-line = { workspace = true, features = ["test-support"] }
 ezer-pager-render = { path = "../ezer-pager-render", features = ["test-support"] }

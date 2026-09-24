@@ -1099,6 +1099,7 @@ fn with_ezer_subagents<T>(value: &str, f: impl FnOnce() -> T) -> T {
     with_env_var_opt("EZER_SUBAGENTS", Some(value), f)
 }
 #[test]
+#[serial_test::serial]
 fn subagents_config_default_enabled() {
     without_ezer_subagents(|| {
         let config = toml::Value::Table(toml::map::Map::new());
@@ -1157,6 +1158,7 @@ fn subagents_max_depth_invalid_env_falls_through() {
         );
 }
 #[test]
+#[serial_test::serial]
 fn subagents_config_parses_max_depth_from_toml() {
     without_ezer_subagents(|| {
         let config: toml::Value = toml::from_str("[subagents]\nmax_depth = 2\n")
@@ -1204,6 +1206,7 @@ fn subagent_sampling_limit_applies_precedence_and_clamps() {
     assert!(resolve(Some("0"), Some(0), Some(0)) > 0);
 }
 #[test]
+#[serial_test::serial]
 fn subagent_sampling_limit_env_override_beats_toml() {
     let _lock = SUBAGENTS_ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
     let _g = crate::env::EnvVarGuard::set(SubagentsConfig::ENV_SAMPLING_LIMIT, "24");
@@ -1213,6 +1216,7 @@ fn subagent_sampling_limit_env_override_beats_toml() {
     assert_eq!(config.subagents_sampling_limit, 24);
 }
 #[test]
+#[serial_test::serial]
 fn subagent_sampling_limit_defaults_to_resolved_subagents_max_concurrent() {
     let _lock = SUBAGENTS_ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
     let _env = crate::env::EnvVarGuard::remove(SubagentsConfig::ENV_SAMPLING_LIMIT)
@@ -1244,6 +1248,7 @@ fn subagent_limit_behavior_resolves_env_over_toml_over_remote_over_queue() {
     assert_eq!(resolve(None, Some("sometimes"), None), LimitBehavior::Queue);
 }
 #[test]
+#[serial_test::serial]
 fn subagents_config_parses_limits_from_toml() {
     without_ezer_subagents(|| {
         let config: toml::Value = toml::from_str(
@@ -1258,6 +1263,7 @@ fn subagents_config_parses_limits_from_toml() {
     });
 }
 #[test]
+#[serial_test::serial]
 fn subagents_config_parses_negative_max_depth_without_dropping_section() {
     without_ezer_subagents(|| {
         let config: toml::Value = toml::from_str(
@@ -1274,6 +1280,7 @@ fn subagents_config_parses_negative_max_depth_without_dropping_section() {
     });
 }
 #[test]
+#[serial_test::serial]
 fn subagents_config_cli_flag_enables() {
     without_ezer_subagents(|| {
         let config = toml::Value::Table(toml::map::Map::new());
@@ -1308,6 +1315,7 @@ fn subagents_config_limits_only_section_stays_enabled() {
     });
 }
 #[test]
+#[serial_test::serial]
 fn subagents_config_env_var_enables() {
     with_ezer_subagents(
         "1",
@@ -1319,6 +1327,7 @@ fn subagents_config_env_var_enables() {
     );
 }
 #[test]
+#[serial_test::serial]
 fn subagents_config_env_var_disables() {
     with_ezer_subagents(
         "0",
@@ -1331,6 +1340,7 @@ fn subagents_config_env_var_disables() {
     );
 }
 #[test]
+#[serial_test::serial]
 fn subagents_config_toml_enables() {
     without_ezer_subagents(|| {
         let config: toml::Value = toml::from_str("[subagents]\nenabled = true").unwrap();
@@ -1339,6 +1349,7 @@ fn subagents_config_toml_enables() {
     });
 }
 #[test]
+#[serial_test::serial]
 fn subagents_config_local_disabled_wins() {
     without_ezer_subagents(|| {
         let config: toml::Value = toml::from_str("[subagents]\nenabled = false")
@@ -1348,6 +1359,7 @@ fn subagents_config_local_disabled_wins() {
     });
 }
 #[test]
+#[serial_test::serial]
 fn subagents_config_env_var_disables_default() {
     with_ezer_subagents(
         "0",
@@ -1363,6 +1375,7 @@ fn subagents_config_env_var_disables_default() {
 }
 /// A `subagents_enabled` key served by an old cli-chat-proxy must parse as an unknown key and have no effect on resolution.
 #[test]
+#[serial_test::serial]
 fn subagents_config_remote_settings_key_is_ignored() {
     without_ezer_subagents(|| {
         let _settings: crate::util::config::RemoteSettings = serde_json::from_str(
@@ -1375,6 +1388,7 @@ fn subagents_config_remote_settings_key_is_ignored() {
     });
 }
 #[test]
+#[serial_test::serial]
 fn subagents_config_cli_flag_overrides_env_var() {
     with_ezer_subagents(
         "0",
@@ -1389,6 +1403,7 @@ fn subagents_config_cli_flag_overrides_env_var() {
     );
 }
 #[test]
+#[serial_test::serial]
 fn subagents_config_models_parsed() {
     without_ezer_subagents(|| {
         let config: toml::Value = toml::from_str(
@@ -1410,6 +1425,7 @@ fn subagents_config_models_parsed() {
     });
 }
 #[test]
+#[serial_test::serial]
 fn subagents_config_models_empty_when_missing() {
     without_ezer_subagents(|| {
         let config: toml::Value = toml::from_str("[subagents]\nenabled = true").unwrap();
@@ -1419,7 +1435,8 @@ fn subagents_config_models_empty_when_missing() {
     });
 }
 #[test]
-fn subagents_config_models_without_enabled() {
+#[serial_test::serial]
+fn subagents_config_models_without_enabled_keeps_default_enabled() {
     without_ezer_subagents(|| {
         let config: toml::Value = toml::from_str(
                 r#"
@@ -1438,6 +1455,37 @@ fn subagents_config_models_without_enabled() {
     });
 }
 #[test]
+#[serial_test::serial]
+fn subagents_config_limits_only_table_keeps_default_enabled() {
+    without_ezer_subagents(|| {
+        let config: toml::Value = toml::from_str(
+                "[subagents]\nmax_depth = 3\nmax_concurrent = 4\n",
+            )
+            .unwrap();
+        let sa = SubagentsConfig::resolve(None, &config);
+        assert!(sa.enabled, "[subagents] max_* settings alone must not disable subagents");
+        assert_eq!(sa.max_depth, Some(3));
+        assert_eq!(sa.max_concurrent, Some(4));
+    });
+}
+#[test]
+#[serial_test::serial]
+fn subagents_config_cli_disable_overrides_env_and_toml() {
+    with_ezer_subagents(
+        "1",
+        || {
+            let config: toml::Value = toml::from_str("[subagents]\nenabled = true")
+                .unwrap();
+            let sa = SubagentsConfig::resolve(Some(false), &config);
+            assert!(
+                !sa.enabled,
+                "--no-subagents must win over EZER_SUBAGENTS=1 and [subagents] enabled = true"
+            );
+        },
+    );
+}
+#[test]
+#[serial_test::serial]
 fn subagents_config_models_with_env_var_enables() {
     with_ezer_subagents(
         "1",
@@ -1456,6 +1504,7 @@ fn subagents_config_models_with_env_var_enables() {
     );
 }
 #[test]
+#[serial_test::serial]
 fn subagents_config_toggle_mixed_values() {
     without_ezer_subagents(|| {
         let config: toml::Value = toml::from_str(
@@ -1481,6 +1530,7 @@ fn subagents_config_toggle_mixed_values() {
     });
 }
 #[test]
+#[serial_test::serial]
 fn subagents_config_toggle_missing_defaults_to_empty() {
     without_ezer_subagents(|| {
         let config: toml::Value = toml::from_str("[subagents]\nenabled = true").unwrap();
@@ -2684,7 +2734,7 @@ fn project_overlay_preserves_source_precedence() {
             "#,
         )
         .unwrap();
-        let base = SubagentsConfig::resolve_base_with_sources(
+    let base = SubagentsConfig::resolve_base_with_sources(
         None,
         &config,
         Some(&home.join(".ezer")),
@@ -4072,7 +4122,7 @@ fn project_overlay_tracks_authoritative_trust_transitions() {
 fn base_resolver_without_project_cwd_keeps_project_files_out() {
     let tmp = tempfile::tempdir().unwrap();
     write_subagent_definitions(&tmp.path().join(".ezer"), &[("project", "Project")]);
-        let base = SubagentsConfig::resolve_base_with_sources(
+    let base = SubagentsConfig::resolve_base_with_sources(
         None,
         &toml::Value::Table(Default::default()),
         None,
@@ -4088,7 +4138,7 @@ fn explicit_ezer_root_is_the_only_user_source() {
     let configured = tmp.path().join("configured-ezer-home");
     write_subagent_definitions(&ambient, &[("ambient", "Ambient")]);
     write_subagent_definitions(&configured, &[("configured", "Configured")]);
-        let base = SubagentsConfig::resolve_base_with_sources(
+    let base = SubagentsConfig::resolve_base_with_sources(
         None,
         &toml::Value::Table(Default::default()),
         Some(&configured),

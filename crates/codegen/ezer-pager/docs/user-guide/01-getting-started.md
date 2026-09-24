@@ -24,6 +24,17 @@ Verify the installation:
 ezer --version
 ```
 
+If you installed Grok Build with WinGet, update it with WinGet instead. Quit
+Grok first, then run:
+
+```powershell
+winget upgrade --id xAI.GrokBuild -e
+```
+
+On a WinGet install, `grok update` prints this command and changes nothing.
+The WinGet package tracks the stable channel, and new releases can take a few
+days to reach it.
+
 To fetch a repository through Grove (NFS on macOS, FUSE on Linux), enable
 `ezer clone` with `[clone] enabled = true` in Grove config, `EZER_CLONE=1`,
 or the enable-both convenience `EZER_GROVE=1` / `[cli] grove = true` in
